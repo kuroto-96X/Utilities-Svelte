@@ -136,19 +136,21 @@
 
   <!-- TAP Button -->
   <div class="flex justify-center py-8">
-    {#key tapKey}
-      <button
-        type="button"
-        class="tap-button"
-        class:tap-anim={isTapAnimating}
-        onpointerdown={handleTap}
-      >
-        <span class="relative z-10 font-bold">TAP</span>
-        {#key rippleKey}
-          <span class="ripple" class:active={isRippling}></span>
-        {/key}
-      </button>
-    {/key}
+    <div class="tap-button-wrapper">
+      {#key rippleKey}
+        <span class="ripple" class:active={isRippling}></span>
+      {/key}
+      {#key tapKey}
+        <button
+          type="button"
+          class="tap-button"
+          class:tap-anim={isTapAnimating}
+          onpointerdown={handleTap}
+        >
+          <span class="relative z-10 font-bold">TAP</span>
+        </button>
+      {/key}
+    </div>
   </div>
 
   <!-- Reset Button -->
@@ -247,11 +249,19 @@
     font-size: clamp(4rem, 20vw, 7rem);
   }
 
-  .tap-button {
+  .tap-button-wrapper {
+    position: relative;
     width: min(70vw, 260px);
     height: min(70vw, 260px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tap-button {
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
-    overflow: hidden;
     background-color: #0d6efd;
     color: #fff;
     font-size: clamp(1.5rem, 6vw, 2.5rem);
@@ -263,6 +273,7 @@
     -webkit-tap-highlight-color: transparent;
     box-shadow: 0 4px 20px rgba(13, 110, 253, 0.35);
     position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -285,19 +296,20 @@
     height: 100%;
     top: 0;
     left: 0;
-    background: rgba(13, 110, 253, 0.45);
-    transform: scale(1);
+    background: rgba(13, 110, 253, 0.4);
+    transform: scale(0.76);
     transform-origin: center;
     opacity: 0;
     pointer-events: none;
+    z-index: 0;
   }
 
   .ripple.active {
-    animation: ripple-expand 0.184s ease-out 46ms forwards;
+    animation: ripple-expand 0.23s ease-out 46ms forwards;
   }
 
   @keyframes ripple-expand {
-    from { transform: scale(1); opacity: 1; }
+    from { transform: scale(0.76); opacity: 1; }
     to   { transform: scale(1.5); opacity: 0; }
   }
 
