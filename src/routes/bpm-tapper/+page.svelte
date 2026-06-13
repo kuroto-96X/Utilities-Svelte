@@ -141,6 +141,7 @@
   <div class="flex justify-center py-8">
     {#key tapKey}
       <button
+        type="button"
         class="tap-button"
         class:tap-anim={isTapAnimating}
         onpointerdown={handleTap}
@@ -156,6 +157,7 @@
   <!-- Reset Button -->
   <div class="flex justify-center pb-4">
     <button
+      type="button"
       class="reset-button"
       class:pressed={isResetPressed}
       onclick={handleReset}
@@ -175,6 +177,7 @@
     <div class="flex-1 min-w-0 pl-2">
       <input
         type="range"
+        aria-label="Averaging window"
         min="0" max="100" step="1"
         disabled={tapHistory.length === 0}
         bind:value={sliderValue}
@@ -196,7 +199,7 @@
           {/if}
           <span>{chartData.chartMinInt}</span>
         </div>
-        <svg viewBox="0 0 400 80" preserveAspectRatio="none" class="bpm-chart">
+        <svg viewBox="0 0 400 80" preserveAspectRatio="none" class="bpm-chart" aria-label="BPM over time">
           {#if chartData.mainBpmPath}
             <path d={chartData.mainBpmPath} stroke="#dc3545" stroke-width="1.5" stroke-dasharray="4 3" fill="none" />
           {/if}
@@ -216,10 +219,10 @@
         <table class="w-full text-sm">
           <thead>
             <tr class="bg-gray-800 text-white">
-              <th class="px-3 py-2 text-left font-semibold">#</th>
-              <th class="px-3 py-2 text-left font-semibold">Time</th>
-              <th class="px-3 py-2 text-left font-semibold">Interval (ms)</th>
-              <th class="px-3 py-2 text-left font-semibold">Instant BPM</th>
+              <th scope="col" class="px-3 py-2 text-left font-semibold">#</th>
+              <th scope="col" class="px-3 py-2 text-left font-semibold">Time</th>
+              <th scope="col" class="px-3 py-2 text-left font-semibold">Interval (ms)</th>
+              <th scope="col" class="px-3 py-2 text-left font-semibold">Instant BPM</th>
             </tr>
           </thead>
           <tbody>
