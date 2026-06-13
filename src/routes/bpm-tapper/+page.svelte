@@ -117,4 +117,127 @@
   }
 </script>
 
-<div>placeholder</div>
+<svelte:head>
+  <title>Tap BPM</title>
+</svelte:head>
+
+<div class="flex flex-col items-center w-full">
+
+  <!-- Header -->
+  <div class="w-full text-center py-3 px-4 border-b border-gray-200">
+    <h1 class="text-3xl font-bold tracking-tight">Tap BPM</h1>
+    <p class="text-sm text-gray-500 mt-1 mb-2">Tap the button to the beat to measure your BPM</p>
+  </div>
+
+  <!-- BPM Display -->
+  <div class="text-center pt-4 pb-2">
+    <div class="bpm-value font-bold tabular-nums leading-none tracking-tighter">
+      {mainBpm !== null ? Math.round(mainBpm) : '---'}
+    </div>
+    <div class="text-xl text-gray-500 font-medium mt-1">BPM</div>
+  </div>
+
+  <!-- TAP Button -->
+  <div class="flex justify-center py-8">
+    {#key tapKey}
+      <button
+        class="tap-button"
+        class:tap-anim={isTapAnimating}
+        onpointerdown={handleTap}
+      >
+        <span class="relative z-10 font-bold">TAP</span>
+        {#key rippleKey}
+          <span class="ripple" class:active={isRippling}></span>
+        {/key}
+      </button>
+    {/key}
+  </div>
+
+  <!-- Reset Button -->
+  <div class="flex justify-center pb-4">
+    <button
+      class="reset-button"
+      class:pressed={isResetPressed}
+      onclick={handleReset}
+      onpointerdown={() => (isResetPressed = true)}
+      onpointerup={() => (isResetPressed = false)}
+      onpointerleave={() => (isResetPressed = false)}
+      onpointercancel={() => (isResetPressed = false)}
+    >Reset</button>
+  </div>
+
+  <!-- Avg Label -->
+  <div class="text-center text-sm text-gray-500 px-4 min-h-5">{avgTapLabel}</div>
+
+  <!-- Slider -->
+  <div class="flex gap-1 px-4 pt-1 w-full max-w-sm">
+    <div class="w-8 shrink-0"></div>
+    <div class="flex-1 min-w-0 pl-2">
+      <input
+        type="range"
+        min="0" max="100" step="1"
+        disabled={tapHistory.length === 0}
+        bind:value={sliderValue}
+        class="w-full accent-blue-600 disabled:opacity-40"
+      />
+    </div>
+  </div>
+
+  <!-- SVG Chart -->
+  {#if chartData}
+    <div class="w-full px-4 pt-2">
+      <div class="flex items-stretch gap-1">
+        <div class="chart-y-labels">
+          <span>{chartData.chartMaxInt}</span>
+          {#if chartData.mainBpmLabelTopPx >= 0}
+            <span class="chart-main-label" style="top: {chartData.mainBpmLabelTopPx.toFixed(1)}px">
+              {mainBpm !== null ? Math.round(mainBpm) : ''}
+            </span>
+          {/if}
+          <span>{chartData.chartMinInt}</span>
+        </div>
+        <svg viewBox="0 0 400 80" preserveAspectRatio="none" class="bpm-chart">
+          {#if chartData.mainBpmPath}
+            <path d={chartData.mainBpmPath} stroke="#dc3545" stroke-width="1.5" stroke-dasharray="4 3" fill="none" />
+          {/if}
+          {#if chartData.outPolyline}
+            <polyline points={chartData.outPolyline} fill="none" stroke="#adb5bd" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" />
+          {/if}
+          <polyline points={chartData.inPolyline} fill="none" stroke="#0d6efd" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+        </svg>
+      </div>
+    </div>
+  {/if}
+
+  <!-- History Table -->
+  {#if tapHistory.length > 0}
+    <div class="w-full history-section mt-2">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-800 text-white">
+              <th class="px-3 py-2 text-left font-semibold">#</th>
+              <th class="px-3 py-2 text-left font-semibold">Time</th>
+              <th class="px-3 py-2 text-left font-semibold">Interval (ms)</th>
+              <th class="px-3 py-2 text-left font-semibold">Instant BPM</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each [...tapHistory].reverse() as tap, j}
+              {#if showDivider && j === n}
+                <tr class="range-divider"><td colspan="4"></td></tr>
+              {/if}
+              <tr class:out-of-range={showDivider && j >= n} class="odd:bg-gray-50">
+                <td class="px-3 py-1">{tap.index}</td>
+                <td class="px-3 py-1 font-mono text-xs">{formatTime(tap.timestamp)}</td>
+                <td class="px-3 py-1">{tap.intervalMs !== null ? Math.round(tap.intervalMs) : '-'}</td>
+                <td class="px-3 py-1">{tap.instantBpm !== null ? Math.round(tap.instantBpm) : '-'}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {/if}
+
+</div>
