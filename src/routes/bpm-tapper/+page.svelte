@@ -244,3 +244,125 @@
   {/if}
 
 </div>
+
+<style>
+  .bpm-value {
+    font-size: clamp(4rem, 20vw, 7rem);
+  }
+
+  .tap-button {
+    width: min(70vw, 260px);
+    height: min(70vw, 260px);
+    border-radius: 50%;
+    background-color: #0d6efd;
+    color: #fff;
+    font-size: clamp(1.5rem, 6vw, 2.5rem);
+    border: none;
+    cursor: pointer;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    box-shadow: 0 4px 20px rgba(13, 110, 253, 0.35);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tap-button.tap-anim {
+    animation: tap-bounce 0.23s ease-out;
+  }
+
+  @keyframes tap-bounce {
+    0%   { transform: scale(1); }
+    20%  { transform: scale(0.76); }
+    100% { transform: scale(1); }
+  }
+
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: rgba(13, 110, 253, 0.45);
+    transform: scale(1);
+    transform-origin: center;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .ripple.active {
+    animation: ripple-expand 0.184s ease-out 46ms forwards;
+  }
+
+  @keyframes ripple-expand {
+    from { transform: scale(1); opacity: 1; }
+    to   { transform: scale(1.5); opacity: 0; }
+  }
+
+  .reset-button {
+    width: min(70vw, 260px);
+    height: 3rem;
+    border-radius: 9999px;
+    border: 2px solid #6c757d;
+    background: transparent;
+    color: #6c757d;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .reset-button.pressed {
+    background: #6c757d;
+    color: #fff;
+  }
+
+  .chart-y-labels {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.65rem;
+    line-height: 1;
+    color: #6c757d;
+    text-align: right;
+    min-width: 2rem;
+  }
+
+  .chart-main-label {
+    position: absolute;
+    right: 0;
+    transform: translateY(-50%);
+    color: #dc3545;
+    font-size: 0.65rem;
+    line-height: 1;
+  }
+
+  .bpm-chart {
+    flex: 1;
+    height: 80px;
+    display: block;
+    min-width: 0;
+  }
+
+  .history-section {
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+
+  .range-divider td {
+    padding: 0;
+    height: 2px;
+    background-color: #0d6efd;
+    opacity: 0.5;
+  }
+
+  .out-of-range {
+    opacity: 0.35;
+  }
+</style>
