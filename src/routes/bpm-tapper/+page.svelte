@@ -254,6 +254,7 @@
     width: min(70vw, 260px);
     height: min(70vw, 260px);
     border-radius: 50%;
+    overflow: hidden;
     background-color: #0d6efd;
     color: #fff;
     font-size: clamp(1.5rem, 6vw, 2.5rem);
@@ -262,6 +263,7 @@
     touch-action: manipulation;
     user-select: none;
     -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
     box-shadow: 0 4px 20px rgba(13, 110, 253, 0.35);
     position: relative;
     display: flex;
@@ -313,6 +315,7 @@
     font-weight: 600;
     cursor: pointer;
     touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
     transition: background 0.15s, color 0.15s;
   }
 
