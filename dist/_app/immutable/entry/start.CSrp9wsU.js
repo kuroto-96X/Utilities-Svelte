@@ -1,1 +1,0 @@
-import{o as e,t}from"../chunks/Bigc1P5b.js";export{e as load_css,t as start};
