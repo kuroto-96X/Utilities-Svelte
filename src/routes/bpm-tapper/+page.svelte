@@ -188,7 +188,7 @@
 
   <!-- SVG Chart -->
   {#if chartData}
-    <div class="w-full px-4 pt-2">
+    <div class="w-full max-w-sm px-4 pt-2">
       <div class="flex items-stretch gap-1">
         <div class="chart-y-labels">
           <span>{chartData.chartMaxInt}</span>
@@ -214,7 +214,7 @@
 
   <!-- History Table -->
   {#if tapHistory.length > 0}
-    <div class="w-full history-section mt-2">
+    <div class="w-full max-w-sm history-section mt-2">
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
