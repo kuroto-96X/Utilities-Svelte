@@ -34,8 +34,7 @@
   const avgTapLabel = $derived.by(() => {
     if (tapHistory.length === 0) return 'Tap the button to start';
     if (intervalCount <= 0) return 'Tap again to measure BPM';
-    const nVal = Math.max(1, Math.floor(intervalCount * effectiveSliderValue / 100));
-    return nVal === 1 ? 'Instant BPM (1 tap)' : `Averaging last ${nVal} taps`;
+    return n === 1 ? 'Instant BPM (1 tap)' : `Averaging last ${n} taps`;
   });
 
   const bpmPoints = $derived(
