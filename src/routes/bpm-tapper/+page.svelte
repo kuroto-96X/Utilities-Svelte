@@ -7,18 +7,17 @@
   };
 
   let tapHistory = $state<TapRecord[]>([]);
-  let sliderValue = $state(0);
+  let sliderValue = $state(1); // 1 = 全件（左端）, intervalCount = 最新1件（右端）
   let isTapAnimating = $state(false);
   let isRippling = $state(false);
   let tapKey = $state(0);
   let rippleKey = $state(0);
   let isResetPressed = $state(false);
 
-  const effectiveSliderValue = $derived(100 - sliderValue);
   const intervalCount = $derived(tapHistory.length - 1);
   const n = $derived(
     intervalCount > 0
-      ? Math.max(1, Math.floor(intervalCount * effectiveSliderValue / 100))
+      ? Math.max(1, Math.min(intervalCount, intervalCount + 1 - sliderValue))
       : 0
   );
   const showDivider = $derived(intervalCount > 0 && n < intervalCount);
@@ -26,8 +25,7 @@
   const mainBpm = $derived.by(() => {
     if (tapHistory.length < 2) return null;
     const intervals = tapHistory.slice(1).map(t => t.intervalMs!);
-    const nVal = Math.max(1, Math.floor(intervals.length * effectiveSliderValue / 100));
-    const recent = intervals.slice(-nVal);
+    const recent = intervals.slice(-n);
     return 60000 / (recent.reduce((a, b) => a + b, 0) / recent.length);
   });
 
@@ -61,8 +59,7 @@
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     });
 
-    const nVal = Math.max(1, Math.floor(bpmPoints.length * effectiveSliderValue / 100));
-    const splitIndex = bpmPoints.length - nVal;
+    const splitIndex = Math.max(0, bpmPoints.length - n);
     const outPolyline = splitIndex > 0 ? allPts.slice(0, splitIndex + 1).join(' ') : '';
     const inPolyline = allPts.slice(splitIndex).join(' ');
 
@@ -105,7 +102,7 @@
 
   function handleReset() {
     tapHistory = [];
-    sliderValue = 0;
+    sliderValue = 1;
   }
 
   function formatTime(d: Date): string {
@@ -178,8 +175,8 @@
       <input
         type="range"
         aria-label="Averaging window"
-        min="0" max="100" step="1"
-        disabled={tapHistory.length === 0}
+        min="1" max={Math.max(1, intervalCount)} step="1"
+        disabled={tapHistory.length < 2}
         bind:value={sliderValue}
         class="w-full accent-blue-600 disabled:opacity-40"
       />
