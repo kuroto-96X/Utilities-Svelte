@@ -116,13 +116,13 @@
   // 形態素解析を自動変換にも適用する。
   // 戻す場合: convertWithSplit 内の if 分岐を削除し、convert(chunk, s) のみを残す。
   function convertWithSplit(input: string, s: HepburnSettings): { output: string, hasUntranslatableChars: boolean } {
-    const chunks = input.split(/( +)/)
+    const chunks = input.split(/([ 　]+)/)
     let out = ''
     let hasUntranslatable = false
     for (const chunk of chunks) {
       if (chunk === '') continue
-      if (/^ +$/.test(chunk)) {
-        out += s.width === 'full' ? '　'.repeat(chunk.length) : chunk
+      if (/^[ 　]+$/.test(chunk)) {
+        out += s.width === 'full' ? '　'.repeat(chunk.length) : ' '.repeat(chunk.length)
       } else {
         const result = s.useParser && parser && parserStatus === 'ready'
           ? convertSegments(mergeSmallKana(parser.parse(chunk)), s)
