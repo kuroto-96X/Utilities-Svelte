@@ -314,7 +314,7 @@
   }
 
   .reset-button {
-    width: min(70vw, 260px);
+    width: min(52.5vw, 195px);
     height: 3rem;
     border-radius: 9999px;
     border: 2px solid #6c757d;
