@@ -41,16 +41,12 @@
 
   // --- 定数 ---
   const CHAR_LIMIT = 10000
-  const SAMPLE_TEXT = 'しんぶんはきんようびにとうきょうへいく'
+  const SAMPLE_TEXT = 'しんぶんはきんようびに きっぷでとうきょうへ'
 
   // --- 派生値 ---
   const charCount = $derived(inputText.length)
   const isOverLimit = $derived(charCount > CHAR_LIMIT)
-  const sampleOutput = $derived(
-    settings.useParser && parser && parserStatus === 'ready'
-      ? convertSegments(mergeSmallKana(parser.parse(SAMPLE_TEXT)), settings).output
-      : convert(SAMPLE_TEXT, settings).output
-  )
+  const sampleOutput = $derived(convertWithSplit(SAMPLE_TEXT, settings).output)
 
   onDestroy(() => {
     if (autoConvertTimer !== null) clearTimeout(autoConvertTimer)
