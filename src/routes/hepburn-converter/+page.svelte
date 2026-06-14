@@ -354,8 +354,8 @@
 
       <!-- プリセット連動設定 -->
       <div class="rounded-lg border border-teal-100 bg-teal-50 px-3 py-2.5 space-y-2.5">
-        <div class="flex flex-wrap items-center gap-3">
-          <label class="text-sm text-gray-600 w-28 shrink-0">プリセット</label>
+        <div class="flex flex-wrap items-center gap-2">
+          <label class="text-sm text-gray-600 w-24 shrink-0">プリセット</label>
           <select
             class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white"
             value={settings.preset}
@@ -372,7 +372,7 @@
 
           <div class="flex flex-col gap-1">
             <div class="flex items-center gap-2">
-              <label class="text-sm text-gray-600 w-36 shrink-0">長音</label>
+              <label class="text-sm text-gray-600 w-24 shrink-0">長音</label>
               <select
                 class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 bg-white"
                 value={settings.longVowel}
@@ -388,7 +388,7 @@
 
           <div class="flex flex-col gap-1">
             <div class="flex items-center gap-2">
-              <label class="text-sm text-gray-600 w-36 shrink-0">撥音「ん」</label>
+              <label class="text-sm text-gray-600 w-24 shrink-0">撥音「ん」</label>
               <select
                 class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 bg-white"
                 value={settings.nasal}
@@ -403,7 +403,7 @@
 
           <div class="flex flex-col gap-1">
             <div class="flex items-center gap-2">
-              <label class="text-sm text-gray-600 w-36 shrink-0">撥音+母音/y</label>
+              <label class="text-sm text-gray-600 w-24 shrink-0">撥音+母音/y</label>
               <select
                 class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 bg-white"
                 value={settings.separator}
@@ -419,7 +419,7 @@
 
           <div class="flex flex-col gap-1">
             <div class="flex items-center gap-2">
-              <label class="text-sm text-gray-600 w-36 shrink-0">ヴ行</label>
+              <label class="text-sm text-gray-600 w-24 shrink-0">ヴ行</label>
               <select
                 class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 bg-white"
                 value={settings.vuStyle}
@@ -437,11 +437,11 @@
       </div>
 
       <!-- その他の設定 -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 px-3">
 
         <div class="flex flex-col gap-1">
           <div class="flex items-center gap-2">
-            <label class="text-sm text-gray-600 w-36 shrink-0">半角/全角</label>
+            <label class="text-sm text-gray-600 w-24 shrink-0">半角/全角</label>
             <select
               class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1"
               value={settings.width}
@@ -456,7 +456,7 @@
 
         <div class="flex flex-col gap-1">
           <div class="flex items-center gap-2">
-            <label class="text-sm text-gray-600 w-36 shrink-0">出力形式</label>
+            <label class="text-sm text-gray-600 w-24 shrink-0">出力形式</label>
             <select
               class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1"
               value={settings.caseMode}
@@ -472,7 +472,7 @@
 
         <div class="flex flex-col gap-1">
           <div class="flex items-center gap-2">
-            <label class="text-sm text-gray-600 w-36 shrink-0">形態素解析</label>
+            <label class="text-sm text-gray-600 w-24 shrink-0">形態素解析</label>
             <label
               class="flex items-center gap-1.5 text-sm text-gray-600"
               class:cursor-pointer={kuromojiStatus === 'ready'}
@@ -497,7 +497,7 @@
 
         <div class="flex flex-col gap-1" class:opacity-50={!settings.useParser || kuromojiStatus !== 'ready'}>
           <div class="flex items-center gap-2">
-            <label class="text-sm text-gray-600 w-36 shrink-0">単語区切り</label>
+            <label class="text-sm text-gray-600 w-24 shrink-0">単語区切り</label>
             <label
               class="flex items-center gap-1.5 text-sm text-gray-600"
               class:cursor-pointer={settings.useParser && kuromojiStatus === 'ready'}
@@ -517,7 +517,7 @@
 
         <div class="flex flex-col gap-1">
           <div class="flex items-center gap-2">
-            <label class="text-sm text-gray-600 w-36 shrink-0">漢字変換</label>
+            <label class="text-sm text-gray-600 w-24 shrink-0">漢字変換</label>
             <label
               class="flex items-center gap-1.5 text-sm text-gray-600"
               class:cursor-pointer={kuromojiStatus === 'ready'}
