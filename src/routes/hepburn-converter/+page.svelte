@@ -45,7 +45,7 @@
 
   // --- 定数 ---
   const CHAR_LIMIT = 10000
-  const SAMPLE_TEXT = 'とうきょう しんぶん ヴィオラ しんよう'
+  const SAMPLE_TEXT = 'とうきょうのしんぶんしゃで働くヴィオラは しんようがある'
 
   // --- 派生値 ---
   const charCount = $derived(inputText.length)
