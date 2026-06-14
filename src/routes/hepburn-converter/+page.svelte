@@ -45,7 +45,7 @@
 
   // --- 定数 ---
   const CHAR_LIMIT = 10000
-  const SAMPLE_TEXT = 'しんぶんはきんようびに きっぷでとうきょうへ'
+  const SAMPLE_TEXT = 'とうきょう しんぶん ヴィオラ しんよう'
 
   // --- 派生値 ---
   const charCount = $derived(inputText.length)
@@ -525,7 +525,7 @@
       </div>
       <textarea
         class="w-full h-48 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-300"
-        placeholder="ひらがな・カタカナ・半角カナを入力..."
+        placeholder="変換したい文を入力"
         bind:value={inputText}
         oninput={handleInput}
         oncompositionstart={handleCompositionStart}
@@ -568,6 +568,7 @@
       <textarea
         class="w-full h-48 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 resize-y focus:outline-none"
         readonly
+        placeholder="結果が表示されます"
         value={outputText}
       ></textarea>
       <div class="flex justify-end">
@@ -599,7 +600,7 @@
       </div>
       <textarea
         class="w-full h-32 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
-        placeholder="ひらがな・カタカナ・半角カナを入力..."
+        placeholder="変換したい文を入力"
         bind:value={inputText}
         oninput={handleInput}
         oncompositionstart={handleCompositionStart}
@@ -642,6 +643,7 @@
       <textarea
         class="w-full h-32 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 resize-none focus:outline-none"
         readonly
+        placeholder="結果が表示されます"
         value={outputText}
       ></textarea>
       <div class="flex justify-end">
