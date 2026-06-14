@@ -5,5 +5,11 @@ export default defineConfig({
   plugins: [sveltekit()],
   build: {
     outDir: 'dist'
+  },
+  optimizeDeps: {
+    include: ['kuromoji']
+  },
+  ssr: {
+    noExternal: ['kuromoji']
   }
 });

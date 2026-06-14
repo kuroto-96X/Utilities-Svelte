@@ -37,6 +37,14 @@
   let parser = $state<Parser | null>(null)
   let parserStatus = $state<'loading' | 'ready' | 'error'>('loading')
 
+  // kuromoji トークナイザー（漢字→かな変換用）
+  type KuromojiTokenizer = {
+    tokenize: (text: string) => Array<{ surface_form: string; reading: string }>
+  }
+  let kuromojiTokenizer = $state<KuromojiTokenizer | null>(null)
+  let kuromojiStatus = $state<'loading' | 'ready' | 'error'>('loading')
+  let useKanji = $state(false)
+
   // デバウンス用タイマー
   let autoConvertTimer: ReturnType<typeof setTimeout> | null = null
   let copyTimer: ReturnType<typeof setTimeout> | null = null
@@ -64,7 +72,34 @@
     } catch {
       parserStatus = 'error'
     }
+    loadKuromojiAsync()
   })
+
+  async function loadKuromojiAsync() {
+    try {
+      const mod = await import('kuromoji')
+      const kuromoji = mod.default ?? mod
+      await new Promise<void>((resolve, reject) => {
+        kuromoji.builder({ dicPath: '/kuromoji/dict' }).build((err: unknown, tokenizer: KuromojiTokenizer) => {
+          if (err) { reject(err); return }
+          kuromojiTokenizer = tokenizer
+          kuromojiStatus = 'ready'
+          resolve()
+        })
+      })
+    } catch {
+      kuromojiStatus = 'error'
+    }
+  }
+
+  // 漢字→かな（カタカナ）に変換する。kuromoji のトークン reading を優先する。
+  function kanjiToKana(text: string): string {
+    if (!kuromojiTokenizer) return text
+    return kuromojiTokenizer
+      .tokenize(text)
+      .map((t) => (t.reading && t.reading !== '*' ? t.reading : t.surface_form))
+      .join('')
+  }
 
   // --- 変換処理 ---
 
@@ -165,7 +200,8 @@
   function handleButtonConvert() {
     if (settings.useParser && (!parser || parserStatus !== 'ready')) return
     isConverting = true
-    const result = convertWithSplit(inputText, settings)
+    const input = useKanji && kuromojiTokenizer ? kanjiToKana(inputText) : inputText
+    const result = convertWithSplit(input, settings)
     outputText = result.output
     hasUntranslatableChars = result.hasUntranslatableChars
     settingsChangedWarning = false
@@ -279,6 +315,11 @@
     onSettingsChanged()
   }
 
+  function onUseKanjiChange(e: Event) {
+    useKanji = (e.target as HTMLInputElement).checked
+    if (inputText) settingsChangedWarning = true
+  }
+
   function onSettingsChanged() {
     if (inputText) {
       settingsChangedWarning = true
@@ -298,8 +339,8 @@
 
   <!-- 説明文・注意文 -->
   <div class="text-sm text-gray-600 space-y-1 mb-5">
-    <p>ひらがな・カタカナ・半角カナをヘボン式ローマ字に変換します。漢字はそのまま出力されます。</p>
-    <p>入力中は自動で変換されます（形態素解析による単語区切り）。「変換」ボタンを押しても同様に変換します。形態素解析の準備前は単語区切りなしで変換されます。</p>
+    <p>ひらがな・カタカナ・半角カナをヘボン式ローマ字に変換します。漢字変換を有効にすると漢字も読みに変換されます。</p>
+    <p>入力中は自動で変換されます（形態素解析による単語区切り）。「変換」ボタンを押しても同様に変換します。漢字変換は「変換」ボタン押下時のみ適用されます。</p>
     <p class="text-amber-600">変換結果は誤りを含む場合があります。出力内容は必ずご自身でご確認ください。</p>
   </div>
 
@@ -415,6 +456,28 @@
             <option value="lower">小文字</option>
             <option value="upper">大文字</option>
           </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-gray-600 w-36 shrink-0">漢字変換</label>
+          <label
+            class="flex items-center gap-1.5 text-sm text-gray-600"
+            class:cursor-pointer={kuromojiStatus === 'ready'}
+            class:opacity-50={kuromojiStatus !== 'ready'}
+          >
+            <input
+              type="checkbox"
+              checked={useKanji}
+              disabled={kuromojiStatus !== 'ready'}
+              onchange={onUseKanjiChange}
+            />
+            使用する
+          </label>
+          {#if kuromojiStatus === 'loading'}
+            <span class="text-xs text-gray-400">準備中...</span>
+          {:else if kuromojiStatus === 'error'}
+            <span class="text-xs text-red-500">読込失敗</span>
+          {/if}
         </div>
 
         <div class="flex items-center gap-2">

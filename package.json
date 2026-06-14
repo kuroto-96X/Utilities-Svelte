@@ -7,6 +7,7 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
+		"postinstall": "node scripts/copy-kuromoji-dict.js",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
@@ -39,6 +40,7 @@
 		"vitest": "^4.1.8"
 	},
 	"dependencies": {
-		"budoux": "^0.8.4"
+		"budoux": "^0.8.4",
+		"kuromoji": "^0.1.2"
 	}
 }
