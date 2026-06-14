@@ -170,7 +170,8 @@
       hasUntranslatableChars = false
       return
     }
-    const result = convertWithSplit(inputText, settings)
+    const kanjiConverter = useKanji && kuromojiTokenizer ? kanjiToKana : undefined
+    const result = convertWithSplit(inputText, settings, kanjiConverter)
     outputText = result.output
     hasUntranslatableChars = result.hasUntranslatableChars
     settingsChangedWarning = false
@@ -446,28 +447,6 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <label class="text-sm text-gray-600 w-36 shrink-0">漢字変換</label>
-          <label
-            class="flex items-center gap-1.5 text-sm text-gray-600"
-            class:cursor-pointer={kuromojiStatus === 'ready'}
-            class:opacity-50={kuromojiStatus !== 'ready'}
-          >
-            <input
-              type="checkbox"
-              checked={useKanji}
-              disabled={kuromojiStatus !== 'ready'}
-              onchange={onUseKanjiChange}
-            />
-            使用する
-          </label>
-          {#if kuromojiStatus === 'loading'}
-            <span class="text-xs text-gray-400">準備中...</span>
-          {:else if kuromojiStatus === 'error'}
-            <span class="text-xs text-red-500">読込失敗</span>
-          {/if}
-        </div>
-
-        <div class="flex items-center gap-2">
           <label class="text-sm text-gray-600 w-36 shrink-0">形態素解析</label>
           <label
             class="flex items-center gap-1.5 text-sm text-gray-600"
@@ -499,6 +478,28 @@
             />
             スペースを入れる
           </label>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-gray-600 w-36 shrink-0">漢字変換</label>
+          <label
+            class="flex items-center gap-1.5 text-sm text-gray-600"
+            class:cursor-pointer={kuromojiStatus === 'ready'}
+            class:opacity-50={kuromojiStatus !== 'ready'}
+          >
+            <input
+              type="checkbox"
+              checked={useKanji}
+              disabled={kuromojiStatus !== 'ready'}
+              onchange={onUseKanjiChange}
+            />
+            使用する
+          </label>
+          {#if kuromojiStatus === 'loading'}
+            <span class="text-xs text-gray-400">準備中...</span>
+          {:else if kuromojiStatus === 'error'}
+            <span class="text-xs text-red-500">読込失敗</span>
+          {/if}
         </div>
 
       </div>
