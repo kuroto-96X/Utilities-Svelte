@@ -148,7 +148,11 @@
   // PascalCase の場合は各チャンクの先頭が大文字になる。
   // 形態素解析を自動変換にも適用する。
   // 戻す場合: convertWithSplit 内の if 分岐を削除し、convert(chunk, s) のみを残す。
-  function convertWithSplit(input: string, s: HepburnSettings): { output: string, hasUntranslatableChars: boolean } {
+  function convertWithSplit(
+    input: string,
+    s: HepburnSettings,
+    kanjiConverter?: (text: string) => string
+  ): { output: string, hasUntranslatableChars: boolean } {
     const chunks = input.split(/([ 　]+)/)
     let out = ''
     let hasUntranslatable = false
@@ -157,9 +161,14 @@
       if (/^[ 　]+$/.test(chunk)) {
         out += s.width === 'full' ? '　'.repeat(chunk.length) : ' '.repeat(chunk.length)
       } else {
-        const result = s.useParser && parser && parserStatus === 'ready'
-          ? convertSegments(mergeSmallKana(parser.parse(chunk)), s)
-          : convert(chunk, s)
+        let result: { output: string, hasUntranslatableChars: boolean }
+        if (s.useParser && parser && parserStatus === 'ready') {
+          const segments = mergeSmallKana(parser.parse(chunk))
+          const converted = kanjiConverter ? segments.map(kanjiConverter) : segments
+          result = convertSegments(converted, s)
+        } else {
+          result = convert(kanjiConverter ? kanjiConverter(chunk) : chunk, s)
+        }
         out += result.output
         if (result.hasUntranslatableChars) hasUntranslatable = true
       }
@@ -200,8 +209,8 @@
   function handleButtonConvert() {
     if (settings.useParser && (!parser || parserStatus !== 'ready')) return
     isConverting = true
-    const input = useKanji && kuromojiTokenizer ? kanjiToKana(inputText) : inputText
-    const result = convertWithSplit(input, settings)
+    const kanjiConverter = useKanji && kuromojiTokenizer ? kanjiToKana : undefined
+    const result = convertWithSplit(inputText, settings, kanjiConverter)
     outputText = result.output
     hasUntranslatableChars = result.hasUntranslatableChars
     settingsChangedWarning = false
