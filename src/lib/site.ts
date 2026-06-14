@@ -22,5 +22,10 @@ export const site = {
       label: "ヘボン式変換",
       description: "日本語をヘボン式ローマ字に変換するツール",
     },
+    {
+      href: "/image-tools",
+      label: "画像変換(開発中)",
+      description: "画像の圧縮・リサイズ・形式変換ツール",
+    },
   ],
 } as const
