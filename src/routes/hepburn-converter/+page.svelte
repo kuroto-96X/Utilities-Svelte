@@ -373,6 +373,19 @@
             </select>
           </div>
 
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-gray-600 w-36 shrink-0">ヴ行の表記</label>
+            <select
+              class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 bg-white"
+              value={settings.vuStyle}
+              onchange={onVuStyleChange}
+            >
+              <option value="v">va / vi / vu / ve / vo</option>
+              <option value="b">ba / bi / bu / be / bo</option>
+              <option value="bu">bua / bui / bu / bue / buo</option>
+            </select>
+          </div>
+
         </div>
       </div>
 
@@ -401,19 +414,6 @@
             <option value="pascal">PascalCase</option>
             <option value="lower">小文字</option>
             <option value="upper">大文字</option>
-          </select>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <label class="text-sm text-gray-600 w-36 shrink-0">ヴ行の表記</label>
-          <select
-            class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1"
-            value={settings.vuStyle}
-            onchange={onVuStyleChange}
-          >
-            <option value="v">va / vi / vu / ve / vo</option>
-            <option value="b">ba / bi / bu / be / bo</option>
-            <option value="bu">bua / bui / bu / bue / buo</option>
           </select>
         </div>
 

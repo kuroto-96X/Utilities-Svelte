@@ -29,15 +29,15 @@ export const DEFAULT_SETTINGS: HepburnSettings = {
   caseMode: 'pascal',
   pascalSpaces: false,
   useParser: true,
-  vuStyle: 'v'
+  vuStyle: 'bu'
 }
 
-type PresetValues = Pick<HepburnSettings, 'longVowel' | 'nasal' | 'separator'>
+type PresetValues = Pick<HepburnSettings, 'longVowel' | 'nasal' | 'separator' | 'vuStyle'>
 
 export const PRESET_VALUES: Record<Exclude<Preset, 'custom'>, PresetValues> = {
-  passport: { longVowel: 'omit',   nasal: 'mn', separator: 'none'   },
-  railway:  { longVowel: 'macron', nasal: 'mn', separator: 'hyphen' },
-  road:     { longVowel: 'omit',   nasal: 'n',  separator: 'none'   }
+  passport: { longVowel: 'omit',   nasal: 'mn', separator: 'none',   vuStyle: 'bu' },
+  railway:  { longVowel: 'macron', nasal: 'mn', separator: 'hyphen', vuStyle: 'v'  },
+  road:     { longVowel: 'omit',   nasal: 'n',  separator: 'none',   vuStyle: 'v'  }
 }
 
 const STORAGE_KEY = 'hepburn-settings'
@@ -61,7 +61,7 @@ export function saveSettings(settings: HepburnSettings): void {
 }
 
 // プリセット値に含まれるキーのみプリセットを 'custom' に変更する
-const PRESET_AFFECTED_KEYS = new Set<keyof HepburnSettings>(['longVowel', 'nasal', 'separator'])
+const PRESET_AFFECTED_KEYS = new Set<keyof HepburnSettings>(['longVowel', 'nasal', 'separator', 'vuStyle'])
 
 /**
  * 個別設定変更時にプリセットを 'custom' に更新し、変更後の設定を返す。
