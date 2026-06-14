@@ -53,12 +53,12 @@
   const exKanjiConv         = $derived(useKanji && kuromojiTokenizer ? kanjiToKana : undefined)
   const exampleLongVowel    = $derived(convertWithSplit('とうきょう',         settings, exKanjiConv).output)
   const exampleNasal        = $derived(convertWithSplit('しんぶん',           settings, exKanjiConv).output)
-  const exampleSeparator    = $derived(convertWithSplit('しんよう',           settings, exKanjiConv).output)
+  const exampleSeparator    = $derived(convertWithSplit('しんちょく',           settings, exKanjiConv).output)
   const exampleVuStyle      = $derived(convertWithSplit('ヴィオラ',           settings, exKanjiConv).output)
-  const exampleWidth        = $derived(convertWithSplit('とうきょう',         settings, exKanjiConv).output)
-  const exampleCaseMode     = $derived(convertWithSplit('とうきょう',         settings, exKanjiConv).output)
-  const exampleUseParser    = $derived(convertWithSplit('とうきょうおおさか', settings, exKanjiConv).output)
-  const examplePascalSpaces = $derived(convertWithSplit('とうきょうおおさか', settings, exKanjiConv).output)
+  const exampleWidth        = $derived(convertWithSplit('はんかくぜんかく',         settings, exKanjiConv).output)
+  const exampleCaseMode     = $derived(convertWithSplit('けいしき',         settings, exKanjiConv).output)
+  const exampleUseParser    = $derived(convertWithSplit('おおさかふ', settings, exKanjiConv).output)
+  const examplePascalSpaces = $derived(convertWithSplit('おおさかふ', settings, exKanjiConv).output)
   const exampleUseKanji     = $derived(convertWithSplit('東京',               settings, exKanjiConv).output)
 
   onDestroy(() => {
@@ -414,7 +414,7 @@
                 <option value="hyphen">ハイフン（n-）</option>
               </select>
             </div>
-            <p class="text-xs text-gray-400 pl-2">例: しんよう → <span class="font-mono">{exampleSeparator}</span></p>
+            <p class="text-xs text-gray-400 pl-2">例: しんちょく → <span class="font-mono">{exampleSeparator}</span></p>
           </div>
 
           <div class="flex flex-col gap-1">
@@ -451,7 +451,7 @@
               <option value="full">全角</option>
             </select>
           </div>
-          <p class="text-xs text-gray-400 pl-2">例: とうきょう → <span class="font-mono">{exampleWidth}</span></p>
+          <p class="text-xs text-gray-400 pl-2">例: はんかくぜんかく → <span class="font-mono">{exampleWidth}</span></p>
         </div>
 
         <div class="flex flex-col gap-1">
@@ -467,7 +467,7 @@
               <option value="upper">大文字</option>
             </select>
           </div>
-          <p class="text-xs text-gray-400 pl-2">例: とうきょう → <span class="font-mono">{exampleCaseMode}</span></p>
+          <p class="text-xs text-gray-400 pl-2">例: けいしき → <span class="font-mono">{exampleCaseMode}</span></p>
         </div>
 
         <div class="flex flex-col gap-1">
@@ -492,7 +492,7 @@
               <span class="text-xs text-red-500">読込失敗</span>
             {/if}
           </div>
-          <p class="text-xs text-gray-400 pl-2">例: とうきょうおおさか → <span class="font-mono">{exampleUseParser}</span></p>
+          <p class="text-xs text-gray-400 pl-2">例: おおさかふ → <span class="font-mono">{exampleUseParser}</span></p>
         </div>
 
         <div class="flex flex-col gap-1" class:opacity-50={!settings.useParser || kuromojiStatus !== 'ready'}>
@@ -512,7 +512,7 @@
               スペースを入れる
             </label>
           </div>
-          <p class="text-xs text-gray-400 pl-2">例: とうきょうおおさか → <span class="font-mono">{examplePascalSpaces}</span></p>
+          <p class="text-xs text-gray-400 pl-2">例: おおさかふ → <span class="font-mono">{examplePascalSpaces}</span></p>
         </div>
 
         <div class="flex flex-col gap-1">
