@@ -331,7 +331,7 @@
   </div>
 
   <!-- 設定パネル -->
-  <div class="border border-gray-200 rounded-xl mb-6 overflow-hidden">
+  <div class="border border-teal-700/10 rounded-xl mb-6 overflow-hidden">
     <!-- スマホ: アコーディオンヘッダー -->
     <button
       type="button"
@@ -345,7 +345,7 @@
     <div class:hidden={!isSettingsPanelOpen} class="sm:block p-4 space-y-4">
 
       <!-- プリセット連動設定 -->
-      <div class="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2.5 space-y-2.5">
+      <div class="rounded-lg border border-teal-100 bg-teal-50 px-3 py-2.5 space-y-2.5">
         <div class="flex flex-wrap items-center gap-3">
           <label class="text-sm text-gray-600 w-28 shrink-0">プリセット</label>
           <select
@@ -359,7 +359,7 @@
             <option value="custom">カスタム</option>
           </select>
         </div>
-        <hr class="border-blue-100" />
+        <hr class="border-teal-100" />
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
           <div class="flex items-center gap-2">
@@ -523,14 +523,14 @@
       <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
         <label class="text-sm font-medium text-gray-700">入力</label>
         {#if settingsChangedWarning}
-          <span class="text-xs text-blue-600">設定変更済み — 変換ボタンで再変換</span>
+          <span class="text-xs text-teal-700">設定変更済み — 変換ボタンで再変換</span>
         {/if}
         {#if hasUntranslatableChars}
           <span class="text-xs text-amber-600">変換できない文字が含まれています</span>
         {/if}
       </div>
       <textarea
-        class="w-full h-48 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-300"
+        class="w-full h-48 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-teal-300"
         placeholder="変換したい文を入力"
         bind:value={inputText}
         oninput={handleInput}
@@ -554,7 +554,7 @@
     <div class="flex flex-col items-center justify-center gap-2">
       <button
           type="button"
-          class="px-5 py-3 bg-blue-600 text-white rounded-xl font-medium text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed leading-tight text-center"
+          class="px-5 py-3 bg-gradient-to-r from-teal-700 to-sky-600 text-white rounded-xl font-medium text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed leading-tight text-center transition-opacity"
           disabled={isConverting}
           onclick={handleButtonConvert}
         >
@@ -596,14 +596,14 @@
       <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
         <label class="text-sm font-medium text-gray-700">入力</label>
         {#if settingsChangedWarning}
-          <span class="text-xs text-blue-600">設定変更済み — 変換ボタンで再変換</span>
+          <span class="text-xs text-teal-700">設定変更済み — 変換ボタンで再変換</span>
         {/if}
         {#if hasUntranslatableChars}
           <span class="text-xs text-amber-600">変換できない文字が含まれています</span>
         {/if}
       </div>
       <textarea
-        class="w-full h-32 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
+        class="w-full h-32 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-teal-300"
         placeholder="変換したい文を入力"
         bind:value={inputText}
         oninput={handleInput}
@@ -627,7 +627,7 @@
     <div class="flex justify-center">
       <button
         type="button"
-        class="px-8 py-3 bg-blue-600 text-white rounded-xl font-medium text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed leading-tight text-center"
+        class="px-8 py-3 bg-gradient-to-r from-teal-700 to-sky-600 text-white rounded-xl font-medium text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed leading-tight text-center transition-opacity"
         disabled={isConverting}
         onclick={handleButtonConvert}
       >
