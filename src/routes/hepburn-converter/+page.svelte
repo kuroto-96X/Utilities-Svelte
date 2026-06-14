@@ -702,7 +702,6 @@
           <table class="text-xs border-collapse whitespace-nowrap mx-auto">
             <thead>
               <tr class="bg-gray-50">
-                <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-left w-10"></th>
                 <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-center" colspan="2">あ</th>
                 <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-center" colspan="2">い</th>
                 <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-center" colspan="2">う</th>
@@ -729,12 +728,11 @@
                 { row: 'パ', cells: [['ぱ','pa'],['ぴ','pi'],['ぷ','pu'],['ぺ','pe'],['ぽ','po']] },
               ] as rowData}
                 <tr>
-                  <td class="px-2 py-1 border border-gray-200 text-gray-500">{rowData.row}</td>
                   {#each rowData.cells as [kana, romaji]}
                     {#if kana === ''}
                       <td colspan="2" class="px-2 py-1 border border-gray-200 text-center text-gray-300">—</td>
                     {:else}
-                      <td class="px-2 py-1 border border-gray-200 text-center">{kana}</td>
+                      <td class="px-2 py-1 border border-gray-200 text-center bg-teal-50">{kana}</td>
                       <td class="px-2 py-1 border border-gray-200 text-center font-mono text-gray-600">{romaji}</td>
                     {/if}
                   {/each}
@@ -752,7 +750,6 @@
           <table class="text-xs border-collapse whitespace-nowrap mx-auto">
             <thead>
               <tr class="bg-gray-50">
-                <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-left"></th>
                 <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-center" colspan="2">〜ゃ</th>
                 <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-center" colspan="2">〜ゅ</th>
                 <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-center" colspan="2">〜ょ</th>
@@ -773,9 +770,8 @@
                 { row: 'ピャ', cells: [['ぴゃ','pya'],['ぴゅ','pyu'],['ぴょ','pyo']] },
               ] as rowData}
                 <tr>
-                  <td class="px-2 py-1 border border-gray-200 text-gray-500">{rowData.row}</td>
                   {#each rowData.cells as [kana, romaji]}
-                    <td class="px-2 py-1 border border-gray-200 text-center">{kana}</td>
+                    <td class="px-2 py-1 border border-gray-200 text-center bg-teal-50">{kana}</td>
                     <td class="px-2 py-1 border border-gray-200 text-center font-mono text-gray-600">{romaji}</td>
                   {/each}
                 </tr>
@@ -799,7 +795,7 @@
               ] as row}
                 <tr>
                   {#each row as [kana, romaji]}
-                    <td class="px-2 py-1 border border-gray-200 text-center">{kana}</td>
+                    <td class="px-2 py-1 border border-gray-200 text-center bg-teal-50">{kana}</td>
                     <td class="px-2 py-1 border border-gray-200 text-center font-mono text-gray-600">{romaji}</td>
                   {/each}
                 </tr>
