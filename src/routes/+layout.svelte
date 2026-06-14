@@ -17,7 +17,7 @@
         href="/"
         class="font-extrabold text-lg tracking-tight mr-2 bg-gradient-to-r from-teal-700 to-sky-600 bg-clip-text text-transparent"
       >
-        Utilities
+        96X's Tools
       </a>
       <a
         href="/bpm-tapper"
