@@ -251,8 +251,8 @@
 
   .tap-button-wrapper {
     position: relative;
-    width: min(70vw, 260px);
-    height: min(70vw, 260px);
+    width: min(52.5vw, 195px);
+    height: min(52.5vw, 195px);
     display: flex;
     align-items: center;
     justify-content: center;
