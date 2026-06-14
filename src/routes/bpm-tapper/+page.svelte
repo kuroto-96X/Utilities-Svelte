@@ -120,12 +120,6 @@
 
 <div class="flex flex-col items-center w-full">
 
-  <!-- Header -->
-  <div class="w-full text-center py-3 px-4 border-b border-gray-200">
-    <h1 class="text-3xl font-bold tracking-tight">Tap BPM</h1>
-    <p class="text-sm text-gray-500 mt-1 mb-2">Tap the button to the beat to measure your BPM</p>
-  </div>
-
   <!-- BPM Display -->
   <div class="text-center pt-4 pb-2">
     <div class="bpm-value font-bold tabular-nums leading-none tracking-tighter">
