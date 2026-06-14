@@ -13,6 +13,7 @@ export type HepburnSettings = {
   width: Width
   caseMode: CaseMode
   pascalSpaces: boolean
+  useParser: boolean
 }
 
 export const DEFAULT_SETTINGS: HepburnSettings = {
@@ -22,7 +23,8 @@ export const DEFAULT_SETTINGS: HepburnSettings = {
   separator: 'none',
   width: 'half',
   caseMode: 'pascal',
-  pascalSpaces: false
+  pascalSpaces: false,
+  useParser: true
 }
 
 type PresetValues = Pick<HepburnSettings, 'longVowel' | 'nasal' | 'separator'>

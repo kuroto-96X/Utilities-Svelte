@@ -47,7 +47,7 @@
   const charCount = $derived(inputText.length)
   const isOverLimit = $derived(charCount > CHAR_LIMIT)
   const sampleOutput = $derived(
-    parser && parserStatus === 'ready'
+    settings.useParser && parser && parserStatus === 'ready'
       ? convertSegments(mergeSmallKana(parser.parse(SAMPLE_TEXT)), settings).output
       : convert(SAMPLE_TEXT, settings).output
   )
@@ -119,7 +119,7 @@
     }
     // 形態素解析を自動変換にも適用する。
     // 戻す場合: この if ブロックを削除し、else の処理のみを残す。
-    if (parser && parserStatus === 'ready') {
+    if (settings.useParser && parser && parserStatus === 'ready') {
       const result = convertSegments(mergeSmallKana(parser.parse(inputText)), settings)
       outputText = result.output
       hasUntranslatableChars = result.hasUntranslatableChars
@@ -150,9 +150,11 @@
   }
 
   function handleButtonConvert() {
-    if (!parser || parserStatus !== 'ready') return
+    if (settings.useParser && (!parser || parserStatus !== 'ready')) return
     isConverting = true
-    const result = convertSegments(mergeSmallKana(parser.parse(inputText)), settings)
+    const result = settings.useParser && parser
+      ? convertSegments(mergeSmallKana(parser.parse(inputText)), settings)
+      : convert(inputText, settings)
     outputText = result.output
     hasUntranslatableChars = result.hasUntranslatableChars
     settingsChangedWarning = false
@@ -248,6 +250,13 @@
   function onPascalSpacesChange(e: Event) {
     const value = (e.target as HTMLInputElement).checked
     settings = applyIndividualChange(settings, 'pascalSpaces', value)
+    saveSettings(settings)
+    onSettingsChanged()
+  }
+
+  function onUseParserChange(e: Event) {
+    const value = (e.target as HTMLInputElement).checked
+    settings = applyIndividualChange(settings, 'useParser', value)
     saveSettings(settings)
     onSettingsChanged()
   }
@@ -378,11 +387,28 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <label class="text-sm text-gray-600 w-36 shrink-0">単語区切り</label>
+          <label class="text-sm text-gray-600 w-36 shrink-0">形態素解析</label>
           <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
             <input
               type="checkbox"
+              checked={settings.useParser}
+              onchange={onUseParserChange}
+            />
+            使用する
+          </label>
+        </div>
+
+        <div class="flex items-center gap-2" class:opacity-50={!settings.useParser}>
+          <label class="text-sm text-gray-600 w-36 shrink-0">単語区切り</label>
+          <label
+            class="flex items-center gap-1.5 text-sm text-gray-600"
+            class:cursor-pointer={settings.useParser}
+            class:cursor-not-allowed={!settings.useParser}
+          >
+            <input
+              type="checkbox"
               checked={settings.pascalSpaces}
+              disabled={!settings.useParser}
               onchange={onPascalSpacesChange}
             />
             スペースを入れる
@@ -436,7 +462,7 @@
 
     <!-- 変換ボタン -->
     <div class="flex flex-col items-center justify-center pt-8 gap-2">
-      {#if parserStatus === 'error'}
+      {#if parserStatus === 'error' && settings.useParser}
         <p class="text-xs text-red-500 text-center mb-1">形態素解析の<br/>読み込みに<br/>失敗しました</p>
         <button
           type="button"
@@ -447,15 +473,15 @@
         <button
           type="button"
           class="px-5 py-3 bg-blue-600 text-white rounded-xl font-medium text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed leading-tight text-center"
-          disabled={parserStatus !== 'ready' || isConverting}
+          disabled={isConverting || (settings.useParser && parserStatus !== 'ready')}
           onclick={handleButtonConvert}
         >
-          {#if parserStatus === 'loading'}
+          {#if parserStatus === 'loading' && settings.useParser}
             準備中...
           {:else if isConverting}
             変換中...
           {:else}
-            変換 →<br/><span class="text-xs font-normal opacity-80">（形態素解析）</span>
+            変換 →{#if settings.useParser}<br/><span class="text-xs font-normal opacity-80">（形態素解析）</span>{/if}
           {/if}
         </button>
       {/if}
@@ -519,7 +545,7 @@
 
     <!-- 変換ボタン -->
     <div class="flex justify-center">
-      {#if parserStatus === 'error'}
+      {#if parserStatus === 'error' && settings.useParser}
         <div class="flex flex-col items-center gap-2">
           <p class="text-sm text-red-500">形態素解析の読み込みに失敗しました</p>
           <button
@@ -532,15 +558,15 @@
         <button
           type="button"
           class="px-8 py-3 bg-blue-600 text-white rounded-xl font-medium text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed leading-tight text-center"
-          disabled={parserStatus !== 'ready' || isConverting}
+          disabled={isConverting || (settings.useParser && parserStatus !== 'ready')}
           onclick={handleButtonConvert}
         >
-          {#if parserStatus === 'loading'}
+          {#if parserStatus === 'loading' && settings.useParser}
             準備中...
           {:else if isConverting}
             変換中...
           {:else}
-            変換 →<br/><span class="text-xs font-normal opacity-80">（形態素解析）</span>
+            変換 →{#if settings.useParser}<br/><span class="text-xs font-normal opacity-80">（形態素解析）</span>{/if}
           {/if}
         </button>
       {/if}
