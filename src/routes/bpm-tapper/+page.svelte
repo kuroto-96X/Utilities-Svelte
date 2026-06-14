@@ -174,7 +174,7 @@
         min="1" max={Math.max(1, intervalCount)} step="1"
         disabled={tapHistory.length < 2}
         bind:value={sliderValue}
-        class="w-full accent-blue-600 disabled:opacity-40"
+        class="w-full accent-teal-700 disabled:opacity-40"
       />
     </div>
   </div>
@@ -199,7 +199,7 @@
           {#if chartData.outPolyline}
             <polyline points={chartData.outPolyline} fill="none" stroke="#adb5bd" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" />
           {/if}
-          <polyline points={chartData.inPolyline} fill="none" stroke="#0d6efd" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+          <polyline points={chartData.inPolyline} fill="none" stroke="#0f766e" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
         </svg>
       </div>
     </div>
@@ -256,7 +256,7 @@
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    background-color: #0d6efd;
+    background: linear-gradient(135deg, #0f766e, #0284c7);
     color: #fff;
     font-size: clamp(1.5rem, 6vw, 2.5rem);
     border: none;
@@ -265,7 +265,7 @@
     user-select: none;
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
-    box-shadow: 0 4px 20px rgba(13, 110, 253, 0.35);
+    box-shadow: 0 4px 20px rgba(15, 118, 110, 0.35);
     position: relative;
     z-index: 1;
     display: flex;
@@ -290,7 +290,7 @@
     height: 100%;
     top: 0;
     left: 0;
-    background: rgba(13, 110, 253, 0.4);
+    background: rgba(15, 118, 110, 0.4);
     transform: scale(0.76);
     transform-origin: center;
     opacity: 0;
@@ -364,7 +364,7 @@
   .range-divider td {
     padding: 0;
     height: 2px;
-    background-color: #0d6efd;
+    background-color: #0f766e;
     opacity: 0.5;
   }
 
