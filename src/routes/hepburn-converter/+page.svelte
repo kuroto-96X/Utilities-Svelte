@@ -50,7 +50,9 @@
   // --- 派生値 ---
   const charCount = $derived(inputText.length)
   const isOverLimit = $derived(charCount > CHAR_LIMIT)
-  const sampleOutput = $derived(convertWithSplit(SAMPLE_TEXT, settings).output)
+  const sampleOutput = $derived(
+    convertWithSplit(SAMPLE_TEXT, settings, useKanji && kuromojiTokenizer ? kanjiToKana : undefined).output
+  )
 
   onDestroy(() => {
     if (autoConvertTimer !== null) clearTimeout(autoConvertTimer)
