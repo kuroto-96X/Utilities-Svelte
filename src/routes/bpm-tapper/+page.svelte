@@ -35,6 +35,12 @@
     return n === 1 ? 'Instant BPM (1 tap)' : `Averaging last ${n} taps`;
   });
 
+  const sliderPercent = $derived.by(() => {
+    const max = Math.max(1, intervalCount);
+    if (max <= 1) return 0;
+    return ((sliderValue - 1) / (max - 1)) * 100;
+  });
+
   const bpmPoints = $derived(
     tapHistory.filter(t => t.instantBpm !== null).map(t => t.instantBpm!)
   );
@@ -103,6 +109,7 @@
   function handleReset() {
     tapHistory = [];
     sliderValue = 1;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function formatTime(d: Date): string {
@@ -176,7 +183,8 @@
         min="1" max={Math.max(1, intervalCount)} step="1"
         disabled={tapHistory.length < 2}
         bind:value={sliderValue}
-        class="w-full accent-teal-700 disabled:opacity-40"
+        class="w-full slider-custom"
+        style="background: linear-gradient(to right, #adb5bd 0%, #adb5bd {sliderPercent}%, #0f766e {sliderPercent}%, #0f766e 100%)"
       />
     </div>
   </div>
@@ -374,5 +382,41 @@
 
   .out-of-range {
     opacity: 0.35;
+  }
+
+  .slider-custom {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .slider-custom:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .slider-custom::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #0f766e;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  .slider-custom::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #0f766e;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   }
 </style>
