@@ -173,24 +173,21 @@
   <!-- Avg Label -->
   <div class="text-center text-sm text-gray-500 px-4 min-h-5">{avgTapLabel}</div>
 
-  <!-- Slider -->
-  <div class="flex gap-1 px-4 pt-1 w-full max-w-sm">
-    <div class="w-8 shrink-0"></div>
-    <div class="flex-1 min-w-0 pl-2">
-      <input
-        type="range"
-        aria-label="Averaging window"
-        min="1" max={Math.max(1, intervalCount)} step="1"
-        disabled={tapHistory.length < 2}
-        bind:value={sliderValue}
-        class="w-full slider-custom"
-        style="background: linear-gradient(to right, #adb5bd 0%, #adb5bd {sliderPercent}%, #0f766e {sliderPercent}%, #0f766e 100%)"
-      />
-    </div>
-  </div>
-
-  <!-- SVG Chart -->
+  <!-- Slider + SVG Chart -->
   {#if chartData}
+    <div class="flex gap-1 px-4 pt-1 w-full max-w-sm">
+      <div class="w-8 shrink-0"></div>
+      <div class="flex-1 min-w-0 pl-2">
+        <input
+          type="range"
+          aria-label="Averaging window"
+          min="1" max={Math.max(1, intervalCount)} step="1"
+          bind:value={sliderValue}
+          class="w-full slider-custom"
+          style="background: linear-gradient(to right, #adb5bd 0%, #adb5bd {sliderPercent}%, #0f766e {sliderPercent}%, #0f766e 100%)"
+        />
+      </div>
+    </div>
     <div class="w-full max-w-sm px-4 pt-2">
       <div class="flex items-stretch gap-1">
         <div class="chart-y-labels">
