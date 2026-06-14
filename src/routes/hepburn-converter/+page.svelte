@@ -309,10 +309,7 @@
   }
 
   function onSettingsChanged() {
-    if (inputText) {
-      settingsChangedWarning = true
-      autoConvert()
-    }
+    if (inputText) settingsChangedWarning = true
   }
 </script>
 
