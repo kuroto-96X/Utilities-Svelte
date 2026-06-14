@@ -1,10 +1,11 @@
 <script lang="ts">
   import '../app.css'
   import favicon from '$lib/assets/favicon.svg'
-  import { page } from '$app/stores'
+  import { page } from '$app/state'
   import { site } from '$lib/site'
 
   let { children } = $props()
+  let routeId = $derived(page.route.id)
 </script>
 
 <svelte:head>
@@ -21,7 +22,7 @@
         {site.name}
       </a>
       {#each site.tools as tool (tool.href)}
-        {@const active = ($page.url.pathname as string) === tool.href}
+        {@const active = routeId === tool.href}
         <a
           href={tool.href}
           class="text-sm font-medium transition-colors border-b-2 pb-0.5"
