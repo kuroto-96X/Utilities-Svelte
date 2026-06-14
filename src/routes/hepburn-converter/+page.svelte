@@ -49,12 +49,17 @@
   // --- 派生値 ---
   const charCount = $derived(inputText.length)
   const isOverLimit = $derived(charCount > CHAR_LIMIT)
-  // 設定項目ごとのインライン変換例（caseMode/width は中立化）
-  const exampleBase = $derived({ ...settings, caseMode: 'lower' as const, width: 'half' as const })
-  const exampleLongVowel = $derived(convert('とうきょう', exampleBase).output)
-  const exampleNasal     = $derived(convert('しんぶん',   exampleBase).output)
-  const exampleSeparator = $derived(convert('しんよう',   exampleBase).output)
-  const exampleVuStyle   = $derived(convert('ヴィオラ',   exampleBase).output)
+  // 変換例（自動変換・変換ボタンと同じルール）
+  const exKanjiConv         = $derived(useKanji && kuromojiTokenizer ? kanjiToKana : undefined)
+  const exampleLongVowel    = $derived(convertWithSplit('とうきょう',         settings, exKanjiConv).output)
+  const exampleNasal        = $derived(convertWithSplit('しんぶん',           settings, exKanjiConv).output)
+  const exampleSeparator    = $derived(convertWithSplit('しんよう',           settings, exKanjiConv).output)
+  const exampleVuStyle      = $derived(convertWithSplit('ヴィオラ',           settings, exKanjiConv).output)
+  const exampleWidth        = $derived(convertWithSplit('とうきょう',         settings, exKanjiConv).output)
+  const exampleCaseMode     = $derived(convertWithSplit('とうきょう',         settings, exKanjiConv).output)
+  const exampleUseParser    = $derived(convertWithSplit('とうきょうおおさか', settings, exKanjiConv).output)
+  const examplePascalSpaces = $derived(convertWithSplit('とうきょうおおさか', settings, exKanjiConv).output)
+  const exampleUseKanji     = $derived(convertWithSplit('東京',               settings, exKanjiConv).output)
 
   onDestroy(() => {
     if (autoConvertTimer !== null) clearTimeout(autoConvertTimer)
@@ -434,90 +439,105 @@
       <!-- その他の設定 -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
-        <div class="flex items-center gap-2">
-          <label class="text-sm text-gray-600 w-36 shrink-0">半角/全角</label>
-          <select
-            class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1"
-            value={settings.width}
-            onchange={onWidthChange}
-          >
-            <option value="half">半角</option>
-            <option value="full">全角</option>
-          </select>
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-gray-600 w-36 shrink-0">半角/全角</label>
+            <select
+              class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1"
+              value={settings.width}
+              onchange={onWidthChange}
+            >
+              <option value="half">半角</option>
+              <option value="full">全角</option>
+            </select>
+          </div>
+          <p class="text-xs text-gray-400 pl-2">例: とうきょう → <span class="font-mono">{exampleWidth}</span></p>
         </div>
 
-        <div class="flex items-center gap-2">
-          <label class="text-sm text-gray-600 w-36 shrink-0">出力形式</label>
-          <select
-            class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1"
-            value={settings.caseMode}
-            onchange={onCaseModeChange}
-          >
-            <option value="pascal">PascalCase</option>
-            <option value="lower">小文字</option>
-            <option value="upper">大文字</option>
-          </select>
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-gray-600 w-36 shrink-0">出力形式</label>
+            <select
+              class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1"
+              value={settings.caseMode}
+              onchange={onCaseModeChange}
+            >
+              <option value="pascal">PascalCase</option>
+              <option value="lower">小文字</option>
+              <option value="upper">大文字</option>
+            </select>
+          </div>
+          <p class="text-xs text-gray-400 pl-2">例: とうきょう → <span class="font-mono">{exampleCaseMode}</span></p>
         </div>
 
-        <div class="flex items-center gap-2">
-          <label class="text-sm text-gray-600 w-36 shrink-0">形態素解析</label>
-          <label
-            class="flex items-center gap-1.5 text-sm text-gray-600"
-            class:cursor-pointer={kuromojiStatus === 'ready'}
-            class:opacity-50={kuromojiStatus !== 'ready'}
-          >
-            <input
-              type="checkbox"
-              checked={settings.useParser && kuromojiStatus === 'ready'}
-              disabled={kuromojiStatus !== 'ready'}
-              onchange={onUseParserChange}
-            />
-            使用する
-          </label>
-          {#if kuromojiStatus === 'loading'}
-            <span class="text-xs text-gray-400">準備中...</span>
-          {:else if kuromojiStatus === 'error'}
-            <span class="text-xs text-red-500">読込失敗</span>
-          {/if}
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-gray-600 w-36 shrink-0">形態素解析</label>
+            <label
+              class="flex items-center gap-1.5 text-sm text-gray-600"
+              class:cursor-pointer={kuromojiStatus === 'ready'}
+              class:opacity-50={kuromojiStatus !== 'ready'}
+            >
+              <input
+                type="checkbox"
+                checked={settings.useParser && kuromojiStatus === 'ready'}
+                disabled={kuromojiStatus !== 'ready'}
+                onchange={onUseParserChange}
+              />
+              使用する
+            </label>
+            {#if kuromojiStatus === 'loading'}
+              <span class="text-xs text-gray-400">準備中...</span>
+            {:else if kuromojiStatus === 'error'}
+              <span class="text-xs text-red-500">読込失敗</span>
+            {/if}
+          </div>
+          <p class="text-xs text-gray-400 pl-2">例: とうきょうおおさか → <span class="font-mono">{exampleUseParser}</span></p>
         </div>
 
-        <div class="flex items-center gap-2" class:opacity-50={!settings.useParser || kuromojiStatus !== 'ready'}>
-          <label class="text-sm text-gray-600 w-36 shrink-0">単語区切り</label>
-          <label
-            class="flex items-center gap-1.5 text-sm text-gray-600"
-            class:cursor-pointer={settings.useParser && kuromojiStatus === 'ready'}
-            class:cursor-not-allowed={!settings.useParser || kuromojiStatus !== 'ready'}
-          >
-            <input
-              type="checkbox"
-              checked={settings.pascalSpaces && settings.useParser && kuromojiStatus === 'ready'}
-              disabled={!settings.useParser || kuromojiStatus !== 'ready'}
-              onchange={onPascalSpacesChange}
-            />
-            スペースを入れる
-          </label>
+        <div class="flex flex-col gap-1" class:opacity-50={!settings.useParser || kuromojiStatus !== 'ready'}>
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-gray-600 w-36 shrink-0">単語区切り</label>
+            <label
+              class="flex items-center gap-1.5 text-sm text-gray-600"
+              class:cursor-pointer={settings.useParser && kuromojiStatus === 'ready'}
+              class:cursor-not-allowed={!settings.useParser || kuromojiStatus !== 'ready'}
+            >
+              <input
+                type="checkbox"
+                checked={settings.pascalSpaces && settings.useParser && kuromojiStatus === 'ready'}
+                disabled={!settings.useParser || kuromojiStatus !== 'ready'}
+                onchange={onPascalSpacesChange}
+              />
+              スペースを入れる
+            </label>
+          </div>
+          <p class="text-xs text-gray-400 pl-2">例: とうきょうおおさか → <span class="font-mono">{examplePascalSpaces}</span></p>
         </div>
 
-        <div class="flex items-center gap-2">
-          <label class="text-sm text-gray-600 w-36 shrink-0">漢字変換</label>
-          <label
-            class="flex items-center gap-1.5 text-sm text-gray-600"
-            class:cursor-pointer={kuromojiStatus === 'ready'}
-            class:opacity-50={kuromojiStatus !== 'ready'}
-          >
-            <input
-              type="checkbox"
-              checked={useKanji && kuromojiStatus === 'ready'}
-              disabled={kuromojiStatus !== 'ready'}
-              onchange={onUseKanjiChange}
-            />
-            使用する
-          </label>
-          {#if kuromojiStatus === 'loading'}
-            <span class="text-xs text-gray-400">準備中...</span>
-          {:else if kuromojiStatus === 'error'}
-            <span class="text-xs text-red-500">読込失敗</span>
-          {/if}
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-gray-600 w-36 shrink-0">漢字変換</label>
+            <label
+              class="flex items-center gap-1.5 text-sm text-gray-600"
+              class:cursor-pointer={kuromojiStatus === 'ready'}
+              class:opacity-50={kuromojiStatus !== 'ready'}
+            >
+              <input
+                type="checkbox"
+                checked={useKanji && kuromojiStatus === 'ready'}
+                disabled={kuromojiStatus !== 'ready'}
+                onchange={onUseKanjiChange}
+              />
+              使用する
+            </label>
+            {#if kuromojiStatus === 'loading'}
+              <span class="text-xs text-gray-400">準備中...</span>
+            {:else if kuromojiStatus === 'error'}
+              <span class="text-xs text-red-500">読込失敗</span>
+            {/if}
+          </div>
+          <p class="text-xs text-gray-400 pl-2">例: 東京 → <span class="font-mono">{exampleUseKanji}</span></p>
         </div>
 
       </div>
