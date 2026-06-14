@@ -246,6 +246,21 @@
     </div>
   {/if}
 
+  <!-- Description -->
+  <div class="w-full max-w-sm px-4 py-5 mt-2 border-t border-slate-100">
+    <h2 class="text-sm font-semibold text-slate-700 mb-2">BPM Tapperとは</h2>
+    <p class="text-xs text-slate-500 leading-relaxed">
+      音楽のビートに合わせてTAPボタンを叩くと、テンポ（BPM）をリアルタイムで測定します。
+      タップするたびに直前との間隔から瞬間BPMを算出し、その平均値を大きく表示します。
+    </p>
+    <h2 class="text-sm font-semibold text-slate-700 mt-4 mb-2">スライダーについて</h2>
+    <p class="text-xs text-slate-500 leading-relaxed">
+      スライダーで平均を取るタップ数を調整できます。
+      左端では全タップの平均、右端では直近1タップのみの瞬間BPMを表示します。
+      グラフの青い折れ線が平均範囲、灰色が対象外のタップを示しています。
+    </p>
+  </div>
+
 </div>
 </div>
 </div>
