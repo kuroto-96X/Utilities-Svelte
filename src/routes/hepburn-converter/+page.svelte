@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte'
-  import { loadDefaultJapaneseParser } from 'budoux'
   import { convert } from '$lib/hepburn/converter'
   import { VU_ENTRIES } from '$lib/hepburn/table'
   import {
@@ -32,12 +31,7 @@
   let isComposing = $state(false)
   let isSettingsPanelOpen = $state(false)
 
-  // budoux パーサー
-  type Parser = ReturnType<typeof loadDefaultJapaneseParser>
-  let parser = $state<Parser | null>(null)
-  let parserStatus = $state<'loading' | 'ready' | 'error'>('loading')
-
-  // kuromoji トークナイザー（漢字→かな変換用）
+  // kuromoji トークナイザー（形態素解析・漢字→かな変換用）
   type KuromojiTokenizer = {
     tokenize: (text: string) => Array<{ surface_form: string; reading: string }>
   }
@@ -66,12 +60,6 @@
   // --- 初期化 ---
   onMount(() => {
     settings = loadSettings()
-    try {
-      parser = loadDefaultJapaneseParser()
-      parserStatus = 'ready'
-    } catch {
-      parserStatus = 'error'
-    }
     loadKuromojiAsync()
   })
 
@@ -162,8 +150,8 @@
         out += s.width === 'full' ? '　'.repeat(chunk.length) : ' '.repeat(chunk.length)
       } else {
         let result: { output: string, hasUntranslatableChars: boolean }
-        if (s.useParser && parser && parserStatus === 'ready') {
-          const segments = mergeSmallKana(parser.parse(chunk))
+        if (s.useParser && kuromojiTokenizer && kuromojiStatus === 'ready') {
+          const segments = mergeSmallKana(kuromojiTokenizer.tokenize(chunk).map(t => t.surface_form))
           const converted = kanjiConverter ? segments.map(kanjiConverter) : segments
           result = convertSegments(converted, s)
         } else {
@@ -207,7 +195,7 @@
   }
 
   function handleButtonConvert() {
-    if (settings.useParser && (!parser || parserStatus !== 'ready')) return
+    if (settings.useParser && (!kuromojiTokenizer || kuromojiStatus !== 'ready')) return
     isConverting = true
     const kanjiConverter = useKanji && kuromojiTokenizer ? kanjiToKana : undefined
     const result = convertWithSplit(inputText, settings, kanjiConverter)
@@ -233,16 +221,6 @@
       copyTimer = setTimeout(() => { copySuccess = false }, 2000)
     } catch {
       // クリップボード API が使えない場合は無視
-    }
-  }
-
-  function handleRetryParser() {
-    parserStatus = 'loading'
-    try {
-      parser = loadDefaultJapaneseParser()
-      parserStatus = 'ready'
-    } catch {
-      parserStatus = 'error'
     }
   }
 
@@ -491,10 +469,15 @@
 
         <div class="flex items-center gap-2">
           <label class="text-sm text-gray-600 w-36 shrink-0">形態素解析</label>
-          <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+          <label
+            class="flex items-center gap-1.5 text-sm text-gray-600"
+            class:cursor-pointer={kuromojiStatus === 'ready'}
+            class:opacity-50={kuromojiStatus !== 'ready'}
+          >
             <input
               type="checkbox"
               checked={settings.useParser}
+              disabled={kuromojiStatus !== 'ready'}
               onchange={onUseParserChange}
             />
             使用する
@@ -565,21 +548,13 @@
 
     <!-- 変換ボタン -->
     <div class="flex flex-col items-center justify-center gap-2">
-      {#if parserStatus === 'error' && settings.useParser}
-        <p class="text-xs text-red-500 text-center mb-1">形態素解析の<br/>読み込みに<br/>失敗しました</p>
-        <button
-          type="button"
-          class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-200"
-          onclick={handleRetryParser}
-        >再試行</button>
-      {:else}
-        <button
+      <button
           type="button"
           class="px-5 py-3 bg-blue-600 text-white rounded-xl font-medium text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed leading-tight text-center"
-          disabled={isConverting || (settings.useParser && parserStatus !== 'ready')}
+          disabled={isConverting || (settings.useParser && kuromojiStatus !== 'ready')}
           onclick={handleButtonConvert}
         >
-          {#if parserStatus === 'loading' && settings.useParser}
+          {#if kuromojiStatus === 'loading' && settings.useParser}
             準備中...
           {:else if isConverting}
             変換中...
@@ -587,7 +562,6 @@
             変換
           {/if}
         </button>
-      {/if}
     </div>
 
     <!-- 出力欄 -->
@@ -648,31 +622,20 @@
 
     <!-- 変換ボタン -->
     <div class="flex justify-center">
-      {#if parserStatus === 'error' && settings.useParser}
-        <div class="flex flex-col items-center gap-2">
-          <p class="text-sm text-red-500">形態素解析の読み込みに失敗しました</p>
-          <button
-            type="button"
-            class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-200"
-            onclick={handleRetryParser}
-          >再試行</button>
-        </div>
-      {:else}
-        <button
-          type="button"
-          class="px-8 py-3 bg-blue-600 text-white rounded-xl font-medium text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed leading-tight text-center"
-          disabled={isConverting || (settings.useParser && parserStatus !== 'ready')}
-          onclick={handleButtonConvert}
-        >
-          {#if parserStatus === 'loading' && settings.useParser}
-            準備中...
-          {:else if isConverting}
-            変換中...
-          {:else}
-            変換
-          {/if}
-        </button>
-      {/if}
+      <button
+        type="button"
+        class="px-8 py-3 bg-blue-600 text-white rounded-xl font-medium text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed leading-tight text-center"
+        disabled={isConverting || (settings.useParser && kuromojiStatus !== 'ready')}
+        onclick={handleButtonConvert}
+      >
+        {#if kuromojiStatus === 'loading' && settings.useParser}
+          準備中...
+        {:else if isConverting}
+          変換中...
+        {:else}
+          変換
+        {/if}
+      </button>
     </div>
 
     <!-- 出力欄 -->
@@ -921,7 +884,7 @@
         <div>
           <dt class="font-medium text-gray-800">形態素解析 / 単語区切り</dt>
           <dd class="mt-1 pl-3 text-gray-600">
-            形態素解析（BudouX）を使うと日本語の単語境界を自動検出し、PascalCase での先頭大文字処理や「単語区切り」のスペース挿入に反映されます。形態素解析を無効にするとページ読み込み後すぐに変換できます。単語区切りのスペースは形態素解析が有効なときのみ機能します。
+            形態素解析（kuromoji）を使うと日本語の単語境界を自動検出し、PascalCase での先頭大文字処理や「単語区切り」のスペース挿入に反映されます。単語区切りのスペースは形態素解析が有効なときのみ機能します。
           </dd>
         </div>
 

@@ -40,7 +40,6 @@
 		"vitest": "^4.1.8"
 	},
 	"dependencies": {
-		"budoux": "^0.8.4",
 		"kuromoji": "^0.1.2"
 	}
 }
