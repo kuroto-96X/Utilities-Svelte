@@ -58,7 +58,10 @@ function startsWithVowelOrY(s: string): boolean {
 
 /**
  * kana が直前の母音に対して長音延長かどうか。
- * う after o-vowel → long ō。それ以外は false。
+ * う/ウ after o-vowel → long ō のみ検出する（Hepburn おう パターン）。
+ *
+ * 同一母音繰り返し（ああ/いい/おお）は形態素解析なしでは語境界と区別できない
+ * ため意図的に検出しない。例: にいく（に＋いく）の「い」が長音と誤認される。
  */
 function isLongVowelExtension(kana: string, lastVowel: string): boolean {
   return (kana === 'う' || kana === 'ウ') && lastVowel === 'o'

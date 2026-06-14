@@ -17,16 +17,16 @@
       <a
         href="/bpm-tapper"
         class="text-sm font-medium transition-colors"
-        class:text-blue-600={$page.url.pathname === '/bpm-tapper'}
-        class:text-gray-500={$page.url.pathname !== '/bpm-tapper'}
+        class:text-blue-600={($page.url.pathname as string) === '/bpm-tapper'}
+        class:text-gray-500={($page.url.pathname as string) !== '/bpm-tapper'}
       >
         BPM Tapper
       </a>
       <a
         href="/hepburn-converter"
         class="text-sm font-medium transition-colors"
-        class:text-blue-600={$page.url.pathname === '/hepburn-converter'}
-        class:text-gray-500={$page.url.pathname !== '/hepburn-converter'}
+        class:text-blue-600={($page.url.pathname as string) === '/hepburn-converter'}
+        class:text-gray-500={($page.url.pathname as string) !== '/hepburn-converter'}
       >
         ヘボン式変換
       </a>

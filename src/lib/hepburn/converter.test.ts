@@ -130,6 +130,12 @@ describe('長音', () => {
       convert('ラーメン', { ...DEFAULT_SETTINGS, longVowel: 'double' }).output
     ).toBe('raamen')
   })
+
+  // 形態素解析なしでは同一母音の長音と語境界を区別できないため、
+  // おお/ええ/ああ等の同一母音繰り返しは長音として検出しない（既知の制限）
+  test('既知の制限: おお は長音検出しない（おう のみ対応）', () => {
+    expect(convert('おおさか', DEFAULT_SETTINGS).output).toBe('oosaka')
+  })
 })
 
 // --- 文字の大小 ---
