@@ -111,24 +111,39 @@
     }
   }
 
+  // スペースで区切られた各チャンクを個別に変換する。
+  // PascalCase の場合は各チャンクの先頭が大文字になる。
+  // 形態素解析を自動変換にも適用する。
+  // 戻す場合: convertWithSplit 内の if 分岐を削除し、convert(chunk, s) のみを残す。
+  function convertWithSplit(input: string, s: HepburnSettings): { output: string, hasUntranslatableChars: boolean } {
+    const chunks = input.split(/( +)/)
+    let out = ''
+    let hasUntranslatable = false
+    for (const chunk of chunks) {
+      if (chunk === '') continue
+      if (/^ +$/.test(chunk)) {
+        out += s.width === 'full' ? '　'.repeat(chunk.length) : chunk
+      } else {
+        const result = s.useParser && parser && parserStatus === 'ready'
+          ? convertSegments(mergeSmallKana(parser.parse(chunk)), s)
+          : convert(chunk, s)
+        out += result.output
+        if (result.hasUntranslatableChars) hasUntranslatable = true
+      }
+    }
+    return { output: out, hasUntranslatableChars: hasUntranslatable }
+  }
+
   function autoConvert() {
     if (isOverLimit || !inputText) {
       outputText = ''
       hasUntranslatableChars = false
       return
     }
-    // 形態素解析を自動変換にも適用する。
-    // 戻す場合: この if ブロックを削除し、else の処理のみを残す。
-    if (settings.useParser && parser && parserStatus === 'ready') {
-      const result = convertSegments(mergeSmallKana(parser.parse(inputText)), settings)
-      outputText = result.output
-      hasUntranslatableChars = result.hasUntranslatableChars
-      settingsChangedWarning = false
-    } else {
-      const result = convert(inputText, settings)
-      outputText = result.output
-      hasUntranslatableChars = result.hasUntranslatableChars
-    }
+    const result = convertWithSplit(inputText, settings)
+    outputText = result.output
+    hasUntranslatableChars = result.hasUntranslatableChars
+    settingsChangedWarning = false
   }
 
   function scheduleAutoConvert() {
@@ -152,9 +167,7 @@
   function handleButtonConvert() {
     if (settings.useParser && (!parser || parserStatus !== 'ready')) return
     isConverting = true
-    const result = settings.useParser && parser
-      ? convertSegments(mergeSmallKana(parser.parse(inputText)), settings)
-      : convert(inputText, settings)
+    const result = convertWithSplit(inputText, settings)
     outputText = result.output
     hasUntranslatableChars = result.hasUntranslatableChars
     settingsChangedWarning = false
