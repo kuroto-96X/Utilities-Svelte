@@ -1,3 +1,6 @@
+import type { VuStyle } from './table'
+export type { VuStyle }
+
 export type LongVowel = 'omit' | 'macron' | 'double'
 export type Nasal = 'mn' | 'n'
 export type Separator = 'none' | 'apostrophe' | 'hyphen'
@@ -14,6 +17,7 @@ export type HepburnSettings = {
   caseMode: CaseMode
   pascalSpaces: boolean
   useParser: boolean
+  vuStyle: VuStyle
 }
 
 export const DEFAULT_SETTINGS: HepburnSettings = {
@@ -24,7 +28,8 @@ export const DEFAULT_SETTINGS: HepburnSettings = {
   width: 'half',
   caseMode: 'pascal',
   pascalSpaces: false,
-  useParser: true
+  useParser: true,
+  vuStyle: 'v'
 }
 
 type PresetValues = Pick<HepburnSettings, 'longVowel' | 'nasal' | 'separator'>

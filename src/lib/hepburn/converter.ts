@@ -1,5 +1,5 @@
 import { normalize } from './normalizer'
-import { TABLE } from './table'
+import { TABLE, VU_ENTRIES } from './table'
 import type { HepburnSettings } from './settings'
 
 export type ConvertResult = {
@@ -41,11 +41,11 @@ function doubledConsonant(romaji: string): string {
 }
 
 /** 指定インデックスのかな（複合拍優先）のローマ字を返す。テーブルにない場合は '' */
-function getNextRomaji(src: string, idx: number): string {
+function getNextRomaji(src: string, idx: number, table: Map<string, string>): string {
   const ch = src[idx] ?? ''
   const next = src[idx + 1] ?? ''
-  if (TABLE.has(ch + next)) return TABLE.get(ch + next)!
-  if (TABLE.has(ch)) return TABLE.get(ch)!
+  if (table.has(ch + next)) return table.get(ch + next)!
+  if (table.has(ch)) return table.get(ch)!
   return ''
 }
 
@@ -99,6 +99,7 @@ export function convert(
   settings: HepburnSettings
 ): ConvertResult {
   const src = normalize(input)
+  const table = new Map([...TABLE, ...VU_ENTRIES[settings.vuStyle]])
   let output = ''
   let hasUntranslatableChars = false
   let lastVowel = ''
@@ -109,8 +110,8 @@ export function convert(
     const next = src[i + 1] ?? ''
 
     // 2文字複合拍（きゃ, しゃ, etc.）。next が空のときは単拍処理に回す。
-    if (next !== '' && TABLE.has(ch + next)) {
-      const romaji = TABLE.get(ch + next)!
+    if (next !== '' && table.has(ch + next)) {
+      const romaji = table.get(ch + next)!
       output += romaji
       lastVowel = romaji[romaji.length - 1].toLowerCase()
       i += 2
@@ -119,7 +120,7 @@ export function convert(
 
     // っ / ッ（促音: 次の子音を重ねる）
     if (ch === 'っ' || ch === 'ッ') {
-      const nextRomaji = getNextRomaji(src, i + 1)
+      const nextRomaji = getNextRomaji(src, i + 1, table)
       output += doubledConsonant(nextRomaji)
       // lastVowel は更新しない（促音は母音を含まない）
       i++
@@ -128,7 +129,7 @@ export function convert(
 
     // ん / ン（撥音）
     if (ch === 'ん' || ch === 'ン') {
-      const nextRomaji = getNextRomaji(src, i + 1)
+      const nextRomaji = getNextRomaji(src, i + 1, table)
       const firstOfNext = nextRomaji[0]?.toLowerCase() ?? ''
       const isLabial = LABIALS.has(firstOfNext)
       let nasal = (settings.nasal === 'mn' && isLabial) ? 'm' : 'n'
@@ -154,8 +155,8 @@ export function convert(
     }
 
     // 単拍かな（テーブルにある1文字）
-    if (TABLE.has(ch)) {
-      const romaji = TABLE.get(ch)!
+    if (table.has(ch)) {
+      const romaji = table.get(ch)!
       const thisVowel = romaji[romaji.length - 1].toLowerCase()
 
       if (isLongVowelExtension(ch, lastVowel)) {

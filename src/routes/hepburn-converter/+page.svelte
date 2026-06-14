@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte'
   import { loadDefaultJapaneseParser } from 'budoux'
   import { convert } from '$lib/hepburn/converter'
+  import { VU_ENTRIES } from '$lib/hepburn/table'
   import {
     DEFAULT_SETTINGS,
     loadSettings,
@@ -16,7 +17,8 @@
     type Nasal,
     type Separator,
     type Width,
-    type CaseMode
+    type CaseMode,
+    type VuStyle
   } from '$lib/hepburn/settings'
 
   // --- 状態 ---
@@ -270,6 +272,13 @@
     onSettingsChanged()
   }
 
+  function onVuStyleChange(e: Event) {
+    const value = (e.target as HTMLSelectElement).value as VuStyle
+    settings = applyIndividualChange(settings, 'vuStyle', value)
+    saveSettings(settings)
+    onSettingsChanged()
+  }
+
   function onSettingsChanged() {
     if (inputText) {
       settingsChangedWarning = true
@@ -392,6 +401,19 @@
             <option value="pascal">PascalCase</option>
             <option value="lower">小文字</option>
             <option value="upper">大文字</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-gray-600 w-36 shrink-0">ヴ行の表記</label>
+          <select
+            class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1"
+            value={settings.vuStyle}
+            onchange={onVuStyleChange}
+          >
+            <option value="v">va / vi / vu / ve / vo</option>
+            <option value="b">ba / bi / bu / be / bo</option>
+            <option value="bu">bua / bui / bu / bue / buo</option>
           </select>
         </div>
 
@@ -710,7 +732,7 @@
                 [['ファ','fa'],['フィ','fi'],['フェ','fe'],['フォ','fo'],['ウィ','wi']],
                 [['ウェ','we'],['ウォ','wo'],['ティ','ti'],['ディ','di'],['デュ','dyu']],
                 [['シェ','she'],['チェ','che'],['ジェ','je'],['ニィ','ni'],['ニェ','nye']],
-                [['ヴ','vu'],['ヴァ','va'],['ヴィ','vi'],['ヴェ','ve'],['ヴォ','vo']],
+                VU_ENTRIES[settings.vuStyle],
               ] as row}
                 <tr>
                   {#each row as [kana, romaji]}
@@ -812,6 +834,15 @@
             <p><span class="font-medium">PascalCase</span> — 形態素解析またはスペースで区切られた各単語の先頭を大文字に</p>
             <p><span class="font-medium">小文字</span> — すべて小文字</p>
             <p><span class="font-medium">大文字</span> — すべて大文字</p>
+          </dd>
+        </div>
+
+        <div>
+          <dt class="font-medium text-gray-800">ヴ行の表記</dt>
+          <dd class="mt-1 space-y-0.5 pl-3 text-gray-600">
+            <p><span class="font-medium">va / vi / vu / ve / vo</span> — v を使った標準ヘボン式表記</p>
+            <p><span class="font-medium">ba / bi / bu / be / bo</span> — b に置き換える表記（実際の発音に近い）</p>
+            <p><span class="font-medium">bua / bui / bu / bue / buo</span> — bu + 母音 で表す表記</p>
           </dd>
         </div>
 

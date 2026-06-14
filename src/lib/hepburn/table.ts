@@ -58,18 +58,25 @@ const KATA_ENTRIES: [string, string][] = HIRA_ENTRIES.map(
   ([kana, romaji]) => [toKatakana(kana), romaji]
 )
 
-// カタカナ専用エントリー（ひらがな対応なし）
-const KATA_ONLY_ENTRIES: [string, string][] = [
-  ['ヴァ', 'va'], ['ヴィ', 'vi'], ['ヴェ', 've'], ['ヴォ', 'vo'],
-  ['ヴ',  'vu'],
-]
+/** ヴ行の表記スタイル */
+export type VuStyle = 'v' | 'b' | 'bu'
+
+/**
+ * ヴ行エントリー（スタイル別）。
+ * converter が動的にテーブルへ追加する。表示順は [ヴ, ヴァ, ヴィ, ヴェ, ヴォ]。
+ */
+export const VU_ENTRIES: Record<VuStyle, [string, string][]> = {
+  v:  [['ヴ', 'vu'],  ['ヴァ', 'va'],  ['ヴィ', 'vi'],  ['ヴェ', 've'],  ['ヴォ', 'vo']],
+  b:  [['ヴ', 'bu'],  ['ヴァ', 'ba'],  ['ヴィ', 'bi'],  ['ヴェ', 'be'],  ['ヴォ', 'bo']],
+  bu: [['ヴ', 'bu'],  ['ヴァ', 'bua'], ['ヴィ', 'bui'], ['ヴェ', 'bue'], ['ヴォ', 'buo']],
+}
 
 /**
  * かな（ひらがな・カタカナ）→ ローマ字のルックアップテーブル。
+ * ヴ行は含まない（converter が VU_ENTRIES から動的に追加）。
  * 2文字キーと1文字キーが混在する。converter は2文字を優先してマッチする。
  */
 export const TABLE: Map<string, string> = new Map([
   ...HIRA_ENTRIES,
   ...KATA_ENTRIES,
-  ...KATA_ONLY_ENTRIES,
 ])
