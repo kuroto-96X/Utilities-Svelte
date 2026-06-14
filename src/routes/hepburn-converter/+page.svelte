@@ -302,7 +302,7 @@
       class="w-full flex justify-between items-center px-4 py-3 bg-gray-50 text-sm font-medium text-gray-700 sm:hidden"
       onclick={() => { isSettingsPanelOpen = !isSettingsPanelOpen }}
     >
-      ヘボン式ルール設定
+      変換ルール設定
       <span>{isSettingsPanelOpen ? '▲' : '▼'}</span>
     </button>
 
@@ -490,7 +490,7 @@
           {:else if isConverting}
             変換中...
           {:else}
-            変換<br/><span class="text-xs font-normal opacity-80" class:line-through={!settings.useParser}>（形態素解析）</span>
+            変換
           {/if}
         </button>
       {/if}
@@ -575,7 +575,7 @@
           {:else if isConverting}
             変換中...
           {:else}
-            変換<br/><span class="text-xs font-normal opacity-80" class:line-through={!settings.useParser}>（形態素解析）</span>
+            変換
           {/if}
         </button>
       {/if}
@@ -602,5 +602,215 @@
 
   </div>
 
+
+  <!-- 詳細説明 -->
+  <div class="mt-10 pt-8 border-t border-gray-200 space-y-8">
+
+    <!-- 変換表 -->
+    <section class="space-y-4">
+      <h2 class="text-base font-semibold text-gray-800">変換表（ヘボン式）</h2>
+
+      <!-- 清音・濁音・半濁音 -->
+      <div>
+        <p class="text-xs font-medium text-gray-500 mb-2">清音・濁音・半濁音</p>
+        <div class="overflow-x-auto">
+          <table class="text-xs border-collapse whitespace-nowrap">
+            <thead>
+              <tr class="bg-gray-50">
+                <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-left w-10"></th>
+                <th class="px-3 py-1.5 border border-gray-200 text-gray-500">あ</th>
+                <th class="px-3 py-1.5 border border-gray-200 text-gray-500">い</th>
+                <th class="px-3 py-1.5 border border-gray-200 text-gray-500">う</th>
+                <th class="px-3 py-1.5 border border-gray-200 text-gray-500">え</th>
+                <th class="px-3 py-1.5 border border-gray-200 text-gray-500">お</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each [
+                { row: 'ア', cells: [['あ','a'],['い','i'],['う','u'],['え','e'],['お','o']] },
+                { row: 'カ', cells: [['か','ka'],['き','ki'],['く','ku'],['け','ke'],['こ','ko']] },
+                { row: 'サ', cells: [['さ','sa'],['し','shi'],['す','su'],['せ','se'],['そ','so']] },
+                { row: 'タ', cells: [['た','ta'],['ち','chi'],['つ','tsu'],['て','te'],['と','to']] },
+                { row: 'ナ', cells: [['な','na'],['に','ni'],['ぬ','nu'],['ね','ne'],['の','no']] },
+                { row: 'ハ', cells: [['は','ha'],['ひ','hi'],['ふ','fu'],['へ','he'],['ほ','ho']] },
+                { row: 'マ', cells: [['ま','ma'],['み','mi'],['む','mu'],['め','me'],['も','mo']] },
+                { row: 'ヤ', cells: [['や','ya'],['',''],['ゆ','yu'],['',''],['よ','yo']] },
+                { row: 'ラ', cells: [['ら','ra'],['り','ri'],['る','ru'],['れ','re'],['ろ','ro']] },
+                { row: 'ワ', cells: [['わ','wa'],['',''],['',''],['',''],['を','o']] },
+                { row: 'ガ', cells: [['が','ga'],['ぎ','gi'],['ぐ','gu'],['げ','ge'],['ご','go']] },
+                { row: 'ザ', cells: [['ざ','za'],['じ','ji'],['ず','zu'],['ぜ','ze'],['ぞ','zo']] },
+                { row: 'ダ', cells: [['だ','da'],['ぢ','(ji)'],['づ','(zu)'],['で','de'],['ど','do']] },
+                { row: 'バ', cells: [['ば','ba'],['び','bi'],['ぶ','bu'],['べ','be'],['ぼ','bo']] },
+                { row: 'パ', cells: [['ぱ','pa'],['ぴ','pi'],['ぷ','pu'],['ぺ','pe'],['ぽ','po']] },
+              ] as rowData}
+                <tr>
+                  <td class="px-2 py-1 border border-gray-200 text-gray-500">{rowData.row}</td>
+                  {#each rowData.cells as [kana, romaji]}
+                    {#if kana === ''}
+                      <td class="px-2 py-1 border border-gray-200 text-center text-gray-300">—</td>
+                    {:else}
+                      <td class="px-2 py-1 border border-gray-200 text-center">
+                        {kana}<span class="text-gray-400 mx-0.5">→</span><span class="font-mono">{romaji}</span>
+                      </td>
+                    {/if}
+                  {/each}
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 拗音 -->
+      <div>
+        <p class="text-xs font-medium text-gray-500 mb-2">拗音（複合仮名）</p>
+        <div class="overflow-x-auto">
+          <table class="text-xs border-collapse whitespace-nowrap">
+            <thead>
+              <tr class="bg-gray-50">
+                <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-left"></th>
+                <th class="px-3 py-1.5 border border-gray-200 text-gray-500">〜ゃ</th>
+                <th class="px-3 py-1.5 border border-gray-200 text-gray-500">〜ゅ</th>
+                <th class="px-3 py-1.5 border border-gray-200 text-gray-500">〜ょ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each [
+                { row: 'キャ', cells: [['きゃ','kya'],['きゅ','kyu'],['きょ','kyo']] },
+                { row: 'シャ', cells: [['しゃ','sha'],['しゅ','shu'],['しょ','sho']] },
+                { row: 'チャ', cells: [['ちゃ','cha'],['ちゅ','chu'],['ちょ','cho']] },
+                { row: 'ニャ', cells: [['にゃ','nya'],['にゅ','nyu'],['にょ','nyo']] },
+                { row: 'ヒャ', cells: [['ひゃ','hya'],['ひゅ','hyu'],['ひょ','hyo']] },
+                { row: 'ミャ', cells: [['みゃ','mya'],['みゅ','myu'],['みょ','myo']] },
+                { row: 'リャ', cells: [['りゃ','rya'],['りゅ','ryu'],['りょ','ryo']] },
+                { row: 'ギャ', cells: [['ぎゃ','gya'],['ぎゅ','gyu'],['ぎょ','gyo']] },
+                { row: 'ジャ', cells: [['じゃ','ja'],['じゅ','ju'],['じょ','jo']] },
+                { row: 'ビャ', cells: [['びゃ','bya'],['びゅ','byu'],['びょ','byo']] },
+                { row: 'ピャ', cells: [['ぴゃ','pya'],['ぴゅ','pyu'],['ぴょ','pyo']] },
+              ] as rowData}
+                <tr>
+                  <td class="px-2 py-1 border border-gray-200 text-gray-500">{rowData.row}</td>
+                  {#each rowData.cells as [kana, romaji]}
+                    <td class="px-2 py-1 border border-gray-200 text-center">
+                      {kana}<span class="text-gray-400 mx-0.5">→</span><span class="font-mono">{romaji}</span>
+                    </td>
+                  {/each}
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 特殊 -->
+      <div>
+        <p class="text-xs font-medium text-gray-500 mb-2">特殊</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1.5 text-sm text-gray-700">
+          <div class="flex gap-2 items-baseline">
+            <span class="font-mono shrink-0 text-gray-800">っ</span>
+            <span>次の子音を重ねる（例: きっぷ → <span class="font-mono">kippu</span>）</span>
+          </div>
+          <div class="flex gap-2 items-baseline">
+            <span class="font-mono shrink-0 text-gray-800">ん</span>
+            <span>n（b/m/p の前は設定により m）</span>
+          </div>
+          <div class="flex gap-2 items-baseline">
+            <span class="font-mono shrink-0 text-gray-800">ー</span>
+            <span>直前の母音を延長（長音の設定による）</span>
+          </div>
+          <div class="flex gap-2 items-baseline">
+            <span class="font-mono shrink-0 text-gray-800">を</span>
+            <span>o（wa ではなく o）</span>
+          </div>
+          <div class="flex gap-2 items-baseline">
+            <span class="font-mono shrink-0 text-gray-800">ぢ・づ</span>
+            <span>じ・ず と同様（ji・zu）</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-xs text-gray-400">カタカナは同じルールで変換されます。ヴ行（ヴ→vu, ヴァ→va 等）はカタカナのみ対応。</p>
+    </section>
+
+    <!-- 変換ルール設定の説明 -->
+    <section class="space-y-4">
+      <h2 class="text-base font-semibold text-gray-800">変換ルール設定について</h2>
+      <dl class="space-y-4 text-sm text-gray-700">
+
+        <div>
+          <dt class="font-medium text-gray-800">プリセット</dt>
+          <dd class="mt-1 space-y-0.5 pl-3 text-gray-600">
+            <p><span class="font-medium">パスポート式（デフォルト）</span> — 長音省略 / mn 使い分け / 区切りなし</p>
+            <p><span class="font-medium">鉄道式</span> — マクロン（ā, ō 等）/ mn 使い分け / ハイフン（n-）</p>
+            <p><span class="font-medium">道路標識式</span> — 長音省略 / 常に n / 区切りなし</p>
+            <p><span class="font-medium">カスタム</span> — 下記の設定を自由に組み合わせ。別プリセットへ切り替えて再びカスタムに戻すと直前の値が復元されます。</p>
+          </dd>
+        </div>
+
+        <div>
+          <dt class="font-medium text-gray-800">長音の表記</dt>
+          <dd class="mt-1 space-y-0.5 pl-3 text-gray-600">
+            <p><span class="font-medium">表記しない</span> — おう・うう等の長音を省略。例: とうきょう → <span class="font-mono">tokyo</span></p>
+            <p><span class="font-medium">マクロン</span> — 伸ばす母音の上にバーを付加。例: とうきょう → <span class="font-mono">tōkyō</span></p>
+            <p><span class="font-medium">母音を重ねる</span> — 母音を繰り返す。例: とうきょう → <span class="font-mono">toukyou</span></p>
+          </dd>
+        </div>
+
+        <div>
+          <dt class="font-medium text-gray-800">撥音「ん」</dt>
+          <dd class="mt-1 space-y-0.5 pl-3 text-gray-600">
+            <p><span class="font-medium">b/m/p 前はm</span> — ん の後に b, m, p が続く場合は m に変換。例: しんぶん → <span class="font-mono">shimbun</span></p>
+            <p><span class="font-medium">常に n</span> — すべて n で表記。例: しんぶん → <span class="font-mono">shinbun</span></p>
+          </dd>
+        </div>
+
+        <div>
+          <dt class="font-medium text-gray-800">撥音＋母音・y続く場合</dt>
+          <dd class="mt-1 space-y-0.5 pl-3 text-gray-600">
+            <p><span class="font-medium">何もしない</span> — 区切りを入れない。例: しんよう → <span class="font-mono">shinyou</span></p>
+            <p><span class="font-medium">アポストロフィ</span> — アポストロフィで区切る。例: しんよう → <span class="font-mono">shin'you</span></p>
+            <p><span class="font-medium">ハイフン</span> — ハイフンで区切る。例: しんよう → <span class="font-mono">shin-you</span></p>
+          </dd>
+        </div>
+
+        <div>
+          <dt class="font-medium text-gray-800">半角 / 全角</dt>
+          <dd class="mt-1 pl-3 text-gray-600">
+            出力文字の幅を選択します。全角ではローマ字が全角文字（Ａ, ｂ 等）で出力されます。「単語区切り」のスペースも全角スペースになります。
+          </dd>
+        </div>
+
+        <div>
+          <dt class="font-medium text-gray-800">アルファベット</dt>
+          <dd class="mt-1 space-y-0.5 pl-3 text-gray-600">
+            <p><span class="font-medium">PascalCase</span> — 形態素解析またはスペースで区切られた各単語の先頭を大文字に</p>
+            <p><span class="font-medium">小文字</span> — すべて小文字</p>
+            <p><span class="font-medium">大文字</span> — すべて大文字</p>
+          </dd>
+        </div>
+
+        <div>
+          <dt class="font-medium text-gray-800">形態素解析 / 単語区切り</dt>
+          <dd class="mt-1 pl-3 text-gray-600">
+            形態素解析（BudouX）を使うと日本語の単語境界を自動検出し、PascalCase での先頭大文字処理や「単語区切り」のスペース挿入に反映されます。形態素解析を無効にするとページ読み込み後すぐに変換できます。単語区切りのスペースは形態素解析が有効なときのみ機能します。
+          </dd>
+        </div>
+
+      </dl>
+    </section>
+
+    <!-- その他の仕様 -->
+    <section class="space-y-3 pb-8">
+      <h2 class="text-base font-semibold text-gray-800">その他の仕様</h2>
+      <ul class="space-y-1.5 text-sm text-gray-600 list-disc list-inside">
+        <li>文字数制限: 10,000文字。超過すると自動変換を停止します（変換ボタンは引き続き使用可）。</li>
+        <li>入力中は 300ms 後に自動変換されます。IME（日本語入力）の変換確定前は変換しません。</li>
+        <li>スペース（半角・全角とも）は文の区切りとして扱い、それぞれを独立して変換します。PascalCase では各文の先頭が大文字になります。</li>
+        <li>漢字・数字・ASCII記号はそのまま出力されます。</li>
+        <li>変換できない文字（絵文字など）はそのまま出力され、警告が表示されます。</li>
+      </ul>
+    </section>
+
+  </div>
 
 </div>
