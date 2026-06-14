@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { onMount, onDestroy } from 'svelte'
   import { loadDefaultJapaneseParser } from 'budoux'
   import { convert } from '$lib/hepburn/converter'
   import {
@@ -45,6 +45,11 @@
   const charCount = $derived(inputText.length)
   const isOverLimit = $derived(charCount > CHAR_LIMIT)
   const sampleOutput = $derived(convert(SAMPLE_TEXT, settings).output)
+
+  onDestroy(() => {
+    if (autoConvertTimer !== null) clearTimeout(autoConvertTimer)
+    if (copyTimer !== null) clearTimeout(copyTimer)
+  })
 
   // --- 初期化 ---
   onMount(() => {
