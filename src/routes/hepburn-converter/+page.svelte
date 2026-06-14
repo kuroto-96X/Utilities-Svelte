@@ -319,6 +319,7 @@
 </svelte:head>
 
 <div class="max-w-4xl mx-auto px-4 py-6">
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
 
   <!-- タイトル -->
   <h1 class="text-2xl font-bold text-gray-800 mb-3">ヘボン式ローマ字変換</h1>
@@ -915,4 +916,5 @@
 
   </div>
 
+</div>
 </div>

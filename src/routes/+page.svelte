@@ -16,7 +16,7 @@
     {#each site.tools as tool (tool.href)}
       <a
         href={tool.href}
-        class="block p-6 bg-white/80 backdrop-blur-sm border border-teal-700/15 rounded-xl shadow-sm hover:border-teal-700/35 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+        class="block p-6 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-teal-700/40 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
       >
         <h2 class="text-lg font-bold text-slate-800 mb-1">{tool.label}</h2>
         <p class="text-sm text-slate-500">{tool.description}</p>

@@ -13,7 +13,7 @@
 </svelte:head>
 
 <div class="gradient-bg flex flex-col">
-  <header class="sticky top-0 z-10 border-b border-teal-700/10 bg-white/65 backdrop-blur-md">
+  <header class="sticky top-0 z-10 border-b border-slate-200 bg-white shadow-sm">
     <nav class="max-w-4xl mx-auto px-4 py-2.5 flex items-center gap-6">
       <a
         href="/"
@@ -42,7 +42,7 @@
     {@render children()}
   </main>
 
-  <footer class="border-t border-teal-700/10 bg-white/50 backdrop-blur-md">
+  <footer class="border-t border-slate-200 bg-white">
     <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div

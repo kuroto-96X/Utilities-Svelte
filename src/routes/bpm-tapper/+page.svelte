@@ -118,6 +118,8 @@
   <title>Tap BPM</title>
 </svelte:head>
 
+<div class="max-w-lg mx-auto px-4 py-6">
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm">
 <div class="flex flex-col items-center w-full">
 
   <!-- BPM Display -->
@@ -236,6 +238,8 @@
     </div>
   {/if}
 
+</div>
+</div>
 </div>
 
 <style>
