@@ -76,3 +76,27 @@ export function applyPreset(settings: HepburnSettings, preset: Preset): HepburnS
   if (preset === 'custom') return { ...settings, preset: 'custom' }
   return { ...settings, ...PRESET_VALUES[preset], preset }
 }
+
+// カスタムプリセットのスナップショット（長音・撥音・撥音+母音）を保存・復元する
+const CUSTOM_SNAPSHOT_KEY = 'hepburn-custom-snapshot'
+
+export function saveCustomSnapshot(settings: HepburnSettings): void {
+  try {
+    const snapshot: PresetValues = {
+      longVowel: settings.longVowel,
+      nasal: settings.nasal,
+      separator: settings.separator
+    }
+    localStorage.setItem(CUSTOM_SNAPSHOT_KEY, JSON.stringify(snapshot))
+  } catch {}
+}
+
+export function loadCustomSnapshot(): PresetValues | null {
+  try {
+    const raw = localStorage.getItem(CUSTOM_SNAPSHOT_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as PresetValues
+  } catch {
+    return null
+  }
+}

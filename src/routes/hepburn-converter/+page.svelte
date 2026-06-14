@@ -8,6 +8,8 @@
     saveSettings,
     applyPreset,
     applyIndividualChange,
+    saveCustomSnapshot,
+    loadCustomSnapshot,
     type HepburnSettings,
     type Preset,
     type LongVowel,
@@ -190,7 +192,17 @@
 
   function onPresetChange(e: Event) {
     const value = (e.target as HTMLSelectElement).value as Preset
-    settings = applyPreset(settings, value)
+    if (value === 'custom') {
+      // カスタムを選択: 保存済みスナップショットがあれば復元
+      const snapshot = loadCustomSnapshot()
+      settings = snapshot
+        ? { ...settings, ...snapshot, preset: 'custom' }
+        : applyPreset(settings, 'custom')
+    } else {
+      // 別プリセットに切り替え: カスタム状態なら現在値をスナップショットに保存してから切り替え
+      if (settings.preset === 'custom') saveCustomSnapshot(settings)
+      settings = applyPreset(settings, value)
+    }
     saveSettings(settings)
     onSettingsChanged()
   }
@@ -199,6 +211,7 @@
     const value = (e.target as HTMLSelectElement).value as LongVowel
     settings = applyIndividualChange(settings, 'longVowel', value)
     saveSettings(settings)
+    saveCustomSnapshot(settings)
     onSettingsChanged()
   }
 
@@ -206,6 +219,7 @@
     const value = (e.target as HTMLSelectElement).value as Nasal
     settings = applyIndividualChange(settings, 'nasal', value)
     saveSettings(settings)
+    saveCustomSnapshot(settings)
     onSettingsChanged()
   }
 
@@ -213,6 +227,7 @@
     const value = (e.target as HTMLSelectElement).value as Separator
     settings = applyIndividualChange(settings, 'separator', value)
     saveSettings(settings)
+    saveCustomSnapshot(settings)
     onSettingsChanged()
   }
 
@@ -277,7 +292,6 @@
 
       <!-- プリセット連動設定 -->
       <div class="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2.5 space-y-2.5">
-        <p class="text-xs text-blue-500 font-medium">プリセット連動</p>
         <div class="flex flex-wrap items-center gap-3">
           <label class="text-sm text-gray-600 w-28 shrink-0">プリセット</label>
           <select
@@ -291,6 +305,7 @@
             <option value="custom">カスタム</option>
           </select>
         </div>
+        <hr class="border-blue-100" />
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
           <div class="flex items-center gap-2">
