@@ -97,7 +97,19 @@
     if (!parser || parserStatus !== 'ready') return
     isConverting = true
 
-    const segments = parser.parse(inputText)
+    const rawSegments = parser.parse(inputText)
+
+    // 小書き仮名（ゃゅょ等）で始まるセグメントを前のセグメントに結合する。
+    // BudouX が複合拍（にゅ など）の途中で分割した場合に小書き仮名が単独になるのを防ぐ。
+    const SMALL_KANA_RE = /^[ぁぃぅぇぉゃゅょゎァィゥェォャュョヮ]/
+    const segments: string[] = []
+    for (const seg of rawSegments) {
+      if (segments.length > 0 && SMALL_KANA_RE.test(seg)) {
+        segments[segments.length - 1] += seg
+      } else {
+        segments.push(seg)
+      }
+    }
 
     if (settings.caseMode === 'pascal') {
       const parts = segments.map(seg => {
@@ -258,7 +270,7 @@
 
       <hr class="border-gray-100" />
 
-      <!-- 個別設定 -->
+      <!-- 個別設定（プリセット連動） -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
         <div class="flex items-center gap-2">
@@ -311,33 +323,41 @@
           </select>
         </div>
 
-        <div class="flex items-center gap-2">
-          <label class="text-sm text-gray-600 w-36 shrink-0">アルファベット</label>
-          <select
-            class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1"
-            value={settings.caseMode}
-            onchange={onCaseModeChange}
-          >
-            <option value="lower">小文字</option>
-            <option value="upper">大文字</option>
-            <option value="pascal">PascalCase</option>
-          </select>
-        </div>
+      </div>
 
-        {#if settings.caseMode === 'pascal'}
+      <!-- アルファベット設定（プリセット非連動） -->
+      <div class="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2.5 space-y-2.5">
+        <p class="text-xs text-blue-500 font-medium">アルファベット設定（プリセット非連動）</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
           <div class="flex items-center gap-2">
-            <label class="text-sm text-gray-600 w-36 shrink-0">PascalCase スペース</label>
-            <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.pascalSpaces}
-                onchange={onPascalSpacesChange}
-              />
-              変換ボタン時にスペースを入れる
-            </label>
+            <label class="text-sm text-gray-600 w-36 shrink-0">アルファベット</label>
+            <select
+              class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 bg-white"
+              value={settings.caseMode}
+              onchange={onCaseModeChange}
+            >
+              <option value="lower">小文字</option>
+              <option value="upper">大文字</option>
+              <option value="pascal">PascalCase</option>
+            </select>
           </div>
-        {/if}
 
+          {#if settings.caseMode === 'pascal'}
+            <div class="flex items-center gap-2">
+              <label class="text-sm text-gray-600 w-36 shrink-0">単語区切り</label>
+              <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.pascalSpaces}
+                  onchange={onPascalSpacesChange}
+                />
+                半角スペースを入れる
+              </label>
+            </div>
+          {/if}
+
+        </div>
       </div>
 
       <!-- 変換例 -->
@@ -353,7 +373,15 @@
 
     <!-- 入力欄 -->
     <div class="flex flex-col gap-2">
-      <label class="text-sm font-medium text-gray-700">入力</label>
+      <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <label class="text-sm font-medium text-gray-700">入力</label>
+        {#if settingsChangedWarning}
+          <span class="text-xs text-blue-600">設定変更済み — 変換ボタンで再変換</span>
+        {/if}
+        {#if hasUntranslatableChars}
+          <span class="text-xs text-amber-600">変換できない文字が含まれています</span>
+        {/if}
+      </div>
       <textarea
         class="w-full h-48 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-300"
         placeholder="ひらがな・カタカナ・半角カナを入力..."
@@ -396,7 +424,7 @@
           {:else if isConverting}
             変換中...
           {:else}
-            変換<br/><span class="text-xs font-normal opacity-80">（形態素解析）</span>
+            変換 →<br/><span class="text-xs font-normal opacity-80">（形態素解析）</span>
           {/if}
         </button>
       {/if}
@@ -428,7 +456,15 @@
 
     <!-- 入力欄 -->
     <div class="flex flex-col gap-2">
-      <label class="text-sm font-medium text-gray-700">入力</label>
+      <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <label class="text-sm font-medium text-gray-700">入力</label>
+        {#if settingsChangedWarning}
+          <span class="text-xs text-blue-600">設定変更済み — 変換ボタンで再変換</span>
+        {/if}
+        {#if hasUntranslatableChars}
+          <span class="text-xs text-amber-600">変換できない文字が含まれています</span>
+        {/if}
+      </div>
       <textarea
         class="w-full h-32 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
         placeholder="ひらがな・カタカナ・半角カナを入力..."
@@ -473,7 +509,7 @@
           {:else if isConverting}
             変換中...
           {:else}
-            変換<br/><span class="text-xs font-normal opacity-80">（形態素解析）</span>
+            変換 →<br/><span class="text-xs font-normal opacity-80">（形態素解析）</span>
           {/if}
         </button>
       {/if}
@@ -500,16 +536,5 @@
 
   </div>
 
-  <!-- 警告メッセージエリア -->
-  <div class="mt-4 space-y-2">
-    {#if settingsChangedWarning}
-      <p class="text-sm text-blue-600">
-        設定が変更されました。変換ボタンを押して再変換してください。
-      </p>
-    {/if}
-    {#if hasUntranslatableChars}
-      <p class="text-sm text-amber-600">変換できない文字が含まれています</p>
-    {/if}
-  </div>
 
 </div>

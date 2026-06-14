@@ -21,7 +21,7 @@ export const DEFAULT_SETTINGS: HepburnSettings = {
   nasal: 'mn',
   separator: 'none',
   width: 'half',
-  caseMode: 'lower',
+  caseMode: 'pascal',
   pascalSpaces: false
 }
 
@@ -53,15 +53,20 @@ export function saveSettings(settings: HepburnSettings): void {
   }
 }
 
+// プリセット値に含まれるキーのみプリセットを 'custom' に変更する
+const PRESET_AFFECTED_KEYS = new Set<keyof HepburnSettings>(['longVowel', 'nasal', 'separator'])
+
 /**
  * 個別設定変更時にプリセットを 'custom' に更新し、変更後の設定を返す。
+ * caseMode / pascalSpaces はプリセット非連動のため preset を変更しない。
  */
 export function applyIndividualChange<K extends keyof HepburnSettings>(
   settings: HepburnSettings,
   key: K,
   value: HepburnSettings[K]
 ): HepburnSettings {
-  return { ...settings, [key]: value, preset: 'custom' }
+  const preset = PRESET_AFFECTED_KEYS.has(key) ? 'custom' : settings.preset
+  return { ...settings, [key]: value, preset }
 }
 
 /**
