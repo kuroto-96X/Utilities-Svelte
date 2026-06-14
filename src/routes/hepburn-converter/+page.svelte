@@ -44,7 +44,11 @@
   // --- 派生値 ---
   const charCount = $derived(inputText.length)
   const isOverLimit = $derived(charCount > CHAR_LIMIT)
-  const sampleOutput = $derived(convert(SAMPLE_TEXT, settings).output)
+  const sampleOutput = $derived(
+    parser && parserStatus === 'ready'
+      ? convertSegments(mergeSmallKana(parser.parse(SAMPLE_TEXT)), settings).output
+      : convert(SAMPLE_TEXT, settings).output
+  )
 
   onDestroy(() => {
     if (autoConvertTimer !== null) clearTimeout(autoConvertTimer)
@@ -81,8 +85,9 @@
 
   // 形態素解析済みセグメントをヘボン式に変換する。
   // settings.pascalSpaces で単語区切りスペースの有無を制御する（caseMode 非依存）。
+  // 全角出力時は全角スペースを使用する。
   function convertSegments(segments: string[], s: HepburnSettings): { output: string, hasUntranslatableChars: boolean } {
-    const sep = s.pascalSpaces ? ' ' : ''
+    const sep = s.pascalSpaces ? (s.width === 'full' ? '　' : ' ') : ''
     if (s.caseMode === 'pascal') {
       const parts = segments.map(seg => {
         const r = convert(seg, { ...s, caseMode: 'lower' })
@@ -270,26 +275,22 @@
 
     <div class:hidden={!isSettingsPanelOpen} class="sm:block p-4 space-y-4">
 
-      <!-- プリセット -->
-      <div class="flex flex-wrap items-center gap-3">
-        <label class="text-sm font-medium text-gray-700 w-28 shrink-0">プリセット</label>
-        <select
-          class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
-          value={settings.preset}
-          onchange={onPresetChange}
-        >
-          <option value="passport">パスポート式（デフォルト）</option>
-          <option value="railway">鉄道式</option>
-          <option value="road">道路標識式</option>
-          <option value="custom">カスタム</option>
-        </select>
-      </div>
-
-      <hr class="border-gray-100" />
-
       <!-- プリセット連動設定 -->
       <div class="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2.5 space-y-2.5">
         <p class="text-xs text-blue-500 font-medium">プリセット連動</p>
+        <div class="flex flex-wrap items-center gap-3">
+          <label class="text-sm text-gray-600 w-28 shrink-0">プリセット</label>
+          <select
+            class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white"
+            value={settings.preset}
+            onchange={onPresetChange}
+          >
+            <option value="passport">パスポート式（デフォルト）</option>
+            <option value="railway">鉄道式</option>
+            <option value="road">道路標識式</option>
+            <option value="custom">カスタム</option>
+          </select>
+        </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
           <div class="flex items-center gap-2">
@@ -337,7 +338,7 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
         <div class="flex items-center gap-2">
-          <label class="text-sm text-gray-600 w-36 shrink-0">出力の文字幅</label>
+          <label class="text-sm text-gray-600 w-36 shrink-0">半角/全角</label>
           <select
             class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1"
             value={settings.width}
@@ -355,9 +356,9 @@
             value={settings.caseMode}
             onchange={onCaseModeChange}
           >
+            <option value="pascal">PascalCase</option>
             <option value="lower">小文字</option>
             <option value="upper">大文字</option>
-            <option value="pascal">PascalCase</option>
           </select>
         </div>
 
@@ -369,7 +370,7 @@
               checked={settings.pascalSpaces}
               onchange={onPascalSpacesChange}
             />
-            半角スペースを入れる
+            スペースを入れる
           </label>
         </div>
 
