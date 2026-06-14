@@ -435,7 +435,7 @@
   </div>
 
   <!-- PC: 入力 / ボタン / 出力 横並び -->
-  <div class="hidden sm:grid grid-cols-[1fr_auto_1fr] gap-4 items-start">
+  <div class="hidden sm:grid grid-cols-[1fr_auto_1fr] gap-4 items-center">
 
     <!-- 入力欄 -->
     <div class="flex flex-col gap-2">
@@ -470,7 +470,7 @@
     </div>
 
     <!-- 変換ボタン -->
-    <div class="flex flex-col items-center justify-center pt-8 gap-2">
+    <div class="flex flex-col items-center justify-center gap-2">
       {#if parserStatus === 'error' && settings.useParser}
         <p class="text-xs text-red-500 text-center mb-1">形態素解析の<br/>読み込みに<br/>失敗しました</p>
         <button
@@ -618,11 +618,11 @@
             <thead>
               <tr class="bg-gray-50">
                 <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-left w-10"></th>
-                <th class="px-3 py-1.5 border border-gray-200 text-gray-500">あ</th>
-                <th class="px-3 py-1.5 border border-gray-200 text-gray-500">い</th>
-                <th class="px-3 py-1.5 border border-gray-200 text-gray-500">う</th>
-                <th class="px-3 py-1.5 border border-gray-200 text-gray-500">え</th>
-                <th class="px-3 py-1.5 border border-gray-200 text-gray-500">お</th>
+                <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-center" colspan="2">あ</th>
+                <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-center" colspan="2">い</th>
+                <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-center" colspan="2">う</th>
+                <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-center" colspan="2">え</th>
+                <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-center" colspan="2">お</th>
               </tr>
             </thead>
             <tbody>
@@ -647,11 +647,10 @@
                   <td class="px-2 py-1 border border-gray-200 text-gray-500">{rowData.row}</td>
                   {#each rowData.cells as [kana, romaji]}
                     {#if kana === ''}
-                      <td class="px-2 py-1 border border-gray-200 text-center text-gray-300">—</td>
+                      <td colspan="2" class="px-2 py-1 border border-gray-200 text-center text-gray-300">—</td>
                     {:else}
-                      <td class="px-2 py-1 border border-gray-200 text-center">
-                        {kana}<span class="text-gray-400 mx-0.5">→</span><span class="font-mono">{romaji}</span>
-                      </td>
+                      <td class="px-2 py-1 border border-gray-200 text-center">{kana}</td>
+                      <td class="px-2 py-1 border border-gray-200 text-center font-mono text-gray-600">{romaji}</td>
                     {/if}
                   {/each}
                 </tr>
@@ -669,9 +668,9 @@
             <thead>
               <tr class="bg-gray-50">
                 <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-left"></th>
-                <th class="px-3 py-1.5 border border-gray-200 text-gray-500">〜ゃ</th>
-                <th class="px-3 py-1.5 border border-gray-200 text-gray-500">〜ゅ</th>
-                <th class="px-3 py-1.5 border border-gray-200 text-gray-500">〜ょ</th>
+                <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-center" colspan="2">〜ゃ</th>
+                <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-center" colspan="2">〜ゅ</th>
+                <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-center" colspan="2">〜ょ</th>
               </tr>
             </thead>
             <tbody>
@@ -691,9 +690,32 @@
                 <tr>
                   <td class="px-2 py-1 border border-gray-200 text-gray-500">{rowData.row}</td>
                   {#each rowData.cells as [kana, romaji]}
-                    <td class="px-2 py-1 border border-gray-200 text-center">
-                      {kana}<span class="text-gray-400 mx-0.5">→</span><span class="font-mono">{romaji}</span>
-                    </td>
+                    <td class="px-2 py-1 border border-gray-200 text-center">{kana}</td>
+                    <td class="px-2 py-1 border border-gray-200 text-center font-mono text-gray-600">{romaji}</td>
+                  {/each}
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 外来語・特殊音 -->
+      <div>
+        <p class="text-xs font-medium text-gray-500 mb-2">外来語・特殊音</p>
+        <div class="overflow-x-auto">
+          <table class="text-xs border-collapse whitespace-nowrap">
+            <tbody>
+              {#each [
+                [['ファ','fa'],['フィ','fi'],['フェ','fe'],['フォ','fo'],['ウィ','wi']],
+                [['ウェ','we'],['ウォ','wo'],['ティ','ti'],['ディ','di'],['デュ','dyu']],
+                [['シェ','she'],['チェ','che'],['ジェ','je'],['ニィ','ni'],['ニェ','nye']],
+                [['ヴ','vu'],['ヴァ','va'],['ヴィ','vi'],['ヴェ','ve'],['ヴォ','vo']],
+              ] as row}
+                <tr>
+                  {#each row as [kana, romaji]}
+                    <td class="px-2 py-1 border border-gray-200 text-center">{kana}</td>
+                    <td class="px-2 py-1 border border-gray-200 text-center font-mono text-gray-600">{romaji}</td>
                   {/each}
                 </tr>
               {/each}
@@ -704,7 +726,7 @@
 
       <!-- 特殊 -->
       <div>
-        <p class="text-xs font-medium text-gray-500 mb-2">特殊</p>
+        <p class="text-xs font-medium text-gray-500 mb-2">特殊文字</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1.5 text-sm text-gray-700">
           <div class="flex gap-2 items-baseline">
             <span class="font-mono shrink-0 text-gray-800">っ</span>
@@ -726,10 +748,14 @@
             <span class="font-mono shrink-0 text-gray-800">ぢ・づ</span>
             <span>じ・ず と同様（ji・zu）</span>
           </div>
+          <div class="flex gap-2 items-baseline">
+            <span class="font-mono shrink-0 text-gray-800">ぁぃぅぇぉ 等</span>
+            <span>小書き仮名は単独使用時に大きい文字と同じ変換</span>
+          </div>
         </div>
       </div>
 
-      <p class="text-xs text-gray-400">カタカナは同じルールで変換されます。ヴ行（ヴ→vu, ヴァ→va 等）はカタカナのみ対応。</p>
+      <p class="text-xs text-gray-400">カタカナは同じルールで変換されます。外来語・特殊音および小書き仮名フォールバックはカタカナにも適用。</p>
     </section>
 
     <!-- 変換ルール設定の説明 -->
