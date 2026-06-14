@@ -45,14 +45,16 @@
 
   // --- 定数 ---
   const CHAR_LIMIT = 10000
-  const SAMPLE_TEXT = 'とうきょうのしんぶんしゃで働くヴィオラは しんようがある'
 
   // --- 派生値 ---
   const charCount = $derived(inputText.length)
   const isOverLimit = $derived(charCount > CHAR_LIMIT)
-  const sampleOutput = $derived(
-    convertWithSplit(SAMPLE_TEXT, settings, useKanji && kuromojiTokenizer ? kanjiToKana : undefined).output
-  )
+  // 設定項目ごとのインライン変換例（caseMode/width は中立化）
+  const exampleBase = $derived({ ...settings, caseMode: 'lower' as const, width: 'half' as const })
+  const exampleLongVowel = $derived(convert('とうきょう', exampleBase).output)
+  const exampleNasal     = $derived(convert('しんぶん',   exampleBase).output)
+  const exampleSeparator = $derived(convert('しんよう',   exampleBase).output)
+  const exampleVuStyle   = $derived(convert('ヴィオラ',   exampleBase).output)
 
   onDestroy(() => {
     if (autoConvertTimer !== null) clearTimeout(autoConvertTimer)
@@ -363,55 +365,67 @@
         <hr class="border-teal-100" />
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
-          <div class="flex items-center gap-2">
-            <label class="text-sm text-gray-600 w-36 shrink-0">長音の表記</label>
-            <select
-              class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 bg-white"
-              value={settings.longVowel}
-              onchange={onLongVowelChange}
-            >
-              <option value="omit">表記しない</option>
-              <option value="macron">マクロン（ā, ī, ū, ē, ō）</option>
-              <option value="double">母音を重ねる</option>
-            </select>
+          <div class="flex flex-col gap-1">
+            <div class="flex items-center gap-2">
+              <label class="text-sm text-gray-600 w-36 shrink-0">長音</label>
+              <select
+                class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 bg-white"
+                value={settings.longVowel}
+                onchange={onLongVowelChange}
+              >
+                <option value="omit">表記しない</option>
+                <option value="macron">マクロン（ā, ī, ū, ē, ō）</option>
+                <option value="double">母音を重ねる</option>
+              </select>
+            </div>
+            <p class="text-xs text-gray-400 pl-2">例: とうきょう → <span class="font-mono">{exampleLongVowel}</span></p>
           </div>
 
-          <div class="flex items-center gap-2">
-            <label class="text-sm text-gray-600 w-36 shrink-0">撥音「ん」</label>
-            <select
-              class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 bg-white"
-              value={settings.nasal}
-              onchange={onNasalChange}
-            >
-              <option value="mn">b/m/p前はm、それ以外はn</option>
-              <option value="n">常にn</option>
-            </select>
+          <div class="flex flex-col gap-1">
+            <div class="flex items-center gap-2">
+              <label class="text-sm text-gray-600 w-36 shrink-0">撥音「ん」</label>
+              <select
+                class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 bg-white"
+                value={settings.nasal}
+                onchange={onNasalChange}
+              >
+                <option value="mn">b/m/p前はm、それ以外はn</option>
+                <option value="n">常にn</option>
+              </select>
+            </div>
+            <p class="text-xs text-gray-400 pl-2">例: しんぶん → <span class="font-mono">{exampleNasal}</span></p>
           </div>
 
-          <div class="flex items-center gap-2">
-            <label class="text-sm text-gray-600 w-36 shrink-0">撥音＋母音・y続く場合</label>
-            <select
-              class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 bg-white"
-              value={settings.separator}
-              onchange={onSeparatorChange}
-            >
-              <option value="none">何もしない</option>
-              <option value="apostrophe">アポストロフィ（n'）</option>
-              <option value="hyphen">ハイフン（n-）</option>
-            </select>
+          <div class="flex flex-col gap-1">
+            <div class="flex items-center gap-2">
+              <label class="text-sm text-gray-600 w-36 shrink-0">撥音+母音/y</label>
+              <select
+                class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 bg-white"
+                value={settings.separator}
+                onchange={onSeparatorChange}
+              >
+                <option value="none">何もしない</option>
+                <option value="apostrophe">アポストロフィ（n'）</option>
+                <option value="hyphen">ハイフン（n-）</option>
+              </select>
+            </div>
+            <p class="text-xs text-gray-400 pl-2">例: しんよう → <span class="font-mono">{exampleSeparator}</span></p>
           </div>
 
-          <div class="flex items-center gap-2">
-            <label class="text-sm text-gray-600 w-36 shrink-0">ヴ行の表記</label>
-            <select
-              class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 bg-white"
-              value={settings.vuStyle}
-              onchange={onVuStyleChange}
-            >
-              <option value="v">va / vi / vu / ve / vo</option>
-              <option value="b">ba / bi / bu / be / bo</option>
-              <option value="bu">bua / bui / bu / bue / buo</option>
-            </select>
+          <div class="flex flex-col gap-1">
+            <div class="flex items-center gap-2">
+              <label class="text-sm text-gray-600 w-36 shrink-0">ヴ行</label>
+              <select
+                class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 bg-white"
+                value={settings.vuStyle}
+                onchange={onVuStyleChange}
+              >
+                <option value="v">va / vi / vu / ve / vo</option>
+                <option value="b">ba / bi / bu / be / bo</option>
+                <option value="bu">bua / bui / bu / bue / buo</option>
+              </select>
+            </div>
+            <p class="text-xs text-gray-400 pl-2">例: ヴィオラ → <span class="font-mono">{exampleVuStyle}</span></p>
           </div>
 
         </div>
@@ -433,7 +447,7 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <label class="text-sm text-gray-600 w-36 shrink-0">アルファベット</label>
+          <label class="text-sm text-gray-600 w-36 shrink-0">出力形式</label>
           <select
             class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1"
             value={settings.caseMode}
@@ -508,11 +522,6 @@
 
       </div>
 
-      <!-- 変換例 -->
-      <div class="bg-gray-50 rounded-lg px-4 py-3 text-sm text-gray-600">
-        <span class="font-medium">変換例：</span>
-        {SAMPLE_TEXT} → <span class="font-mono text-gray-800">{sampleOutput}</span>
-      </div>
     </div>
   </div>
 
@@ -834,7 +843,7 @@
         </div>
 
         <div>
-          <dt class="font-medium text-gray-800">長音の表記</dt>
+          <dt class="font-medium text-gray-800">長音</dt>
           <dd class="mt-1 space-y-0.5 pl-3 text-gray-600">
             <p><span class="font-medium">表記しない</span> — おう・うう等の長音を省略。例: とうきょう → <span class="font-mono">tokyo</span></p>
             <p><span class="font-medium">マクロン</span> — 伸ばす母音の上にバーを付加。例: とうきょう → <span class="font-mono">tōkyō</span></p>
@@ -851,7 +860,7 @@
         </div>
 
         <div>
-          <dt class="font-medium text-gray-800">撥音＋母音・y続く場合</dt>
+          <dt class="font-medium text-gray-800">撥音+母音/y</dt>
           <dd class="mt-1 space-y-0.5 pl-3 text-gray-600">
             <p><span class="font-medium">何もしない</span> — 区切りを入れない。例: しんよう → <span class="font-mono">shinyou</span></p>
             <p><span class="font-medium">アポストロフィ</span> — アポストロフィで区切る。例: しんよう → <span class="font-mono">shin'you</span></p>
@@ -867,7 +876,7 @@
         </div>
 
         <div>
-          <dt class="font-medium text-gray-800">アルファベット</dt>
+          <dt class="font-medium text-gray-800">出力形式</dt>
           <dd class="mt-1 space-y-0.5 pl-3 text-gray-600">
             <p><span class="font-medium">PascalCase</span> — 形態素解析またはスペースで区切られた各単語の先頭を大文字に</p>
             <p><span class="font-medium">小文字</span> — すべて小文字</p>
@@ -876,7 +885,7 @@
         </div>
 
         <div>
-          <dt class="font-medium text-gray-800">ヴ行の表記</dt>
+          <dt class="font-medium text-gray-800">ヴ行</dt>
           <dd class="mt-1 space-y-0.5 pl-3 text-gray-600">
             <p><span class="font-medium">va / vi / vu / ve / vo</span> — v を使った標準ヘボン式表記</p>
             <p><span class="font-medium">ba / bi / bu / be / bo</span> — b に置き換える表記（実際の発音に近い）</p>
@@ -887,14 +896,14 @@
         <div>
           <dt class="font-medium text-gray-800">形態素解析 / 単語区切り</dt>
           <dd class="mt-1 pl-3 text-gray-600">
-            形態素解析（kuromoji）を使うと日本語の単語境界を自動検出し、PascalCase での先頭大文字処理や「単語区切り」のスペース挿入に反映されます。単語区切りのスペースは形態素解析が有効なときのみ機能します。
+            形態素解析を使うと日本語の単語境界を自動検出し、PascalCase での先頭大文字処理や「単語区切り」のスペース挿入に反映されます。単語区切りのスペースは形態素解析が有効なときのみ機能します。
           </dd>
         </div>
 
         <div>
           <dt class="font-medium text-gray-800">漢字変換</dt>
           <dd class="mt-1 pl-3 text-gray-600">
-            kuromoji の形態素解析で漢字を読み（カタカナ）に変換してからローマ字化します。形態素解析が有効な場合は単語ごとに変換されます。
+            形態素解析で漢字を読み（カタカナ）に変換してからローマ字化します。形態素解析が有効な場合は単語ごとに変換されます。
           </dd>
         </div>
 
