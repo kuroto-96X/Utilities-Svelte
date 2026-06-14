@@ -68,7 +68,6 @@
     const result = convert(inputText, settings)
     outputText = result.output
     hasUntranslatableChars = result.hasUntranslatableChars
-    settingsChangedWarning = false
   }
 
   function scheduleAutoConvert() {
