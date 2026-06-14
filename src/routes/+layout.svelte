@@ -1,6 +1,7 @@
 <script lang="ts">
   import '../app.css'
-  import favicon from '$lib/assets/favicon.svg'
+  import siteIcon from '$lib/assets/site_icon.png'
+  import authorIcon from '$lib/assets/96x_icon.png'
   import { page } from '$app/state'
   import { site } from '$lib/site'
 
@@ -9,7 +10,7 @@
 </script>
 
 <svelte:head>
-  <link rel="icon" href="{favicon}" />
+  <link rel="icon" href={siteIcon} />
 </svelte:head>
 
 <div class="gradient-bg flex flex-col">
@@ -43,23 +44,39 @@
   </main>
 
   <footer class="border-t border-slate-200 bg-white">
-    <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div
-          class="w-7 h-7 rounded-full bg-gradient-to-br from-teal-700 to-sky-600 flex items-center justify-center text-white text-xs font-bold select-none"
-          aria-hidden="true"
-        >{site.author.avatarLabel}</div>
+    <div class="max-w-4xl mx-auto px-4 py-5 flex items-start justify-between gap-6">
+      <div class="flex items-start gap-3">
+        <img
+          src={authorIcon}
+          alt={site.author.name}
+          class="w-10 h-10 rounded-full object-cover shrink-0"
+        />
         <div>
           <p class="text-sm font-bold text-slate-800">{site.author.name}</p>
-          <a
-            href={site.author.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-xs text-sky-600 hover:underline"
-          >{site.author.handle}</a>
+          <p class="text-xs text-slate-500 mt-0.5 max-w-sm">{site.author.bio}</p>
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
+            <a
+              href={site.author.links.x}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-xs text-sky-600 hover:underline"
+            >{site.author.handle}</a>
+            <a
+              href={site.author.links.booth}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-xs text-slate-500 hover:text-slate-700 hover:underline"
+            >BOOTH</a>
+            <a
+              href={site.author.links.youtube}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-xs text-slate-500 hover:text-slate-700 hover:underline"
+            >YouTube</a>
+          </div>
         </div>
       </div>
-      <p class="text-xs text-slate-400">{site.tagline}</p>
+      <p class="text-xs text-slate-400 shrink-0 mt-1">{site.tagline}</p>
     </div>
   </footer>
 </div>

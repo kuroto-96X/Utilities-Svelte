@@ -4,8 +4,12 @@ export const site = {
   author: {
     name: "96X",
     handle: "@96X_SBRB",
-    url: "https://x.com/96X_SBRB",
-    avatarLabel: "96",
+    bio: "ゲーム開発と楽曲制作の合間に、自分が欲しかった『ちょっとした道具』を作って置いています。",
+    links: {
+      x: "https://x.com/96X_SBRB",
+      booth: "https://kogatagemmaipan.booth.pm/",
+      youtube: "https://www.youtube.com/@96X%E3%81%93%E3%81%8C%E3%81%9F%E7%8E%84%E7%B1%B3%E3%83%91%E3%83%B3",
+    },
   },
   tools: [
     {
