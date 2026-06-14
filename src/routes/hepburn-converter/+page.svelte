@@ -481,7 +481,7 @@
           {:else if isConverting}
             変換中...
           {:else}
-            変換 →{#if settings.useParser}<br/><span class="text-xs font-normal opacity-80">（形態素解析）</span>{/if}
+            変換<br/><span class="text-xs font-normal opacity-80" class:line-through={!settings.useParser}>（形態素解析）</span>
           {/if}
         </button>
       {/if}
@@ -566,7 +566,7 @@
           {:else if isConverting}
             変換中...
           {:else}
-            変換 →{#if settings.useParser}<br/><span class="text-xs font-normal opacity-80">（形態素解析）</span>{/if}
+            変換<br/><span class="text-xs font-normal opacity-80" class:line-through={!settings.useParser}>（形態素解析）</span>
           {/if}
         </button>
       {/if}
