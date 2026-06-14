@@ -64,15 +64,64 @@
 
   // --- 変換処理 ---
 
+  // 小書き仮名（ゃゅょ等）で始まるセグメントを前のセグメントに結合する。
+  // BudouX が複合拍（にゅ など）の途中で分割した場合に小書き仮名が単独になるのを防ぐ。
+  const SMALL_KANA_RE = /^[ぁぃぅぇぉゃゅょゎァィゥェォャュョヮ]/
+  function mergeSmallKana(segments: string[]): string[] {
+    const merged: string[] = []
+    for (const seg of segments) {
+      if (merged.length > 0 && SMALL_KANA_RE.test(seg)) {
+        merged[merged.length - 1] += seg
+      } else {
+        merged.push(seg)
+      }
+    }
+    return merged
+  }
+
+  // 形態素解析済みセグメントをヘボン式に変換する。
+  // settings.pascalSpaces で単語区切りスペースの有無を制御する（caseMode 非依存）。
+  function convertSegments(segments: string[], s: HepburnSettings): { output: string, hasUntranslatableChars: boolean } {
+    const sep = s.pascalSpaces ? ' ' : ''
+    if (s.caseMode === 'pascal') {
+      const parts = segments.map(seg => {
+        const r = convert(seg, { ...s, caseMode: 'lower' })
+        return {
+          text: r.output.length > 0 ? r.output[0].toUpperCase() + r.output.slice(1) : '',
+          hasUntranslatable: r.hasUntranslatableChars
+        }
+      })
+      return {
+        output: parts.map(p => p.text).join(sep),
+        hasUntranslatableChars: parts.some(p => p.hasUntranslatable)
+      }
+    } else {
+      const parts = segments.map(seg => convert(seg, s))
+      return {
+        output: parts.map(p => p.output).join(sep),
+        hasUntranslatableChars: parts.some(p => p.hasUntranslatableChars)
+      }
+    }
+  }
+
   function autoConvert() {
     if (isOverLimit || !inputText) {
       outputText = ''
       hasUntranslatableChars = false
       return
     }
-    const result = convert(inputText, settings)
-    outputText = result.output
-    hasUntranslatableChars = result.hasUntranslatableChars
+    // 形態素解析を自動変換にも適用する。
+    // 戻す場合: この if ブロックを削除し、else の処理のみを残す。
+    if (parser && parserStatus === 'ready') {
+      const result = convertSegments(mergeSmallKana(parser.parse(inputText)), settings)
+      outputText = result.output
+      hasUntranslatableChars = result.hasUntranslatableChars
+      settingsChangedWarning = false
+    } else {
+      const result = convert(inputText, settings)
+      outputText = result.output
+      hasUntranslatableChars = result.hasUntranslatableChars
+    }
   }
 
   function scheduleAutoConvert() {
@@ -96,41 +145,9 @@
   function handleButtonConvert() {
     if (!parser || parserStatus !== 'ready') return
     isConverting = true
-
-    const rawSegments = parser.parse(inputText)
-
-    // 小書き仮名（ゃゅょ等）で始まるセグメントを前のセグメントに結合する。
-    // BudouX が複合拍（にゅ など）の途中で分割した場合に小書き仮名が単独になるのを防ぐ。
-    const SMALL_KANA_RE = /^[ぁぃぅぇぉゃゅょゎァィゥェォャュョヮ]/
-    const segments: string[] = []
-    for (const seg of rawSegments) {
-      if (segments.length > 0 && SMALL_KANA_RE.test(seg)) {
-        segments[segments.length - 1] += seg
-      } else {
-        segments.push(seg)
-      }
-    }
-
-    if (settings.caseMode === 'pascal') {
-      const parts = segments.map(seg => {
-        const r = convert(seg, { ...settings, caseMode: 'lower' })
-        return {
-          text: r.output.length > 0
-            ? r.output[0].toUpperCase() + r.output.slice(1)
-            : '',
-          hasUntranslatable: r.hasUntranslatableChars
-        }
-      })
-      hasUntranslatableChars = parts.some(p => p.hasUntranslatable)
-      outputText = settings.pascalSpaces
-        ? parts.map(p => p.text).join(' ')
-        : parts.map(p => p.text).join('')
-    } else {
-      const parts = segments.map(seg => convert(seg, settings))
-      hasUntranslatableChars = parts.some(p => p.hasUntranslatableChars)
-      outputText = parts.map(p => p.output).join(' ')
-    }
-
+    const result = convertSegments(mergeSmallKana(parser.parse(inputText)), settings)
+    outputText = result.output
+    hasUntranslatableChars = result.hasUntranslatableChars
     settingsChangedWarning = false
     isConverting = false
   }
@@ -235,7 +252,7 @@
   <!-- 説明文・注意文 -->
   <div class="text-sm text-gray-600 space-y-1 mb-5">
     <p>ひらがな・カタカナ・半角カナをヘボン式ローマ字に変換します。漢字はそのまま出力されます。</p>
-    <p>入力中は自動で変換されます（単語の区切りなし）。「変換」ボタンを押すと、形態素解析を行って単語ごとに区切った結果に変換し直します。</p>
+    <p>入力中は自動で変換されます（形態素解析による単語区切り）。「変換」ボタンを押しても同様に変換します。形態素解析の準備前は単語区切りなしで変換されます。</p>
     <p class="text-amber-600">変換結果は誤りを含む場合があります。出力内容は必ずご自身でご確認ください。</p>
   </div>
 
@@ -270,46 +287,54 @@
 
       <hr class="border-gray-100" />
 
-      <!-- 個別設定（プリセット連動） -->
+      <!-- プリセット連動設定 -->
+      <div class="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2.5 space-y-2.5">
+        <p class="text-xs text-blue-500 font-medium">プリセット連動</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-gray-600 w-36 shrink-0">長音の表記</label>
+            <select
+              class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 bg-white"
+              value={settings.longVowel}
+              onchange={onLongVowelChange}
+            >
+              <option value="omit">表記しない</option>
+              <option value="macron">マクロン（ā, ī, ū, ē, ō）</option>
+              <option value="double">母音を重ねる</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-gray-600 w-36 shrink-0">撥音「ん」</label>
+            <select
+              class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 bg-white"
+              value={settings.nasal}
+              onchange={onNasalChange}
+            >
+              <option value="mn">b/m/p前はm、それ以外はn</option>
+              <option value="n">常にn</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-gray-600 w-36 shrink-0">撥音＋母音・y続く場合</label>
+            <select
+              class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 bg-white"
+              value={settings.separator}
+              onchange={onSeparatorChange}
+            >
+              <option value="none">何もしない</option>
+              <option value="apostrophe">アポストロフィ（n'）</option>
+              <option value="hyphen">ハイフン（n-）</option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- その他の設定 -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-        <div class="flex items-center gap-2">
-          <label class="text-sm text-gray-600 w-36 shrink-0">長音の表記</label>
-          <select
-            class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1"
-            value={settings.longVowel}
-            onchange={onLongVowelChange}
-          >
-            <option value="omit">表記しない</option>
-            <option value="macron">マクロン（ā, ī, ū, ē, ō）</option>
-            <option value="double">母音を重ねる</option>
-          </select>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <label class="text-sm text-gray-600 w-36 shrink-0">撥音「ん」</label>
-          <select
-            class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1"
-            value={settings.nasal}
-            onchange={onNasalChange}
-          >
-            <option value="mn">b/m/p前はm、それ以外はn</option>
-            <option value="n">常にn</option>
-          </select>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <label class="text-sm text-gray-600 w-36 shrink-0">撥音＋母音・y続く場合</label>
-          <select
-            class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1"
-            value={settings.separator}
-            onchange={onSeparatorChange}
-          >
-            <option value="none">何もしない</option>
-            <option value="apostrophe">アポストロフィ（n'）</option>
-            <option value="hyphen">ハイフン（n-）</option>
-          </select>
-        </div>
 
         <div class="flex items-center gap-2">
           <label class="text-sm text-gray-600 w-36 shrink-0">出力の文字幅</label>
@@ -323,41 +348,31 @@
           </select>
         </div>
 
-      </div>
-
-      <!-- アルファベット設定（プリセット非連動） -->
-      <div class="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2.5 space-y-2.5">
-        <p class="text-xs text-blue-500 font-medium">アルファベット設定（プリセット非連動）</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-          <div class="flex items-center gap-2">
-            <label class="text-sm text-gray-600 w-36 shrink-0">アルファベット</label>
-            <select
-              class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 bg-white"
-              value={settings.caseMode}
-              onchange={onCaseModeChange}
-            >
-              <option value="lower">小文字</option>
-              <option value="upper">大文字</option>
-              <option value="pascal">PascalCase</option>
-            </select>
-          </div>
-
-          {#if settings.caseMode === 'pascal'}
-            <div class="flex items-center gap-2">
-              <label class="text-sm text-gray-600 w-36 shrink-0">単語区切り</label>
-              <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.pascalSpaces}
-                  onchange={onPascalSpacesChange}
-                />
-                半角スペースを入れる
-              </label>
-            </div>
-          {/if}
-
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-gray-600 w-36 shrink-0">アルファベット</label>
+          <select
+            class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1"
+            value={settings.caseMode}
+            onchange={onCaseModeChange}
+          >
+            <option value="lower">小文字</option>
+            <option value="upper">大文字</option>
+            <option value="pascal">PascalCase</option>
+          </select>
         </div>
+
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-gray-600 w-36 shrink-0">単語区切り</label>
+          <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={settings.pascalSpaces}
+              onchange={onPascalSpacesChange}
+            />
+            半角スペースを入れる
+          </label>
+        </div>
+
       </div>
 
       <!-- 変換例 -->
