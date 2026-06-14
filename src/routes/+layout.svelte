@@ -2,6 +2,7 @@
   import '../app.css'
   import favicon from '$lib/assets/favicon.svg'
   import { page } from '$app/stores'
+  import { site } from '$lib/site'
 
   let { children } = $props()
 </script>
@@ -17,26 +18,22 @@
         href="/"
         class="font-extrabold text-lg tracking-tight mr-2 bg-gradient-to-r from-teal-700 to-sky-600 bg-clip-text text-transparent"
       >
-        96X's Tools
+        {site.name}
       </a>
-      <a
-        href="/bpm-tapper"
-        class="text-sm font-medium transition-colors"
-        class:text-teal-700={($page.url.pathname as string) === '/bpm-tapper'}
-        class:font-semibold={($page.url.pathname as string) === '/bpm-tapper'}
-        class:text-slate-500={($page.url.pathname as string) !== '/bpm-tapper'}
-      >
-        BPM Tapper
-      </a>
-      <a
-        href="/hepburn-converter"
-        class="text-sm font-medium transition-colors"
-        class:text-teal-700={($page.url.pathname as string) === '/hepburn-converter'}
-        class:font-semibold={($page.url.pathname as string) === '/hepburn-converter'}
-        class:text-slate-500={($page.url.pathname as string) !== '/hepburn-converter'}
-      >
-        ヘボン式変換
-      </a>
+      {#each site.tools as tool (tool.href)}
+        {@const active = ($page.url.pathname as string) === tool.href}
+        <a
+          href={tool.href}
+          class="text-sm font-medium transition-colors border-b-2 pb-0.5"
+          class:text-teal-700={active}
+          class:font-semibold={active}
+          class:border-teal-700={active}
+          class:text-slate-500={!active}
+          class:border-transparent={!active}
+        >
+          {tool.label}
+        </a>
+      {/each}
     </nav>
   </header>
 
@@ -50,18 +47,18 @@
         <div
           class="w-7 h-7 rounded-full bg-gradient-to-br from-teal-700 to-sky-600 flex items-center justify-center text-white text-xs font-bold select-none"
           aria-hidden="true"
-        >96</div>
+        >{site.author.avatarLabel}</div>
         <div>
-          <p class="text-sm font-bold text-slate-800">96X</p>
+          <p class="text-sm font-bold text-slate-800">{site.author.name}</p>
           <a
-            href="https://x.com/96X_SBRB"
+            href={site.author.url}
             target="_blank"
             rel="noopener noreferrer"
             class="text-xs text-sky-600 hover:underline"
-          >@96X_SBRB</a>
+          >{site.author.handle}</a>
         </div>
       </div>
-      <p class="text-xs text-slate-400">個人開発ツール集</p>
+      <p class="text-xs text-slate-400">{site.tagline}</p>
     </div>
   </footer>
 </div>
