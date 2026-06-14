@@ -198,7 +198,6 @@
   }
 
   function handleButtonConvert() {
-    if (settings.useParser && (!kuromojiTokenizer || kuromojiStatus !== 'ready')) return
     isConverting = true
     const kanjiConverter = useKanji && kuromojiTokenizer ? kanjiToKana : undefined
     const result = convertWithSplit(inputText, settings, kanjiConverter)
@@ -454,25 +453,30 @@
           >
             <input
               type="checkbox"
-              checked={settings.useParser}
+              checked={settings.useParser && kuromojiStatus === 'ready'}
               disabled={kuromojiStatus !== 'ready'}
               onchange={onUseParserChange}
             />
             使用する
           </label>
+          {#if kuromojiStatus === 'loading'}
+            <span class="text-xs text-gray-400">準備中...</span>
+          {:else if kuromojiStatus === 'error'}
+            <span class="text-xs text-red-500">読込失敗</span>
+          {/if}
         </div>
 
-        <div class="flex items-center gap-2" class:opacity-50={!settings.useParser}>
+        <div class="flex items-center gap-2" class:opacity-50={!settings.useParser || kuromojiStatus !== 'ready'}>
           <label class="text-sm text-gray-600 w-36 shrink-0">単語区切り</label>
           <label
             class="flex items-center gap-1.5 text-sm text-gray-600"
-            class:cursor-pointer={settings.useParser}
-            class:cursor-not-allowed={!settings.useParser}
+            class:cursor-pointer={settings.useParser && kuromojiStatus === 'ready'}
+            class:cursor-not-allowed={!settings.useParser || kuromojiStatus !== 'ready'}
           >
             <input
               type="checkbox"
-              checked={settings.pascalSpaces}
-              disabled={!settings.useParser}
+              checked={settings.pascalSpaces && settings.useParser && kuromojiStatus === 'ready'}
+              disabled={!settings.useParser || kuromojiStatus !== 'ready'}
               onchange={onPascalSpacesChange}
             />
             スペースを入れる
@@ -488,7 +492,7 @@
           >
             <input
               type="checkbox"
-              checked={useKanji}
+              checked={useKanji && kuromojiStatus === 'ready'}
               disabled={kuromojiStatus !== 'ready'}
               onchange={onUseKanjiChange}
             />
@@ -551,12 +555,10 @@
       <button
           type="button"
           class="px-5 py-3 bg-blue-600 text-white rounded-xl font-medium text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed leading-tight text-center"
-          disabled={isConverting || (settings.useParser && kuromojiStatus !== 'ready')}
+          disabled={isConverting}
           onclick={handleButtonConvert}
         >
-          {#if kuromojiStatus === 'loading' && settings.useParser}
-            準備中...
-          {:else if isConverting}
+          {#if isConverting}
             変換中...
           {:else}
             変換
@@ -626,12 +628,10 @@
       <button
         type="button"
         class="px-8 py-3 bg-blue-600 text-white rounded-xl font-medium text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed leading-tight text-center"
-        disabled={isConverting || (settings.useParser && kuromojiStatus !== 'ready')}
+        disabled={isConverting}
         onclick={handleButtonConvert}
       >
-        {#if kuromojiStatus === 'loading' && settings.useParser}
-          準備中...
-        {:else if isConverting}
+        {#if isConverting}
           変換中...
         {:else}
           変換
