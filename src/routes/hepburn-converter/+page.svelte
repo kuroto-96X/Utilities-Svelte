@@ -571,7 +571,7 @@
         <span class:text-amber-500={isOverLimit}>{charCount.toLocaleString()}文字</span>
         <button
           type="button"
-          class="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600"
+          class="px-3 py-1 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 text-gray-600"
           onclick={handleClear}
         >クリア</button>
       </div>
@@ -581,20 +581,18 @@
     </div>
 
     <!-- 変換ボタン -->
-    <div class="flex flex-col items-center justify-center gap-2">
-      <button
-          type="button"
-          class="px-5 py-3 bg-gradient-to-r from-teal-700 to-sky-600 text-white rounded-xl font-medium text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed leading-tight text-center transition-opacity"
-          disabled={isConverting}
-          onclick={handleButtonConvert}
-        >
-          {#if isConverting}
-            変換中...
-          {:else}
-            変換
-          {/if}
-        </button>
-    </div>
+    <button
+      type="button"
+      class="h-48 px-3 flex items-center justify-center [writing-mode:vertical-rl] bg-gradient-to-r from-teal-700 to-sky-600 text-white rounded-xl font-medium text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+      disabled={isConverting}
+      onclick={handleButtonConvert}
+    >
+      {#if isConverting}
+        変換中...
+      {:else}
+        ↑変換
+      {/if}
+    </button>
 
     <!-- 出力欄 -->
     <div class="flex flex-col gap-2">
@@ -644,7 +642,7 @@
         <span class:text-amber-500={isOverLimit}>{charCount.toLocaleString()}文字</span>
         <button
           type="button"
-          class="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600"
+          class="px-3 py-1 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 text-gray-600"
           onclick={handleClear}
         >クリア</button>
       </div>
@@ -654,20 +652,18 @@
     </div>
 
     <!-- 変換ボタン -->
-    <div class="flex justify-center">
-      <button
-        type="button"
-        class="px-8 py-3 bg-gradient-to-r from-teal-700 to-sky-600 text-white rounded-xl font-medium text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed leading-tight text-center transition-opacity"
-        disabled={isConverting}
-        onclick={handleButtonConvert}
-      >
-        {#if isConverting}
-          変換中...
-        {:else}
-          変換
-        {/if}
-      </button>
-    </div>
+    <button
+      type="button"
+      class="w-full py-2 bg-gradient-to-r from-teal-700 to-sky-600 text-white rounded-xl font-medium text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+      disabled={isConverting}
+      onclick={handleButtonConvert}
+    >
+      {#if isConverting}
+        変換中...
+      {:else}
+        変換↓
+      {/if}
+    </button>
 
     <!-- 出力欄 -->
     <div class="flex flex-col gap-2">
@@ -703,7 +699,7 @@
       <div>
         <p class="text-xs font-medium text-gray-500 mb-2">清音・濁音・半濁音</p>
         <div class="overflow-x-auto">
-          <table class="text-xs border-collapse whitespace-nowrap">
+          <table class="text-xs border-collapse whitespace-nowrap mx-auto">
             <thead>
               <tr class="bg-gray-50">
                 <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-left w-10"></th>
@@ -753,7 +749,7 @@
       <div>
         <p class="text-xs font-medium text-gray-500 mb-2">拗音（複合仮名）</p>
         <div class="overflow-x-auto">
-          <table class="text-xs border-collapse whitespace-nowrap">
+          <table class="text-xs border-collapse whitespace-nowrap mx-auto">
             <thead>
               <tr class="bg-gray-50">
                 <th class="px-3 py-1.5 border border-gray-200 text-gray-500 text-left"></th>
@@ -793,7 +789,7 @@
       <div>
         <p class="text-xs font-medium text-gray-500 mb-2">外来語・特殊音</p>
         <div class="overflow-x-auto">
-          <table class="text-xs border-collapse whitespace-nowrap">
+          <table class="text-xs border-collapse whitespace-nowrap mx-auto">
             <tbody>
               {#each [
                 [['ファ','fa'],['フィ','fi'],['フェ','fe'],['フォ','fo'],['ウィ','wi']],
