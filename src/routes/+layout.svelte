@@ -36,6 +36,10 @@
 
   // 開いているドロップダウンのカテゴリー id
   let openCategory = $state<string | null>(null)
+
+  function focusFirst(node: HTMLElement) {
+    node.querySelector<HTMLElement>('a')?.focus()
+  }
 </script>
 
 <svelte:window onclick={() => { openCategory = null }} />
@@ -79,6 +83,7 @@
               class="absolute top-full left-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 z-20 min-w-[160px]"
               role="menu"
               tabindex="-1"
+              use:focusFirst
               onclick={(e) => e.stopPropagation()}
               onkeydown={(e) => { if (e.key === 'Escape') { openCategory = null; e.stopPropagation() } }}
             >
@@ -88,6 +93,7 @@
               {#each catTools as tool (tool.href)}
                 {@const isCurrent = routeId === tool.href}
                 <a
+                  role="menuitem"
                   href={tool.href}
                   onclick={() => { openCategory = null }}
                   class="flex items-center gap-2 px-3 py-1.5 text-sm transition-colors"
