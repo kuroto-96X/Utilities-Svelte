@@ -92,7 +92,8 @@ export function saveCustomSnapshot(settings: HepburnSettings): void {
     const snapshot: PresetValues = {
       longVowel: settings.longVowel,
       nasal: settings.nasal,
-      separator: settings.separator
+      separator: settings.separator,
+      vuStyle: settings.vuStyle
     }
     localStorage.setItem(CUSTOM_SNAPSHOT_KEY, JSON.stringify(snapshot))
   } catch {}
