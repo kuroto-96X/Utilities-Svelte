@@ -36,5 +36,11 @@ export const site = {
       description: "SNS各サービスの推奨サイズにワンクリックでリサイズ・クロップするツール",
       visible: true,
     },
+    {
+      href: "/id-photo",
+      label: "証明写真(開発中)",
+      description: "証明写真・履歴書用写真のサイズ調整とコンビニ印刷用シート作成ツール",
+      visible: true,
+    },
   ],
 } as const
