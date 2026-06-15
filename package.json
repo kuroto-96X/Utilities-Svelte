@@ -41,6 +41,7 @@
 	},
 	"dependencies": {
 		"jszip": "^3.10.1",
-		"kuromoji": "^0.1.2"
+		"kuromoji": "^0.1.2",
+		"svelte-easy-crop": "^5.0.1"
 	}
 }
