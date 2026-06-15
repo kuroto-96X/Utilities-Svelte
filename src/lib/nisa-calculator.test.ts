@@ -61,6 +61,12 @@ describe('calculate', () => {
     expect(result).toEqual({ error: expect.stringContaining('確認') })
   })
 
+  test('損益率が大きなマイナスで計算不能な場合はerrorオブジェクト', () => {
+    // 長期保有で損益率-60%は Dietz係数により R<-1 となり NaN になる
+    const result = calculate('2022-01', 'monthly', 600_000, -60, 6)
+    expect(result).toEqual({ error: expect.stringContaining('確認') })
+  })
+
   test('正常入力で年率・期間・累計投資額を返す', () => {
     const result = calculate('2022-01', 'monthly', 1_500_000, 15, 6)
     if (!result || 'error' in result) throw new Error('Expected full result')

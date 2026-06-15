@@ -77,6 +77,7 @@ export function calculate(
   const totalInvested = currentValue / (1 + profitRate / 100)
   const perPeriodAmount = totalInvested / N
   const R = (profitRate / 100) * ((2 * N) / (N + 1))
+  if (1 + R <= 0) return { error: '入力値を確認してください（計算できない損益率です）' }
   const T = N / ppy
   const r = Math.pow(1 + R, 1 / T) - 1
   const refRate = referenceRate / 100
