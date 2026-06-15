@@ -95,12 +95,11 @@ describe('calculate', () => {
   })
 
   test('50年超の満額到達はveryLong=true', () => {
-    // 少額投資で満額まで超長期かかるケース
+    // 少額投資のため満額まで数百年かかる → veryLong=true になるはず
     const result = calculate('2024-01', 'monthly', 100_000, 1, 6)
     if (!result || 'error' in result) throw new Error('Expected full result')
-    if (result.futures.nisaMax.reachedAlready) return
-    if (result.futures.nisaMax.yearsToMax! > 50) {
-      expect(result.futures.nisaMax.veryLong).toBe(true)
-    }
+    expect(result.futures.nisaMax.reachedAlready).toBe(false)
+    expect(result.futures.nisaMax.yearsToMax).toBeGreaterThan(50)
+    expect(result.futures.nisaMax.veryLong).toBe(true)
   })
 })
