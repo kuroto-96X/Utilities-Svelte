@@ -42,5 +42,11 @@ export const site = {
       description: "証明写真・履歴書用写真のサイズ調整とコンビニ印刷用シート作成ツール",
       visible: true,
     },
+    {
+      href: "/nisa-simple-calculator",
+      label: "NISA年率計算(開発中)",
+      description: "NISAの損益率から運用年率を逆算するツール",
+      visible: true,
+    },
   ],
 } as const
