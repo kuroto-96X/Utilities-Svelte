@@ -13,7 +13,7 @@
   <p class="text-sm text-slate-500 mb-10">{site.tagline}</p>
 
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    {#each site.tools as tool (tool.href)}
+    {#each site.tools.filter(t => t.visible) as tool (tool.href)}
       <a
         href={tool.href}
         class="block p-6 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-teal-700/40 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"

@@ -22,7 +22,7 @@
       >
         {site.name}
       </a>
-      {#each site.tools as tool (tool.href)}
+      {#each site.tools.filter(t => t.visible) as tool (tool.href)}
         {@const active = routeId === tool.href}
         <a
           href={tool.href}
