@@ -57,6 +57,7 @@
           class:text-white={frequency === 'monthly'}
           class:text-slate-600={frequency !== 'monthly'}
           onclick={() => (frequency = 'monthly')}
+          aria-pressed={frequency === 'monthly'}
         >
           毎月
         </button>
@@ -67,6 +68,7 @@
           class:text-white={frequency === 'yearly'}
           class:text-slate-600={frequency !== 'yearly'}
           onclick={() => (frequency = 'yearly')}
+          aria-pressed={frequency === 'yearly'}
         >
           毎年
         </button>
@@ -154,6 +156,7 @@
           step="0.5"
           bind:value={referenceRate}
           class="w-full accent-teal-600"
+          aria-label="参考年率"
         />
       </div>
 
