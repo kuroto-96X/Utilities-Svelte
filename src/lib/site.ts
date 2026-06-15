@@ -48,5 +48,11 @@ export const site = {
       description: "NISAの損益率から運用年率を逆算するツール",
       visible: true,
     },
+    {
+      href: "/nisa-accumulation-simulator",
+      label: "NISA積立シミュレーター(開発中)",
+      description: "毎月・毎年の積立投資の将来評価額と資産推移をシミュレーションするツール",
+      visible: true,
+    },
   ],
 } as const
