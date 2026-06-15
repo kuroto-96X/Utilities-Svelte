@@ -12,6 +12,7 @@
   let imageFile = $state<File | null>(null)
   let croppedAreaPixels = $state<PixelCrop | null>(null)
   let isDownloading = $state(false)
+  let downloadError = $state('')
 
   function handleFiles(files: File[]) {
     imageFile = files[0] ?? null
@@ -30,6 +31,7 @@
   async function handleDownload() {
     if (!imageFile || !selectedPreset || !croppedAreaPixels) return
     isDownloading = true
+    downloadError = ''
     try {
       const blob = await cropToBlob(
         imageFile,
@@ -43,6 +45,8 @@
       a.download = buildDownloadFileName(selectedPreset.id)
       a.click()
       URL.revokeObjectURL(url)
+    } catch {
+      downloadError = 'ダウンロードに失敗しました。もう一度お試しください。'
     } finally {
       isDownloading = false
     }
@@ -106,6 +110,9 @@
     >
       {isDownloading ? '処理中...' : downloadLabel}
     </button>
+    {#if downloadError}
+      <p class="text-sm text-red-500">{downloadError}</p>
+    {/if}
   {/if}
 
   <!-- 広告枠 in-content -->
