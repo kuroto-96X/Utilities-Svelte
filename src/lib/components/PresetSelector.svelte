@@ -1,13 +1,14 @@
-<script lang="ts">
-  import type { SnsPreset } from '$lib/data/snsPresets'
+<script lang="ts" generics="T extends { id: string }">
+  import type { Snippet } from 'svelte'
 
   interface Props {
-    presets: SnsPreset[]
-    selected: SnsPreset | null
-    onselect: (preset: SnsPreset) => void
+    presets: T[]
+    selected: T | null
+    onselect: (preset: T) => void
+    children: Snippet<[T]>
   }
 
-  let { presets, selected, onselect }: Props = $props()
+  let { presets, selected, onselect, children }: Props = $props()
 </script>
 
 <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -19,9 +20,7 @@
         : 'border-slate-200 hover:border-slate-300'}"
       onclick={() => onselect(preset)}
     >
-      <p class="text-xs font-medium text-slate-500">{preset.service}</p>
-      <p class="text-sm font-semibold text-slate-800 mt-0.5 leading-tight">{preset.label}</p>
-      <p class="text-xs text-slate-400 mt-1">{preset.width} × {preset.height}</p>
+      {@render children(preset)}
     </button>
   {/each}
 </div>

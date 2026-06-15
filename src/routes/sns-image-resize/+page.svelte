@@ -81,7 +81,13 @@
   <!-- プリセット選択 -->
   <section class="space-y-2">
     <h2 class="text-sm font-semibold text-slate-600">1. サイズを選ぶ</h2>
-    <PresetSelector presets={snsPresets} selected={selectedPreset} onselect={handlePresetSelect} />
+    <PresetSelector presets={snsPresets} selected={selectedPreset} onselect={handlePresetSelect}>
+      {#snippet children(preset)}
+        <p class="text-xs font-medium text-slate-500">{preset.service}</p>
+        <p class="text-sm font-semibold text-slate-800 mt-0.5 leading-tight">{preset.label}</p>
+        <p class="text-xs text-slate-400 mt-1">{preset.width} × {preset.height}</p>
+      {/snippet}
+    </PresetSelector>
   </section>
 
   <!-- 画像アップロード -->
