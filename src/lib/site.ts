@@ -16,16 +16,25 @@ export const site = {
       href: "/bpm-tapper",
       label: "BPM Tapper",
       description: "タップしてBPMを計測するツール",
+      visible: true,
     },
     {
       href: "/hepburn-converter",
       label: "ヘボン式変換",
       description: "日本語をヘボン式ローマ字に変換するツール",
+      visible: true,
     },
     {
       href: "/image-tools",
       label: "画像変換(開発中)",
       description: "画像の圧縮・リサイズ・形式変換ツール",
+      visible: false,
+    },
+    {
+      href: "/sns-image-resize",
+      label: "SNS画像リサイズ(開発中)",
+      description: "SNS各サービスの推奨サイズにワンクリックでリサイズ・クロップするツール",
+      visible: true,
     },
   ],
 } as const
