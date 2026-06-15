@@ -136,4 +136,87 @@
       {/if}
     </div>
   {/if}
+
+  <!-- 将来予測カード -->
+  {#if fullResult}
+    <div class="bg-white rounded-xl shadow-sm p-4 space-y-4">
+      <h2 class="text-sm font-semibold text-slate-700">将来予測</h2>
+
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <p class="text-xs text-slate-500">参考年率</p>
+          <span class="text-sm font-bold text-slate-700">{referenceRate.toFixed(1)}%</span>
+        </div>
+        <input
+          type="range"
+          min="0"
+          max="15"
+          step="0.5"
+          bind:value={referenceRate}
+          class="w-full accent-teal-600"
+        />
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-slate-100">
+              <th class="text-left text-xs text-slate-500 font-normal pb-2 pr-2">時期</th>
+              <th class="text-right text-xs text-slate-500 font-normal pb-2 px-2">
+                ご自身の年率<br /><span class="text-teal-700 font-semibold">{fullResult.annualReturn.toFixed(1)}%</span>
+              </th>
+              <th class="text-right text-xs text-slate-500 font-normal pb-2 pl-2">
+                参考年率<br /><span class="text-slate-700 font-semibold">{referenceRate.toFixed(1)}%</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-50">
+            <tr>
+              <td class="py-2 pr-2 text-xs text-slate-600">5年後</td>
+              <td class="py-2 px-2 text-right font-medium">{toMan(fullResult.futures.years5.own)}<span class="text-xs text-slate-400 ml-0.5">万円</span></td>
+              <td class="py-2 pl-2 text-right font-medium">{toMan(fullResult.futures.years5.ref)}<span class="text-xs text-slate-400 ml-0.5">万円</span></td>
+            </tr>
+            <tr>
+              <td class="py-2 pr-2 text-xs text-slate-600">10年後</td>
+              <td class="py-2 px-2 text-right font-medium">{toMan(fullResult.futures.years10.own)}<span class="text-xs text-slate-400 ml-0.5">万円</span></td>
+              <td class="py-2 pl-2 text-right font-medium">{toMan(fullResult.futures.years10.ref)}<span class="text-xs text-slate-400 ml-0.5">万円</span></td>
+            </tr>
+            <tr>
+              <td class="py-2 pr-2 text-xs text-slate-600">20年後</td>
+              <td class="py-2 px-2 text-right font-medium">{toMan(fullResult.futures.years20.own)}<span class="text-xs text-slate-400 ml-0.5">万円</span></td>
+              <td class="py-2 pl-2 text-right font-medium">{toMan(fullResult.futures.years20.ref)}<span class="text-xs text-slate-400 ml-0.5">万円</span></td>
+            </tr>
+            <tr class="bg-slate-50">
+              {#if fullResult.futures.nisaMax.reachedAlready}
+                <td class="py-2 pr-2 text-xs text-slate-600">NISA満額（達成済み）</td>
+                <td class="py-2 px-2 text-right font-medium">
+                  {toMan(fullResult.futures.nisaMax.currentValue!)}<span class="text-xs text-slate-400 ml-0.5">万円</span>
+                </td>
+                <td class="py-2 pl-2 text-right text-xs text-slate-400">—</td>
+              {:else}
+                <td class="py-2 pr-2 text-xs text-slate-600">
+                  NISA満額到達時
+                  {#if fullResult.futures.nisaMax.veryLong}
+                    <span class="block text-amber-600">（参考値・長期）</span>
+                  {/if}
+                </td>
+                <td class="py-2 px-2 text-right font-medium">
+                  {toMan(fullResult.futures.nisaMax.own!)}<span class="text-xs text-slate-400 ml-0.5">万円</span>
+                </td>
+                <td class="py-2 pl-2 text-right font-medium">
+                  {toMan(fullResult.futures.nisaMax.ref!)}<span class="text-xs text-slate-400 ml-0.5">万円</span>
+                </td>
+              {/if}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="text-xs text-slate-400 space-y-1 border-t border-slate-100 pt-3">
+        <p>※年率は損益率と投資期間から近似計算した参考値です。投資額が一定でない場合や不定期な投資の場合、実際の年率とは異なります。</p>
+        <p>※参考年率は想定値であり、将来の運用成果を示すものではありません。</p>
+        <p>※NISA生涯投資枠1,800万円（2024年からの新NISA制度）を基準にしています。制度内容は変更される可能性があります。</p>
+      </div>
+    </div>
+  {/if}
 </div>
