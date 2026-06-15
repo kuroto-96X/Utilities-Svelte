@@ -7,7 +7,7 @@
   let annualRate = $state(5.0)
 
   const result = $derived.by(() =>
-    simulate(parseFloat(amountStr) || 0, years, annualRate, frequency)
+    simulate(Math.max(parseFloat(amountStr) || 0, 0), years, annualRate, frequency)
   )
 
   const investLabel = $derived(frequency === 'monthly' ? '毎月の投資額（円）' : '毎年の投資額（円）')
@@ -55,7 +55,9 @@
       .map((p, i) => `${i === 0 ? 'M' : 'L'} ${xOf(p.year)},${yOf(p.invested)}`)
       .join(' ')
 
-    const maxLabel = `${Math.round(maxValue / 10_000).toLocaleString()}万円`
+    const maxLabel = result.totalInvested > 0
+      ? `${Math.round(maxValue / 10_000).toLocaleString()}万円`
+      : '—'
 
     return { areaPath, linePath, investedPath, maxLabel, yBottom, xEnd: xOf(years), xStart: xOf(0) }
   })
