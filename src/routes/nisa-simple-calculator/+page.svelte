@@ -98,4 +98,42 @@
       </div>
     </div>
   </div>
+
+  <!-- 計算結果カード -->
+  {#if result !== null}
+    <div class="bg-white rounded-xl shadow-sm p-4 space-y-3">
+      <h2 class="text-sm font-semibold text-slate-700">計算結果</h2>
+
+      {#if 'error' in result}
+        <p class="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{result.error}</p>
+      {:else if fullResult}
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-teal-50 rounded-xl p-3">
+            <p class="text-xs text-slate-500 mb-1">年率換算リターン</p>
+            <p class="text-xl font-bold text-teal-700">
+              {fullResult.annualReturn.toFixed(1)}<span class="text-sm font-normal ml-0.5">%</span>
+            </p>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3">
+            <p class="text-xs text-slate-500 mb-1">運用期間</p>
+            <p class="text-xl font-bold text-slate-700">
+              {fullResult.yearsInvested.toFixed(1)}<span class="text-sm font-normal ml-0.5">年</span>
+            </p>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3">
+            <p class="text-xs text-slate-500 mb-1">累計投資額</p>
+            <p class="text-lg font-bold text-slate-700">
+              {Math.round(fullResult.totalInvested).toLocaleString()}<span class="text-xs font-normal ml-0.5">円</span>
+            </p>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3">
+            <p class="text-xs text-slate-500 mb-1">1回あたり投資額</p>
+            <p class="text-lg font-bold text-slate-700">
+              {Math.round(fullResult.perPeriodAmount).toLocaleString()}<span class="text-xs font-normal ml-0.5">円</span>
+            </p>
+          </div>
+        </div>
+      {/if}
+    </div>
+  {/if}
 </div>
