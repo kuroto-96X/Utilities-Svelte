@@ -61,6 +61,8 @@
           <button
             type="button"
             onclick={(e) => { e.stopPropagation(); openCategory = isOpen ? null : cat.id }}
+            aria-haspopup="true"
+            aria-expanded={isOpen}
             class="text-sm font-medium px-2 py-1 rounded transition-colors border-b-2"
             class:text-teal-700={isActive}
             class:font-semibold={isActive}
@@ -75,9 +77,10 @@
           {#if isOpen}
             <div
               class="absolute top-full left-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 z-20 min-w-[160px]"
-              role="none"
+              role="menu"
+              tabindex="-1"
               onclick={(e) => e.stopPropagation()}
-              onkeydown={(e) => e.stopPropagation()}
+              onkeydown={(e) => { if (e.key === 'Escape') { openCategory = null; e.stopPropagation() } }}
             >
               <p class="px-3 pt-1 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 {cat.label}
