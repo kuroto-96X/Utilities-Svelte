@@ -14,11 +14,9 @@
   {#each presets as preset (preset.id)}
     <button
       type="button"
-      class="rounded-lg border-2 p-3 text-left transition-colors"
-      class:border-teal-500={selected?.id === preset.id}
-      class:bg-teal-50={selected?.id === preset.id}
-      class:border-slate-200={selected?.id !== preset.id}
-      class:hover:border-slate-300={selected?.id !== preset.id}
+      class="rounded-lg border-2 p-3 text-left transition-colors {selected?.id === preset.id
+        ? 'border-teal-500 bg-teal-50'
+        : 'border-slate-200 hover:border-slate-300'}"
       onclick={() => onselect(preset)}
     >
       <p class="text-xs font-medium text-slate-500">{preset.service}</p>
