@@ -1,0 +1,55 @@
+// src/lib/scaleData.test.ts
+import { describe, test, expect } from 'vitest'
+import { ROOTS, SCALE_GROUPS, SCALES, CHORD_GROUPS, CHORDS, PROGRESSIONS } from './scaleData'
+
+describe('ROOTS', () => {
+  test('12個のルート音がある', () => {
+    expect(ROOTS).toHaveLength(12)
+  })
+  test('pcが0から11まで過不足なく存在する', () => {
+    const pcs = ROOTS.map(r => r.pc).sort((a, b) => a - b)
+    expect(pcs).toEqual([0,1,2,3,4,5,6,7,8,9,10,11])
+  })
+})
+
+describe('SCALE_GROUPS / SCALES', () => {
+  test('グループが3つある（基本・モード・和風その他）', () => {
+    expect(SCALE_GROUPS).toHaveLength(3)
+  })
+  test('スケールが合計15種', () => {
+    expect(SCALES).toHaveLength(15)
+  })
+  test('全スケールのintervalsは0から始まる', () => {
+    SCALES.forEach(s => expect(s.intervals[0]).toBe(0))
+  })
+  test('major は [0,2,4,5,7,9,11]', () => {
+    const major = SCALES.find(s => s.id === 'major')!
+    expect(major.intervals).toEqual([0,2,4,5,7,9,11])
+  })
+})
+
+describe('CHORD_GROUPS / CHORDS', () => {
+  test('グループが3つある（トライアド・セブンス・テンション）', () => {
+    expect(CHORD_GROUPS).toHaveLength(3)
+  })
+  test('コードが合計13種', () => {
+    expect(CHORDS).toHaveLength(13)
+  })
+  test('全コードのintervalsは0から始まる', () => {
+    CHORDS.forEach(c => expect(c.intervals[0]).toBe(0))
+  })
+})
+
+describe('PROGRESSIONS', () => {
+  test('5種類のプリセットがある', () => {
+    expect(PROGRESSIONS).toHaveLength(5)
+  })
+  test('全degreesは0〜6の範囲', () => {
+    PROGRESSIONS.forEach(p => {
+      p.degrees.forEach(d => {
+        expect(d).toBeGreaterThanOrEqual(0)
+        expect(d).toBeLessThanOrEqual(6)
+      })
+    })
+  })
+})
