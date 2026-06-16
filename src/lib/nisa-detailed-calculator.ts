@@ -47,6 +47,7 @@ export type DetailedCalcResult =
 type ValidRecord = InvestmentRecord & { index: number; monthIndex: number }
 
 const SHORT_PERIOD_ERROR = '投資期間が短すぎるため、年率を正確に計算できません'
+const CALCULATION_ERROR = '計算できませんでした。入力値をご確認ください'
 const MS_PER_365_DAYS = 365 * 24 * 60 * 60 * 1000
 
 export function periodsPerYear(frequency: Frequency): number {
@@ -128,8 +129,10 @@ export function calculateDetailed(
   const latestRecord = validRecords[validRecords.length - 1]
   const ppy = periodsPerYear(latestRecord.frequency)
   const refRate = Number.isFinite(referenceRate) && referenceRate > -100 ? referenceRate / 100 : 0
-  const solvedRate = solveXirr(cashFlows, ages, currentValue)
-  const ownRate = Number.isFinite(solvedRate) ? solvedRate : 0
+  const solved = solveXirr(cashFlows, ages, currentValue)
+  if (!solved.converged) return { error: CALCULATION_ERROR }
+
+  const ownRate = solved.rate
 
   const calc = (years: number, rate: number) =>
     calcFutureValue(currentValue, latestRecord.amount, rate, years, ppy)
@@ -173,12 +176,16 @@ export function calculateDetailed(
   }
 }
 
-function solveXirr(cashFlows: CashFlow[], ages: number[], currentValue: number): number {
+function solveXirr(
+  cashFlows: CashFlow[],
+  ages: number[],
+  currentValue: number
+): { rate: number; converged: boolean } {
   let rate = 0.1
 
   for (let i = 0; i < 100; i++) {
     const base = 1 + rate
-    if (base <= 0 || !Number.isFinite(base)) return 0
+    if (base <= 0 || !Number.isFinite(base)) return { rate: 0, converged: false }
 
     let value = -currentValue
     let derivative = 0
@@ -189,18 +196,21 @@ function solveXirr(cashFlows: CashFlow[], ages: number[], currentValue: number):
       derivative += amount * age * Math.pow(base, age - 1)
     }
 
-    if (!Number.isFinite(value) || !Number.isFinite(derivative)) return 0
+    if (!Number.isFinite(value) || !Number.isFinite(derivative)) {
+      return { rate: 0, converged: false }
+    }
     if (Math.abs(derivative) < 1e-12) break
 
     const step = Math.max(-1, Math.min(1, value / derivative))
     let nextRate = rate - step
     if (nextRate < -0.99) nextRate = -0.99
-    if (Math.abs(nextRate - rate) < 1e-8) return nextRate
+    if (!Number.isFinite(nextRate)) return { rate: 0, converged: false }
+    if (Math.abs(nextRate - rate) < 1e-8) return { rate: nextRate, converged: true }
 
     rate = nextRate
   }
 
-  return 0
+  return { rate: 0, converged: false }
 }
 
 function sortedValidRecords(records: InvestmentRecord[]): ValidRecord[] {

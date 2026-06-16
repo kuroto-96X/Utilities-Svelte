@@ -91,4 +91,15 @@ describe('calculateDetailed', () => {
       expect(Number.isFinite(result.futures.nisaMax.ref)).toBe(true)
     }
   })
+
+  test('XIRRを計算できない場合は入力確認エラーになる', () => {
+    const result = calculateDetailed(
+      [{ id: 'a', startMonth: '2020-01', frequency: 'monthly', amount: Number.MIN_VALUE }],
+      1_000,
+      6,
+      new Date('2024-06-15T00:00:00')
+    )
+
+    expect(result).toEqual({ error: expect.stringContaining('計算できませんでした') })
+  })
 })
