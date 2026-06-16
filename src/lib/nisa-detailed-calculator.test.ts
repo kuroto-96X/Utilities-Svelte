@@ -74,4 +74,21 @@ describe('calculateDetailed', () => {
     expect(result.futures.nisaMax.reachedAlready).toBe(true)
     expect(result.futures.nisaMax.currentValue).toBe(25_000_000)
   })
+
+  test('referenceRate at or below -100% uses 0% for finite reference projections', () => {
+    const result = calculateDetailed(
+      [{ id: 'a', startMonth: '2022-01', frequency: 'monthly', amount: 10_000 }],
+      300_000,
+      -101,
+      new Date('2024-06-15T00:00:00')
+    )
+
+    if (!result || 'error' in result) throw new Error('Expected full result')
+    expect(Number.isFinite(result.futures.years5.ref)).toBe(true)
+    expect(Number.isFinite(result.futures.years10.ref)).toBe(true)
+    expect(Number.isFinite(result.futures.years20.ref)).toBe(true)
+    if (!result.futures.nisaMax.reachedAlready) {
+      expect(Number.isFinite(result.futures.nisaMax.ref)).toBe(true)
+    }
+  })
 })

@@ -127,7 +127,7 @@ export function calculateDetailed(
   const totalInvested = cashFlows.reduce((sum, flow) => sum + flow.amount, 0)
   const latestRecord = validRecords[validRecords.length - 1]
   const ppy = periodsPerYear(latestRecord.frequency)
-  const refRate = Number.isFinite(referenceRate) ? referenceRate / 100 : 0
+  const refRate = Number.isFinite(referenceRate) && referenceRate > -100 ? referenceRate / 100 : 0
   const solvedRate = solveXirr(cashFlows, ages, currentValue)
   const ownRate = Number.isFinite(solvedRate) ? solvedRate : 0
 
