@@ -44,5 +44,9 @@ export function startNote(midi: number): () => void {
     gain.gain.setValueAtTime(gain.gain.value, t);
     gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
     osc.stop(t + 0.06);
+    setTimeout(() => {
+      osc.disconnect();
+      gain.disconnect();
+    }, 100);
   };
 }
