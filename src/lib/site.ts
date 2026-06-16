@@ -61,6 +61,13 @@ export const site = {
       category: 'investment',
     },
     {
+      href: "/nisa-detailed-calculator",
+      label: "NISA詳細年率計算(開発中)",
+      description: "投資額の変更履歴からXIRRで運用年率を計算するツール",
+      visible: true,
+      category: 'investment',
+    },
+    {
       href: "/nisa-accumulation-simulator",
       label: "NISA積立シミュレーター(開発中)",
       description: "毎月・毎年の積立投資の将来評価額と資産推移をシミュレーションするツール",
