@@ -26,6 +26,13 @@ export const site = {
       category: 'music',
     },
     {
+      href: "/note-duration",
+      label: "BPM音符換算(開発中)",
+      description: "BPMから全音符〜32分音符の長さを秒・msで計算するツール",
+      visible: true,
+      category: 'music',
+    },
+    {
       href: "/hepburn-converter",
       label: "ヘボン式変換",
       description: "日本語をヘボン式ローマ字に変換するツール",
