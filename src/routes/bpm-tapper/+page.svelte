@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { DEFAULT_BPM } from '$lib/noteDuration'
+
   type TapRecord = {
     index: number;
     timestamp: Date;
@@ -258,7 +260,7 @@
     </p>
     <div class="mt-4 pt-3 border-t border-slate-100 text-center">
       <a
-        href="/note-duration?bpm={mainBpm !== null ? Math.round(mainBpm) : 120}"
+        href="/note-duration?bpm={mainBpm !== null ? Math.round(mainBpm) : DEFAULT_BPM}"
         class="text-sm font-medium text-teal-700 hover:underline"
       >音符換算で開く →</a>
     </div>
