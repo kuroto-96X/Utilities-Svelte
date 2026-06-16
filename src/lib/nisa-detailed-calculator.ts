@@ -35,7 +35,6 @@ export type DetailedCalcResult =
       totalInvested: number
       latestAmount: number
       latestFrequency: Frequency
-      perPeriodAmount: number
       hasDuplicateStartMonth: boolean
       futures: {
         years5: FutureRow
@@ -48,7 +47,7 @@ export type DetailedCalcResult =
 type ValidRecord = InvestmentRecord & { index: number; monthIndex: number }
 
 const SHORT_PERIOD_ERROR = '投資期間が短すぎるため、年率を正確に計算できません'
-const MS_PER_YEAR = 365.25 * 24 * 60 * 60 * 1000
+const MS_PER_365_DAYS = 365 * 24 * 60 * 60 * 1000
 
 export function periodsPerYear(frequency: Frequency): number {
   return frequency === 'monthly' ? 12 : 1
@@ -95,6 +94,8 @@ export function calcFutureValue(
   ppy: number
 ): number {
   const periods = years * ppy
+  if (periods <= 0) return currentValue
+
   const rPeriod = Math.pow(1 + rateAnnual, 1 / ppy) - 1
   if (Math.abs(rPeriod) < 1e-10) {
     return currentValue + perPeriod * periods
@@ -162,7 +163,6 @@ export function calculateDetailed(
     totalInvested,
     latestAmount: latestRecord.amount,
     latestFrequency: latestRecord.frequency,
-    perPeriodAmount: latestRecord.amount,
     hasDuplicateStartMonth: hasDuplicateStartMonth(records),
     futures: {
       years5: { own: calc(5, ownRate), ref: calc(5, refRate) },
@@ -190,12 +190,14 @@ function solveXirr(cashFlows: CashFlow[], ages: number[], currentValue: number):
     }
 
     if (!Number.isFinite(value) || !Number.isFinite(derivative)) return 0
-    if (Math.abs(value) < 1e-8) return rate
     if (Math.abs(derivative) < 1e-12) break
 
     const step = Math.max(-1, Math.min(1, value / derivative))
-    rate -= step
-    if (rate < -0.99) rate = -0.99
+    let nextRate = rate - step
+    if (nextRate < -0.99) nextRate = -0.99
+    if (Math.abs(nextRate - rate) < 1e-8) return nextRate
+
+    rate = nextRate
   }
 
   return 0
@@ -246,7 +248,7 @@ function createCashFlow(monthIndex: number, amount: number): CashFlow {
 }
 
 function yearsBetween(from: Date, to: Date): number {
-  return Math.max(0, (to.getTime() - from.getTime()) / MS_PER_YEAR)
+  return Math.max(0, (to.getTime() - from.getTime()) / MS_PER_365_DAYS)
 }
 
 function hasDuplicateStartMonth(records: InvestmentRecord[]): boolean {
