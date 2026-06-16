@@ -34,6 +34,7 @@ const NOTE_DEFS: Array<Omit<NoteDuration, 'normalSec' | 'dottedSec' | 'tripletSe
   { id: 'thirtysecond', label: '32分音符', fraction: '1/32', mult: 0.125, symbol: { filled: true,  stem: true,  flags: 3 } },
 ]
 
+/** bpm は clampBpm() で検証済みの値を渡すこと。bpm <= 0 の場合は DEFAULT_BPM にフォールバックするが、これは最終防衛ラインであり主要な検証パスではない。 */
 export function calculateNoteDurations(bpm: number): NoteDuration[] {
   const safeBpm = bpm > 0 ? bpm : DEFAULT_BPM
   const quarterSec = 60 / safeBpm
