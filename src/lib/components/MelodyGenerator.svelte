@@ -10,12 +10,16 @@
     bpm,
     addPlayingPc,
     removePlayingPc,
+    addPlayingMidi,
+    removePlayingMidi,
   }: {
     intervals: number[];
     rootPc: number;
     bpm: number;
     addPlayingPc: (pc: number) => void;
     removePlayingPc: (pc: number) => void;
+    addPlayingMidi?: (midi: number) => void;
+    removePlayingMidi?: (midi: number) => void;
   } = $props();
 
   const NOTE_LABELS = ['32分', '16分', '8分', '4分', '2分', '全'];
@@ -88,13 +92,16 @@
     const ctx = getAudioContext();
     let activeStopFn: (() => void) | null = null;
     let activePc: number | null = null;
+    let activeMidi: number | null = null;
     let stepIdx = 0;
 
     function playNextNote() {
       activeStopFn?.();
       if (activePc !== null) removePlayingPc(activePc);
+      if (activeMidi !== null) removePlayingMidi?.(activeMidi);
       activeStopFn = null;
       activePc = null;
+      activeMidi = null;
 
       if (stepIdx >= seq.length) {
         isPlaying = false;
@@ -110,7 +117,9 @@
       const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
       activeStopFn = stopFn;
       activePc = pc;
+      activeMidi = midi;
       addPlayingPc(pc);
+      addPlayingMidi?.(midi);
 
       stepIdx++;
       setTimeout(playNextNote, note.duration * 1000);

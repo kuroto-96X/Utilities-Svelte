@@ -22,6 +22,7 @@
   let anchorToRoot = $state(false);
   let octaves = $state(1);
   let playingPcs = $state(new Set<number>());
+  let playingMidis = $state(new Set<number>());
   let progressionStopCount = $state(0);
   let playId = 0;
   let currentPlayStopFns: Array<() => void> = [];
@@ -37,6 +38,8 @@
 
   function addPlayingPc(pc: number) { playingPcs = new Set(playingPcs).add(pc); }
   function removePlayingPc(pc: number) { const s = new Set(playingPcs); s.delete(pc); playingPcs = s; }
+  function addPlayingMidi(midi: number) { playingMidis = new Set(playingMidis).add(midi); }
+  function removePlayingMidi(midi: number) { const s = new Set(playingMidis); s.delete(midi); playingMidis = s; }
 
   function stopAllCurrentNotes() {
     for (const fn of currentPlayStopFns) fn();
@@ -49,6 +52,7 @@
     playId++;
     stopAllCurrentNotes();
     playingPcs = new Set();
+    playingMidis = new Set();
   }
 
   $effect(() => {
@@ -63,6 +67,7 @@
 
     stopAllCurrentNotes();
     playingPcs = new Set();
+    playingMidis = new Set();
 
     const ctx = getAudioContext();
 
@@ -74,12 +79,14 @@
         const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
         currentPlayStopFns.push(stopFn);
         addPlayingPc(pc);
+        addPlayingMidi(midi);
       });
       const wholeDuration = (60 / bpm) * 2;
       setTimeout(() => {
         if (playId !== myId) return;
         stopAllCurrentNotes();
         playingPcs = new Set();
+        playingMidis = new Set();
       }, wholeDuration * 1000);
     } else {
       // スケール：各音を次の音が始まるまで持続
@@ -87,13 +94,16 @@
       const SPACING = (60 / bpm) * 0.5;
       let activeStopFn: (() => void) | null = null;
       let activePc: number | null = null;
+      let activeMidi: number | null = null;
 
       function playScaleStep(stepIdx: number) {
         // 前の音を停止
         activeStopFn?.();
         if (activePc !== null) removePlayingPc(activePc);
+        if (activeMidi !== null) removePlayingMidi(activeMidi);
         activeStopFn = null;
         activePc = null;
+        activeMidi = null;
 
         if (playId !== myId) return; // 別の再生が始まったらキャンセル
         if (stepIdx >= seq.length) return; // 終了
@@ -105,8 +115,10 @@
         const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
         activeStopFn = stopFn;
         activePc = pc;
+        activeMidi = midi;
         currentPlayStopFns.push(stopFn);
         addPlayingPc(pc);
+        addPlayingMidi(midi);
 
         setTimeout(() => playScaleStep(stepIdx + 1), SPACING * 1000);
       }
@@ -168,8 +180,11 @@
             rootPc={root.pc}
             startSemitone={anchorToRoot ? root.pc : 0}
             {playingPcs}
+            {playingMidis}
             {addPlayingPc}
             {removePlayingPc}
+            {addPlayingMidi}
+            {removePlayingMidi}
           />
         </div>
         <!-- 再生中の音の表示 -->
@@ -189,17 +204,19 @@
           {diatonicChords}
           {addPlayingPc}
           {removePlayingPc}
+          {addPlayingMidi}
+          {removePlayingMidi}
           stopProgression={() => { progressionStopCount += 1; }}
         />
       {/if}
       <MelodyGenerator
         intervals={currentIntervals}
         rootPc={root.pc}
-        {bpm} {addPlayingPc} {removePlayingPc}
+        {bpm} {addPlayingPc} {removePlayingPc} {addPlayingMidi} {removePlayingMidi}
       />
       {#if diatonicChords}
         <ProgressionPlayer
-          {diatonicChords} {bpm} {addPlayingPc} {removePlayingPc}
+          {diatonicChords} {bpm} {addPlayingPc} {removePlayingPc} {addPlayingMidi} {removePlayingMidi}
           stopCount={progressionStopCount}
         />
       {/if}

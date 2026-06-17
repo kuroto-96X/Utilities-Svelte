@@ -11,8 +11,11 @@
     intervals,
     rootPc,
     playingPcs,
+    playingMidis,
     addPlayingPc,
     removePlayingPc,
+    addPlayingMidi,
+    removePlayingMidi,
     totalWidth = TOTAL_WIDTH,
     startSemitone = 0,
   }: {
@@ -21,8 +24,11 @@
     intervals: number[];
     rootPc: number;
     playingPcs: Set<number>;
+    playingMidis?: Set<number>;
     addPlayingPc: (pc: number) => void;
     removePlayingPc: (pc: number) => void;
+    addPlayingMidi?: (midi: number) => void;
+    removePlayingMidi?: (midi: number) => void;
     totalWidth?: number;
     startSemitone?: number;
   } = $props();
@@ -35,8 +41,15 @@
     return Math.floor((60 + startSemitone + windowIndex) / 12) - 1;
   }
 
+  function isActive(windowIndex: number, pc: number): boolean {
+    return playingMidis
+      ? playingMidis.has(60 + windowIndex)
+      : playingPcs.has(pc);
+  }
+
   function handlePointerDown(key: LayoutKey) {
     addPlayingPc(key.pc);
+    addPlayingMidi?.(60 + key.windowIndex);
     const stop = startNote(60 + key.windowIndex);
     stopFns.set(key.windowIndex, stop);
   }
@@ -45,6 +58,7 @@
     const stop = stopFns.get(key.windowIndex);
     if (stop) { stop(); stopFns.delete(key.windowIndex); }
     removePlayingPc(key.pc);
+    removePlayingMidi?.(60 + key.windowIndex);
   }
 </script>
 
@@ -120,7 +134,7 @@
 
   <!-- アクティブリング（最前面・opacity影響を受けない） -->
   {#each whiteKeys as key (key.windowIndex)}
-    {#if playingPcs.has(key.pc)}
+    {#if isActive(key.windowIndex, key.pc)}
       <rect
         x={key.x + 2} y={2}
         width={WHITE_W - 5} height={WHITE_H - 4}
@@ -132,7 +146,7 @@
     {/if}
   {/each}
   {#each blackKeys as key (key.windowIndex)}
-    {#if playingPcs.has(key.pc)}
+    {#if isActive(key.windowIndex, key.pc)}
       <rect
         x={key.x + 2} y={2}
         width={BLACK_W - 4} height={BLACK_H - 4}

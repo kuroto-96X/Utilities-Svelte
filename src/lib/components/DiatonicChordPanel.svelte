@@ -8,17 +8,22 @@
     diatonicChords,
     addPlayingPc,
     removePlayingPc,
+    addPlayingMidi,
+    removePlayingMidi,
     stopProgression,
   }: {
     diatonicChords: DiatonicChord[];
     addPlayingPc: (pc: number) => void;
     removePlayingPc: (pc: number) => void;
+    addPlayingMidi?: (midi: number) => void;
+    removePlayingMidi?: (midi: number) => void;
     stopProgression: () => void;
   } = $props();
 
   let pressedDegree = $state<number | null>(null);
   let activeStopFns: Array<() => void> = [];
   let activePcs: number[] = [];
+  let activeMidis: number[] = [];
 
   function chordName(chord: DiatonicChord): string {
     const root = NOTE_NAMES[chord.rootPc];
@@ -35,6 +40,8 @@
     activeStopFns = [];
     for (const pc of activePcs) removePlayingPc(pc);
     activePcs = [];
+    for (const midi of activeMidis) removePlayingMidi?.(midi);
+    activeMidis = [];
   }
 
   function startChord(chord: DiatonicChord) {
@@ -48,7 +55,9 @@
       const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
       activeStopFns.push(stopFn);
       activePcs.push(pc);
+      activeMidis.push(midi);
       addPlayingPc(pc);
+      addPlayingMidi?.(midi);
     });
   }
 
