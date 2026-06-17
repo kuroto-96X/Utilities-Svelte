@@ -10,6 +10,7 @@
   import PianoKeyboard from '$lib/components/PianoKeyboard.svelte';
   import BpmSlider from '$lib/components/BpmSlider.svelte';
   import DiatonicChordPanel from '$lib/components/DiatonicChordPanel.svelte';
+  import ProgressionPlayer from '$lib/components/ProgressionPlayer.svelte';
 
   let rootId = $state('C');
   let mode = $state<'scale' | 'chord'>('scale');
@@ -19,7 +20,7 @@
   let anchorToRoot = $state(false);
   let playingPcs = $state(new Set<number>());
 
-  let progressionPlayerRef: { stop: () => void } | null = null;
+  let progressionStopCount = $state(0);
 
   const root = $derived(ROOTS.find(r => r.id === rootId)!);
   const currentIntervals = $derived(
@@ -35,11 +36,11 @@
 
   $effect(() => {
     rootId; scaleId; chordId; mode; bpm;
-    progressionPlayerRef?.stop();
+    progressionStopCount += 1;
   });
 
   function playMain() {
-    progressionPlayerRef?.stop();
+    progressionStopCount += 1;
     const ctx = getAudioContext();
     const now = ctx.currentTime;
 
@@ -125,10 +126,17 @@
           {bpm}
           {addPlayingPc}
           {removePlayingPc}
-          stopProgression={() => progressionPlayerRef?.stop()}
+          stopProgression={() => { progressionStopCount += 1; }}
+        />
+        <ProgressionPlayer
+          {diatonicChords}
+          {bpm}
+          {addPlayingPc}
+          {removePlayingPc}
+          stopCount={progressionStopCount}
         />
       {/if}
-      <!-- ProgressionPlayer, MelodyGenerator -->
+      <!-- MelodyGenerator -->
     </div>
   </div>
 </div>
