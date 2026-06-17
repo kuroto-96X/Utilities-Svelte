@@ -62,8 +62,8 @@ export const CHORDS: ScaleOrChord[] = CHORD_GROUPS.flatMap(g => g.items);
 export interface Progression { id: string; label: string; degrees: number[]; }
 export const PROGRESSIONS: Progression[] = [
   { id: 'kingRoad',   label: '王道進行（IV-V-iii-vi）',   degrees: [3,4,2,5] },
-  { id: 'canon',      label: 'カノン進行',                 degrees: [0,4,5,2,3,0,3,4] },
+  { id: 'canon',      label: 'カノン進行（I-V-vi-iii-IV-I-IV-V）', degrees: [0,4,5,2,3,0,3,4] },
   { id: 'axis',       label: 'ポップパンク（I-V-vi-IV）',  degrees: [0,4,5,3] },
   { id: 'fifties',    label: '50年代進行（I-vi-IV-V）',    degrees: [0,5,3,4] },
-  { id: 'twoFiveOne', label: 'ジャズ ii-V-I',              degrees: [1,4,0] },
+  { id: 'twoFiveOne', label: 'ジャズ（ii-V-I）',            degrees: [1,4,0] },
 ];

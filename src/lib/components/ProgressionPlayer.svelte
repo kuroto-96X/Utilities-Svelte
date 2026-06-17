@@ -2,7 +2,7 @@
 <script lang="ts">
   import type { DiatonicChord } from '$lib/diatonicChords';
   import { PROGRESSIONS } from '$lib/scaleData';
-  import { getAudioContext, playNoteAt } from '$lib/audioEngine';
+  import { getAudioContext, startNoteAt } from '$lib/audioEngine';
 
   let {
     diatonicChords,
@@ -20,16 +20,22 @@
 
   let activeProgId = $state<string | null>(null);
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let activeChordStopFns: Array<() => void> = [];
+  let activeChordPcs: number[] = [];
+
+  function stopCurrentChord() {
+    for (const fn of activeChordStopFns) fn();
+    activeChordStopFns = [];
+    for (const pc of activeChordPcs) removePlayingPc(pc);
+    activeChordPcs = [];
+  }
 
   function stopInternal() {
     activeProgId = null;
-    if (timeoutId !== null) {
-      clearTimeout(timeoutId);
-      timeoutId = null;
-    }
+    if (timeoutId !== null) { clearTimeout(timeoutId); timeoutId = null; }
+    stopCurrentChord();
   }
 
-  // stopCount が変化したら停止
   $effect(() => {
     stopCount;
     stopInternal();
@@ -39,9 +45,10 @@
     if (activeProgId !== progId) return;
 
     const ctx = getAudioContext();
-    const now = ctx.currentTime;
     const STEP_SPACING = (60 / bpm) * 2;
-    const CHORD_DURATION = STEP_SPACING * 0.9;
+
+    // 前のコードを停止して次のコードを開始（サステイン）
+    stopCurrentChord();
 
     const degree = degrees[stepIndex % degrees.length];
     const chord = diatonicChords[degree];
@@ -49,9 +56,10 @@
       chord.intervals.forEach(interval => {
         const midi = 60 + chord.rootPc + interval;
         const pc = (chord.rootPc + interval) % 12;
-        playNoteAt(ctx, midi, CHORD_DURATION, now);
+        const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
+        activeChordStopFns.push(stopFn);
+        activeChordPcs.push(pc);
         addPlayingPc(pc);
-        setTimeout(() => removePlayingPc(pc), CHORD_DURATION * 1000);
       });
     }
 

@@ -2,7 +2,7 @@
 <script lang="ts">
   import { calculateNoteDurations } from '$lib/noteDuration';
   import { NOTE_NAMES } from '$lib/scaleData';
-  import { getAudioContext, playNoteAt } from '$lib/audioEngine';
+  import { getAudioContext, startNoteAt } from '$lib/audioEngine';
 
   let {
     intervals,
@@ -68,21 +68,36 @@
     if (isPlaying) return;
     isPlaying = true;
     const ctx = getAudioContext();
-    const now = ctx.currentTime;
-    let startTime = now;
-    let totalDuration = 0;
-    seq.forEach(note => {
+    let activeStopFn: (() => void) | null = null;
+    let activePc: number | null = null;
+    let stepIdx = 0;
+
+    function playNextNote() {
+      // 前の音を停止
+      activeStopFn?.();
+      if (activePc !== null) removePlayingPc(activePc);
+      activeStopFn = null;
+      activePc = null;
+
+      if (stepIdx >= seq.length) {
+        isPlaying = false;
+        return;
+      }
+
+      const note = seq[stepIdx];
       const midi = 60 + rootPc + note.interval;
       const pc = note.pc;
-      const dur = note.duration * 0.9;
-      playNoteAt(ctx, midi, dur, startTime);
-      const t = (startTime - now) * 1000;
-      setTimeout(() => addPlayingPc(pc), t);
-      setTimeout(() => removePlayingPc(pc), t + dur * 1000);
-      startTime += note.duration;
-      totalDuration += note.duration;
-    });
-    setTimeout(() => { isPlaying = false; }, totalDuration * 1000 + 200);
+
+      const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
+      activeStopFn = stopFn;
+      activePc = pc;
+      addPlayingPc(pc);
+
+      stepIdx++;
+      setTimeout(playNextNote, note.duration * 1000);
+    }
+
+    playNextNote();
   }
 
   function handleGenerate() {

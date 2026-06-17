@@ -5,7 +5,7 @@
   import { buildKeyboardWindow } from '$lib/pianoLayout';
   import { buildDiatonicChords } from '$lib/diatonicChords';
   import { DEFAULT_BPM } from '$lib/noteDuration';
-  import { getAudioContext, playNoteAt } from '$lib/audioEngine';
+  import { getAudioContext, startNoteAt } from '$lib/audioEngine';
   import RootSelector from '$lib/components/RootSelector.svelte';
   import ScaleChordSelector from '$lib/components/ScaleChordSelector.svelte';
   import PianoKeyboard from '$lib/components/PianoKeyboard.svelte';
@@ -24,6 +24,7 @@
   let playingPcs = $state(new Set<number>());
   let progressionStopCount = $state(0);
   let playId = 0;
+  let currentPlayStopFns: Array<() => void> = [];
 
   const root = $derived(ROOTS.find(r => r.id === rootId)!);
   const currentIntervals = $derived(
@@ -37,6 +38,11 @@
   function addPlayingPc(pc: number) { playingPcs = new Set(playingPcs).add(pc); }
   function removePlayingPc(pc: number) { const s = new Set(playingPcs); s.delete(pc); playingPcs = s; }
 
+  function stopAllCurrentNotes() {
+    for (const fn of currentPlayStopFns) fn();
+    currentPlayStopFns = [];
+  }
+
   $effect(() => {
     rootId; scaleId; chordId; mode; bpm;
     untrack(() => { progressionStopCount += 1; });
@@ -46,32 +52,52 @@
     progressionStopCount += 1;
     playId++;
     const myId = playId;
+
+    stopAllCurrentNotes();
     playingPcs = new Set();
 
     const ctx = getAudioContext();
-    const now = ctx.currentTime;
 
     if (mode === 'chord') {
-      const duration = (60 / bpm) * 2;
+      // コード：全音を同時に鳴らし、次の再生まで持続
       currentIntervals.forEach(interval => {
         const midi = 60 + root.pc + interval;
         const pc = (root.pc + interval) % 12;
-        playNoteAt(ctx, midi, duration, now);
+        const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
+        currentPlayStopFns.push(stopFn);
         addPlayingPc(pc);
-        setTimeout(() => { if (playId === myId) removePlayingPc(pc); }, duration * 1000);
       });
     } else {
+      // スケール：各音を次の音が始まるまで持続
       const seq = [...currentIntervals, ...currentIntervals.slice(0, -1).reverse()];
       const SPACING = (60 / bpm) * 0.5;
-      const duration = SPACING * 0.85;
-      seq.forEach((interval, i) => {
+      let activeStopFn: (() => void) | null = null;
+      let activePc: number | null = null;
+
+      function playScaleStep(stepIdx: number) {
+        // 前の音を停止
+        activeStopFn?.();
+        if (activePc !== null) removePlayingPc(activePc);
+        activeStopFn = null;
+        activePc = null;
+
+        if (playId !== myId) return; // 別の再生が始まったらキャンセル
+        if (stepIdx >= seq.length) return; // 終了
+
+        const interval = seq[stepIdx];
         const midi = 60 + root.pc + interval;
         const pc = (root.pc + interval) % 12;
-        const startTime = now + i * SPACING;
-        playNoteAt(ctx, midi, duration, startTime);
-        setTimeout(() => { if (playId === myId) addPlayingPc(pc); }, i * SPACING * 1000);
-        setTimeout(() => { if (playId === myId) removePlayingPc(pc); }, (i * SPACING + duration) * 1000);
-      });
+
+        const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
+        activeStopFn = stopFn;
+        activePc = pc;
+        currentPlayStopFns.push(stopFn);
+        addPlayingPc(pc);
+
+        setTimeout(() => playScaleStep(stepIdx + 1), SPACING * 1000);
+      }
+
+      playScaleStep(0);
     }
   }
 </script>
@@ -137,7 +163,9 @@
 
       {#if diatonicChords}
         <DiatonicChordPanel
-          {diatonicChords} {bpm} {addPlayingPc} {removePlayingPc}
+          {diatonicChords}
+          {addPlayingPc}
+          {removePlayingPc}
           stopProgression={() => { progressionStopCount += 1; }}
         />
         <ProgressionPlayer

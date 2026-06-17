@@ -1,34 +1,49 @@
 <!-- src/lib/components/DiatonicChordPanel.svelte -->
 <script lang="ts">
   import type { DiatonicChord } from '$lib/diatonicChords';
-  import { getAudioContext, playNoteAt } from '$lib/audioEngine';
+  import { getAudioContext, startNoteAt } from '$lib/audioEngine';
 
   let {
     diatonicChords,
-    bpm,
     addPlayingPc,
     removePlayingPc,
     stopProgression,
   }: {
     diatonicChords: DiatonicChord[];
-    bpm: number;
     addPlayingPc: (pc: number) => void;
     removePlayingPc: (pc: number) => void;
     stopProgression: () => void;
   } = $props();
 
-  function playChord(chord: DiatonicChord) {
+  let pressedDegree = $state<number | null>(null);
+  let activeStopFns: Array<() => void> = [];
+  let activePcs: number[] = [];
+
+  function stopCurrentChord() {
+    for (const fn of activeStopFns) fn();
+    activeStopFns = [];
+    for (const pc of activePcs) removePlayingPc(pc);
+    activePcs = [];
+  }
+
+  function startChord(chord: DiatonicChord) {
     stopProgression();
+    stopCurrentChord();
+    pressedDegree = chord.degreeIndex;
     const ctx = getAudioContext();
-    const duration = (60 / bpm) * 2;
-    const now = ctx.currentTime;
     chord.intervals.forEach(interval => {
       const midi = 60 + chord.rootPc + interval;
       const pc = (chord.rootPc + interval) % 12;
-      playNoteAt(ctx, midi, duration, now);
+      const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
+      activeStopFns.push(stopFn);
+      activePcs.push(pc);
       addPlayingPc(pc);
-      setTimeout(() => removePlayingPc(pc), duration * 1000);
     });
+  }
+
+  function stopChord() {
+    pressedDegree = null;
+    stopCurrentChord();
   }
 </script>
 
@@ -37,8 +52,15 @@
   <div class="flex flex-wrap gap-2">
     {#each diatonicChords as chord}
       <button
-        class="px-3 py-2 text-sm rounded bg-gray-700 hover:bg-gray-600 text-gray-200 font-mono"
-        onclick={() => playChord(chord)}
+        class="px-3 py-2 text-sm rounded font-mono
+          {pressedDegree === chord.degreeIndex
+            ? 'bg-teal-500 text-white'
+            : 'bg-gray-700 hover:bg-gray-600 text-gray-200'}"
+        style="touch-action: none;"
+        onpointerdown={() => startChord(chord)}
+        onpointerup={stopChord}
+        onpointerleave={stopChord}
+        onpointercancel={stopChord}
         title="{chord.roman} ({chord.quality})"
       >
         {chord.roman}

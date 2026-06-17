@@ -24,6 +24,29 @@ export function playNoteAt(audioCtx: AudioContext, midi: number, duration: numbe
   osc.stop(startTime + duration + 0.02);
 }
 
+// 次の音が再生されるまで同じ音量で鳴らし続けるサステイン版。返り値の関数で停止。
+export function startNoteAt(audioCtx: AudioContext, midi: number, startTime: number): () => void {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.value = freqFromMidi(midi);
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.exponentialRampToValueAtTime(0.2, startTime + 0.012);
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(startTime);
+  let stopped = false;
+  return () => {
+    if (stopped) return;
+    stopped = true;
+    const t = audioCtx.currentTime;
+    gain.gain.cancelScheduledValues(t);
+    gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+    osc.stop(t + 0.06);
+    setTimeout(() => { osc.disconnect(); gain.disconnect(); }, 100);
+  };
+}
+
 export function startNote(midi: number): () => void {
   const audioCtx = getAudioContext();
   const osc = audioCtx.createOscillator();
