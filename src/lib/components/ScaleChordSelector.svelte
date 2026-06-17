@@ -15,14 +15,14 @@
 		<button
 			class="flex-1 py-1.5 text-sm rounded
 				{mode === 'scale' ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-			onclick={() => { mode = 'scale'; onstop?.(); }}
+			onclick={() => { mode = 'scale'; onchange?.(); }}
 		>
 			スケール
 		</button>
 		<button
 			class="flex-1 py-1.5 text-sm rounded
 				{mode === 'chord' ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-			onclick={() => { mode = 'chord'; onstop?.(); }}
+			onclick={() => { mode = 'chord'; onchange?.(); }}
 		>
 			コード
 		</button>

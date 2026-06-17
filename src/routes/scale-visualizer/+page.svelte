@@ -75,7 +75,7 @@
         currentPlayStopFns.push(stopFn);
         addPlayingPc(pc);
       });
-      const wholeDuration = (60 / bpm) * 4;
+      const wholeDuration = (60 / bpm) * 2;
       setTimeout(() => {
         if (playId !== myId) return;
         stopAllCurrentNotes();
@@ -166,6 +166,7 @@
             totalWidth={keyboard.totalWidth}
             intervals={currentIntervals}
             rootPc={root.pc}
+            startSemitone={anchorToRoot ? root.pc : 0}
             {playingPcs}
             {addPlayingPc}
             {removePlayingPc}
@@ -183,6 +184,11 @@
 
       <div class="ad-slot--in-content"></div>
 
+      <MelodyGenerator
+        intervals={currentIntervals}
+        rootPc={root.pc}
+        {bpm} {addPlayingPc} {removePlayingPc}
+      />
       {#if diatonicChords}
         <DiatonicChordPanel
           {diatonicChords}
@@ -195,11 +201,6 @@
           stopCount={progressionStopCount}
         />
       {/if}
-      <MelodyGenerator
-        intervals={currentIntervals}
-        rootPc={root.pc}
-        {bpm} {addPlayingPc} {removePlayingPc}
-      />
     </div>
   </div>
 </div>

@@ -2,6 +2,7 @@
 <script lang="ts">
   import type { LayoutKey } from '$lib/pianoLayout';
   import { WHITE_W, WHITE_H, BLACK_W, BLACK_H, TOTAL_WIDTH } from '$lib/pianoLayout';
+  import { NOTE_NAMES } from '$lib/scaleData';
   import { startNote } from '$lib/audioEngine';
 
   let {
@@ -13,6 +14,7 @@
     addPlayingPc,
     removePlayingPc,
     totalWidth = TOTAL_WIDTH,
+    startSemitone = 0,
   }: {
     whiteKeys: LayoutKey[];
     blackKeys: LayoutKey[];
@@ -22,11 +24,16 @@
     addPlayingPc: (pc: number) => void;
     removePlayingPc: (pc: number) => void;
     totalWidth?: number;
+    startSemitone?: number;
   } = $props();
 
   const scalePcs = $derived(new Set(intervals.map(i => (rootPc + i) % 12)));
 
   const stopFns = new Map<number, () => void>();
+
+  function keyOctave(windowIndex: number): number {
+    return Math.floor((60 + startSemitone + windowIndex) / 12) - 1;
+  }
 
   function handlePointerDown(key: LayoutKey) {
     addPlayingPc(key.pc);
@@ -63,11 +70,20 @@
     {#if isRoot}
       <circle
         cx={key.x + (WHITE_W - 1) / 2}
-        cy={WHITE_H - 12}
+        cy={WHITE_H - 20}
         r={5}
         fill="#14b8a6"
       />
     {/if}
+    <text
+      x={key.x + (WHITE_W - 1) / 2}
+      y={WHITE_H - 6}
+      text-anchor="middle"
+      font-size="10"
+      fill="#374151"
+      font-family="monospace"
+      pointer-events="none"
+    >{NOTE_NAMES[key.pc]}{keyOctave(key.windowIndex)}</text>
   {/each}
 
   <!-- 黒鍵ベース -->
@@ -86,11 +102,20 @@
     {#if isRoot}
       <circle
         cx={key.x + BLACK_W / 2}
-        cy={BLACK_H - 10}
+        cy={BLACK_H - 18}
         r={4}
         fill="#14b8a6"
       />
     {/if}
+    <text
+      x={key.x + BLACK_W / 2}
+      y={BLACK_H - 6}
+      text-anchor="middle"
+      font-size="8"
+      fill={inScale ? '#99f6e4' : '#9ca3af'}
+      font-family="monospace"
+      pointer-events="none"
+    >{NOTE_NAMES[key.pc]}</text>
   {/each}
 
   <!-- アクティブリング（最前面・opacity影響を受けない） -->
@@ -121,7 +146,9 @@
 
   <!-- オクターブ区切り -->
   {#each Array.from({length: Math.round(totalWidth / TOTAL_WIDTH) - 1}, (_, i) => (i + 1) * TOTAL_WIDTH) as x}
-    <line x1={x} y1={0} x2={x} y2={WHITE_H} stroke="#6b7280" stroke-width="1.5" />
+    <line x1={x} y1={0} x2={x} y2={WHITE_H}
+      stroke={playingPcs.size > 0 ? '#f59e0b' : '#6b7280'}
+      stroke-width="2" />
   {/each}
 
   <!-- ポインターターゲット（透明）白鍵→黒鍵の順で黒鍵が前面 -->

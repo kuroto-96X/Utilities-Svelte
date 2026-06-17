@@ -204,59 +204,62 @@
     {/if}
   </div>
 
-  <!-- 生成結果チップ -->
+  <!-- 生成結果：チップ（左）＋ピアノロール（右） -->
   {#if cachedMelody}
-    <div class="flex flex-wrap gap-1">
-      {#each cachedMelody as note, i}
-        <span class="px-1.5 py-0.5 text-xs rounded font-mono
-          {currentNoteIdx === i ? 'bg-teal-500 text-white' : 'bg-gray-700 text-gray-300'}">
-          {NOTE_NAMES[note.pc]}{i === cachedMelody.length - 1 ? ' 🏠' : ''}
-        </span>
-      {/each}
-    </div>
-  {/if}
+    <div class="flex flex-col md:flex-row gap-3 items-start">
+      <!-- ノートチップ -->
+      <div class="flex flex-wrap gap-1 md:max-w-[180px] flex-shrink-0">
+        {#each cachedMelody as note, i}
+          <span class="px-1.5 py-0.5 text-xs rounded font-mono
+            {currentNoteIdx === i ? 'bg-teal-500 text-white' : 'bg-gray-700 text-gray-300'}">
+            {NOTE_NAMES[note.pc]}{i === cachedMelody.length - 1 ? ' 🏠' : ''}
+          </span>
+        {/each}
+      </div>
 
-  <!-- ピアノロール -->
-  {#if rollNotes && rollNotes.length > 0}
-    {@const midiValues = rollNotes.map(n => n.midi)}
-    {@const minMidi = Math.min(...midiValues)}
-    {@const maxMidi = Math.max(...midiValues)}
-    {@const totalDur = rollNotes[rollNotes.length - 1].end}
-    {@const ROW_H = 14}
-    {@const LABEL_W = 26}
-    {@const rollW = Math.max(totalDur * 80, 200)}
-    {@const pitchRange = maxMidi - minMidi + 1}
-    <div class="overflow-x-auto mt-1">
-      <svg width={rollW + LABEL_W} height={pitchRange * ROW_H} style="display: block;">
-        <!-- 行背景 -->
-        {#each Array.from({length: pitchRange}, (_, i) => maxMidi - i) as midi, rowIdx}
-          {@const pc = ((midi % 12) + 12) % 12}
-          {@const isBlack = [1,3,6,8,10].includes(pc)}
-          <rect x={0} y={rowIdx * ROW_H} width={LABEL_W + rollW} height={ROW_H}
-            fill={isBlack ? '#1a1f2e' : '#111827'} />
-          <text x={LABEL_W - 3} y={rowIdx * ROW_H + ROW_H - 3}
-            text-anchor="end" font-size="9" fill="#6b7280" font-family="monospace">
-            {NOTE_NAMES[pc]}
-          </text>
-        {/each}
-        <!-- 行境界線 -->
-        {#each Array.from({length: pitchRange + 1}, (_, i) => i * ROW_H) as y}
-          <line x1={LABEL_W} y1={y} x2={LABEL_W + rollW} y2={y} stroke="#1f2937" stroke-width="1" />
-        {/each}
-        <!-- ノート矩形 -->
-        {#each rollNotes as rn, i}
-          {@const rowIdx = maxMidi - rn.midi}
-          {@const x = LABEL_W + (rn.start / totalDur) * rollW}
-          {@const w = ((rn.end - rn.start) / totalDur) * rollW}
-          <rect
-            x={x + 1} y={rowIdx * ROW_H + 1}
-            width={Math.max(w - 2, 1)} height={ROW_H - 2}
-            fill={currentNoteIdx === i ? '#5eead4' : '#14b8a6'}
-            rx={2}
-            opacity={currentNoteIdx === i ? 1 : 0.8}
-          />
-        {/each}
-      </svg>
+      <!-- ピアノロール -->
+      {#if rollNotes && rollNotes.length > 0}
+        {@const midiValues = rollNotes.map(n => n.midi)}
+        {@const minMidi = Math.min(...midiValues)}
+        {@const maxMidi = Math.max(...midiValues)}
+        {@const totalDur = rollNotes[rollNotes.length - 1].end}
+        {@const ROW_H = 14}
+        {@const LABEL_W = 26}
+        {@const rollW = Math.max(totalDur * 80, 200)}
+        {@const pitchRange = maxMidi - minMidi + 1}
+        <div class="overflow-x-auto flex-1 min-w-0">
+          <svg width={rollW + LABEL_W} height={pitchRange * ROW_H} style="display: block;">
+            <!-- 行背景 -->
+            {#each Array.from({length: pitchRange}, (_, i) => maxMidi - i) as midi, rowIdx}
+              {@const pc = ((midi % 12) + 12) % 12}
+              {@const isBlack = [1,3,6,8,10].includes(pc)}
+              <rect x={0} y={rowIdx * ROW_H} width={LABEL_W + rollW} height={ROW_H}
+                fill={isBlack ? '#1a1f2e' : '#111827'} />
+              <text x={LABEL_W - 3} y={rowIdx * ROW_H + ROW_H - 3}
+                text-anchor="end" font-size="9" fill="#6b7280" font-family="monospace">
+                {NOTE_NAMES[pc]}
+              </text>
+            {/each}
+            <!-- 行境界線 -->
+            {#each Array.from({length: pitchRange + 1}, (_, i) => i * ROW_H) as y}
+              <line x1={LABEL_W} y1={y} x2={LABEL_W + rollW} y2={y} stroke="#1f2937" stroke-width="1" />
+            {/each}
+            <!-- ノート矩形 -->
+            {#each rollNotes as rn, i}
+              {@const rowIdx = maxMidi - rn.midi}
+              {@const x = LABEL_W + (rn.start / totalDur) * rollW}
+              {@const w = ((rn.end - rn.start) / totalDur) * rollW}
+              <rect
+                x={x + 1} y={rowIdx * ROW_H + 1}
+                width={Math.max(w - 2, 1)} height={ROW_H - 2}
+                fill={currentNoteIdx === i ? '#5eead4' : '#14b8a6'}
+                rx={2}
+                opacity={currentNoteIdx === i ? 1 : 0.8}
+              />
+            {/each}
+          </svg>
+        </div>
+      {/if}
     </div>
   {/if}
 </div>

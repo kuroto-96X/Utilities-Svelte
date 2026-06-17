@@ -2,6 +2,7 @@
 <script lang="ts">
   import type { DiatonicChord } from '$lib/diatonicChords';
   import { PROGRESSIONS } from '$lib/scaleData';
+  import { NOTE_NAMES } from '$lib/scaleData';
   import { getAudioContext, startNoteAt } from '$lib/audioEngine';
 
   let {
@@ -22,6 +23,18 @@
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   let activeChordStopFns: Array<() => void> = [];
   let activeChordPcs: number[] = [];
+
+  function chordNameForDegree(degree: number): string {
+    const chord = diatonicChords[degree];
+    if (!chord) return '?';
+    const root = NOTE_NAMES[chord.rootPc];
+    switch (chord.quality) {
+      case 'min': return root + 'm';
+      case 'dim': return root + 'dim';
+      case 'aug': return root + '+';
+      default: return root;
+    }
+  }
 
   function stopCurrentChord() {
     for (const fn of activeChordStopFns) fn();
@@ -47,7 +60,6 @@
     const ctx = getAudioContext();
     const STEP_SPACING = (60 / bpm) * 2;
 
-    // 前のコードを停止して次のコードを開始（サステイン）
     stopCurrentChord();
 
     const degree = degrees[stepIndex % degrees.length];
@@ -90,7 +102,10 @@
             : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
         onclick={() => toggleProgression(prog)}
       >
-        {activeProgId === prog.id ? '⏹ ' : '▶ '}{prog.label}
+        <span class="block">{activeProgId === prog.id ? '⏹ ' : '▶ '}{prog.label}</span>
+        <span class="block text-xs opacity-60 font-mono mt-0.5">
+          {prog.degrees.map(d => chordNameForDegree(d)).join(' → ')}
+        </span>
       </button>
     {/each}
   </div>
