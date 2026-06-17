@@ -9,6 +9,7 @@
   import ScaleChordSelector from '$lib/components/ScaleChordSelector.svelte';
   import PianoKeyboard from '$lib/components/PianoKeyboard.svelte';
   import BpmSlider from '$lib/components/BpmSlider.svelte';
+  import DiatonicChordPanel from '$lib/components/DiatonicChordPanel.svelte';
 
   let rootId = $state('C');
   let mode = $state<'scale' | 'chord'>('scale');
@@ -118,8 +119,16 @@
 
       <div class="ad-slot--in-content"></div>
 
-      <!-- 以降のTaskで追加するコンポーネントのプレースホルダー -->
-      <!-- DiatonicChordPanel, ProgressionPlayer, MelodyGenerator -->
+      {#if diatonicChords}
+        <DiatonicChordPanel
+          {diatonicChords}
+          {bpm}
+          {addPlayingPc}
+          {removePlayingPc}
+          stopProgression={() => progressionPlayerRef?.stop()}
+        />
+      {/if}
+      <!-- ProgressionPlayer, MelodyGenerator -->
     </div>
   </div>
 </div>
