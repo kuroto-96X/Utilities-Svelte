@@ -33,6 +33,13 @@ export const site = {
       category: 'music',
     },
     {
+      href: "/scale-visualizer",
+      label: "スケールビジュアライザー(開発中)",
+      description: "スケール・コードを鍵盤で確認し、コード進行やメロディを試せるツール",
+      visible: true,
+      category: 'music',
+    },
+    {
       href: "/hepburn-converter",
       label: "ヘボン式変換",
       description: "日本語をヘボン式ローマ字に変換するツール",
