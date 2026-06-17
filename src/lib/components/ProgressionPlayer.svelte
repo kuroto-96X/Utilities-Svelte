@@ -1,8 +1,8 @@
 <!-- src/lib/components/ProgressionPlayer.svelte -->
 <script lang="ts">
   import type { DiatonicChord } from '$lib/diatonicChords';
-  import { PROGRESSIONS } from '$lib/scaleData';
-  import { NOTE_NAMES } from '$lib/scaleData';
+  import { PROGRESSIONS, CHROMATIC_PROGRESSIONS, NOTE_NAMES } from '$lib/scaleData';
+  import type { Progression, ChromaticProgression } from '$lib/scaleData';
   import { getAudioContext, startNoteAt } from '$lib/audioEngine';
 
   let {
@@ -19,10 +19,24 @@
     stopCount?: number;
   } = $props();
 
-  let activeProgId = $state<string | null>(null);
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  let activeChordStopFns: Array<() => void> = [];
-  let activeChordPcs: number[] = [];
+  type AnyProg = Progression | ChromaticProgression;
+
+  function isChromatic(p: AnyProg): p is ChromaticProgression {
+    return 'steps' in p;
+  }
+
+  // ---- コード名ヘルパー ----
+
+  function qualitySuffix(intervals: number[]): string {
+    const has = (n: number) => intervals.includes(n);
+    if (has(9) && has(6) && has(3))  return 'dim7';
+    if (has(11) && has(7) && has(4)) return 'maj7';
+    if (has(10) && has(7) && has(4)) return '7';
+    if (has(10) && has(7) && has(3)) return 'm7';
+    if (has(6)  && has(3))           return 'dim';
+    if (has(7)  && has(3))           return 'm';
+    return '';
+  }
 
   function chordNameForDegree(degree: number): string {
     const chord = diatonicChords[degree];
@@ -32,9 +46,30 @@
       case 'min': return root + 'm';
       case 'dim': return root + 'dim';
       case 'aug': return root + '+';
-      default: return root;
+      default:    return root;
     }
   }
+
+  function chromaticChordNames(prog: ChromaticProgression): string {
+    const keyRoot = diatonicChords[0]?.rootPc ?? 0;
+    return prog.steps.map(s => {
+      const rootPc = ((keyRoot + s.semitone) % 12 + 12) % 12;
+      return NOTE_NAMES[rootPc] + qualitySuffix(s.intervals);
+    }).join(' → ');
+  }
+
+  function progSubLabel(prog: AnyProg): string {
+    return isChromatic(prog)
+      ? chromaticChordNames(prog)
+      : prog.degrees.map(d => chordNameForDegree(d)).join(' → ');
+  }
+
+  // ---- 再生ロジック ----
+
+  let activeProgId = $state<string | null>(null);
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let activeChordStopFns: Array<() => void> = [];
+  let activeChordPcs: number[] = [];
 
   function stopCurrentChord() {
     for (const fn of activeChordStopFns) fn();
@@ -54,7 +89,7 @@
     stopInternal();
   });
 
-  function playStep(progId: string, degrees: number[], stepIndex: number) {
+  function playStep(progId: string, prog: AnyProg, stepIndex: number) {
     if (activeProgId !== progId) return;
 
     const ctx = getAudioContext();
@@ -62,38 +97,55 @@
 
     stopCurrentChord();
 
-    const degree = degrees[stepIndex % degrees.length];
-    const chord = diatonicChords[degree];
-    if (chord) {
-      chord.intervals.forEach(interval => {
-        const midi = 60 + chord.rootPc + interval;
-        const pc = (chord.rootPc + interval) % 12;
+    if (isChromatic(prog)) {
+      const step = prog.steps[stepIndex % prog.steps.length];
+      const keyRoot = ((diatonicChords[0]?.rootPc ?? 0) + 120);
+      const chordRoot = (keyRoot + step.semitone) % 12;
+      step.intervals.forEach(interval => {
+        const midi = 60 + chordRoot + interval;
+        const pc = (chordRoot + interval) % 12;
         const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
         activeChordStopFns.push(stopFn);
         activeChordPcs.push(pc);
         addPlayingPc(pc);
       });
+    } else {
+      const degree = prog.degrees[stepIndex % prog.degrees.length];
+      const chord = diatonicChords[degree];
+      if (chord) {
+        chord.intervals.forEach(interval => {
+          const midi = 60 + chord.rootPc + interval;
+          const pc = (chord.rootPc + interval) % 12;
+          const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
+          activeChordStopFns.push(stopFn);
+          activeChordPcs.push(pc);
+          addPlayingPc(pc);
+        });
+      }
     }
 
     timeoutId = setTimeout(() => {
-      playStep(progId, degrees, stepIndex + 1);
+      playStep(progId, prog, stepIndex + 1);
     }, STEP_SPACING * 1000);
   }
 
-  function toggleProgression(prog: (typeof PROGRESSIONS)[number]) {
+  function toggleProgression(prog: AnyProg) {
     if (activeProgId === prog.id) {
       stopInternal();
     } else {
       stopInternal();
       activeProgId = prog.id;
-      playStep(prog.id, prog.degrees, 0);
+      playStep(prog.id, prog, 0);
     }
   }
 </script>
 
 <div>
   <p class="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">コード進行プリセット</p>
-  <div class="space-y-1">
+
+  <!-- ダイアトニック -->
+  <p class="text-xs text-gray-500 mb-1">ダイアトニック</p>
+  <div class="space-y-1 mb-3">
     {#each PROGRESSIONS as prog}
       <button
         class="w-full text-left px-3 py-2 text-sm rounded
@@ -103,9 +155,24 @@
         onclick={() => toggleProgression(prog)}
       >
         <span class="block">{activeProgId === prog.id ? '⏹ ' : '▶ '}{prog.label}</span>
-        <span class="block text-xs opacity-60 font-mono mt-0.5">
-          {prog.degrees.map(d => chordNameForDegree(d)).join(' → ')}
-        </span>
+        <span class="block text-xs opacity-60 font-mono mt-0.5">{progSubLabel(prog)}</span>
+      </button>
+    {/each}
+  </div>
+
+  <!-- クロマティック -->
+  <p class="text-xs text-gray-500 mb-1">クロマティック</p>
+  <div class="space-y-1">
+    {#each CHROMATIC_PROGRESSIONS as prog}
+      <button
+        class="w-full text-left px-3 py-2 text-sm rounded
+          {activeProgId === prog.id
+            ? 'bg-orange-600 text-white'
+            : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+        onclick={() => toggleProgression(prog)}
+      >
+        <span class="block">{activeProgId === prog.id ? '⏹ ' : '▶ '}{prog.label}</span>
+        <span class="block text-xs opacity-60 font-mono mt-0.5">{progSubLabel(prog)}</span>
       </button>
     {/each}
   </div>

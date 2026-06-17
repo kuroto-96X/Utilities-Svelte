@@ -61,9 +61,117 @@ export const CHORDS: ScaleOrChord[] = CHORD_GROUPS.flatMap(g => g.items);
 
 export interface Progression { id: string; label: string; degrees: number[]; }
 export const PROGRESSIONS: Progression[] = [
-  { id: 'kingRoad',   label: '王道進行（IV-V-iii-vi）',   degrees: [3,4,2,5] },
+  // 既存
+  { id: 'kingRoad',   label: '王道進行（IV-V-iii-vi）',          degrees: [3,4,2,5] },
   { id: 'canon',      label: 'カノン進行（I-V-vi-iii-IV-I-IV-V）', degrees: [0,4,5,2,3,0,3,4] },
-  { id: 'axis',       label: 'ポップパンク（I-V-vi-IV）',  degrees: [0,4,5,3] },
-  { id: 'fifties',    label: '50年代進行（I-vi-IV-V）',    degrees: [0,5,3,4] },
-  { id: 'twoFiveOne', label: 'ジャズ（ii-V-I）',            degrees: [1,4,0] },
+  { id: 'axis',       label: 'ポップパンク（I-V-vi-IV）',         degrees: [0,4,5,3] },
+  { id: 'fifties',    label: '50年代進行（I-vi-IV-V）',           degrees: [0,5,3,4] },
+  { id: 'twoFiveOne', label: 'ジャズ（ii-V-I）',                  degrees: [1,4,0] },
+  // ダイアトニック循環追加
+  { id: 'basicLoop',    label: '基本循環（I-IV-I-V）',            degrees: [0,3,0,4] },
+  { id: 'letItBe',      label: 'Let It Be系（vi-IV-I-V）',        degrees: [5,3,0,4] },
+  { id: 'minorAnthem',  label: 'マイナーアンセム（i-VI-III-VII）', degrees: [0,5,2,6] },
+  { id: 'rockLoop',     label: 'ロック往復（I-V-IV-V）',          degrees: [0,4,3,4] },
+  { id: 'jazzCircle',   label: 'ジャズ循環（I-vi-ii-V）',         degrees: [0,5,1,4] },
+];
+
+// クロマティック（スケール外の音を含む）進行
+export interface ChromaticStep {
+  semitone: number;    // キールートからの半音オフセット
+  intervals: number[]; // コードの構成音（ルートからの半音）
+  name: string;        // 理論的なコード名（表示用）
+}
+
+export interface ChromaticProgression {
+  id: string;
+  label: string;
+  steps: ChromaticStep[];
+}
+
+export const CHROMATIC_PROGRESSIONS: ChromaticProgression[] = [
+  // 3.1 セカンダリードミナント
+  {
+    id: 'secDom1',
+    label: 'セカンダリードミナント（I-V7/V-V-I）',
+    steps: [
+      { semitone: 0, intervals: [0,4,7],    name: 'I' },
+      { semitone: 2, intervals: [0,4,7,10], name: 'V7/V' },
+      { semitone: 7, intervals: [0,4,7],    name: 'V' },
+      { semitone: 0, intervals: [0,4,7],    name: 'I' },
+    ],
+  },
+  {
+    id: 'secDom2',
+    label: 'ブルース進行（I-V7/IV-IV-V7-I）',
+    steps: [
+      { semitone: 0, intervals: [0,4,7],    name: 'I' },
+      { semitone: 0, intervals: [0,4,7,10], name: 'V7/IV' },
+      { semitone: 5, intervals: [0,4,7],    name: 'IV' },
+      { semitone: 7, intervals: [0,4,7,10], name: 'V7' },
+      { semitone: 0, intervals: [0,4,7],    name: 'I' },
+    ],
+  },
+  // 3.2 借用和音
+  {
+    id: 'borrowedBVII',
+    label: '借用bVII（I-bVII-IV）',
+    steps: [
+      { semitone: 0,  intervals: [0,4,7], name: 'I' },
+      { semitone: 10, intervals: [0,4,7], name: 'bVII' },
+      { semitone: 5,  intervals: [0,4,7], name: 'IV' },
+    ],
+  },
+  {
+    id: 'borrowedIV',
+    label: '借用iv（I-iv-I）',
+    steps: [
+      { semitone: 0, intervals: [0,4,7], name: 'I' },
+      { semitone: 5, intervals: [0,3,7], name: 'iv' },
+      { semitone: 0, intervals: [0,4,7], name: 'I' },
+    ],
+  },
+  {
+    id: 'borrowedBVI',
+    label: 'クロマティックアッセント（vi-bVI-bVII-I）',
+    steps: [
+      { semitone: 9,  intervals: [0,3,7], name: 'vi' },
+      { semitone: 8,  intervals: [0,4,7], name: 'bVI' },
+      { semitone: 10, intervals: [0,4,7], name: 'bVII' },
+      { semitone: 0,  intervals: [0,4,7], name: 'I' },
+    ],
+  },
+  // 3.3 トライトーン代理
+  {
+    id: 'tritone',
+    label: 'トライトーン代理（ii7-bII7-Imaj7）',
+    steps: [
+      { semitone: 2, intervals: [0,3,7,10], name: 'ii7' },
+      { semitone: 1, intervals: [0,4,7,10], name: 'bII7' },
+      { semitone: 0, intervals: [0,4,7,11], name: 'Imaj7' },
+    ],
+  },
+  // 3.4 パッシングディミニッシュ
+  {
+    id: 'passingDim',
+    label: 'パッシングディミニッシュ（I-#I°7-ii-V-I）',
+    steps: [
+      { semitone: 0, intervals: [0,4,7],    name: 'I' },
+      { semitone: 1, intervals: [0,3,6,9],  name: '#I°7' },
+      { semitone: 2, intervals: [0,3,7],    name: 'ii' },
+      { semitone: 7, intervals: [0,4,7,10], name: 'V7' },
+      { semitone: 0, intervals: [0,4,7],    name: 'I' },
+    ],
+  },
+  // 3.5 ナポリの6度
+  {
+    id: 'neapolitan',
+    label: 'ナポリの6度（i-iv-bII-V-i）',
+    steps: [
+      { semitone: 0, intervals: [0,3,7], name: 'i' },
+      { semitone: 5, intervals: [0,3,7], name: 'iv' },
+      { semitone: 1, intervals: [0,4,7], name: 'bII' },
+      { semitone: 7, intervals: [0,4,7], name: 'V' },
+      { semitone: 0, intervals: [0,3,7], name: 'i' },
+    ],
+  },
 ];
