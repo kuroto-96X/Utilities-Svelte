@@ -1,22 +1,37 @@
 <script lang="ts">
-  import { MIN_BPM, MAX_BPM, clampBpm } from '$lib/noteDuration';
+  import { MIN_BPM, MAX_BPM, DEFAULT_BPM, clampBpm } from '$lib/noteDuration';
   let { bpm = $bindable() }: { bpm: number } = $props();
 
   const sliderPercent = $derived(((bpm - MIN_BPM) / (MAX_BPM - MIN_BPM)) * 100);
+
+  function commitInput(e: Event) {
+    const v = parseInt((e.target as HTMLInputElement).value, 10);
+    bpm = clampBpm(isNaN(v) || v < 1 ? DEFAULT_BPM : v);
+  }
 </script>
 
-<div class="flex items-center gap-3">
-  <span class="text-xs text-gray-400 w-8 flex-shrink-0">BPM</span>
+<div class="space-y-1">
+  <div class="flex items-center gap-2">
+    <span class="text-xs text-gray-400 flex-shrink-0">BPM</span>
+    <input
+      type="number"
+      min={MIN_BPM}
+      max={MAX_BPM}
+      value={bpm}
+      onchange={commitInput}
+      onkeydown={(e) => { if (e.key === 'Enter') commitInput(e); }}
+      class="w-16 px-2 py-1 text-sm bg-gray-700 text-gray-200 rounded text-center font-mono border border-gray-600 focus:outline-none focus:border-teal-500"
+    />
+  </div>
   <input
     type="range"
     min={MIN_BPM}
     max={MAX_BPM}
     value={bpm}
     oninput={(e) => (bpm = clampBpm(Number((e.target as HTMLInputElement).value)))}
-    class="flex-1 h-2 rounded-full appearance-none cursor-pointer slider-custom"
+    class="w-full h-2 rounded-full appearance-none cursor-pointer slider-custom"
     style="background: linear-gradient(to right, #14b8a6 0%, #14b8a6 {sliderPercent}%, #4b5563 {sliderPercent}%, #4b5563 100%)"
   />
-  <span class="text-sm font-mono w-10 text-right flex-shrink-0">{bpm}</span>
 </div>
 
 <style>

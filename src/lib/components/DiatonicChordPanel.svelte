@@ -1,6 +1,7 @@
 <!-- src/lib/components/DiatonicChordPanel.svelte -->
 <script lang="ts">
   import type { DiatonicChord } from '$lib/diatonicChords';
+  import { NOTE_NAMES } from '$lib/scaleData';
   import { getAudioContext, startNoteAt } from '$lib/audioEngine';
 
   let {
@@ -18,6 +19,16 @@
   let pressedDegree = $state<number | null>(null);
   let activeStopFns: Array<() => void> = [];
   let activePcs: number[] = [];
+
+  function chordName(chord: DiatonicChord): string {
+    const root = NOTE_NAMES[chord.rootPc];
+    switch (chord.quality) {
+      case 'min': return root + 'm';
+      case 'dim': return root + 'dim';
+      case 'aug': return root + '+';
+      default: return root;
+    }
+  }
 
   function stopCurrentChord() {
     for (const fn of activeStopFns) fn();
@@ -52,7 +63,7 @@
   <div class="flex flex-wrap gap-2">
     {#each diatonicChords as chord}
       <button
-        class="px-3 py-2 text-sm rounded font-mono
+        class="px-3 py-2 rounded font-mono leading-tight
           {pressedDegree === chord.degreeIndex
             ? 'bg-teal-500 text-white'
             : 'bg-gray-700 hover:bg-gray-600 text-gray-200'}"
@@ -63,7 +74,8 @@
         onpointercancel={stopChord}
         title="{chord.roman} ({chord.quality})"
       >
-        {chord.roman}
+        <span class="block text-sm">{chord.roman}</span>
+        <span class="block text-xs opacity-60">{chordName(chord)}</span>
       </button>
     {/each}
   </div>

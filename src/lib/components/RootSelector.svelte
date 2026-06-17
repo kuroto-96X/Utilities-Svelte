@@ -12,7 +12,7 @@
 					{rootId === root.id
 						? 'bg-teal-600 text-white'
 						: 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-				onclick={() => { if (rootId !== root.id) { rootId = root.id; onchange?.(); } }}
+				onclick={() => { rootId = root.id; onchange?.(); }}
 			>
 				{root.id}
 			</button>

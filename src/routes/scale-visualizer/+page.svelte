@@ -1,7 +1,7 @@
 <!-- src/routes/scale-visualizer/+page.svelte -->
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { ROOTS, SCALES, CHORDS } from '$lib/scaleData';
+  import { ROOTS, SCALES, CHORDS, NOTE_NAMES } from '$lib/scaleData';
   import { buildKeyboardWindow } from '$lib/pianoLayout';
   import { buildDiatonicChords } from '$lib/diatonicChords';
   import { DEFAULT_BPM } from '$lib/noteDuration';
@@ -43,6 +43,14 @@
     currentPlayStopFns = [];
   }
 
+  // モード切替など「停止のみ」の操作
+  function stopPlay() {
+    progressionStopCount += 1;
+    playId++;
+    stopAllCurrentNotes();
+    playingPcs = new Set();
+  }
+
   $effect(() => {
     rootId; scaleId; chordId; mode; bpm;
     untrack(() => { progressionStopCount += 1; });
@@ -59,7 +67,7 @@
     const ctx = getAudioContext();
 
     if (mode === 'chord') {
-      // コード：全音を同時に鳴らし、次の再生まで持続
+      // コード：全音を同時に鳴らし、全音符の長さで自動停止
       currentIntervals.forEach(interval => {
         const midi = 60 + root.pc + interval;
         const pc = (root.pc + interval) % 12;
@@ -67,6 +75,12 @@
         currentPlayStopFns.push(stopFn);
         addPlayingPc(pc);
       });
+      const wholeDuration = (60 / bpm) * 4;
+      setTimeout(() => {
+        if (playId !== myId) return;
+        stopAllCurrentNotes();
+        playingPcs = new Set();
+      }, wholeDuration * 1000);
     } else {
       // スケール：各音を次の音が始まるまで持続
       const seq = [...currentIntervals, ...currentIntervals.slice(0, -1).reverse()];
@@ -117,14 +131,14 @@
       </button>
       <BpmSlider bind:bpm />
       <RootSelector bind:rootId onchange={playMain} />
-      <ScaleChordSelector bind:mode bind:scaleId bind:chordId onchange={playMain} />
+      <ScaleChordSelector bind:mode bind:scaleId bind:chordId onchange={playMain} onstop={stopPlay} />
     </div>
 
     <!-- メインエリア -->
     <div class="flex-1 min-w-0 space-y-4">
       <!-- 鍵盤エリア -->
       <div class="space-y-2">
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="flex flex-wrap items-center justify-center gap-3">
           <div class="flex items-center gap-1 text-xs">
             <span class="text-gray-400">オクターブ</span>
             {#each [1, 2, 3] as o}
@@ -156,6 +170,14 @@
             {addPlayingPc}
             {removePlayingPc}
           />
+        </div>
+        <!-- 再生中の音の表示 -->
+        <div class="text-center font-mono text-sm min-h-[1.5rem]">
+          {#if playingPcs.size > 0}
+            <span class="text-teal-400">
+              {[...playingPcs].sort((a, b) => a - b).map(pc => NOTE_NAMES[pc]).join(' · ')}
+            </span>
+          {/if}
         </div>
       </div>
 

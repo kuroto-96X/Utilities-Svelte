@@ -119,6 +119,11 @@
     {/if}
   {/each}
 
+  <!-- オクターブ区切り -->
+  {#each Array.from({length: Math.round(totalWidth / TOTAL_WIDTH) - 1}, (_, i) => (i + 1) * TOTAL_WIDTH) as x}
+    <line x1={x} y1={0} x2={x} y2={WHITE_H} stroke="#6b7280" stroke-width="1.5" />
+  {/each}
+
   <!-- ポインターターゲット（透明）白鍵→黒鍵の順で黒鍵が前面 -->
   {#each whiteKeys as key (key.windowIndex)}
     <rect
