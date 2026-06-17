@@ -4,7 +4,8 @@
 		mode = $bindable(),
 		scaleId = $bindable(),
 		chordId = $bindable(),
-	}: { mode: 'scale' | 'chord'; scaleId: string; chordId: string } = $props();
+		onchange,
+	}: { mode: 'scale' | 'chord'; scaleId: string; chordId: string; onchange?: () => void } = $props();
 </script>
 
 <div>
@@ -13,14 +14,14 @@
 		<button
 			class="flex-1 py-1.5 text-sm rounded
 				{mode === 'scale' ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-			onclick={() => (mode = 'scale')}
+			onclick={() => { if (mode !== 'scale') { mode = 'scale'; onchange?.(); } }}
 		>
 			スケール
 		</button>
 		<button
 			class="flex-1 py-1.5 text-sm rounded
 				{mode === 'chord' ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-			onclick={() => (mode = 'chord')}
+			onclick={() => { if (mode !== 'chord') { mode = 'chord'; onchange?.(); } }}
 		>
 			コード
 		</button>
@@ -37,7 +38,7 @@
 							{scaleId === item.id
 								? 'bg-teal-600 text-white'
 								: 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-						onclick={() => (scaleId = item.id)}
+						onclick={() => { if (scaleId !== item.id) { scaleId = item.id; onchange?.(); } }}
 					>
 						{item.label}
 					</button>
@@ -54,7 +55,7 @@
 							{chordId === item.id
 								? 'bg-teal-600 text-white'
 								: 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-						onclick={() => (chordId = item.id)}
+						onclick={() => { if (chordId !== item.id) { chordId = item.id; onchange?.(); } }}
 					>
 						{item.label}
 					</button>

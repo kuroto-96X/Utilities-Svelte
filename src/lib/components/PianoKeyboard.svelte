@@ -12,6 +12,7 @@
     playingPcs,
     addPlayingPc,
     removePlayingPc,
+    totalWidth = TOTAL_WIDTH,
   }: {
     whiteKeys: LayoutKey[];
     blackKeys: LayoutKey[];
@@ -20,6 +21,7 @@
     playingPcs: Set<number>;
     addPlayingPc: (pc: number) => void;
     removePlayingPc: (pc: number) => void;
+    totalWidth?: number;
   } = $props();
 
   const scalePcs = $derived(new Set(intervals.map(i => (rootPc + i) % 12)));
@@ -40,8 +42,8 @@
 </script>
 
 <svg
-  viewBox="0 0 {TOTAL_WIDTH} {WHITE_H}"
-  width={TOTAL_WIDTH}
+  viewBox="0 0 {totalWidth} {WHITE_H}"
+  width={totalWidth}
   height={WHITE_H}
   style="touch-action: none; user-select: none; display: block;"
 >

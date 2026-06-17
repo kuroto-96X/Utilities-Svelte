@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ROOTS } from '$lib/scaleData';
-	let { rootId = $bindable() }: { rootId: string } = $props();
+	let { rootId = $bindable(), onchange }: { rootId: string; onchange?: () => void } = $props();
 </script>
 
 <div>
@@ -12,7 +12,7 @@
 					{rootId === root.id
 						? 'bg-teal-600 text-white'
 						: 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-				onclick={() => (rootId = root.id)}
+				onclick={() => { if (rootId !== root.id) { rootId = root.id; onchange?.(); } }}
 			>
 				{root.id}
 			</button>

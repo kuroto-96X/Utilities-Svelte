@@ -20,9 +20,10 @@
   let chordId = $state('maj');
   let bpm = $state(DEFAULT_BPM);
   let anchorToRoot = $state(false);
+  let octaves = $state(1);
   let playingPcs = $state(new Set<number>());
-
   let progressionStopCount = $state(0);
+  let playId = 0;
 
   const root = $derived(ROOTS.find(r => r.id === rootId)!);
   const currentIntervals = $derived(
@@ -31,7 +32,7 @@
       : CHORDS.find(c => c.id === chordId)!.intervals
   );
   const diatonicChords = $derived(buildDiatonicChords(currentIntervals, root.pc));
-  const keyboard = $derived(buildKeyboardWindow(anchorToRoot ? root.pc : 0));
+  const keyboard = $derived(buildKeyboardWindow(anchorToRoot ? root.pc : 0, octaves));
 
   function addPlayingPc(pc: number) { playingPcs = new Set(playingPcs).add(pc); }
   function removePlayingPc(pc: number) { const s = new Set(playingPcs); s.delete(pc); playingPcs = s; }
@@ -43,6 +44,10 @@
 
   function playMain() {
     progressionStopCount += 1;
+    playId++;
+    const myId = playId;
+    playingPcs = new Set();
+
     const ctx = getAudioContext();
     const now = ctx.currentTime;
 
@@ -53,7 +58,7 @@
         const pc = (root.pc + interval) % 12;
         playNoteAt(ctx, midi, duration, now);
         addPlayingPc(pc);
-        setTimeout(() => removePlayingPc(pc), duration * 1000);
+        setTimeout(() => { if (playId === myId) removePlayingPc(pc); }, duration * 1000);
       });
     } else {
       const seq = [...currentIntervals, ...currentIntervals.slice(0, -1).reverse()];
@@ -64,8 +69,8 @@
         const pc = (root.pc + interval) % 12;
         const startTime = now + i * SPACING;
         playNoteAt(ctx, midi, duration, startTime);
-        setTimeout(() => addPlayingPc(pc), i * SPACING * 1000);
-        setTimeout(() => removePlayingPc(pc), (i * SPACING + duration) * 1000);
+        setTimeout(() => { if (playId === myId) addPlayingPc(pc); }, i * SPACING * 1000);
+        setTimeout(() => { if (playId === myId) removePlayingPc(pc); }, (i * SPACING + duration) * 1000);
       });
     }
   }
@@ -78,45 +83,53 @@
   <div class="flex flex-col md:flex-row gap-4">
     <!-- 左サイドバー -->
     <div class="md:w-52 flex-shrink-0 space-y-4">
-      <RootSelector bind:rootId />
-      <ScaleChordSelector bind:mode bind:scaleId bind:chordId />
+      <button
+        class="w-full px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white text-sm rounded font-medium"
+        onclick={playMain}
+      >
+        ▶ 再生
+      </button>
+      <BpmSlider bind:bpm />
+      <RootSelector bind:rootId onchange={playMain} />
+      <ScaleChordSelector bind:mode bind:scaleId bind:chordId onchange={playMain} />
     </div>
 
     <!-- メインエリア -->
     <div class="flex-1 min-w-0 space-y-4">
-      <!-- 鍵盤 -->
-      <div class="overflow-x-auto">
-        <PianoKeyboard
-          whiteKeys={keyboard.whiteKeys}
-          blackKeys={keyboard.blackKeys}
-          intervals={currentIntervals}
-          rootPc={root.pc}
-          {playingPcs}
-          {addPlayingPc}
-          {removePlayingPc}
-        />
-      </div>
-
-      <!-- コントロール行 -->
-      <div class="flex flex-wrap items-center gap-3">
-        <button
-          class="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white text-sm rounded font-medium flex-shrink-0"
-          onclick={playMain}
-        >
-          ▶ {mode === 'scale' ? 'スケール往復' : 'コード再生'}
-        </button>
-        <div class="flex-1 min-w-40">
-          <BpmSlider bind:bpm />
+      <!-- 鍵盤エリア -->
+      <div class="space-y-2">
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex items-center gap-1 text-xs">
+            <span class="text-gray-400">オクターブ</span>
+            {#each [1, 2, 3] as o}
+              <button
+                class="px-2 py-1 rounded {octaves === o ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+                onclick={() => (octaves = o)}
+              >{o}</button>
+            {/each}
+          </div>
+          <div class="flex items-center gap-1 text-xs">
+            <button
+              class="px-2 py-1 rounded {!anchorToRoot ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+              onclick={() => (anchorToRoot = false)}
+            >C基準</button>
+            <button
+              class="px-2 py-1 rounded {anchorToRoot ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+              onclick={() => (anchorToRoot = true)}
+            >ルート基準</button>
+          </div>
         </div>
-        <div class="flex items-center gap-1 text-xs flex-shrink-0">
-          <button
-            class="px-2 py-1 rounded {!anchorToRoot ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-            onclick={() => (anchorToRoot = false)}
-          >C基準</button>
-          <button
-            class="px-2 py-1 rounded {anchorToRoot ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-            onclick={() => (anchorToRoot = true)}
-          >ルート基準</button>
+        <div class="overflow-x-auto flex justify-center">
+          <PianoKeyboard
+            whiteKeys={keyboard.whiteKeys}
+            blackKeys={keyboard.blackKeys}
+            totalWidth={keyboard.totalWidth}
+            intervals={currentIntervals}
+            rootPc={root.pc}
+            {playingPcs}
+            {addPlayingPc}
+            {removePlayingPc}
+          />
         </div>
       </div>
 
@@ -124,27 +137,18 @@
 
       {#if diatonicChords}
         <DiatonicChordPanel
-          {diatonicChords}
-          {bpm}
-          {addPlayingPc}
-          {removePlayingPc}
+          {diatonicChords} {bpm} {addPlayingPc} {removePlayingPc}
           stopProgression={() => { progressionStopCount += 1; }}
         />
         <ProgressionPlayer
-          {diatonicChords}
-          {bpm}
-          {addPlayingPc}
-          {removePlayingPc}
+          {diatonicChords} {bpm} {addPlayingPc} {removePlayingPc}
           stopCount={progressionStopCount}
         />
       {/if}
-      <!-- MelodyGenerator -->
       <MelodyGenerator
         intervals={currentIntervals}
         rootPc={root.pc}
-        {bpm}
-        {addPlayingPc}
-        {removePlayingPc}
+        {bpm} {addPlayingPc} {removePlayingPc}
       />
     </div>
   </div>

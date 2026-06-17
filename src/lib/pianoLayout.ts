@@ -23,8 +23,8 @@ export const TOTAL_WIDTH = 7 * WHITE_W;
 
 export interface LayoutKey { pc: number; windowIndex: number; x: number; }
 
-export function buildKeyboardWindow(startSemitone: number): { whiteKeys: LayoutKey[]; blackKeys: LayoutKey[] } {
-  const items = Array.from({ length: 12 }, (_, i) => {
+export function buildKeyboardWindow(startSemitone: number, octaves = 1): { whiteKeys: LayoutKey[]; blackKeys: LayoutKey[]; totalWidth: number } {
+  const items = Array.from({ length: 12 * octaves }, (_, i) => {
     const s = startSemitone + i;
     const oct = Math.floor(s / 12);
     const pc = ((s % 12) + 12) % 12;
@@ -48,5 +48,5 @@ export function buildKeyboardWindow(startSemitone: number): { whiteKeys: LayoutK
     .filter(it => it.type === 'black')
     .map(it => ({ pc: it.pc, windowIndex: it.windowIndex, x: (it.absAnchorIndex! - minAbs + 1) * WHITE_W - BLACK_W / 2 }));
 
-  return { whiteKeys, blackKeys };
+  return { whiteKeys, blackKeys, totalWidth: 7 * octaves * WHITE_W };
 }
