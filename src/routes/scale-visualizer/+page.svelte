@@ -184,11 +184,6 @@
 
       <div class="ad-slot--in-content"></div>
 
-      <MelodyGenerator
-        intervals={currentIntervals}
-        rootPc={root.pc}
-        {bpm} {addPlayingPc} {removePlayingPc}
-      />
       {#if diatonicChords}
         <DiatonicChordPanel
           {diatonicChords}
@@ -196,6 +191,13 @@
           {removePlayingPc}
           stopProgression={() => { progressionStopCount += 1; }}
         />
+      {/if}
+      <MelodyGenerator
+        intervals={currentIntervals}
+        rootPc={root.pc}
+        {bpm} {addPlayingPc} {removePlayingPc}
+      />
+      {#if diatonicChords}
         <ProgressionPlayer
           {diatonicChords} {bpm} {addPlayingPc} {removePlayingPc}
           stopCount={progressionStopCount}

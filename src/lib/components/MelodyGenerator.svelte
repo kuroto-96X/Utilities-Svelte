@@ -91,7 +91,6 @@
     let stepIdx = 0;
 
     function playNextNote() {
-      // 前の音を停止
       activeStopFn?.();
       if (activePc !== null) removePlayingPc(activePc);
       activeStopFn = null;
@@ -134,132 +133,130 @@
   const maxLabel = $derived(NOTE_LABELS[maxNoteIdx]);
 </script>
 
-<div class="border border-gray-700 rounded-lg p-3 space-y-3">
-  <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">ランダムメロディ生成</p>
+<div class="border border-gray-700 rounded-lg p-3">
+  <div class="flex flex-col md:flex-row gap-4 items-start">
 
-  <!-- 設定行 -->
-  <div class="flex flex-wrap gap-3 items-center">
-    <!-- 小節数 -->
-    <div class="flex items-center gap-1">
-      <span class="text-xs text-gray-400">小節数</span>
-      <div class="flex gap-1">
-        {#each BARS_OPTIONS as b}
-          <button
-            class="px-2 py-0.5 text-xs rounded
-              {bars === b ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-            onclick={() => (bars = b)}
-          >{b}</button>
-        {/each}
-      </div>
-    </div>
+    <!-- 左列: タイトル・設定・ボタン・チップ -->
+    <div class="flex-1 min-w-0 space-y-3">
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">ランダムメロディ生成</p>
 
-    <!-- 音符範囲 -->
-    <div class="flex items-center gap-2">
-      <span class="text-xs text-gray-400">最短</span>
-      <input
-        type="range" min={0} max={maxNoteIdx} value={minNoteIdx}
-        oninput={(e) => (minNoteIdx = Number((e.target as HTMLInputElement).value))}
-        class="w-20 h-1.5 rounded-full appearance-none cursor-pointer bg-gray-600"
-      />
-      <span class="text-xs text-gray-300 w-6">{minLabel}</span>
-      <span class="text-xs text-gray-400">最長</span>
-      <input
-        type="range" min={minNoteIdx} max={5} value={maxNoteIdx}
-        oninput={(e) => (maxNoteIdx = Number((e.target as HTMLInputElement).value))}
-        class="w-20 h-1.5 rounded-full appearance-none cursor-pointer bg-gray-600"
-      />
-      <span class="text-xs text-gray-300 w-6">{maxLabel}</span>
-    </div>
-
-    <!-- 付点/3連 -->
-    <div class="flex gap-2 text-xs">
-      <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
-        <input type="checkbox" bind:checked={useDotted} class="accent-teal-500" />
-        付点
-      </label>
-      <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
-        <input type="checkbox" bind:checked={useTriplet} class="accent-teal-500" />
-        3連符
-      </label>
-    </div>
-  </div>
-
-  <!-- 操作ボタン -->
-  <div class="flex gap-2">
-    <button
-      class="px-3 py-1.5 text-sm rounded bg-teal-600 hover:bg-teal-500 text-white disabled:opacity-50"
-      onclick={handleGenerate}
-      disabled={isPlaying}
-    >
-      🎲 生成 & 再生
-    </button>
-    {#if cachedMelody}
-      <button
-        class="px-3 py-1.5 text-sm rounded bg-gray-700 hover:bg-gray-600 text-gray-200 disabled:opacity-50"
-        onclick={handleReplay}
-        disabled={isPlaying}
-      >
-        ▶ 再生
-      </button>
-    {/if}
-  </div>
-
-  <!-- 生成結果：チップ（左）＋ピアノロール（右） -->
-  {#if cachedMelody}
-    <div class="flex flex-col md:flex-row gap-3 items-start">
-      <!-- ノートチップ -->
-      <div class="flex flex-wrap gap-1 md:max-w-[180px] flex-shrink-0">
-        {#each cachedMelody as note, i}
-          <span class="px-1.5 py-0.5 text-xs rounded font-mono
-            {currentNoteIdx === i ? 'bg-teal-500 text-white' : 'bg-gray-700 text-gray-300'}">
-            {NOTE_NAMES[note.pc]}{i === cachedMelody.length - 1 ? ' 🏠' : ''}
-          </span>
-        {/each}
-      </div>
-
-      <!-- ピアノロール -->
-      {#if rollNotes && rollNotes.length > 0}
-        {@const midiValues = rollNotes.map(n => n.midi)}
-        {@const minMidi = Math.min(...midiValues)}
-        {@const maxMidi = Math.max(...midiValues)}
-        {@const totalDur = rollNotes[rollNotes.length - 1].end}
-        {@const ROW_H = 14}
-        {@const LABEL_W = 26}
-        {@const rollW = Math.max(totalDur * 80, 200)}
-        {@const pitchRange = maxMidi - minMidi + 1}
-        <div class="overflow-x-auto flex-1 min-w-0">
-          <svg width={rollW + LABEL_W} height={pitchRange * ROW_H} style="display: block;">
-            <!-- 行背景 -->
-            {#each Array.from({length: pitchRange}, (_, i) => maxMidi - i) as midi, rowIdx}
-              {@const pc = ((midi % 12) + 12) % 12}
-              {@const isBlack = [1,3,6,8,10].includes(pc)}
-              <rect x={0} y={rowIdx * ROW_H} width={LABEL_W + rollW} height={ROW_H}
-                fill={isBlack ? '#1a1f2e' : '#111827'} />
-              <text x={LABEL_W - 3} y={rowIdx * ROW_H + ROW_H - 3}
-                text-anchor="end" font-size="9" fill="#6b7280" font-family="monospace">
-                {NOTE_NAMES[pc]}
-              </text>
+      <!-- 設定行 -->
+      <div class="flex flex-wrap gap-3 items-center">
+        <!-- 小節数 -->
+        <div class="flex items-center gap-1">
+          <span class="text-xs text-gray-400">小節数</span>
+          <div class="flex gap-1">
+            {#each BARS_OPTIONS as b}
+              <button
+                class="px-2 py-0.5 text-xs rounded
+                  {bars === b ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+                onclick={() => (bars = b)}
+              >{b}</button>
             {/each}
-            <!-- 行境界線 -->
-            {#each Array.from({length: pitchRange + 1}, (_, i) => i * ROW_H) as y}
-              <line x1={LABEL_W} y1={y} x2={LABEL_W + rollW} y2={y} stroke="#1f2937" stroke-width="1" />
-            {/each}
-            <!-- ノート矩形 -->
-            {#each rollNotes as rn, i}
-              {@const rowIdx = maxMidi - rn.midi}
-              {@const x = LABEL_W + (rn.start / totalDur) * rollW}
-              {@const w = ((rn.end - rn.start) / totalDur) * rollW}
-              <rect
-                x={x + 1} y={rowIdx * ROW_H + 1}
-                width={Math.max(w - 2, 1)} height={ROW_H - 2}
-                fill={currentNoteIdx === i ? '#5eead4' : '#14b8a6'}
-                rx={2}
-                opacity={currentNoteIdx === i ? 1 : 0.8}
-              />
-            {/each}
-          </svg>
+          </div>
         </div>
-      {/if}
+
+        <!-- 音符範囲 -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-400">最短</span>
+          <input
+            type="range" min={0} max={maxNoteIdx} value={minNoteIdx}
+            oninput={(e) => (minNoteIdx = Number((e.target as HTMLInputElement).value))}
+            class="w-20 h-1.5 rounded-full appearance-none cursor-pointer bg-gray-600"
+          />
+          <span class="text-xs text-gray-300 w-6">{minLabel}</span>
+          <span class="text-xs text-gray-400">最長</span>
+          <input
+            type="range" min={minNoteIdx} max={5} value={maxNoteIdx}
+            oninput={(e) => (maxNoteIdx = Number((e.target as HTMLInputElement).value))}
+            class="w-20 h-1.5 rounded-full appearance-none cursor-pointer bg-gray-600"
+          />
+          <span class="text-xs text-gray-300 w-6">{maxLabel}</span>
+        </div>
+
+        <!-- 付点/3連 -->
+        <div class="flex gap-2 text-xs">
+          <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
+            <input type="checkbox" bind:checked={useDotted} class="accent-teal-500" />
+            付点
+          </label>
+          <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
+            <input type="checkbox" bind:checked={useTriplet} class="accent-teal-500" />
+            3連符
+          </label>
+        </div>
+      </div>
+
+      <!-- ボタン + ノートチップ（ボタン右に並ぶ） -->
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          class="px-3 py-1.5 text-sm rounded bg-teal-600 hover:bg-teal-500 text-white disabled:opacity-50 flex-shrink-0"
+          onclick={handleGenerate}
+          disabled={isPlaying}
+        >
+          🎲 生成 & 再生
+        </button>
+        {#if cachedMelody}
+          <button
+            class="px-3 py-1.5 text-sm rounded bg-gray-700 hover:bg-gray-600 text-gray-200 disabled:opacity-50 flex-shrink-0"
+            onclick={handleReplay}
+            disabled={isPlaying}
+          >
+            ▶ 再生
+          </button>
+          {#each cachedMelody as note, i}
+            <span class="px-1.5 py-0.5 text-xs rounded font-mono
+              {currentNoteIdx === i ? 'bg-teal-500 text-white' : 'bg-gray-700 text-gray-300'}">
+              {NOTE_NAMES[note.pc]}{i === cachedMelody.length - 1 ? ' 🏠' : ''}
+            </span>
+          {/each}
+        {/if}
+      </div>
     </div>
-  {/if}
+
+    <!-- 右列: ピアノロール（上から表示） -->
+    {#if rollNotes && rollNotes.length > 0}
+      {@const midiValues = rollNotes.map(n => n.midi)}
+      {@const minMidi = Math.min(...midiValues)}
+      {@const maxMidi = Math.max(...midiValues)}
+      {@const totalDur = rollNotes[rollNotes.length - 1].end}
+      {@const ROW_H = 14}
+      {@const LABEL_W = 26}
+      {@const rollW = Math.max(totalDur * 80, 200)}
+      {@const pitchRange = maxMidi - minMidi + 1}
+      <div class="overflow-x-auto flex-shrink-0">
+        <svg width={rollW + LABEL_W} height={pitchRange * ROW_H} style="display: block;">
+          <!-- 行背景 -->
+          {#each Array.from({length: pitchRange}, (_, i) => maxMidi - i) as midi, rowIdx}
+            {@const pc = ((midi % 12) + 12) % 12}
+            {@const isBlack = [1,3,6,8,10].includes(pc)}
+            <rect x={0} y={rowIdx * ROW_H} width={LABEL_W + rollW} height={ROW_H}
+              fill={isBlack ? '#1a1f2e' : '#111827'} />
+            <text x={LABEL_W - 3} y={rowIdx * ROW_H + ROW_H - 3}
+              text-anchor="end" font-size="9" fill="#6b7280" font-family="monospace">
+              {NOTE_NAMES[pc]}
+            </text>
+          {/each}
+          <!-- 行境界線 -->
+          {#each Array.from({length: pitchRange + 1}, (_, i) => i * ROW_H) as y}
+            <line x1={LABEL_W} y1={y} x2={LABEL_W + rollW} y2={y} stroke="#1f2937" stroke-width="1" />
+          {/each}
+          <!-- ノート矩形 -->
+          {#each rollNotes as rn, i}
+            {@const rowIdx = maxMidi - rn.midi}
+            {@const x = LABEL_W + (rn.start / totalDur) * rollW}
+            {@const w = ((rn.end - rn.start) / totalDur) * rollW}
+            <rect
+              x={x + 1} y={rowIdx * ROW_H + 1}
+              width={Math.max(w - 2, 1)} height={ROW_H - 2}
+              fill={currentNoteIdx === i ? '#5eead4' : '#14b8a6'}
+              rx={2}
+              opacity={currentNoteIdx === i ? 1 : 0.8}
+            />
+          {/each}
+        </svg>
+      </div>
+    {/if}
+
+  </div>
 </div>

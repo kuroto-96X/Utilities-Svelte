@@ -125,7 +125,7 @@
         x={key.x + 2} y={2}
         width={WHITE_W - 5} height={WHITE_H - 4}
         fill="none"
-        stroke="#14b8a6"
+        stroke="#f97316"
         stroke-width={3}
         rx={2}
       />
@@ -137,7 +137,7 @@
         x={key.x + 2} y={2}
         width={BLACK_W - 4} height={BLACK_H - 4}
         fill="none"
-        stroke="#14b8a6"
+        stroke="#f97316"
         stroke-width={3}
         rx={2}
       />
