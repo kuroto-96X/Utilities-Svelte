@@ -1,5 +1,6 @@
 <!-- src/routes/scale-visualizer/+page.svelte -->
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { ROOTS, SCALES, CHORDS } from '$lib/scaleData';
   import { buildKeyboardWindow } from '$lib/pianoLayout';
   import { buildDiatonicChords } from '$lib/diatonicChords';
@@ -37,7 +38,7 @@
 
   $effect(() => {
     rootId; scaleId; chordId; mode; bpm;
-    progressionStopCount += 1;
+    untrack(() => { progressionStopCount += 1; });
   });
 
   function playMain() {
