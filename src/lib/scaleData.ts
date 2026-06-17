@@ -175,3 +175,49 @@ export const CHROMATIC_PROGRESSIONS: ChromaticProgression[] = [
     ],
   },
 ];
+
+// テンション解決系（同一ルート・コード質のみ変化）
+export const TENSION_PROGRESSIONS: ChromaticProgression[] = [
+  {
+    id: 'sus4ToMaj',
+    label: 'sus4 → メジャー',
+    steps: [
+      { semitone: 0, intervals: [0,5,7],       name: 'sus4' },
+      { semitone: 0, intervals: [0,4,7],       name: 'I' },
+    ],
+  },
+  {
+    id: 'sus2ToMaj',
+    label: 'sus2 → メジャー',
+    steps: [
+      { semitone: 0, intervals: [0,2,7],       name: 'sus2' },
+      { semitone: 0, intervals: [0,4,7],       name: 'I' },
+    ],
+  },
+  {
+    id: 'sus4Sus2ToMaj',
+    label: 'sus4 → sus2 → メジャー',
+    steps: [
+      { semitone: 0, intervals: [0,5,7],       name: 'sus4' },
+      { semitone: 0, intervals: [0,2,7],       name: 'sus2' },
+      { semitone: 0, intervals: [0,4,7],       name: 'I' },
+    ],
+  },
+  {
+    id: 'add9ToMaj',
+    label: 'add9 → メジャー',
+    steps: [
+      { semitone: 0, intervals: [0,2,4,7],     name: 'add9' },
+      { semitone: 0, intervals: [0,4,7],       name: 'I' },
+    ],
+  },
+  {
+    id: 'minTension',
+    label: 'マイナー → m7 → m9（テンション積み）',
+    steps: [
+      { semitone: 0, intervals: [0,3,7],       name: 'im' },
+      { semitone: 0, intervals: [0,3,7,10],    name: 'im7' },
+      { semitone: 0, intervals: [0,2,3,7,10],  name: 'im9' },
+    ],
+  },
+];

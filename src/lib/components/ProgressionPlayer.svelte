@@ -1,7 +1,7 @@
 <!-- src/lib/components/ProgressionPlayer.svelte -->
 <script lang="ts">
   import type { DiatonicChord } from '$lib/diatonicChords';
-  import { PROGRESSIONS, CHROMATIC_PROGRESSIONS, NOTE_NAMES } from '$lib/scaleData';
+  import { PROGRESSIONS, CHROMATIC_PROGRESSIONS, TENSION_PROGRESSIONS, NOTE_NAMES } from '$lib/scaleData';
   import type { Progression, ChromaticProgression } from '$lib/scaleData';
   import { getAudioContext, startNoteAt } from '$lib/audioEngine';
 
@@ -29,12 +29,16 @@
 
   function qualitySuffix(intervals: number[]): string {
     const has = (n: number) => intervals.includes(n);
-    if (has(9) && has(6) && has(3))  return 'dim7';
-    if (has(11) && has(7) && has(4)) return 'maj7';
-    if (has(10) && has(7) && has(4)) return '7';
-    if (has(10) && has(7) && has(3)) return 'm7';
-    if (has(6)  && has(3))           return 'dim';
-    if (has(7)  && has(3))           return 'm';
+    if (has(9)  && has(6) && has(3))                              return 'dim7';
+    if (has(11) && has(7) && has(4))                              return 'maj7';
+    if (has(10) && has(7) && has(4))                              return '7';
+    if (has(2)  && has(3) && has(7) && has(10))                   return 'm9';
+    if (has(10) && has(7) && has(3))                              return 'm7';
+    if (has(6)  && has(3))                                        return 'dim';
+    if (has(5)  && has(7) && !has(3) && !has(4))                  return 'sus4';
+    if (has(2)  && has(4) && has(7)  && !has(10))                 return 'add9';
+    if (has(2)  && has(7) && !has(3) && !has(4) && !has(10))      return 'sus2';
+    if (has(7)  && has(3))                                        return 'm';
     return '';
   }
 
@@ -162,12 +166,29 @@
 
   <!-- クロマティック -->
   <p class="text-xs text-gray-500 mb-1">クロマティック</p>
-  <div class="space-y-1">
+  <div class="space-y-1 mb-3">
     {#each CHROMATIC_PROGRESSIONS as prog}
       <button
         class="w-full text-left px-3 py-2 text-sm rounded
           {activeProgId === prog.id
             ? 'bg-orange-600 text-white'
+            : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+        onclick={() => toggleProgression(prog)}
+      >
+        <span class="block">{activeProgId === prog.id ? '⏹ ' : '▶ '}{prog.label}</span>
+        <span class="block text-xs opacity-60 font-mono mt-0.5">{progSubLabel(prog)}</span>
+      </button>
+    {/each}
+  </div>
+
+  <!-- テンション解決 -->
+  <p class="text-xs text-gray-500 mb-1">テンション解決</p>
+  <div class="space-y-1">
+    {#each TENSION_PROGRESSIONS as prog}
+      <button
+        class="w-full text-left px-3 py-2 text-sm rounded
+          {activeProgId === prog.id
+            ? 'bg-violet-600 text-white'
             : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
         onclick={() => toggleProgression(prog)}
       >
