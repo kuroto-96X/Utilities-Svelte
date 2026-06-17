@@ -11,6 +11,7 @@
   import BpmSlider from '$lib/components/BpmSlider.svelte';
   import DiatonicChordPanel from '$lib/components/DiatonicChordPanel.svelte';
   import ProgressionPlayer from '$lib/components/ProgressionPlayer.svelte';
+  import MelodyGenerator from '$lib/components/MelodyGenerator.svelte';
 
   let rootId = $state('C');
   let mode = $state<'scale' | 'chord'>('scale');
@@ -137,6 +138,13 @@
         />
       {/if}
       <!-- MelodyGenerator -->
+      <MelodyGenerator
+        intervals={currentIntervals}
+        rootPc={root.pc}
+        {bpm}
+        {addPlayingPc}
+        {removePlayingPc}
+      />
     </div>
   </div>
 </div>
