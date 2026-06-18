@@ -35,8 +35,8 @@
     const target = e.target as HTMLInputElement;
     const v = Number(target.value);
     if (draggingHighFromLow) {
-      if (v < low) {
-        // high を越えて左に戻った → 役割を戻す
+      if (v <= low) {
+        // アンカー位置まで戻った → 役割を戻す
         draggingHighFromLow = false;
         high = low;
         low = v;
@@ -60,8 +60,8 @@
     const target = e.target as HTMLInputElement;
     const v = Number(target.value);
     if (draggingLowFromHigh) {
-      if (v > high) {
-        // low を越えて右に戻った → 役割を戻す
+      if (v >= high) {
+        // アンカー位置まで戻った → 役割を戻す
         draggingLowFromHigh = false;
         low = high;
         high = v;
