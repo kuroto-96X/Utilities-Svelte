@@ -30,10 +30,11 @@
   let maxNoteIdx = $state(3); // 4分音符
   let useDotted = $state(false);
   let useTriplet = $state(false);
+  let useMotifRepeat = $state(true);
   let isPlaying = $state(false);
   let currentNoteIdx = $state<number | null>(null);
 
-  interface MelodyNote { interval: number; pc: number; duration: number; }
+  interface MelodyNote { degreeIndex: number; interval: number; pc: number; duration: number; }
   let cachedMelody = $state<MelodyNote[] | null>(null);
 
   interface RollNote { midi: number; pc: number; start: number; end: number; }
@@ -65,24 +66,130 @@
     return pool.length > 0 ? pool : [ascDurations[2].normalSec];
   }
 
+  // --- メロディ構造ヘルパー ---
+
+  const STEP_BASE = [
+    { delta: 0, weight: 10 },
+    { delta: 1, weight: 28 }, { delta: -1, weight: 28 },
+    { delta: 2, weight: 12 }, { delta: -2, weight: 12 },
+    { delta: 3, weight: 5 },  { delta: -3, weight: 5 },
+  ];
+  const LEAP_THRESHOLD = 3;
+
+  function pickStableIndex(ivs: number[]): number {
+    let bestIdx = 0;
+    let bestDiff = Infinity;
+    for (let i = 1; i < ivs.length; i++) {
+      const diff = Math.abs(ivs[i] - 7);
+      if (diff < bestDiff) { bestDiff = diff; bestIdx = i; }
+    }
+    return bestIdx;
+  }
+
+  function weightedDelta(prevWasLeap: boolean, prevLeapSign: number): number {
+    const weights = STEP_BASE.map(b => {
+      if (prevWasLeap && b.delta !== 0 && Math.sign(b.delta) === prevLeapSign)
+        return { ...b, weight: b.weight * 0.3 };
+      if (prevWasLeap && Math.sign(b.delta) === -prevLeapSign)
+        return { ...b, weight: b.weight * 1.6 };
+      return b;
+    });
+    const total = weights.reduce((s, w) => s + w.weight, 0);
+    let r = Math.random() * total;
+    for (const w of weights) {
+      if (r < w.weight) return w.delta;
+      r -= w.weight;
+    }
+    return 0;
+  }
+
+  function isStrongBeat(cumulative: number, secPerBeat: number): boolean {
+    const beatIndex = Math.round(cumulative / secPerBeat);
+    const onBoundary = Math.abs(cumulative - beatIndex * secPerBeat) < secPerBeat * 0.05;
+    return onBoundary && beatIndex % 2 === 0;
+  }
+
+  function nearestStable(currentIdx: number, stableIndices: number[]): number {
+    return stableIndices.reduce((best, c) =>
+      Math.abs(c - currentIdx) < Math.abs(best - currentIdx) ? c : best, stableIndices[0]);
+  }
+
+  function pickDuration(pool: number[], strongBeat: boolean): number {
+    if (pool.length === 1) return pool[0];
+    const sorted = [...pool].sort((a, b) => a - b);
+    const mid = Math.ceil(sorted.length / 2);
+    const shorterHalf = sorted.slice(0, mid);
+    const longerHalf = sorted.slice(mid);
+    const useLonger = strongBeat ? Math.random() < 0.7 : Math.random() < 0.3;
+    const bucket = useLonger && longerHalf.length > 0 ? longerHalf : shorterHalf;
+    return bucket[Math.floor(Math.random() * bucket.length)];
+  }
+
+  function generateStructuredPhrase(
+    ivs: number[], rpc: number, secPerBeat: number, pool: number[], targetSeconds: number
+  ): MelodyNote[] {
+    const stableIndices = [0, pickStableIndex(ivs)];
+    const seq: MelodyNote[] = [];
+    let cumulative = 0;
+    let currentIdx = 0;
+    let prevWasLeap = false;
+    let prevLeapSign = 1;
+    let guard = 0;
+
+    while (cumulative < targetSeconds && guard < 300) {
+      guard++;
+      const strong = isStrongBeat(cumulative, secPerBeat);
+
+      if (strong && Math.random() < 0.6) {
+        currentIdx = nearestStable(currentIdx, stableIndices);
+      } else {
+        const delta = weightedDelta(prevWasLeap, prevLeapSign);
+        currentIdx = Math.max(0, Math.min(ivs.length - 1, currentIdx + delta));
+        prevWasLeap = Math.abs(delta) >= LEAP_THRESHOLD;
+        prevLeapSign = Math.sign(delta) || 1;
+      }
+
+      const octShift = Math.random() < 0.15 ? 12 : 0;
+      const duration = pickDuration(pool, strong);
+      seq.push({
+        degreeIndex: currentIdx,
+        interval: ivs[currentIdx] + octShift,
+        pc: (rpc + ivs[currentIdx]) % 12,
+        duration,
+      });
+      cumulative += duration;
+    }
+    return seq;
+  }
+
+  function buildPhraseWithMotif(
+    ivs: number[], rpc: number, secPerBeat: number, pool: number[], targetSeconds: number
+  ): MelodyNote[] {
+    const motif = generateStructuredPhrase(ivs, rpc, secPerBeat, pool, targetSeconds / 2);
+    const shift = Math.random() < 0.5 ? 1 : 0;
+    const second = motif.map(n => {
+      const newIdx = Math.max(0, Math.min(ivs.length - 1, n.degreeIndex + shift));
+      const octPart = n.interval - ivs[n.degreeIndex]; // オクターブ上げ分を保持
+      return {
+        degreeIndex: newIdx,
+        interval: ivs[newIdx] + octPart,
+        pc: (rpc + ivs[newIdx]) % 12,
+        duration: n.duration,
+      };
+    });
+    return [...motif, ...second];
+  }
+
   function generateMelody(): MelodyNote[] {
     const pool = buildDurationPool();
     const secPerBeat = 60 / bpm;
     const targetSeconds = Math.max(secPerBeat, bars * 4 * secPerBeat - secPerBeat);
-    const seq: MelodyNote[] = [];
-    let cumulative = 0;
-    let guard = 0;
-    while (cumulative < targetSeconds && guard < 300) {
-      guard++;
-      const deg = intervals[Math.floor(Math.random() * intervals.length)];
-      const octShift = Math.random() < 0.25 ? 12 : 0;
-      const duration = pool[Math.floor(Math.random() * pool.length)];
-      const pc = (rootPc + deg) % 12;
-      seq.push({ interval: deg + octShift, pc, duration });
-      cumulative += duration;
-    }
-    seq.push({ interval: 0, pc: rootPc % 12, duration: secPerBeat });
-    return seq;
+
+    const body = useMotifRepeat
+      ? buildPhraseWithMotif(intervals, rootPc, secPerBeat, pool, targetSeconds)
+      : generateStructuredPhrase(intervals, rootPc, secPerBeat, pool, targetSeconds);
+
+    return [...body, { degreeIndex: 0, interval: 0, pc: rootPc % 12, duration: secPerBeat }];
   }
 
   function playMelodySeq(seq: MelodyNote[]) {
@@ -183,7 +290,7 @@
           <span class="text-xs text-gray-300 w-6">{maxLabel}</span>
         </div>
 
-        <!-- 付点/3連 -->
+        <!-- 付点/3連/モチーフ -->
         <div class="flex gap-2 text-xs">
           <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
             <input type="checkbox" bind:checked={useDotted} class="accent-teal-500" />
@@ -192,6 +299,10 @@
           <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
             <input type="checkbox" bind:checked={useTriplet} class="accent-teal-500" />
             3連符
+          </label>
+          <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
+            <input type="checkbox" bind:checked={useMotifRepeat} class="accent-teal-500" />
+            モチーフ反復
           </label>
         </div>
       </div>
