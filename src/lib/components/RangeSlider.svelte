@@ -44,8 +44,8 @@
         high = v;
       }
     } else {
-      if (v > high) {
-        // high を右に越えた → high として動かすモードへ
+      if (v >= high) {
+        // high に重なった・越えた → high として動かすモードへ
         draggingHighFromLow = true;
         low = high;
         high = v;
@@ -69,8 +69,8 @@
         low = v;
       }
     } else {
-      if (v < low) {
-        // low を左に越えた → low として動かすモードへ
+      if (v <= low) {
+        // low に重なった・越えた → low として動かすモードへ
         draggingLowFromHigh = true;
         high = low;
         low = v;
