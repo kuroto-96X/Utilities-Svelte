@@ -3,6 +3,7 @@
   import { calculateNoteDurations } from '$lib/noteDuration';
   import { NOTE_NAMES } from '$lib/scaleData';
   import { getAudioContext, startNoteAt } from '$lib/audioEngine';
+  import RangeSlider from '$lib/components/RangeSlider.svelte';
 
   let {
     intervals,
@@ -262,8 +263,6 @@
     if (cachedMelody) playMelodySeq(cachedMelody);
   }
 
-  const minLabel = $derived(NOTE_LABELS[minNoteIdx]);
-  const maxLabel = $derived(NOTE_LABELS[maxNoteIdx]);
 </script>
 
 <div class="border border-gray-700 rounded-lg p-3">
@@ -291,20 +290,13 @@
 
         <!-- 音符範囲 -->
         <div class="flex items-center gap-2">
-          <span class="text-xs text-gray-400">最短</span>
-          <input
-            type="range" min={0} max={maxNoteIdx} value={minNoteIdx}
-            oninput={(e) => (minNoteIdx = Number((e.target as HTMLInputElement).value))}
-            class="w-20 h-1.5 rounded-full appearance-none cursor-pointer bg-gray-600"
+          <span class="text-xs text-gray-400">音符</span>
+          <RangeSlider
+            min={0} max={5}
+            bind:low={minNoteIdx}
+            bind:high={maxNoteIdx}
+            formatter={(v) => NOTE_LABELS[v]}
           />
-          <span class="text-xs text-gray-300 w-6">{minLabel}</span>
-          <span class="text-xs text-gray-400">最長</span>
-          <input
-            type="range" min={minNoteIdx} max={5} value={maxNoteIdx}
-            oninput={(e) => (maxNoteIdx = Number((e.target as HTMLInputElement).value))}
-            class="w-20 h-1.5 rounded-full appearance-none cursor-pointer bg-gray-600"
-          />
-          <span class="text-xs text-gray-300 w-6">{maxLabel}</span>
         </div>
 
         <!-- 付点/3連/モチーフ -->
