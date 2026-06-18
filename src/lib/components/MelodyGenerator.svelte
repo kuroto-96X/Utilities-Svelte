@@ -24,6 +24,15 @@
 
   const NOTE_LABELS = ['32分', '16分', '8分', '4分', '2分', '全'];
   const BARS_OPTIONS = [1, 2, 4, 8];
+  const CONTOUR_OPTIONS = [
+    { id: 'random',     label: 'ランダム' },
+    { id: 'ascending',  label: '上昇傾向' },
+    { id: 'descending', label: '下降傾向' },
+    { id: 'arch',       label: '山型' },
+    { id: 'valley',     label: '谷型' },
+  ] as const;
+
+  type ContourPattern = 'random' | 'ascending' | 'descending' | 'arch' | 'valley';
 
   let bars = $state(2);
   let minNoteIdx = $state(1); // 16分音符
@@ -31,6 +40,8 @@
   let useDotted = $state(false);
   let useTriplet = $state(false);
   let useMotifRepeat = $state(true);
+  let maxStep = $state(2);
+  let pattern = $state<ContourPattern>('random');
   let isPlaying = $state(false);
   let currentNoteIdx = $state<number | null>(null);
 
@@ -68,13 +79,7 @@
 
   // --- メロディ構造ヘルパー ---
 
-  const STEP_BASE = [
-    { delta: 0, weight: 10 },
-    { delta: 1, weight: 28 }, { delta: -1, weight: 28 },
-    { delta: 2, weight: 12 }, { delta: -2, weight: 12 },
-    { delta: 3, weight: 5 },  { delta: -3, weight: 5 },
-  ];
-  const LEAP_THRESHOLD = 3;
+  const STEP_BASE_WEIGHTS = [28, 12, 6, 3, 2]; // index0=距離1, index1=距離2, ...
 
   function pickStableIndex(ivs: number[]): number {
     let bestIdx = 0;
@@ -86,14 +91,23 @@
     return bestIdx;
   }
 
-  function weightedDelta(prevWasLeap: boolean, prevLeapSign: number): number {
-    const weights = STEP_BASE.map(b => {
-      if (prevWasLeap && b.delta !== 0 && Math.sign(b.delta) === prevLeapSign)
-        return { ...b, weight: b.weight * 0.3 };
-      if (prevWasLeap && Math.sign(b.delta) === -prevLeapSign)
-        return { ...b, weight: b.weight * 1.6 };
-      return b;
-    });
+  function biasRatioFor(pat: ContourPattern, progress: number): number {
+    switch (pat) {
+      case 'ascending':  return 0.72;
+      case 'descending': return 0.28;
+      case 'arch':   return progress < 0.5 ? 0.72 : 0.28;
+      case 'valley': return progress < 0.5 ? 0.28 : 0.72;
+      default: return 0.5;
+    }
+  }
+
+  function weightedDelta(ms: number, biasRatio: number): number {
+    const weights: { delta: number; weight: number }[] = [{ delta: 0, weight: 10 }];
+    for (let d = 1; d <= ms; d++) {
+      const base = STEP_BASE_WEIGHTS[d - 1] ?? 1;
+      weights.push({ delta:  d, weight: base * (biasRatio * 2) });
+      weights.push({ delta: -d, weight: base * ((1 - biasRatio) * 2) });
+    }
     const total = weights.reduce((s, w) => s + w.weight, 0);
     let r = Math.random() * total;
     for (const w of weights) {
@@ -114,6 +128,13 @@
       Math.abs(c - currentIdx) < Math.abs(best - currentIdx) ? c : best, stableIndices[0]);
   }
 
+  function moveTowardStable(currentIdx: number, stableIndices: number[], ms: number): number {
+    const target = nearestStable(currentIdx, stableIndices);
+    const diff = target - currentIdx;
+    const step = Math.max(-ms, Math.min(ms, diff));
+    return currentIdx + step;
+  }
+
   function pickDuration(pool: number[], strongBeat: boolean): number {
     if (pool.length === 1) return pool[0];
     const sorted = [...pool].sort((a, b) => a - b);
@@ -126,34 +147,32 @@
   }
 
   function generateStructuredPhrase(
-    ivs: number[], rpc: number, secPerBeat: number, pool: number[], targetSeconds: number
+    ivs: number[], rpc: number, secPerBeat: number, pool: number[],
+    targetSeconds: number, ms: number, pat: ContourPattern
   ): MelodyNote[] {
     const stableIndices = [0, pickStableIndex(ivs)];
     const seq: MelodyNote[] = [];
     let cumulative = 0;
     let currentIdx = 0;
-    let prevWasLeap = false;
-    let prevLeapSign = 1;
     let guard = 0;
 
     while (cumulative < targetSeconds && guard < 300) {
       guard++;
       const strong = isStrongBeat(cumulative, secPerBeat);
+      const progress = cumulative / targetSeconds;
 
       if (strong && Math.random() < 0.6) {
-        currentIdx = nearestStable(currentIdx, stableIndices);
+        currentIdx = moveTowardStable(currentIdx, stableIndices, ms);
       } else {
-        const delta = weightedDelta(prevWasLeap, prevLeapSign);
+        const biasRatio = biasRatioFor(pat, progress);
+        const delta = weightedDelta(ms, biasRatio);
         currentIdx = Math.max(0, Math.min(ivs.length - 1, currentIdx + delta));
-        prevWasLeap = Math.abs(delta) >= LEAP_THRESHOLD;
-        prevLeapSign = Math.sign(delta) || 1;
       }
 
-      const octShift = Math.random() < 0.15 ? 12 : 0;
       const duration = pickDuration(pool, strong);
       seq.push({
         degreeIndex: currentIdx,
-        interval: ivs[currentIdx] + octShift,
+        interval: ivs[currentIdx],
         pc: (rpc + ivs[currentIdx]) % 12,
         duration,
       });
@@ -163,16 +182,16 @@
   }
 
   function buildPhraseWithMotif(
-    ivs: number[], rpc: number, secPerBeat: number, pool: number[], targetSeconds: number
+    ivs: number[], rpc: number, secPerBeat: number, pool: number[],
+    targetSeconds: number, ms: number, pat: ContourPattern
   ): MelodyNote[] {
-    const motif = generateStructuredPhrase(ivs, rpc, secPerBeat, pool, targetSeconds / 2);
+    const motif = generateStructuredPhrase(ivs, rpc, secPerBeat, pool, targetSeconds / 2, ms, pat);
     const shift = Math.random() < 0.5 ? 1 : 0;
     const second = motif.map(n => {
       const newIdx = Math.max(0, Math.min(ivs.length - 1, n.degreeIndex + shift));
-      const octPart = n.interval - ivs[n.degreeIndex]; // オクターブ上げ分を保持
       return {
         degreeIndex: newIdx,
-        interval: ivs[newIdx] + octPart,
+        interval: ivs[newIdx],
         pc: (rpc + ivs[newIdx]) % 12,
         duration: n.duration,
       };
@@ -183,13 +202,11 @@
   function generateMelody(): MelodyNote[] {
     const pool = buildDurationPool();
     const secPerBeat = 60 / bpm;
-    const targetSeconds = Math.max(secPerBeat, bars * 4 * secPerBeat - secPerBeat);
+    const targetSeconds = bars * 4 * secPerBeat;
 
-    const body = useMotifRepeat
-      ? buildPhraseWithMotif(intervals, rootPc, secPerBeat, pool, targetSeconds)
-      : generateStructuredPhrase(intervals, rootPc, secPerBeat, pool, targetSeconds);
-
-    return [...body, { degreeIndex: 0, interval: 0, pc: rootPc % 12, duration: secPerBeat }];
+    return useMotifRepeat
+      ? buildPhraseWithMotif(intervals, rootPc, secPerBeat, pool, targetSeconds, maxStep, pattern)
+      : generateStructuredPhrase(intervals, rootPc, secPerBeat, pool, targetSeconds, maxStep, pattern);
   }
 
   function playMelodySeq(seq: MelodyNote[]) {
@@ -307,6 +324,34 @@
         </div>
       </div>
 
+      <!-- 最大度数差 -->
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-gray-400">最大度数差</span>
+        <div class="flex gap-1">
+          {#each [1, 2, 3, 4] as n}
+            <button
+              class="px-2 py-0.5 text-xs rounded
+                {maxStep === n ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+              onclick={() => (maxStep = n)}
+            >{n}度</button>
+          {/each}
+        </div>
+      </div>
+
+      <!-- メロディの形 -->
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-gray-400">メロディの形</span>
+        <div class="flex flex-wrap gap-1">
+          {#each CONTOUR_OPTIONS as opt}
+            <button
+              class="px-2 py-0.5 text-xs rounded
+                {pattern === opt.id ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+              onclick={() => (pattern = opt.id)}
+            >{opt.label}</button>
+          {/each}
+        </div>
+      </div>
+
       <!-- ボタン + ノートチップ（ボタン右に並ぶ） -->
       <div class="flex flex-wrap items-center gap-2">
         <button
@@ -327,7 +372,7 @@
           {#each cachedMelody as note, i}
             <span class="px-1.5 py-0.5 text-xs rounded font-mono
               {currentNoteIdx === i ? 'bg-teal-500 text-white' : 'bg-gray-700 text-gray-300'}">
-              {NOTE_NAMES[note.pc]}{i === cachedMelody.length - 1 ? ' 🏠' : ''}
+              {NOTE_NAMES[note.pc]}
             </span>
           {/each}
         {/if}
