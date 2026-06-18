@@ -21,13 +21,17 @@
   const highPct = $derived(((high - min) / range) * 100);
 
   function onLowInput(e: Event) {
-    const v = Number((e.target as HTMLInputElement).value);
+    const target = e.target as HTMLInputElement;
+    const v = Number(target.value);
     low = Math.min(v, high);
+    target.value = String(low); // 視覚的な位置を強制更新
   }
 
   function onHighInput(e: Event) {
-    const v = Number((e.target as HTMLInputElement).value);
+    const target = e.target as HTMLInputElement;
+    const v = Number(target.value);
     high = Math.max(v, low);
+    target.value = String(high); // 視覚的な位置を強制更新
   }
 </script>
 
