@@ -1,11 +1,12 @@
 <!-- src/lib/components/DiatonicChordPanel.svelte -->
 <script lang="ts">
   import type { DiatonicChord } from '$lib/diatonicChords';
-  import { NOTE_NAMES } from '$lib/scaleData';
+  import { NOTE_NAMES, applyInversion } from '$lib/scaleData';
   import { getAudioContext, startNoteAt } from '$lib/audioEngine';
 
   let {
     diatonicChords,
+    inversion = 0,
     addPlayingPc,
     removePlayingPc,
     addPlayingMidi,
@@ -13,6 +14,7 @@
     stopProgression,
   }: {
     diatonicChords: DiatonicChord[];
+    inversion?: number;
     addPlayingPc: (pc: number) => void;
     removePlayingPc: (pc: number) => void;
     addPlayingMidi?: (midi: number) => void;
@@ -49,7 +51,7 @@
     stopCurrentChord();
     pressedDegree = chord.degreeIndex;
     const ctx = getAudioContext();
-    chord.intervals.forEach(interval => {
+    applyInversion(chord.intervals, inversion).forEach(interval => {
       const midi = 60 + chord.rootPc + interval;
       const pc = (chord.rootPc + interval) % 12;
       const stopFn = startNoteAt(ctx, midi, ctx.currentTime);

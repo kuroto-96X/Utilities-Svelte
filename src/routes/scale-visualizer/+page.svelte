@@ -1,7 +1,7 @@
 <!-- src/routes/scale-visualizer/+page.svelte -->
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { ROOTS, SCALES, CHORDS, NOTE_NAMES } from '$lib/scaleData';
+  import { ROOTS, SCALES, CHORDS, NOTE_NAMES, applyInversion } from '$lib/scaleData';
   import { buildKeyboardWindow } from '$lib/pianoLayout';
   import { buildDiatonicChords } from '$lib/diatonicChords';
   import { DEFAULT_BPM } from '$lib/noteDuration';
@@ -23,6 +23,7 @@
   let octaves = $state(1);
   let playingPcs = $state(new Set<number>());
   let playingMidis = $state(new Set<number>());
+  let inversion = $state(0);
   let progressionStopCount = $state(0);
   let playId = 0;
   let currentPlayStopFns: Array<() => void> = [];
@@ -73,7 +74,7 @@
 
     if (mode === 'chord') {
       // コード：全音を同時に鳴らし、全音符の長さで自動停止
-      currentIntervals.forEach(interval => {
+      applyInversion(currentIntervals, inversion).forEach(interval => {
         const midi = 60 + root.pc + interval;
         const pc = (root.pc + interval) % 12;
         const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
@@ -170,6 +171,15 @@
               onclick={() => (anchorToRoot = true)}
             >ルート基準</button>
           </div>
+          <div class="flex items-center gap-1 text-xs">
+            <span class="text-gray-400">転回形</span>
+            {#each ['ルート', '1転', '2転', '3転'] as label, i}
+              <button
+                class="px-2 py-1 rounded {inversion === i ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+                onclick={() => (inversion = i)}
+              >{label}</button>
+            {/each}
+          </div>
         </div>
         <div class="overflow-x-auto flex justify-center">
           <PianoKeyboard
@@ -202,6 +212,7 @@
       {#if diatonicChords}
         <DiatonicChordPanel
           {diatonicChords}
+          {inversion}
           {addPlayingPc}
           {removePlayingPc}
           {addPlayingMidi}
@@ -216,7 +227,7 @@
       />
       {#if diatonicChords}
         <ProgressionPlayer
-          {diatonicChords} {bpm} {addPlayingPc} {removePlayingPc} {addPlayingMidi} {removePlayingMidi}
+          {diatonicChords} {bpm} {inversion} {addPlayingPc} {removePlayingPc} {addPlayingMidi} {removePlayingMidi}
           stopCount={progressionStopCount}
         />
       {/if}

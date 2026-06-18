@@ -34,6 +34,9 @@
   } = $props();
 
   const scalePcs = $derived(new Set(intervals.map(i => (rootPc + i) % 12)));
+  const bassMidi = $derived(
+    playingMidis && playingMidis.size > 0 ? Math.min(...playingMidis) : -1
+  );
 
   const stopFns = new Map<number, () => void>();
 
@@ -133,13 +136,14 @@
   {/each}
 
   <!-- アクティブリング（最前面・opacity影響を受けない） -->
+  <!-- ベース音（最低音）は青、それ以外はオレンジ -->
   {#each whiteKeys as key (key.windowIndex)}
     {#if isActive(key.windowIndex, key.pc)}
       <rect
         x={key.x + 2} y={2}
         width={WHITE_W - 5} height={WHITE_H - 4}
         fill="none"
-        stroke="#f97316"
+        stroke={60 + key.windowIndex === bassMidi ? '#60a5fa' : '#f97316'}
         stroke-width={3}
         rx={2}
       />
@@ -151,7 +155,7 @@
         x={key.x + 2} y={2}
         width={BLACK_W - 4} height={BLACK_H - 4}
         fill="none"
-        stroke="#f97316"
+        stroke={60 + key.windowIndex === bassMidi ? '#60a5fa' : '#f97316'}
         stroke-width={3}
         rx={2}
       />

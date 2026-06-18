@@ -59,6 +59,18 @@ export const CHORD_GROUPS: Group[] = [
 ];
 export const CHORDS: ScaleOrChord[] = CHORD_GROUPS.flatMap(g => g.items);
 
+/**
+ * 転回形を適用する。inv=1: 第1転回形（最低音=3度）、inv=2: 第2転回形（最低音=5度）など。
+ * コードの音数を超えるinvはコードサイズ-1にクランプされる。
+ */
+export function applyInversion(intervals: number[], inv: number): number[] {
+  if (inv === 0) return [...intervals];
+  const sorted = [...intervals].sort((a, b) => a - b);
+  const count = Math.min(inv, sorted.length - 1);
+  for (let i = 0; i < count; i++) sorted[i] += 12;
+  return sorted.sort((a, b) => a - b);
+}
+
 export interface Progression { id: string; label: string; degrees: number[]; }
 export const PROGRESSIONS: Progression[] = [
   // 既存

@@ -1,13 +1,14 @@
 <!-- src/lib/components/ProgressionPlayer.svelte -->
 <script lang="ts">
   import type { DiatonicChord } from '$lib/diatonicChords';
-  import { PROGRESSIONS, CHROMATIC_PROGRESSIONS, TENSION_PROGRESSIONS, NOTE_NAMES } from '$lib/scaleData';
+  import { PROGRESSIONS, CHROMATIC_PROGRESSIONS, TENSION_PROGRESSIONS, NOTE_NAMES, applyInversion } from '$lib/scaleData';
   import type { Progression, ChromaticProgression } from '$lib/scaleData';
   import { getAudioContext, startNoteAt } from '$lib/audioEngine';
 
   let {
     diatonicChords,
     bpm,
+    inversion = 0,
     addPlayingPc,
     removePlayingPc,
     addPlayingMidi,
@@ -16,6 +17,7 @@
   }: {
     diatonicChords: DiatonicChord[];
     bpm: number;
+    inversion?: number;
     addPlayingPc: (pc: number) => void;
     removePlayingPc: (pc: number) => void;
     addPlayingMidi?: (midi: number) => void;
@@ -112,7 +114,7 @@
       const step = prog.steps[stepIndex % prog.steps.length];
       const keyRoot = ((diatonicChords[0]?.rootPc ?? 0) + 120);
       const chordRoot = (keyRoot + step.semitone) % 12;
-      step.intervals.forEach(interval => {
+      applyInversion(step.intervals, inversion).forEach(interval => {
         const midi = 60 + chordRoot + interval;
         const pc = (chordRoot + interval) % 12;
         const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
@@ -126,7 +128,7 @@
       const degree = prog.degrees[stepIndex % prog.degrees.length];
       const chord = diatonicChords[degree];
       if (chord) {
-        chord.intervals.forEach(interval => {
+        applyInversion(chord.intervals, inversion).forEach(interval => {
           const midi = 60 + chord.rootPc + interval;
           const pc = (chord.rootPc + interval) % 12;
           const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
