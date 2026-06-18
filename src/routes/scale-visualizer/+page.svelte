@@ -24,6 +24,16 @@
   let playingPcs = $state(new Set<number>());
   let playingMidis = $state(new Set<number>());
   let inversion = $state(0);
+  let playingChordName = $state('');
+
+  const CHORD_SUFFIX: Record<string, string> = {
+    maj: '', min: 'm', dim: 'dim', aug: '+',
+    maj7: 'maj7', min7: 'm7', dom7: '7',
+    sus2: 'sus2', sus4: 'sus4', add9: 'add9',
+    maj9: 'maj9', min9: 'm9', dom9: '9',
+  };
+
+  function setPlayingChordName(name: string) { playingChordName = name; }
   let progressionStopCount = $state(0);
   let playId = 0;
   let currentPlayStopFns: Array<() => void> = [];
@@ -54,6 +64,7 @@
     stopAllCurrentNotes();
     playingPcs = new Set();
     playingMidis = new Set();
+    playingChordName = '';
   }
 
   $effect(() => {
@@ -82,12 +93,14 @@
         addPlayingPc(pc);
         addPlayingMidi(midi);
       });
+      playingChordName = NOTE_NAMES[root.pc] + (CHORD_SUFFIX[chordId] ?? chordId);
       const wholeDuration = (60 / bpm) * 2;
       setTimeout(() => {
         if (playId !== myId) return;
         stopAllCurrentNotes();
         playingPcs = new Set();
         playingMidis = new Set();
+        playingChordName = '';
       }, wholeDuration * 1000);
     } else {
       // スケール：各音を次の音が始まるまで持続
@@ -200,6 +213,9 @@
         <!-- 再生中の音の表示 -->
         <div class="text-center font-mono text-sm min-h-[1.5rem]">
           {#if playingPcs.size > 0}
+            {#if playingChordName}
+              <span class="text-orange-400 mr-2 font-bold">{playingChordName}</span>
+            {/if}
             <span class="text-teal-400">
               {[...playingPcs].sort((a, b) => a - b).map(pc => NOTE_NAMES[pc]).join(' · ')}
             </span>
@@ -217,6 +233,7 @@
           {removePlayingPc}
           {addPlayingMidi}
           {removePlayingMidi}
+          {setPlayingChordName}
           stopProgression={() => { progressionStopCount += 1; }}
         />
       {/if}
@@ -228,6 +245,7 @@
       {#if diatonicChords}
         <ProgressionPlayer
           {diatonicChords} {bpm} {inversion} {addPlayingPc} {removePlayingPc} {addPlayingMidi} {removePlayingMidi}
+          {setPlayingChordName}
           stopCount={progressionStopCount}
         />
       {/if}

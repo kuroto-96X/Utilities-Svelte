@@ -22,6 +22,7 @@
     removePlayingPc: (pc: number) => void;
     addPlayingMidi?: (midi: number) => void;
     removePlayingMidi?: (midi: number) => void;
+    setPlayingChordName?: (name: string) => void;
     stopCount?: number;
   } = $props();
 
@@ -68,15 +69,20 @@
     }).join(' → ');
   }
 
-  function progSubLabel(prog: AnyProg): string {
+  function progChordNames(prog: AnyProg): string[] {
+    const keyRoot = diatonicChords[0]?.rootPc ?? 0;
     return isChromatic(prog)
-      ? chromaticChordNames(prog)
-      : prog.degrees.map(d => chordNameForDegree(d)).join(' → ');
+      ? prog.steps.map(s => {
+          const rootPc = ((keyRoot + s.semitone) % 12 + 12) % 12;
+          return NOTE_NAMES[rootPc] + qualitySuffix(s.intervals);
+        })
+      : prog.degrees.map(d => chordNameForDegree(d));
   }
 
   // ---- 再生ロジック ----
 
   let activeProgId = $state<string | null>(null);
+  let activeStepIndex = $state(-1);
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   let activeChordStopFns: Array<() => void> = [];
   let activeChordPcs: number[] = [];
@@ -93,8 +99,10 @@
 
   function stopInternal() {
     activeProgId = null;
+    activeStepIndex = -1;
     if (timeoutId !== null) { clearTimeout(timeoutId); timeoutId = null; }
     stopCurrentChord();
+    setPlayingChordName?.('');
   }
 
   $effect(() => {
@@ -108,12 +116,16 @@
     const ctx = getAudioContext();
     const STEP_SPACING = (60 / bpm) * 2;
 
+    const stepsLen = isChromatic(prog) ? prog.steps.length : prog.degrees.length;
+    activeStepIndex = stepIndex % stepsLen;
+
     stopCurrentChord();
 
     if (isChromatic(prog)) {
-      const step = prog.steps[stepIndex % prog.steps.length];
+      const step = prog.steps[activeStepIndex];
       const keyRoot = ((diatonicChords[0]?.rootPc ?? 0) + 120);
       const chordRoot = (keyRoot + step.semitone) % 12;
+      setPlayingChordName?.(NOTE_NAMES[chordRoot] + qualitySuffix(step.intervals));
       applyInversion(step.intervals, inversion).forEach(interval => {
         const midi = 60 + chordRoot + interval;
         const pc = (chordRoot + interval) % 12;
@@ -125,7 +137,8 @@
         addPlayingMidi?.(midi);
       });
     } else {
-      const degree = prog.degrees[stepIndex % prog.degrees.length];
+      const degree = prog.degrees[activeStepIndex];
+      setPlayingChordName?.(chordNameForDegree(degree));
       const chord = diatonicChords[degree];
       if (chord) {
         applyInversion(chord.intervals, inversion).forEach(interval => {
@@ -166,6 +179,8 @@
       <p class="text-xs text-gray-500 mb-1">ダイアトニック</p>
       <div class="space-y-1">
         {#each PROGRESSIONS as prog}
+          {@const names = progChordNames(prog)}
+          {@const activeIdx = activeProgId === prog.id ? activeStepIndex : -1}
           <button
             class="w-full text-left px-3 py-2 text-sm rounded
               {activeProgId === prog.id
@@ -174,7 +189,12 @@
             onclick={() => toggleProgression(prog)}
           >
             <span class="block">{activeProgId === prog.id ? '⏹ ' : '▶ '}{prog.label}</span>
-            <span class="block text-xs opacity-60 font-mono mt-0.5">{progSubLabel(prog)}</span>
+            <span class="block text-xs font-mono mt-0.5">
+              {#each names as name, i}
+                {#if i > 0}<span class="opacity-40"> → </span>{/if}
+                <span class="{activeIdx === i ? 'text-orange-400' : 'opacity-60'}">{name}</span>
+              {/each}
+            </span>
           </button>
         {/each}
       </div>
@@ -185,6 +205,8 @@
       <p class="text-xs text-gray-500 mb-1">クロマティック</p>
       <div class="space-y-1">
         {#each CHROMATIC_PROGRESSIONS as prog}
+          {@const names = progChordNames(prog)}
+          {@const activeIdx = activeProgId === prog.id ? activeStepIndex : -1}
           <button
             class="w-full text-left px-3 py-2 text-sm rounded
               {activeProgId === prog.id
@@ -193,7 +215,12 @@
             onclick={() => toggleProgression(prog)}
           >
             <span class="block">{activeProgId === prog.id ? '⏹ ' : '▶ '}{prog.label}</span>
-            <span class="block text-xs opacity-60 font-mono mt-0.5">{progSubLabel(prog)}</span>
+            <span class="block text-xs font-mono mt-0.5">
+              {#each names as name, i}
+                {#if i > 0}<span class="opacity-40"> → </span>{/if}
+                <span class="{activeIdx === i ? 'text-orange-400' : 'opacity-60'}">{name}</span>
+              {/each}
+            </span>
           </button>
         {/each}
       </div>
@@ -204,6 +231,8 @@
       <p class="text-xs text-gray-500 mb-1">テンション解決</p>
       <div class="space-y-1">
         {#each TENSION_PROGRESSIONS as prog}
+          {@const names = progChordNames(prog)}
+          {@const activeIdx = activeProgId === prog.id ? activeStepIndex : -1}
           <button
             class="w-full text-left px-3 py-2 text-sm rounded
               {activeProgId === prog.id
@@ -212,7 +241,12 @@
             onclick={() => toggleProgression(prog)}
           >
             <span class="block">{activeProgId === prog.id ? '⏹ ' : '▶ '}{prog.label}</span>
-            <span class="block text-xs opacity-60 font-mono mt-0.5">{progSubLabel(prog)}</span>
+            <span class="block text-xs font-mono mt-0.5">
+              {#each names as name, i}
+                {#if i > 0}<span class="opacity-40"> → </span>{/if}
+                <span class="{activeIdx === i ? 'text-orange-400' : 'opacity-60'}">{name}</span>
+              {/each}
+            </span>
           </button>
         {/each}
       </div>

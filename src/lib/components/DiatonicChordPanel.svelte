@@ -19,6 +19,7 @@
     removePlayingPc: (pc: number) => void;
     addPlayingMidi?: (midi: number) => void;
     removePlayingMidi?: (midi: number) => void;
+    setPlayingChordName?: (name: string) => void;
     stopProgression: () => void;
   } = $props();
 
@@ -50,6 +51,7 @@
     stopProgression();
     stopCurrentChord();
     pressedDegree = chord.degreeIndex;
+    setPlayingChordName?.(chordName(chord));
     const ctx = getAudioContext();
     applyInversion(chord.intervals, inversion).forEach(interval => {
       const midi = 60 + chord.rootPc + interval;
@@ -66,6 +68,7 @@
   function stopChord() {
     pressedDegree = null;
     stopCurrentChord();
+    setPlayingChordName?.('');
   }
 </script>
 
