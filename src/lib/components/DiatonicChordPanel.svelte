@@ -11,6 +11,7 @@
     removePlayingPc,
     addPlayingMidi,
     removePlayingMidi,
+    setPlayingChordName,
     stopProgression,
   }: {
     diatonicChords: DiatonicChord[];

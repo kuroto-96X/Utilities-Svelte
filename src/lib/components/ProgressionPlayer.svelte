@@ -13,6 +13,7 @@
     removePlayingPc,
     addPlayingMidi,
     removePlayingMidi,
+    setPlayingChordName,
     stopCount = 0,
   }: {
     diatonicChords: DiatonicChord[];
