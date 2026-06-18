@@ -23,7 +23,8 @@
   // low 入力が high を右に越えたとき、high として機能するフラグ
   let draggingHighFromLow = false;
   // high 入力が low を左に越えたとき、low として機能するフラグ
-  let draggingLowFromHigh = false;
+  // $state にすることで pointerup 時に再レンダリングが走り value={high} が同期される
+  let draggingLowFromHigh = $state(false);
 
   $effect(() => {
     const reset = () => { draggingHighFromLow = false; draggingLowFromHigh = false; };
@@ -78,7 +79,8 @@
         high = v;
       }
     }
-    target.value = String(high);
+    // high 入力はスナップしない → ポインターに追従させる
+    // pointerup 時に $state 変化で再レンダリングされ value={high} が正しく同期される
   }
 </script>
 
