@@ -20,10 +20,14 @@
   const lowPct  = $derived(((low  - min) / range) * 100);
   const highPct = $derived(((high - min) / range) * 100);
 
-  // low 入力が high を右に越えたとき、high として機能するフラグ
-  let draggingHighFromLow = false;
-  // high 入力が low を左に越えたとき、low として機能するフラグ
-  let draggingLowFromHigh = false;
+  // $state にしてフラグ変化時に再レンダリングを起こす（アンカー表示の同期に必要）
+  let draggingHighFromLow = $state(false);
+  let draggingLowFromHigh = $state(false);
+
+  // ルーティング中はアンカー側の入力がアンカー位置を表示し続ける
+  // これにより target.value スナップ不要になり、ドラッグ中の入力は自然追従できる
+  const lowInputValue  = $derived(draggingLowFromHigh  ? high : low);
+  const highInputValue = $derived(draggingHighFromLow  ? low  : high);
 
   $effect(() => {
     const reset = () => { draggingHighFromLow = false; draggingLowFromHigh = false; };
@@ -32,54 +36,41 @@
   });
 
   function onLowInput(e: Event) {
-    const target = e.target as HTMLInputElement;
-    const v = Number(target.value);
+    const v = Number((e.target as HTMLInputElement).value);
     if (draggingHighFromLow) {
       if (v <= low) {
-        // アンカー位置まで戻った → 役割を戻す
         draggingHighFromLow = false;
         high = low;
         low = v;
       } else {
         high = v;
       }
+    } else if (v >= high) {
+      draggingHighFromLow = true;
+      low = high;
+      high = v;
     } else {
-      if (v >= high) {
-        // high に重なった・越えた → high として動かすモードへ
-        draggingHighFromLow = true;
-        low = high;
-        high = v;
-      } else {
-        low = v;
-      }
+      low = v;
     }
-    target.value = String(low);
   }
 
   function onHighInput(e: Event) {
-    const target = e.target as HTMLInputElement;
-    const v = Number(target.value);
+    const v = Number((e.target as HTMLInputElement).value);
     if (draggingLowFromHigh) {
       if (v >= high) {
-        // アンカー位置まで戻った → 役割を戻す
         draggingLowFromHigh = false;
         low = high;
         high = v;
       } else {
         low = v;
       }
+    } else if (v <= low) {
+      draggingLowFromHigh = true;
+      high = low;
+      low = v;
     } else {
-      if (v <= low) {
-        // low に重なった・越えた → low として動かすモードへ
-        draggingLowFromHigh = true;
-        high = low;
-        low = v;
-      } else {
-        high = v;
-      }
+      high = v;
     }
-    // high 入力をアンカー位置に固定（低ハンドルだけ動かすため）
-    target.value = String(high);
   }
 </script>
 
@@ -92,12 +83,12 @@
       style="left: {lowPct}%; width: {highPct - lowPct}%"
     ></div>
     <input
-      type="range" {min} {max} {step} value={low}
+      type="range" {min} {max} {step} value={lowInputValue}
       oninput={onLowInput}
       style="z-index: {low >= high ? 5 : 3}"
     />
     <input
-      type="range" {min} {max} {step} value={high}
+      type="range" {min} {max} {step} value={highInputValue}
       oninput={onHighInput}
       style="z-index: 4"
     />
