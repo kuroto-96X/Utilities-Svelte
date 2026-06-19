@@ -123,10 +123,10 @@
 
   function biasRatioFor(pat: ContourPattern, progress: number): number {
     switch (pat) {
-      case 'ascending':  return 0.72;
-      case 'descending': return 0.28;
-      case 'arch':   return progress < 0.5 ? 0.72 : 0.28;
-      case 'valley': return progress < 0.5 ? 0.28 : 0.72;
+      case 'ascending':  return 0.85;
+      case 'descending': return 0.15;
+      case 'arch':   return progress < 0.5 ? 0.85 : 0.15;
+      case 'valley': return progress < 0.5 ? 0.15 : 0.85;
       default: return 0.5;
     }
   }
@@ -240,23 +240,37 @@
       : generateStructuredPhrase(ivs, rootPc, secPerBeat, pool, targetSeconds, maxStep, pattern);
   }
 
+  // 再生セッション管理（セッションIDが変わると進行中のコールバックが無効化される）
+  let playSession = 0;
+  let activeStopFn: (() => void) | null = null;
+  let activePc: number | null = null;
+  let activeMidi: number | null = null;
+
+  function stopCurrentNote() {
+    activeStopFn?.();
+    if (activePc !== null) removePlayingPc(activePc);
+    if (activeMidi !== null) removePlayingMidi?.(activeMidi);
+    activeStopFn = null; activePc = null; activeMidi = null;
+  }
+
+  function stopMelody() {
+    playSession++;
+    stopCurrentNote();
+    isPlaying = false;
+    currentNoteIdx = null;
+  }
+
   function playMelodySeq(seq: MelodyNote[]) {
-    if (isPlaying) return;
+    const mySession = ++playSession;
+    stopCurrentNote();
     isPlaying = true;
     currentNoteIdx = null;
     const ctx = getAudioContext();
-    let activeStopFn: (() => void) | null = null;
-    let activePc: number | null = null;
-    let activeMidi: number | null = null;
     let stepIdx = 0;
 
     function playNextNote() {
-      activeStopFn?.();
-      if (activePc !== null) removePlayingPc(activePc);
-      if (activeMidi !== null) removePlayingMidi?.(activeMidi);
-      activeStopFn = null;
-      activePc = null;
-      activeMidi = null;
+      if (playSession !== mySession) return;
+      stopCurrentNote();
 
       if (stepIdx >= seq.length) {
         isPlaying = false;
@@ -269,8 +283,7 @@
       const midi = 60 + rootPc + note.interval;
       const pc = note.pc;
 
-      const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
-      activeStopFn = stopFn;
+      activeStopFn = startNoteAt(ctx, midi, ctx.currentTime);
       activePc = pc;
       activeMidi = midi;
       addPlayingPc(pc);
@@ -289,10 +302,6 @@
     playMelodySeq(seq);
   }
 
-  function handleReplay() {
-    if (cachedMelody) playMelodySeq(cachedMelody);
-  }
-
 </script>
 
 <div class="border border-gray-700 rounded-lg p-3">
@@ -302,67 +311,48 @@
     <div class="flex-1 min-w-0 space-y-3">
       <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">ランダムメロディ生成</p>
 
-      <!-- 設定行 -->
-      <div class="flex flex-wrap gap-3 items-center">
-        <!-- 小節数 -->
-        <div class="flex items-center gap-1">
-          <span class="text-xs text-gray-400">小節数</span>
-          <div class="flex gap-1">
-            {#each BARS_OPTIONS as b}
-              <button
-                class="px-2 py-0.5 text-xs rounded
-                  {bars === b ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-                onclick={() => (bars = b)}
-              >{b}</button>
-            {/each}
-          </div>
+      <!-- 小節数 -->
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-gray-400 w-20 shrink-0">小節数</span>
+        <div class="flex gap-1">
+          {#each BARS_OPTIONS as b}
+            <button
+              class="px-2 py-0.5 text-xs rounded
+                {bars === b ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+              onclick={() => (bars = b)}
+            >{b}</button>
+          {/each}
         </div>
+      </div>
 
-        <!-- 音域 -->
-        <div class="flex items-center gap-1">
-          <span class="text-xs text-gray-400">音域</span>
-          <div class="flex gap-1">
-            {#each [1, 2] as oct}
-              <button
-                class="px-2 py-0.5 text-xs rounded
-                  {octaveRange === oct ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-                onclick={() => (octaveRange = oct as 1 | 2)}
-              >{oct}oct</button>
-            {/each}
-          </div>
+      <!-- 音域 -->
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-gray-400 w-20 shrink-0">音域</span>
+        <div class="flex gap-1">
+          {#each [1, 2] as oct}
+            <button
+              class="px-2 py-0.5 text-xs rounded
+                {octaveRange === oct ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+              onclick={() => (octaveRange = oct as 1 | 2)}
+            >{oct}oct</button>
+          {/each}
         </div>
+      </div>
 
-        <!-- 音符範囲 -->
-        <div class="flex items-center gap-2">
-          <span class="text-xs text-gray-400">音符</span>
-          <RangeSlider
-            min={0} max={5}
-            bind:low={minNoteIdx}
-            bind:high={maxNoteIdx}
-            formatter={(v) => NOTE_LABELS[v]}
-          />
-        </div>
-
-        <!-- 付点/3連/モチーフ -->
-        <div class="flex gap-2 text-xs">
-          <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
-            <input type="checkbox" bind:checked={useDotted} class="accent-teal-500" />
-            付点
-          </label>
-          <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
-            <input type="checkbox" bind:checked={useTriplet} class="accent-teal-500" />
-            3連符
-          </label>
-          <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
-            <input type="checkbox" bind:checked={useMotifRepeat} class="accent-teal-500" />
-            モチーフ反復
-          </label>
-        </div>
+      <!-- 音符範囲 -->
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-gray-400 w-20 shrink-0">音符</span>
+        <RangeSlider
+          min={0} max={5}
+          bind:low={minNoteIdx}
+          bind:high={maxNoteIdx}
+          formatter={(v) => NOTE_LABELS[v]}
+        />
       </div>
 
       <!-- 最大度数差 -->
       <div class="flex items-center gap-2">
-        <span class="text-xs text-gray-400">最大度数差</span>
+        <span class="text-xs text-gray-400 w-20 shrink-0">最大度数差</span>
         <div class="flex gap-1">
           {#each [1, 2, 3, 4] as n}
             <button
@@ -376,7 +366,7 @@
 
       <!-- メロディの形 -->
       <div class="flex items-center gap-2">
-        <span class="text-xs text-gray-400">メロディの形</span>
+        <span class="text-xs text-gray-400 w-20 shrink-0">メロディの形</span>
         <div class="flex flex-wrap gap-1">
           {#each CONTOUR_OPTIONS as opt}
             <button
@@ -388,23 +378,40 @@
         </div>
       </div>
 
-      <!-- ボタン + ノートチップ（ボタン右に並ぶ） -->
+      <!-- チェックボックス -->
+      <div class="flex gap-3 text-xs">
+        <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
+          <input type="checkbox" bind:checked={useDotted} class="accent-teal-500" />
+          付点
+        </label>
+        <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
+          <input type="checkbox" bind:checked={useTriplet} class="accent-teal-500" />
+          3連符
+        </label>
+        <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
+          <input type="checkbox" bind:checked={useMotifRepeat} class="accent-teal-500" />
+          モチーフ反復
+        </label>
+      </div>
+
+      <!-- ボタン + ノートチップ -->
       <div class="flex flex-wrap items-center gap-2">
-        <button
-          class="px-3 py-1.5 text-sm rounded bg-teal-600 hover:bg-teal-500 text-white disabled:opacity-50 flex-shrink-0"
-          onclick={handleGenerate}
-          disabled={isPlaying}
-        >
-          🎲 生成 & 再生
-        </button>
-        {#if cachedMelody}
+        {#if isPlaying}
           <button
-            class="px-3 py-1.5 text-sm rounded bg-gray-700 hover:bg-gray-600 text-gray-200 disabled:opacity-50 flex-shrink-0"
-            onclick={handleReplay}
-            disabled={isPlaying}
+            class="px-3 py-1.5 text-sm rounded bg-red-600 hover:bg-red-500 text-white flex-shrink-0"
+            onclick={stopMelody}
           >
-            ▶ 再生
+            ⏹ 停止
           </button>
+        {:else}
+          <button
+            class="px-3 py-1.5 text-sm rounded bg-teal-600 hover:bg-teal-500 text-white flex-shrink-0"
+            onclick={handleGenerate}
+          >
+            🎲 生成 & 再生
+          </button>
+        {/if}
+        {#if cachedMelody}
           {#each cachedMelody as note, i}
             <span class="px-1.5 py-0.5 text-xs rounded font-mono
               {currentNoteIdx === i ? 'bg-teal-500 text-white' : 'bg-gray-700 text-gray-300'}">
