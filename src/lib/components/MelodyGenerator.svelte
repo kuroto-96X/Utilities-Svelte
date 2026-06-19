@@ -36,6 +36,7 @@
   type ContourPattern = 'random' | 'ascending' | 'descending' | 'arch' | 'valley';
 
   let bars = $state(2);
+  let octaveRange = $state<1 | 2>(1);
   let minNoteIdx = $state(1); // 16分音符
   let maxNoteIdx = $state(3); // 4分音符
   let useDotted = $state(false);
@@ -45,6 +46,13 @@
   let pattern = $state<ContourPattern>('random');
   let isPlaying = $state(false);
   let currentNoteIdx = $state<number | null>(null);
+
+  // 2オクターブ時は intervals の各音に +12 した音を追加
+  const extendedIntervals = $derived(
+    octaveRange === 2
+      ? [...intervals, ...intervals.map(iv => iv + 12)]
+      : intervals
+  );
 
   interface MelodyNote { degreeIndex: number; interval: number; pc: number; duration: number; }
   let cachedMelody = $state<MelodyNote[] | null>(null);
@@ -82,14 +90,35 @@
 
   const STEP_BASE_WEIGHTS = [28, 12, 6, 3, 2]; // index0=距離1, index1=距離2, ...
 
-  function pickStableIndex(ivs: number[]): number {
-    let bestIdx = 0;
-    let bestDiff = Infinity;
-    for (let i = 1; i < ivs.length; i++) {
-      const diff = Math.abs(ivs[i] - 7);
-      if (diff < bestDiff) { bestDiff = diff; bestIdx = i; }
+  // ルートと5度相当音のインデックスを収集（オクターブをまたいで対応）
+  function getStableIndices(ivs: number[]): number[] {
+    const result: number[] = [];
+    const octaves = [...new Set(ivs.map(iv => Math.floor(iv / 12)))].sort((a, b) => a - b);
+    for (const oct of octaves) {
+      const items = ivs.map((iv, i) => ({ iv, i })).filter(({ iv }) => Math.floor(iv / 12) === oct);
+      const root = items.find(({ iv }) => iv % 12 === 0);
+      if (root) result.push(root.i);
+      const fifth = items.reduce((best, cur) =>
+        Math.abs((cur.iv % 12) - 7) < Math.abs((best.iv % 12) - 7) ? cur : best, items[0]);
+      if (fifth && !result.includes(fifth.i)) result.push(fifth.i);
     }
-    return bestIdx;
+    return result.length > 0 ? result : [0];
+  }
+
+  // パターンに応じた開始インデックスを選ぶ
+  function pickStartIndex(rangeSize: number, pat: ContourPattern): number {
+    if (rangeSize <= 1) return 0;
+    const third = Math.max(1, Math.floor(rangeSize / 3));
+    switch (pat) {
+      case 'ascending':
+      case 'arch':
+        return Math.floor(Math.random() * third);
+      case 'descending':
+      case 'valley':
+        return rangeSize - 1 - Math.floor(Math.random() * third);
+      default:
+        return Math.floor(Math.random() * rangeSize);
+    }
   }
 
   function biasRatioFor(pat: ContourPattern, progress: number): number {
@@ -151,10 +180,10 @@
     ivs: number[], rpc: number, secPerBeat: number, pool: number[],
     targetSeconds: number, ms: number, pat: ContourPattern
   ): MelodyNote[] {
-    const stableIndices = [0, pickStableIndex(ivs)];
+    const stableIndices = getStableIndices(ivs);
     const seq: MelodyNote[] = [];
     let cumulative = 0;
-    let currentIdx = 0;
+    let currentIdx = pickStartIndex(ivs.length, pat);
     let guard = 0;
 
     while (cumulative < targetSeconds && guard < 300) {
@@ -204,10 +233,11 @@
     const pool = buildDurationPool();
     const secPerBeat = 60 / bpm;
     const targetSeconds = bars * 4 * secPerBeat;
+    const ivs = extendedIntervals;
 
     return useMotifRepeat
-      ? buildPhraseWithMotif(intervals, rootPc, secPerBeat, pool, targetSeconds, maxStep, pattern)
-      : generateStructuredPhrase(intervals, rootPc, secPerBeat, pool, targetSeconds, maxStep, pattern);
+      ? buildPhraseWithMotif(ivs, rootPc, secPerBeat, pool, targetSeconds, maxStep, pattern)
+      : generateStructuredPhrase(ivs, rootPc, secPerBeat, pool, targetSeconds, maxStep, pattern);
   }
 
   function playMelodySeq(seq: MelodyNote[]) {
@@ -284,6 +314,20 @@
                   {bars === b ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
                 onclick={() => (bars = b)}
               >{b}</button>
+            {/each}
+          </div>
+        </div>
+
+        <!-- 音域 -->
+        <div class="flex items-center gap-1">
+          <span class="text-xs text-gray-400">音域</span>
+          <div class="flex gap-1">
+            {#each [1, 2] as oct}
+              <button
+                class="px-2 py-0.5 text-xs rounded
+                  {octaveRange === oct ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+                onclick={() => (octaveRange = oct as 1 | 2)}
+              >{oct}oct</button>
             {/each}
           </div>
         </div>
