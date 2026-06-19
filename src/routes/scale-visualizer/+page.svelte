@@ -20,7 +20,7 @@
   let chordId = $state('maj');
   let bpm = $state(DEFAULT_BPM);
   let anchorToRoot = $state(false);
-  let octaves = $state(1);
+  let octaves = $state(2);
   let playingPcs = $state(new Set<number>());
   let playingMidis = $state(new Set<number>());
   let inversion = $state(0);
@@ -149,12 +149,6 @@
   <div class="flex flex-col md:flex-row gap-4">
     <!-- 左サイドバー -->
     <div class="md:w-52 flex-shrink-0 space-y-4">
-      <button
-        class="w-full px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white text-sm rounded font-medium"
-        onclick={playMain}
-      >
-        ▶ 再生
-      </button>
       <BpmSlider bind:bpm />
       <RootSelector bind:rootId onchange={playMain} />
       <ScaleChordSelector bind:mode bind:scaleId bind:chordId onchange={playMain} onstop={stopPlay} />

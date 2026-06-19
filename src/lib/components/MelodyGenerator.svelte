@@ -302,6 +302,10 @@
     playMelodySeq(seq);
   }
 
+  function handleReplay() {
+    if (cachedMelody) playMelodySeq(cachedMelody);
+  }
+
 </script>
 
 <div class="border border-gray-700 rounded-lg p-3">
@@ -410,6 +414,14 @@
           >
             🎲 生成 & 再生
           </button>
+          {#if cachedMelody}
+            <button
+              class="px-3 py-1.5 text-sm rounded bg-indigo-600 hover:bg-indigo-500 text-white flex-shrink-0"
+              onclick={handleReplay}
+            >
+              ▶ 再生
+            </button>
+          {/if}
         {/if}
         {#if cachedMelody}
           {#each cachedMelody as note, i}
