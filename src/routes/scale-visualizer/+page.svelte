@@ -45,7 +45,7 @@
       : CHORDS.find(c => c.id === chordId)!.intervals
   );
   const diatonicChords = $derived(buildDiatonicChords(currentIntervals, root.pc));
-  const keyboard = $derived(buildKeyboardWindow(anchorToRoot ? root.pc - 12 : -3, octaves));
+  const keyboard = $derived(buildKeyboardWindow(anchorToRoot ? (root.pc - 9 + 12) % 12 - 3 : -3, octaves));
 
   function addPlayingPc(pc: number) { playingPcs = new Set(playingPcs).add(pc); }
   function removePlayingPc(pc: number) { const s = new Set(playingPcs); s.delete(pc); playingPcs = s; }
@@ -205,7 +205,7 @@
             totalWidth={keyboard.totalWidth}
             intervals={currentIntervals}
             rootPc={root.pc}
-            startSemitone={anchorToRoot ? root.pc - 12 : -3}
+            startSemitone={anchorToRoot ? (root.pc - 9 + 12) % 12 - 3 : -3}
             {playingPcs}
             {playingMidis}
             {addPlayingPc}
