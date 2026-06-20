@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { onMount, onDestroy } from 'svelte'
   import { site } from '$lib/site'
 
   type Config = { toolVisibility: Record<string, boolean> }
@@ -17,6 +17,10 @@
     } catch {
       error = 'メニュー管理APIに接続できません。npm run dev で起動してください。'
     }
+  })
+
+  onDestroy(() => {
+    if (flashTimer) clearTimeout(flashTimer)
   })
 
   async function toggle(href: string) {
