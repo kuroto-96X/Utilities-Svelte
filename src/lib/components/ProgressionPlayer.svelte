@@ -2,8 +2,8 @@
 <script lang="ts">
   import { browser } from '$app/environment';
   import type { DiatonicChord } from '$lib/diatonicChords';
-  import { PROGRESSIONS, CHROMATIC_PROGRESSIONS, TENSION_PROGRESSIONS, NOTE_NAMES, resolveProgressionVoicing } from '$lib/scaleData';
-  import type { Progression, ChromaticProgression } from '$lib/scaleData';
+  import { PROGRESSIONS, CHROMATIC_PROGRESSIONS, TENSION_PROGRESSIONS, CHORDS, NOTE_NAMES, resolveProgressionVoicing } from '$lib/scaleData';
+  import type { Progression, ChromaticProgression, ChromaticStep } from '$lib/scaleData';
   import { getAudioContext, startNoteAt } from '$lib/audioEngine';
 
   let {
@@ -85,14 +85,30 @@
 
   // ---- ランダム進行生成・履歴 ----
 
-  const HISTORY_KEY = 'progressionHistory';
+  const HISTORY_KEY = 'progressionHistory2';
   const MAX_HISTORY = 9;
 
-  interface HistoryEntry { id: string; degrees: number[]; }
+  // スケール内の音のみで構成できるコードのプール（スケール・ルートが変わると自動更新）
+  const diatonicChordPool = $derived.by(() => {
+    const keyRoot = diatonicChords[0]?.rootPc ?? 0;
+    const scalePcs = new Set(diatonicChords.map(c => c.rootPc));
+    return [...scalePcs].flatMap(rootPc => {
+      const semitone = (rootPc - keyRoot + 12) % 12;
+      return CHORDS
+        .filter(ct => ct.intervals.every(iv => scalePcs.has((rootPc + iv) % 12)))
+        .map(ct => ({ semitone, intervals: ct.intervals }));
+    });
+  });
+
+  interface HistoryEntry { id: string; steps: Array<{ semitone: number; intervals: number[] }>; }
 
   function loadHistory(): HistoryEntry[] {
     if (!browser) return [];
-    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]'); } catch { return []; }
+    try {
+      const raw = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]');
+      if (!Array.isArray(raw)) return [];
+      return raw.filter((e): e is HistoryEntry => typeof e.id === 'string' && Array.isArray(e.steps));
+    } catch { return []; }
   }
 
   let progressionHistory = $state<HistoryEntry[]>(loadHistory());
@@ -102,37 +118,37 @@
     localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
   }
 
-  let randomProg = $state<Progression | null>(null);
+  let randomProg = $state<ChromaticProgression | null>(null);
 
-  function generateRandomProg(): Progression {
+  function generateRandomProg(): ChromaticProgression {
     const id = `rp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const pool = diatonicChordPool;
     const len = Math.random() < 0.5 ? 4 : 3;
-    const pool = [0, 1, 2, 3, 4, 5]; // I〜vi（vii°は除外）
-    const degrees: number[] = [];
-    while (degrees.length < len) {
-      degrees.push(pool[Math.floor(Math.random() * pool.length)]);
-    }
-    return {
-      id,
-      label: 'ランダム',
-      degrees,
-      smoothVoicings: degrees.map(() => null),
-    };
+    const steps: ChromaticStep[] = pool.length === 0
+      ? [{ semitone: 0, intervals: [0, 4, 7], name: '' }]
+      : Array.from({ length: len }, () => {
+          const c = pool[Math.floor(Math.random() * pool.length)];
+          return { semitone: c.semitone, intervals: c.intervals, name: '' };
+        });
+    return { id, label: 'ランダム', steps, smoothVoicings: steps.map(() => null) };
   }
 
-  function addToHistory(prog: Progression) {
-    const entry: HistoryEntry = { id: prog.id, degrees: prog.degrees };
+  function addToHistory(prog: ChromaticProgression) {
+    const entry: HistoryEntry = {
+      id: prog.id,
+      steps: prog.steps.map(s => ({ semitone: s.semitone, intervals: s.intervals })),
+    };
     const h = [entry, ...progressionHistory].slice(0, MAX_HISTORY);
     progressionHistory = h;
     saveHistory(h);
   }
 
-  function historyToProg(entry: HistoryEntry): Progression {
+  function historyToProg(entry: HistoryEntry): ChromaticProgression {
     return {
       id: entry.id,
       label: 'ランダム',
-      degrees: entry.degrees,
-      smoothVoicings: entry.degrees.map(() => null),
+      steps: entry.steps.map(s => ({ semitone: s.semitone, intervals: s.intervals, name: '' })),
+      smoothVoicings: entry.steps.map(() => null),
     };
   }
 
