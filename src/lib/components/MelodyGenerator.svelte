@@ -38,7 +38,6 @@
   type ContourPattern = 'random' | 'ascending' | 'descending' | 'arch' | 'valley';
 
   let bars = $state(2);
-  let octaveRange = $state<1 | 2>(1);
   let minNoteIdx = $state(2); // 8分音符
   let maxNoteIdx = $state(3); // 4分音符
   let useDotted = $state(false);
@@ -49,12 +48,21 @@
   let isPlaying = $state(false);
   let currentNoteIdx = $state<number | null>(null);
 
-  // 2オクターブ時は intervals の各音に +12 した音を追加
-  const extendedIntervals = $derived(
-    octaveRange === 2
-      ? [...intervals, ...intervals.map(iv => iv + 12)]
-      : intervals
-  );
+  // A3(57)〜G6(91) の範囲でオクターブを展開
+  const extendedIntervals = $derived.by(() => {
+    const baseMidi = 57 + ((rootPc - 9 + 12) % 12);
+    const maxInterval = 91 - baseMidi; // G6 = MIDI 91
+    const result: number[] = [];
+    let oct = 0;
+    while (oct * 12 <= maxInterval) {
+      for (const iv of intervals) {
+        const shifted = iv + oct * 12;
+        if (shifted <= maxInterval) result.push(shifted);
+      }
+      oct++;
+    }
+    return result;
+  });
 
   interface MelodyNote { degreeIndex: number; interval: number; pc: number; duration: number; }
   let cachedMelody = $state<MelodyNote[] | null>(null);
@@ -329,20 +337,6 @@
                 {bars === b ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
               onclick={() => (bars = b)}
             >{b}</button>
-          {/each}
-        </div>
-      </div>
-
-      <!-- 音域 -->
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-gray-400 w-20 shrink-0">音域</span>
-        <div class="flex gap-1">
-          {#each [1, 2] as oct}
-            <button
-              class="px-2 py-0.5 text-xs rounded
-                {octaveRange === oct ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-              onclick={() => (octaveRange = oct as 1 | 2)}
-            >{oct}oct</button>
           {/each}
         </div>
       </div>
