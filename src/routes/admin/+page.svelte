@@ -2,7 +2,10 @@
   import { onMount, onDestroy } from 'svelte'
   import { site } from '$lib/site'
 
-  type Config = { toolVisibility: Record<string, boolean> }
+  type Config = {
+    toolLabels: Record<string, string>
+    toolVisibility: Record<string, boolean>
+  }
 
   let config = $state<Config | null>(null)
   let error = $state<string | null>(null)
@@ -23,9 +26,8 @@
     if (flashTimer) clearTimeout(flashTimer)
   })
 
-  async function toggle(href: string) {
-    if (!config) return
-    config.toolVisibility[href] = !config.toolVisibility[href]
+  async function save(): Promise<boolean> {
+    if (!config) return false
     try {
       const res = await fetch('/api/admin/config', {
         method: 'POST',
@@ -36,10 +38,29 @@
       if (flashTimer) clearTimeout(flashTimer)
       flash = '保存しました'
       flashTimer = setTimeout(() => { flash = null }, 2000)
+      return true
     } catch {
-      config.toolVisibility[href] = !config.toolVisibility[href]
       error = '保存に失敗しました'
+      return false
     }
+  }
+
+  async function toggle(href: string) {
+    if (!config) return
+    config.toolVisibility[href] = !config.toolVisibility[href]
+    const ok = await save()
+    if (!ok) config.toolVisibility[href] = !config.toolVisibility[href]
+  }
+
+  async function saveLabel(href: string, value: string) {
+    if (!config) return
+    const trimmed = value.trim()
+    if (trimmed === '') {
+      delete config.toolLabels[href]
+    } else {
+      config.toolLabels[href] = trimmed
+    }
+    await save()
   }
 </script>
 
@@ -67,16 +88,22 @@
           <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">{cat.label}</h2>
           <div class="border border-slate-200 rounded-lg divide-y divide-slate-100">
             {#each catTools as tool (tool.href)}
-              <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50">
+              <div class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50">
                 <input
                   type="checkbox"
                   checked={config.toolVisibility[tool.href] ?? true}
                   onchange={() => toggle(tool.href)}
-                  class="w-4 h-4 text-teal-600 rounded border-slate-300"
+                  class="w-4 h-4 text-teal-600 rounded border-slate-300 shrink-0"
                 />
-                <span class="text-sm text-slate-700">{tool.label}</span>
-                <span class="text-xs text-slate-400 ml-auto font-mono">{tool.href}</span>
-              </label>
+                <input
+                  type="text"
+                  value={config.toolLabels[tool.href] ?? ''}
+                  placeholder={tool.label}
+                  onblur={(e) => saveLabel(tool.href, e.currentTarget.value)}
+                  class="flex-1 text-sm text-slate-700 bg-transparent border-0 border-b border-transparent hover:border-slate-200 focus:border-teal-400 focus:outline-none py-0.5 min-w-0"
+                />
+                <span class="text-xs text-slate-400 shrink-0 font-mono">{tool.href}</span>
+              </div>
             {/each}
           </div>
         </div>

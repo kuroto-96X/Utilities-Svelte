@@ -9,6 +9,9 @@
   const isVisible = (href: string): boolean =>
     (siteConfig.toolVisibility as Record<string, boolean>)[href] ?? true
 
+  const getLabel = (href: string, defaultLabel: string): string =>
+    (siteConfig.toolLabels as Record<string, string>)[href] ?? defaultLabel
+
   let { children } = $props()
   let routeId = $derived(page.route.id)
 
@@ -111,7 +114,7 @@
                     class="w-1.5 h-1.5 rounded-full shrink-0"
                     class:bg-teal-700={isCurrent}
                   ></span>
-                  {tool.label}
+                  {getLabel(tool.href, tool.label)}
                 </a>
               {/each}
             </div>
@@ -146,7 +149,7 @@
             class:border-slate-200={!isCurrent}
             class:hover:border-slate-300={!isCurrent}
           >
-            {tool.label}
+            {getLabel(tool.href, tool.label)}
           </a>
         {/each}
       </div>
