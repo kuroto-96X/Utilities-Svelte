@@ -9,6 +9,8 @@
     intervals,
     rootPc,
     bpm,
+    startSemitone = -3,
+    octaves = 2,
     addPlayingPc,
     removePlayingPc,
     addPlayingMidi,
@@ -18,6 +20,8 @@
     intervals: number[];
     rootPc: number;
     bpm: number;
+    startSemitone?: number;
+    octaves?: number;
     addPlayingPc: (pc: number) => void;
     removePlayingPc: (pc: number) => void;
     addPlayingMidi?: (midi: number) => void;
@@ -48,11 +52,11 @@
   let isPlaying = $state(false);
   let currentNoteIdx = $state<number | null>(null);
 
-  // A3(57)〜G6(91) の絶対範囲でオクターブ展開（ルートより下も許可）
+  // 鍵盤の表示範囲に合わせてオクターブ展開
   const extendedIntervals = $derived.by(() => {
     const baseMidi = 57 + ((rootPc - 9 + 12) % 12);
-    const minInterval = 57 - baseMidi; // A3
-    const maxInterval = 91 - baseMidi; // G6
+    const minInterval = (60 + startSemitone) - baseMidi;
+    const maxInterval = (60 + startSemitone + 12 * octaves - 1) - baseMidi;
     const result: number[] = [];
     const minOct = Math.floor(minInterval / 12);
     const maxOct = Math.floor(maxInterval / 12);
