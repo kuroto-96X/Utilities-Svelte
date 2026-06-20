@@ -186,20 +186,7 @@
     <div class="md:w-52 flex-shrink-0 space-y-4">
       <BpmSlider bind:bpm />
       <RootSelector bind:rootId onchange={playMain} />
-      <ScaleChordSelector bind:mode bind:scaleId bind:chordId onchange={playMain} onstop={stopPlay} />
-      {#if mode === 'chord'}
-        <div>
-          <p class="text-xs text-gray-400 mb-1">転回形</p>
-          <div class="flex flex-wrap gap-1">
-            {#each ['ルート', '1転', '2転', '3転'] as label, i}
-              <button
-                class="px-2 py-1 text-xs rounded {inversion === i ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-                onclick={() => { inversion = i; playMain(); }}
-              >{label}</button>
-            {/each}
-          </div>
-        </div>
-      {/if}
+      <ScaleChordSelector bind:mode bind:scaleId bind:chordId bind:inversion onchange={playMain} onstop={stopPlay} />
     </div>
 
     <!-- メインエリア -->

@@ -4,9 +4,10 @@
 		mode = $bindable(),
 		scaleId = $bindable(),
 		chordId = $bindable(),
+		inversion = $bindable(0),
 		onchange,
 		onstop,
-	}: { mode: 'scale' | 'chord'; scaleId: string; chordId: string; onchange?: () => void; onstop?: () => void } = $props();
+	}: { mode: 'scale' | 'chord'; scaleId: string; chordId: string; inversion?: number; onchange?: () => void; onstop?: () => void } = $props();
 </script>
 
 <div>
@@ -27,6 +28,22 @@
 			コード
 		</button>
 	</div>
+
+	<!-- 転回形（コードモード時のみ） -->
+	{#if mode === 'chord'}
+		<div class="mb-3">
+			<p class="text-xs text-gray-500 mb-1">転回形</p>
+			<div class="flex flex-wrap gap-1">
+				{#each ['ルート', '1転', '2転', '3転'] as label, i}
+					<button
+						class="px-2 py-1 text-xs rounded
+							{inversion === i ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+						onclick={() => { inversion = i; onchange?.(); }}
+					>{label}</button>
+				{/each}
+			</div>
+		</div>
+	{/if}
 
 	<!-- スケールリスト -->
 	{#if mode === 'scale'}

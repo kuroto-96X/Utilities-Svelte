@@ -1,5 +1,6 @@
 <!-- src/lib/components/ProgressionPlayer.svelte -->
 <script lang="ts">
+  import { browser } from '$app/environment';
   import type { DiatonicChord } from '$lib/diatonicChords';
   import { PROGRESSIONS, CHROMATIC_PROGRESSIONS, TENSION_PROGRESSIONS, NOTE_NAMES, resolveProgressionVoicing } from '$lib/scaleData';
   import type { Progression, ChromaticProgression } from '$lib/scaleData';
@@ -82,11 +83,29 @@
       : prog.degrees.map(d => chordNameForDegree(d));
   }
 
-  // ---- ランダム進行生成 ----
+  // ---- ランダム進行生成・履歴 ----
+
+  const HISTORY_KEY = 'progressionHistory';
+  const MAX_HISTORY = 9;
+
+  interface HistoryEntry { id: string; degrees: number[]; }
+
+  function loadHistory(): HistoryEntry[] {
+    if (!browser) return [];
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]'); } catch { return []; }
+  }
+
+  let progressionHistory = $state<HistoryEntry[]>(loadHistory());
+
+  function saveHistory(h: HistoryEntry[]) {
+    if (!browser) return;
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
+  }
 
   let randomProg = $state<Progression | null>(null);
 
   function generateRandomProg(): Progression {
+    const id = `rp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const len = Math.random() < 0.5 ? 4 : 3;
     const pool = [0, 1, 2, 3, 4, 5]; // I〜vi（vii°は除外）
     const degrees = [0]; // 最初は常に I
@@ -94,10 +113,26 @@
       degrees.push(pool[Math.floor(Math.random() * pool.length)]);
     }
     return {
-      id: 'random',
+      id,
       label: 'ランダム',
       degrees,
       smoothVoicings: degrees.map(() => null),
+    };
+  }
+
+  function addToHistory(prog: Progression) {
+    const entry: HistoryEntry = { id: prog.id, degrees: prog.degrees };
+    const h = [entry, ...progressionHistory].slice(0, MAX_HISTORY);
+    progressionHistory = h;
+    saveHistory(h);
+  }
+
+  function historyToProg(entry: HistoryEntry): Progression {
+    return {
+      id: entry.id,
+      label: 'ランダム',
+      degrees: entry.degrees,
+      smoothVoicings: entry.degrees.map(() => null),
     };
   }
 
@@ -211,15 +246,28 @@
   }
 
   function handleRandom() {
-    if (activeProgId === 'random') {
+    if (activeProgId === randomProg?.id) {
       stopInternal();
     } else {
       const prog = generateRandomProg();
       randomProg = prog;
+      addToHistory(prog);
       onplay?.();
       stopInternal();
-      activeProgId = 'random';
-      playStep('random', prog, 0);
+      activeProgId = prog.id;
+      playStep(prog.id, prog, 0);
+    }
+  }
+
+  function playHistoryItem(entry: HistoryEntry) {
+    const prog = historyToProg(entry);
+    if (activeProgId === entry.id) {
+      stopInternal();
+    } else {
+      onplay?.();
+      stopInternal();
+      activeProgId = entry.id;
+      playStep(entry.id, prog, 0);
     }
   }
 </script>
@@ -316,17 +364,18 @@
     <div class="flex-1 min-w-0">
       <p class="text-xs text-gray-500 mb-1">ランダム</p>
       <div class="space-y-1">
+        <!-- 生成ボタン -->
         <button
           class="w-full text-left px-3 py-2 text-sm rounded
-            {activeProgId === 'random'
+            {activeProgId === randomProg?.id
               ? 'bg-pink-600 text-white'
               : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
           onclick={handleRandom}
         >
-          <span class="block">{activeProgId === 'random' ? '⏹ ' : '🎲 '}ランダム進行</span>
+          <span class="block">{activeProgId === randomProg?.id ? '⏹ ' : '🎲 '}ランダム進行</span>
           {#if randomProg}
             {@const names = progChordNames(randomProg)}
-            {@const activeIdx = activeProgId === 'random' ? activeStepIndex : -1}
+            {@const activeIdx = activeProgId === randomProg.id ? activeStepIndex : -1}
             <span class="block text-xs font-mono mt-0.5">
               {#each names as name, i}
                 {#if i > 0}<span class="opacity-40"> → </span>{/if}
@@ -335,6 +384,29 @@
             </span>
           {/if}
         </button>
+        <!-- 履歴 -->
+        {#each progressionHistory as entry, hi}
+          {#if entry.id !== randomProg?.id}
+            {@const prog = historyToProg(entry)}
+            {@const names = progChordNames(prog)}
+            {@const activeIdx = activeProgId === entry.id ? activeStepIndex : -1}
+            <button
+              class="w-full text-left px-2 py-1.5 text-xs rounded
+                {activeProgId === entry.id
+                  ? 'bg-pink-700 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'}"
+              onclick={() => playHistoryItem(entry)}
+            >
+              <span class="opacity-50 mr-1">{hi + 1}.</span>
+              <span class="font-mono">
+                {#each names as name, i}
+                  {#if i > 0}<span class="opacity-40"> → </span>{/if}
+                  <span class="{activeIdx === i ? 'text-orange-300' : ''}">{name}</span>
+                {/each}
+              </span>
+            </button>
+          {/if}
+        {/each}
       </div>
     </div>
   </div>
