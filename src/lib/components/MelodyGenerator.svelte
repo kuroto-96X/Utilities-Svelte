@@ -89,17 +89,24 @@
     });
   });
 
-  function buildDurationPool(): number[] {
+  function buildDurationPool(): { pool: number[]; tripletSet: Set<number> } {
     const noteDurations = calculateNoteDurations(bpm);
     const ascDurations = [...noteDurations].reverse(); // index0=32分, index5=全音符
     const slice = ascDurations.slice(minNoteIdx, maxNoteIdx + 1);
     const pool: number[] = [];
+    const tripletSet = new Set<number>();
     slice.forEach(nv => {
       pool.push(nv.normalSec);
       if (useDotted) pool.push(nv.dottedSec);
-      if (useTriplet) pool.push(nv.tripletSec);
+      if (useTriplet) {
+        pool.push(nv.tripletSec);
+        tripletSet.add(nv.tripletSec);
+      }
     });
-    return pool.length > 0 ? pool : [ascDurations[2].normalSec];
+    return {
+      pool: pool.length > 0 ? pool : [ascDurations[2].normalSec],
+      tripletSet,
+    };
   }
 
   // --- メロディ構造ヘルパー ---
@@ -194,7 +201,7 @@
   }
 
   function generateStructuredPhrase(
-    ivs: number[], rpc: number, secPerBeat: number, pool: number[],
+    ivs: number[], rpc: number, secPerBeat: number, pool: number[], tripletSet: Set<number>,
     targetSeconds: number, ms: number, pat: ContourPattern
   ): MelodyNote[] {
     const stableIndices = getStableIndices(ivs);
@@ -202,6 +209,8 @@
     let cumulative = 0;
     let currentIdx = pickStartIndex(ivs.length, pat);
     let guard = 0;
+    let tripletRemaining = 0;
+    let forcedTripletDur = 0;
 
     while (cumulative < targetSeconds && guard < 300) {
       guard++;
@@ -224,7 +233,18 @@
         }
       }
 
-      const duration = pickDuration(pool, strong);
+      let duration: number;
+      if (tripletRemaining > 0) {
+        duration = forcedTripletDur;
+        tripletRemaining--;
+      } else {
+        duration = pickDuration(pool, strong);
+        if (tripletSet.has(duration)) {
+          forcedTripletDur = duration;
+          tripletRemaining = 2;
+        }
+      }
+
       seq.push({
         degreeIndex: currentIdx,
         interval: ivs[currentIdx],
@@ -237,10 +257,10 @@
   }
 
   function buildPhraseWithMotif(
-    ivs: number[], rpc: number, secPerBeat: number, pool: number[],
+    ivs: number[], rpc: number, secPerBeat: number, pool: number[], tripletSet: Set<number>,
     targetSeconds: number, ms: number, pat: ContourPattern
   ): MelodyNote[] {
-    const motif = generateStructuredPhrase(ivs, rpc, secPerBeat, pool, targetSeconds / 2, ms, pat);
+    const motif = generateStructuredPhrase(ivs, rpc, secPerBeat, pool, tripletSet, targetSeconds / 2, ms, pat);
     const shift = Math.random() < 0.5 ? 1 : 0;
     const second = motif.map(n => {
       const newIdx = Math.max(0, Math.min(ivs.length - 1, n.degreeIndex + shift));
@@ -255,14 +275,14 @@
   }
 
   function generateMelody(): MelodyNote[] {
-    const pool = buildDurationPool();
+    const { pool, tripletSet } = buildDurationPool();
     const secPerBeat = 60 / bpm;
     const targetSeconds = bars * 4 * secPerBeat;
     const ivs = extendedIntervals;
 
     return useMotifRepeat
-      ? buildPhraseWithMotif(ivs, rootPc, secPerBeat, pool, targetSeconds, maxStep, pattern)
-      : generateStructuredPhrase(ivs, rootPc, secPerBeat, pool, targetSeconds, maxStep, pattern);
+      ? buildPhraseWithMotif(ivs, rootPc, secPerBeat, pool, tripletSet, targetSeconds, maxStep, pattern)
+      : generateStructuredPhrase(ivs, rootPc, secPerBeat, pool, tripletSet, targetSeconds, maxStep, pattern);
   }
 
   // 再生セッション管理（セッションIDが変わると進行中のコールバックが無効化される）
