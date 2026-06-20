@@ -1,7 +1,7 @@
 <!-- src/lib/components/ProgressionPlayer.svelte -->
 <script lang="ts">
   import type { DiatonicChord } from '$lib/diatonicChords';
-  import { PROGRESSIONS, CHROMATIC_PROGRESSIONS, TENSION_PROGRESSIONS, NOTE_NAMES, applyInversion } from '$lib/scaleData';
+  import { PROGRESSIONS, CHROMATIC_PROGRESSIONS, TENSION_PROGRESSIONS, NOTE_NAMES, resolveProgressionVoicing } from '$lib/scaleData';
   import type { Progression, ChromaticProgression } from '$lib/scaleData';
   import { getAudioContext, startNoteAt } from '$lib/audioEngine';
 
@@ -135,30 +135,21 @@
       const baseRoot = 57 + ((chordRoot - 9 + 12) % 12);
       const chordRootMidi = baseRoot < tonicMidi ? baseRoot + 12 : baseRoot;
       setPlayingChordName?.(NOTE_NAMES[chordRoot] + qualitySuffix(step.intervals));
-      const smoothVoicing = useSmoothedBass ? prog.smoothVoicings[activeStepIndex] : null;
-      if (smoothVoicing) {
-        step.intervals.forEach((interval, i) => {
-          const midi = chordRootMidi + interval + (smoothVoicing[i] ?? 0);
-          const pc = ((chordRoot + interval) % 12 + 12) % 12;
-          const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
-          activeChordStopFns.push(stopFn);
-          activeChordPcs.push(pc);
-          activeChordMidis.push(midi);
-          addPlayingPc(pc);
-          addPlayingMidi?.(midi);
-        });
-      } else {
-        applyInversion(step.intervals, inversion).forEach(interval => {
-          const midi = chordRootMidi + interval;
-          const pc = (chordRoot + interval) % 12;
-          const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
-          activeChordStopFns.push(stopFn);
-          activeChordPcs.push(pc);
-          activeChordMidis.push(midi);
-          addPlayingPc(pc);
-          addPlayingMidi?.(midi);
-        });
-      }
+      resolveProgressionVoicing(
+        step.intervals,
+        prog.smoothVoicings[activeStepIndex],
+        useSmoothedBass,
+        inversion,
+      ).forEach(interval => {
+        const midi = chordRootMidi + interval;
+        const pc = ((chordRoot + interval) % 12 + 12) % 12;
+        const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
+        activeChordStopFns.push(stopFn);
+        activeChordPcs.push(pc);
+        activeChordMidis.push(midi);
+        addPlayingPc(pc);
+        addPlayingMidi?.(midi);
+      });
     } else {
       const degree = prog.degrees[activeStepIndex];
       setPlayingChordName?.(chordNameForDegree(degree));
@@ -166,30 +157,21 @@
       if (chord) {
         const baseRoot = 57 + ((chord.rootPc - 9 + 12) % 12);
         const chordRootMidi = baseRoot < tonicMidi ? baseRoot + 12 : baseRoot;
-        const smoothVoicing = useSmoothedBass ? prog.smoothVoicings[activeStepIndex] : null;
-        if (smoothVoicing) {
-          chord.intervals.forEach((interval, i) => {
-            const midi = chordRootMidi + interval + (smoothVoicing[i] ?? 0);
-            const pc = ((chord.rootPc + interval) % 12 + 12) % 12;
-            const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
-            activeChordStopFns.push(stopFn);
-            activeChordPcs.push(pc);
-            activeChordMidis.push(midi);
-            addPlayingPc(pc);
-            addPlayingMidi?.(midi);
-          });
-        } else {
-          applyInversion(chord.intervals, inversion).forEach(interval => {
-            const midi = chordRootMidi + interval;
-            const pc = (chord.rootPc + interval) % 12;
-            const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
-            activeChordStopFns.push(stopFn);
-            activeChordPcs.push(pc);
-            activeChordMidis.push(midi);
-            addPlayingPc(pc);
-            addPlayingMidi?.(midi);
-          });
-        }
+        resolveProgressionVoicing(
+          chord.intervals,
+          prog.smoothVoicings[activeStepIndex],
+          useSmoothedBass,
+          inversion,
+        ).forEach(interval => {
+          const midi = chordRootMidi + interval;
+          const pc = ((chord.rootPc + interval) % 12 + 12) % 12;
+          const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
+          activeChordStopFns.push(stopFn);
+          activeChordPcs.push(pc);
+          activeChordMidis.push(midi);
+          addPlayingPc(pc);
+          addPlayingMidi?.(midi);
+        });
       }
     }
 
