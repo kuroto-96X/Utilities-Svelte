@@ -1,7 +1,7 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 import path from 'path';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import type { Plugin } from 'vite';
 
 /**
@@ -32,8 +32,40 @@ function kuromojiDictRawPlugin(): Plugin {
   }
 }
 
+function adminApiPlugin(): Plugin {
+  return {
+    name: 'admin-api',
+    configureServer(server) {
+      const configPath = path.resolve('src/lib/site.config.json')
+      server.middlewares.use('/api/admin/config', (req, res) => {
+        if (req.method === 'GET') {
+          res.setHeader('Content-Type', 'application/json')
+          res.end(readFileSync(configPath, 'utf-8'))
+        } else if (req.method === 'POST') {
+          let body = ''
+          req.on('data', (chunk: Buffer) => { body += chunk.toString() })
+          req.on('end', () => {
+            try {
+              JSON.parse(body)
+              writeFileSync(configPath, body)
+              res.statusCode = 200
+              res.end('ok')
+            } catch {
+              res.statusCode = 400
+              res.end('invalid JSON')
+            }
+          })
+        } else {
+          res.statusCode = 405
+          res.end('method not allowed')
+        }
+      })
+    }
+  }
+}
+
 export default defineConfig({
-  plugins: [sveltekit(), kuromojiDictRawPlugin()],
+  plugins: [sveltekit(), kuromojiDictRawPlugin(), adminApiPlugin()],
   build: {
     outDir: 'dist'
   },
