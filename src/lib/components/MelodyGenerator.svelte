@@ -48,10 +48,9 @@
   let isPlaying = $state(false);
   let currentNoteIdx = $state<number | null>(null);
 
-  // A3(57)〜G6(91) の範囲でオクターブを展開
+  // A3(57)〜G6(91) の固定スパン（34半音）でオクターブを展開
   const extendedIntervals = $derived.by(() => {
-    const baseMidi = 57 + ((rootPc - 9 + 12) % 12);
-    const maxInterval = 91 - baseMidi; // G6 = MIDI 91
+    const maxInterval = 91 - 57; // 34半音、ルートに関係なく固定
     const result: number[] = [];
     let oct = 0;
     while (oct * 12 <= maxInterval) {
