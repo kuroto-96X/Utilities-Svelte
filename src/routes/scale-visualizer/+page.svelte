@@ -1,6 +1,7 @@
 <!-- src/routes/scale-visualizer/+page.svelte -->
 <script lang="ts">
   import { untrack } from 'svelte';
+  import { browser } from '$app/environment';
   import { page } from '$app/state';
   import { ROOTS, SCALES, CHORDS, NOTE_NAMES, applyInversion } from '$lib/scaleData';
   import { buildKeyboardWindow } from '$lib/pianoLayout';
@@ -15,11 +16,20 @@
   import ProgressionPlayer from '$lib/components/ProgressionPlayer.svelte';
   import MelodyGenerator from '$lib/components/MelodyGenerator.svelte';
 
-  let rootId = $state('C');
-  let mode = $state<'scale' | 'chord'>('scale');
-  let scaleId = $state('major');
-  let chordId = $state('maj');
-  let bpm = $state(DEFAULT_BPM);
+  const STORAGE_KEY = 'scaleVisualizer';
+
+  function loadSaved(): Record<string, unknown> {
+    if (!browser) return {};
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}'); } catch { return {}; }
+  }
+
+  const saved = loadSaved();
+
+  let rootId = $state(typeof saved.rootId === 'string' ? saved.rootId : 'C');
+  let mode = $state<'scale' | 'chord'>(saved.mode === 'chord' ? 'chord' : 'scale');
+  let scaleId = $state(typeof saved.scaleId === 'string' ? saved.scaleId : 'major');
+  let chordId = $state(typeof saved.chordId === 'string' ? saved.chordId : 'maj');
+  let bpm = $state(typeof saved.bpm === 'number' ? clampBpm(saved.bpm) : DEFAULT_BPM);
 
   $effect(() => {
     const p = page.url.searchParams.get('bpm');
@@ -28,11 +38,16 @@
     if (!Number.isNaN(n)) bpm = clampBpm(n);
   });
 
-  let anchorToRoot = $state(true);
-  let octaves = $state(2);
+  let anchorToRoot = $state(typeof saved.anchorToRoot === 'boolean' ? saved.anchorToRoot : true);
+  let octaves = $state(typeof saved.octaves === 'number' && [1, 2, 3].includes(saved.octaves as number) ? saved.octaves as number : 2);
   let playingPcs = $state(new Set<number>());
   let playingMidis = $state(new Set<number>());
-  let inversion = $state(0);
+  let inversion = $state(typeof saved.inversion === 'number' ? saved.inversion : 0);
+
+  $effect(() => {
+    if (!browser) return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ rootId, mode, scaleId, chordId, bpm, anchorToRoot, octaves, inversion }));
+  });
   let playingChordName = $state('');
 
   const CHORD_SUFFIX: Record<string, string> = {
@@ -275,7 +290,7 @@
   <div class="mt-8 max-w-2xl mx-auto space-y-4 text-sm text-gray-400 border-t border-gray-700 pt-6">
     <div>
       <h2 class="text-gray-200 font-semibold mb-1">使い方</h2>
-      <p>ルート音とスケール（またはコード）を選ぶと、鍵盤上に構成音が表示されます。▶ボタンで音を再生して確認できます。BPMスライダーで再生速度を調整してください。</p>
+      <p>ルート音とスケール（またはコード）を選ぶと、鍵盤上に構成音が表示され構成音を再生します。BPMスライダーで再生速度を調整してください。</p>
     </div>
     <div>
       <h2 class="text-gray-200 font-semibold mb-1">鍵盤表示</h2>
@@ -291,7 +306,7 @@
     </div>
     <div>
       <h2 class="text-gray-200 font-semibold mb-1">ランダムメロディ生成</h2>
-      <p>スケールの構成音を使ってランダムなメロディを生成・再生します。小節数、フレーズの輪郭（アーチ・上昇・下降・谷型）、強拍アンカー音を設定できます。</p>
+      <p>スケールの構成音を使ってランダムなメロディを生成・再生します。小節数、フレーズの輪郭（アーチ・上昇・下降・谷型）などを設定できます。</p>
     </div>
   </div>
 </div>
