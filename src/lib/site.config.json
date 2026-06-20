@@ -1,8 +1,9 @@
 {
-  "toolLabels": {},
+  "toolLabels": {
+    "/scale-visualizer": "Scale Visualizer",
+    "/note-duration": "Note Duration"
+  },
   "toolDevStatus": {
-    "/note-duration": true,
-    "/scale-visualizer": true,
     "/image-tools": true,
     "/sns-image-resize": true,
     "/id-photo": true,
