@@ -95,7 +95,7 @@
     if (mode === 'chord') {
       // コード：全音を同時に鳴らし、全音符の長さで自動停止
       applyInversion(currentIntervals, inversion).forEach(interval => {
-        const midi = 60 + root.pc + interval;
+        const midi = 48 + root.pc + interval;
         const pc = (root.pc + interval) % 12;
         const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
         currentPlayStopFns.push(stopFn);
@@ -132,7 +132,7 @@
         if (stepIdx >= seq.length) return; // 終了
 
         const interval = seq[stepIdx];
-        const midi = 60 + root.pc + interval;
+        const midi = 48 + root.pc + interval;
         const pc = (root.pc + interval) % 12;
 
         const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
