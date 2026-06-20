@@ -17,27 +17,29 @@
 </script>
 
 <svelte:head>
-  <title>BPM音符換算ツール｜32分音符〜全音符の秒数を計算</title>
+  <title>BPM Note Duration Calculator</title>
   <meta name="description" content="BPMを入力するだけで、全音符から32分音符までの長さを秒・msで自動計算。付点・3連符にも対応した楽曲制作向けツール。" />
 </svelte:head>
 
 <div class="max-w-lg mx-auto px-4 py-6 space-y-4">
-  <!-- 広告枠 top -->
-  <div class="ad-slot ad-slot--top flex h-24 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-xs text-slate-400">
-    広告枠
-  </div>
-
   <div>
-    <h1 class="text-2xl font-bold text-slate-800">BPM音符換算ツール</h1>
+    <h1 class="text-2xl font-bold text-slate-800">BPM Note Duration Calculator</h1>
     <p class="mt-1 text-sm text-slate-500">BPMを入力すると、32分音符から全音符までの長さを表示します。</p>
   </div>
 
   <BpmInput bind:bpm />
 
-  <!-- 広告枠 in-content -->
-  <div class="ad-slot ad-slot--in-content flex h-24 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-xs text-slate-400">
-    広告枠
-  </div>
-
   <NoteDurationTable {durations} />
+
+  <!-- 画面説明 -->
+  <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3 text-sm text-slate-600">
+    <h2 class="font-semibold text-slate-700">使い方</h2>
+    <p>BPM（Beats Per Minute）を入力すると、各音符の長さを秒・ミリ秒で自動計算します。DAW での遅延設定やシンセのエンベロープ調整など、楽曲制作に役立ててください。</p>
+    <h2 class="font-semibold text-slate-700">表の見かた</h2>
+    <ul class="space-y-1 list-disc list-inside">
+      <li><span class="font-medium">通常</span>：基本の音符長さ</li>
+      <li><span class="font-medium">付点</span>：音符の長さ × 1.5倍</li>
+      <li><span class="font-medium">3連符</span>：音符の長さ × 2/3倍</li>
+    </ul>
+  </div>
 </div>
