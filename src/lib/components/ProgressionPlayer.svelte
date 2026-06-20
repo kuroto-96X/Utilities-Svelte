@@ -97,6 +97,13 @@
 
   const STYLES: StyleDef[] = [
     {
+      id: 'random',
+      label: 'ランダム',
+      allowRepeat: false,
+      rootWeights: new Array(12).fill(1), // 使用しない（実スタイルに委譲）
+      tdWeights: { T: { T: 1, S: 1, D: 1 }, S: { T: 1, S: 1, D: 1 }, D: { T: 1, S: 1, D: 1 } },
+    },
+    {
       id: 'pop',
       label: 'ポップ',
       allowRepeat: false,
@@ -208,15 +215,29 @@
 
   let randomProg = $state<ChromaticProgression | null>(null);
 
+  // トライアド（3音コード）は高め、テンション（5音以上）は低めに重み付け
+  function chordComplexityMul(intervals: number[]): number {
+    if (intervals.length <= 3) return 2.5;
+    if (intervals.length === 4) return 1.0;
+    return 0.5;
+  }
+
   function generateRandomProg(styleId: string = 'random'): ChromaticProgression {
     const id = `rp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    const style = styleId === 'random'
-      ? STYLES[Math.floor(Math.random() * STYLES.length)]
-      : (STYLES.find(s => s.id === styleId) ?? STYLES[0]);
+    const requestedStyle = STYLES.find(s => s.id === styleId) ?? STYLES[0];
+
+    // ランダムスタイルの場合、実スタイル（random以外）からランダム選択して重みを使用
+    const realStyles = STYLES.filter(s => s.id !== 'random');
+    const activeStyle = requestedStyle.id === 'random'
+      ? realStyles[Math.floor(Math.random() * realStyles.length)]
+      : requestedStyle;
+
+    // 履歴ラベルはリクエストされたスタイルのラベルを使用
+    const displayLabel = requestedStyle.label;
 
     const pool = diatonicChordPool;
     if (pool.length === 0) {
-      return { id, label: style.label, steps: [{ semitone: 0, intervals: [0, 4, 7], name: '' }], smoothVoicings: [null] };
+      return { id, label: displayLabel, steps: [{ semitone: 0, intervals: [0, 4, 7], name: '' }], smoothVoicings: [null] };
     }
 
     const sortedSemitones = [...new Set(pool.map(c => c.semitone))].sort((a, b) => a - b);
@@ -224,9 +245,10 @@
     const len = Math.random() < 0.5 ? 4 : 3;
     const steps: ChromaticStep[] = [];
 
-    // 最初のコードはランダムに選択
-    const first = pool[Math.floor(Math.random() * pool.length)];
-    steps.push({ semitone: first.semitone, intervals: first.intervals, name: '' });
+    // 最初のコードはトライアド重み付きでランダム選択
+    const firstWeights = pool.map(c => chordComplexityMul(c.intervals));
+    const firstIdx = weightedPickIdx(firstWeights);
+    steps.push({ semitone: pool[firstIdx].semitone, intervals: pool[firstIdx].intervals, name: '' });
 
     while (steps.length < len) {
       const prev = steps[steps.length - 1];
@@ -234,15 +256,18 @@
 
       const weights = pool.map(c => {
         const interval = (c.semitone - prev.semitone + 12) % 12;
-        let w = style.rootWeights[interval];
+        let w = activeStyle.rootWeights[interval];
 
         if (use7Note) {
           const nextFn = getScaleFunction(c.semitone, sortedSemitones);
-          w *= style.tdWeights[prevFn][nextFn];
+          w *= activeStyle.tdWeights[prevFn][nextFn];
         }
 
+        // トライアドの確率を上げる
+        w *= chordComplexityMul(c.intervals);
+
         // allowRepeat=false のとき同一コード（同ルート・同インターバル）を禁止
-        if (!style.allowRepeat
+        if (!activeStyle.allowRepeat
           && c.semitone === prev.semitone
           && c.intervals.length === prev.intervals.length
           && c.intervals.every((v, i) => v === prev.intervals[i])) {
@@ -256,7 +281,7 @@
       steps.push({ semitone: pool[idx].semitone, intervals: pool[idx].intervals, name: '' });
     }
 
-    return { id, label: style.label, steps, smoothVoicings: steps.map(() => null) };
+    return { id, label: displayLabel, steps, smoothVoicings: steps.map(() => null) };
   }
 
   function addToHistory(prog: ChromaticProgression) {
@@ -522,7 +547,7 @@
                 : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'}"
             onclick={() => playHistoryItem(entry)}
           >
-            <span class="block text-[10px] opacity-40 mb-0.5">{entry.styleLabel}</span>
+            <span class="block text-[10px] opacity-40 mb-0.5">#{hi + 1} {entry.styleLabel}</span>
             <span class="mr-1">{activeProgId === entry.id ? '⏹' : '▶'}</span>
             <span class="font-mono">
               {#each names as name, i}
