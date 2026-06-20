@@ -82,6 +82,25 @@
       : prog.degrees.map(d => chordNameForDegree(d));
   }
 
+  // ---- ランダム進行生成 ----
+
+  let randomProg = $state<Progression | null>(null);
+
+  function generateRandomProg(): Progression {
+    const len = Math.random() < 0.5 ? 4 : 3;
+    const pool = [0, 1, 2, 3, 4, 5]; // I〜vi（vii°は除外）
+    const degrees = [0]; // 最初は常に I
+    while (degrees.length < len) {
+      degrees.push(pool[Math.floor(Math.random() * pool.length)]);
+    }
+    return {
+      id: 'random',
+      label: 'ランダム',
+      degrees,
+      smoothVoicings: degrees.map(() => null),
+    };
+  }
+
   // ---- 再生ロジック ----
 
   let useSmoothedBass = $state(false);
@@ -190,6 +209,19 @@
       playStep(prog.id, prog, 0);
     }
   }
+
+  function handleRandom() {
+    if (activeProgId === 'random') {
+      stopInternal();
+    } else {
+      const prog = generateRandomProg();
+      randomProg = prog;
+      onplay?.();
+      stopInternal();
+      activeProgId = 'random';
+      playStep('random', prog, 0);
+    }
+  }
 </script>
 
 <div>
@@ -277,6 +309,32 @@
             </span>
           </button>
         {/each}
+      </div>
+    </div>
+
+    <!-- ランダム -->
+    <div class="flex-1 min-w-0">
+      <p class="text-xs text-gray-500 mb-1">ランダム</p>
+      <div class="space-y-1">
+        <button
+          class="w-full text-left px-3 py-2 text-sm rounded
+            {activeProgId === 'random'
+              ? 'bg-pink-600 text-white'
+              : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+          onclick={handleRandom}
+        >
+          <span class="block">{activeProgId === 'random' ? '⏹ ' : '🎲 '}ランダム進行</span>
+          {#if randomProg}
+            {@const names = progChordNames(randomProg)}
+            {@const activeIdx = activeProgId === 'random' ? activeStepIndex : -1}
+            <span class="block text-xs font-mono mt-0.5">
+              {#each names as name, i}
+                {#if i > 0}<span class="opacity-40"> → </span>{/if}
+                <span class="{activeIdx === i ? 'text-orange-400' : 'opacity-60'}">{name}</span>
+              {/each}
+            </span>
+          {/if}
+        </button>
       </div>
     </div>
   </div>
