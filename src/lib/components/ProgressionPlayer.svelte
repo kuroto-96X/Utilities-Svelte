@@ -83,6 +83,84 @@
       : prog.degrees.map(d => chordNameForDegree(d));
   }
 
+  // ---- ランダム進行スタイル定義 ----
+
+  type ChordFunction = 'T' | 'S' | 'D';
+
+  interface StyleDef {
+    id: string;
+    label: string;
+    allowRepeat: boolean;
+    rootWeights: number[]; // インデックス = 前コードからの半音数 (0-11)
+    tdWeights: Record<ChordFunction, Record<ChordFunction, number>>;
+  }
+
+  const STYLES: StyleDef[] = [
+    {
+      id: 'pop',
+      label: 'ポップ',
+      allowRepeat: false,
+      // [同音, +m2, +M2, +m3, +M3, +P4(下5度), +TT, +P5, +m6, +M6, +m7, +M7]
+      rootWeights: [0, 2, 8, 8, 6, 30, 3, 12, 5, 8, 10, 2],
+      tdWeights: {
+        T: { T: 0.5, S: 2.0, D: 1.0 },
+        S: { T: 0.5, S: 0.5, D: 3.0 },
+        D: { T: 4.0, S: 0.5, D: 0.3 },
+      },
+    },
+    {
+      id: 'blues',
+      label: 'ブルース',
+      allowRepeat: true,
+      rootWeights: [15, 12, 5, 12, 2, 12, 0, 5, 2, 8, 3, 12],
+      tdWeights: {
+        T: { T: 1.0, S: 1.5, D: 1.5 },
+        S: { T: 1.0, S: 1.0, D: 1.5 },
+        D: { T: 2.0, S: 1.0, D: 0.5 },
+      },
+    },
+    {
+      id: 'modal',
+      label: 'モーダル',
+      allowRepeat: false,
+      rootWeights: [0, 8, 25, 4, 2, 5, 15, 3, 2, 4, 20, 8],
+      tdWeights: {
+        T: { T: 1.0, S: 1.0, D: 1.0 },
+        S: { T: 1.0, S: 1.0, D: 1.0 },
+        D: { T: 1.0, S: 1.0, D: 1.0 },
+      },
+    },
+    {
+      id: 'folk',
+      label: 'フォーク',
+      allowRepeat: false,
+      rootWeights: [0, 6, 22, 15, 2, 5, 0, 3, 2, 12, 20, 6],
+      tdWeights: {
+        T: { T: 0.8, S: 1.5, D: 0.8 },
+        S: { T: 0.8, S: 0.8, D: 1.5 },
+        D: { T: 2.0, S: 0.8, D: 0.5 },
+      },
+    },
+  ];
+
+  // スケール音のインデックス順でT/S/Dを割り当て
+  function getScaleFunction(semitone: number, sortedSemitones: number[]): ChordFunction {
+    const idx = sortedSemitones.indexOf(semitone);
+    const map: ChordFunction[] = ['T', 'S', 'T', 'S', 'D', 'T', 'D'];
+    return map[idx] ?? 'T';
+  }
+
+  function weightedPickIdx(weights: number[]): number {
+    const total = weights.reduce((a, b) => a + b, 0);
+    if (total <= 0) return Math.floor(Math.random() * weights.length);
+    let r = Math.random() * total;
+    for (let i = 0; i < weights.length; i++) {
+      r -= weights[i];
+      if (r < 0) return i;
+    }
+    return weights.length - 1;
+  }
+
   // ---- ランダム進行生成・履歴 ----
 
   const HISTORY_KEY = 'progressionHistory2';
@@ -100,14 +178,24 @@
     });
   });
 
-  interface HistoryEntry { id: string; steps: Array<{ semitone: number; intervals: number[] }>; }
+  interface HistoryEntry {
+    id: string;
+    steps: Array<{ semitone: number; intervals: number[] }>;
+    styleLabel: string;
+  }
 
   function loadHistory(): HistoryEntry[] {
     if (!browser) return [];
     try {
       const raw = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]');
       if (!Array.isArray(raw)) return [];
-      return raw.filter((e): e is HistoryEntry => typeof e.id === 'string' && Array.isArray(e.steps));
+      return raw
+        .filter((e) => typeof e.id === 'string' && Array.isArray(e.steps))
+        .map((e) => ({
+          id: e.id as string,
+          steps: e.steps as Array<{ semitone: number; intervals: number[] }>,
+          styleLabel: typeof e.styleLabel === 'string' ? e.styleLabel : 'ランダム',
+        }));
     } catch { return []; }
   }
 
@@ -120,23 +208,62 @@
 
   let randomProg = $state<ChromaticProgression | null>(null);
 
-  function generateRandomProg(): ChromaticProgression {
+  function generateRandomProg(styleId: string = 'random'): ChromaticProgression {
     const id = `rp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const style = styleId === 'random'
+      ? STYLES[Math.floor(Math.random() * STYLES.length)]
+      : (STYLES.find(s => s.id === styleId) ?? STYLES[0]);
+
     const pool = diatonicChordPool;
+    if (pool.length === 0) {
+      return { id, label: style.label, steps: [{ semitone: 0, intervals: [0, 4, 7], name: '' }], smoothVoicings: [null] };
+    }
+
+    const sortedSemitones = [...new Set(pool.map(c => c.semitone))].sort((a, b) => a - b);
+    const use7Note = sortedSemitones.length === 7;
     const len = Math.random() < 0.5 ? 4 : 3;
-    const steps: ChromaticStep[] = pool.length === 0
-      ? [{ semitone: 0, intervals: [0, 4, 7], name: '' }]
-      : Array.from({ length: len }, () => {
-          const c = pool[Math.floor(Math.random() * pool.length)];
-          return { semitone: c.semitone, intervals: c.intervals, name: '' };
-        });
-    return { id, label: 'ランダム', steps, smoothVoicings: steps.map(() => null) };
+    const steps: ChromaticStep[] = [];
+
+    // 最初のコードはランダムに選択
+    const first = pool[Math.floor(Math.random() * pool.length)];
+    steps.push({ semitone: first.semitone, intervals: first.intervals, name: '' });
+
+    while (steps.length < len) {
+      const prev = steps[steps.length - 1];
+      const prevFn: ChordFunction = use7Note ? getScaleFunction(prev.semitone, sortedSemitones) : 'T';
+
+      const weights = pool.map(c => {
+        const interval = (c.semitone - prev.semitone + 12) % 12;
+        let w = style.rootWeights[interval];
+
+        if (use7Note) {
+          const nextFn = getScaleFunction(c.semitone, sortedSemitones);
+          w *= style.tdWeights[prevFn][nextFn];
+        }
+
+        // allowRepeat=false のとき同一コード（同ルート・同インターバル）を禁止
+        if (!style.allowRepeat
+          && c.semitone === prev.semitone
+          && c.intervals.length === prev.intervals.length
+          && c.intervals.every((v, i) => v === prev.intervals[i])) {
+          w = 0;
+        }
+
+        return w;
+      });
+
+      const idx = weightedPickIdx(weights);
+      steps.push({ semitone: pool[idx].semitone, intervals: pool[idx].intervals, name: '' });
+    }
+
+    return { id, label: style.label, steps, smoothVoicings: steps.map(() => null) };
   }
 
   function addToHistory(prog: ChromaticProgression) {
     const entry: HistoryEntry = {
       id: prog.id,
       steps: prog.steps.map(s => ({ semitone: s.semitone, intervals: s.intervals })),
+      styleLabel: prog.label,
     };
     const h = [entry, ...progressionHistory].slice(0, MAX_HISTORY);
     progressionHistory = h;
@@ -146,7 +273,7 @@
   function historyToProg(entry: HistoryEntry): ChromaticProgression {
     return {
       id: entry.id,
-      label: 'ランダム',
+      label: entry.styleLabel,
       steps: entry.steps.map(s => ({ semitone: s.semitone, intervals: s.intervals, name: '' })),
       smoothVoicings: entry.steps.map(() => null),
     };
@@ -395,6 +522,7 @@
                 : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'}"
             onclick={() => playHistoryItem(entry)}
           >
+            <span class="block text-[10px] opacity-40 mb-0.5">{entry.styleLabel}</span>
             <span class="mr-1">{activeProgId === entry.id ? '⏹' : '▶'}</span>
             <span class="font-mono">
               {#each names as name, i}
