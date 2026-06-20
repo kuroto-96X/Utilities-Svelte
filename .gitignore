@@ -28,3 +28,6 @@ vite.config.ts.timestamp-*
 
 # Superpowers brainstorm sessions
 .superpowers/
+
+# Superpowers implementation worktrees
+.worktrees/
