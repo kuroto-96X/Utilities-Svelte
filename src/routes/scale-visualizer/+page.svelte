@@ -155,7 +155,7 @@
 
 <div class="min-h-screen bg-gray-900 text-gray-100 p-4">
   <div class="ad-slot--top"></div>
-  <h1 class="text-2xl font-bold mb-4">スケール / コードビジュアライザー</h1>
+  <h1 class="text-2xl font-bold mb-4">Scale / Chord Visualizer</h1>
 
   <div class="flex flex-col md:flex-row gap-4">
     <!-- 左サイドバー -->
