@@ -13,6 +13,7 @@
     removePlayingMidi,
     setPlayingChordName,
     stopProgression,
+    onplay,
   }: {
     diatonicChords: DiatonicChord[];
     inversion?: number;

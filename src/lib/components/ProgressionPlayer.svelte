@@ -15,6 +15,7 @@
     removePlayingMidi,
     setPlayingChordName,
     stopCount = 0,
+    onplay,
   }: {
     diatonicChords: DiatonicChord[];
     bpm: number;

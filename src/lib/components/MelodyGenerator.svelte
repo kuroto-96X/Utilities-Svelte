@@ -13,6 +13,7 @@
     removePlayingPc,
     addPlayingMidi,
     removePlayingMidi,
+    onplay,
   }: {
     intervals: number[];
     rootPc: number;
