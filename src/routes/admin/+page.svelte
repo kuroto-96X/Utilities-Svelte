@@ -4,6 +4,7 @@
 
   type Config = {
     toolLabels: Record<string, string>
+    toolDevStatus: Record<string, boolean>
     toolVisibility: Record<string, boolean>
   }
 
@@ -19,10 +20,13 @@
       const res = await fetch('/api/admin/config')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json() as Config
-      // bind:value には undefined が使えないので全ツールのエントリを初期化する
+      // 設定値がない場合はデフォルト値で初期化する
       for (const tool of tools) {
         if (data.toolLabels[tool.href] === undefined) {
-          data.toolLabels[tool.href] = ''
+          data.toolLabels[tool.href] = tool.label
+        }
+        if (data.toolDevStatus[tool.href] === undefined) {
+          data.toolDevStatus[tool.href] = false
         }
       }
       config = data
@@ -45,24 +49,24 @@
 
   async function save() {
     if (!config) return
-    // 空文字エントリを除いてから保存する
-    const cleanLabels = Object.fromEntries(
-      Object.entries(config.toolLabels).filter(([, v]) => v.trim() !== '')
-    )
+    // デフォルト値と同じラベルおよびfalseの開発中フラグは保存しない
+    const defaultLabels = Object.fromEntries(tools.map(t => [t.href, t.label]))
+    const toPost: Config = {
+      toolLabels: Object.fromEntries(
+        Object.entries(config.toolLabels).filter(([k, v]) => v.trim() !== '' && v !== defaultLabels[k])
+      ),
+      toolDevStatus: Object.fromEntries(
+        Object.entries(config.toolDevStatus).filter(([, v]) => v === true)
+      ),
+      toolVisibility: config.toolVisibility,
+    }
     try {
       const res = await fetch('/api/admin/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...config, toolLabels: cleanLabels })
+        body: JSON.stringify(toPost)
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      // ローカル状態を保存済み内容に同期する
-      config.toolLabels = cleanLabels
-      for (const tool of tools) {
-        if (config.toolLabels[tool.href] === undefined) {
-          config.toolLabels[tool.href] = ''
-        }
-      }
       if (flashTimer) clearTimeout(flashTimer)
       flash = '保存しました'
       flashTimer = setTimeout(() => { flash = null }, 2000)
@@ -121,9 +125,16 @@
                 <input
                   type="text"
                   bind:value={config.toolLabels[tool.href]}
-                  placeholder={tool.label}
                   class="flex-1 text-sm text-slate-700 bg-transparent border-0 border-b border-transparent hover:border-slate-200 focus:border-teal-400 focus:outline-none py-0.5 min-w-0"
                 />
+                <label class="flex items-center gap-1 shrink-0">
+                  <input
+                    type="checkbox"
+                    bind:checked={config.toolDevStatus[tool.href]}
+                    class="w-3.5 h-3.5 text-amber-500 rounded border-slate-300"
+                  />
+                  <span class="text-xs text-slate-500">開発中</span>
+                </label>
                 <span class="text-xs text-slate-400 shrink-0 font-mono">{tool.href}</span>
               </div>
             {/each}

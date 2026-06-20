@@ -9,8 +9,11 @@
   const isVisible = (href: string): boolean =>
     (siteConfig.toolVisibility as Record<string, boolean>)[href] ?? true
 
-  const getLabel = (href: string, defaultLabel: string): string =>
-    (siteConfig.toolLabels as Record<string, string>)[href] ?? defaultLabel
+  const getLabel = (href: string, defaultLabel: string): string => {
+    const label = (siteConfig.toolLabels as Record<string, string>)[href] ?? defaultLabel
+    const isDev = (siteConfig.toolDevStatus as Record<string, boolean>)[href] ?? false
+    return isDev ? `${label}(開発中)` : label
+  }
 
   let { children } = $props()
   let routeId = $derived(page.route.id)
