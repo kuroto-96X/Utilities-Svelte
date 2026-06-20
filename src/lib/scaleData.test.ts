@@ -1,6 +1,6 @@
 // src/lib/scaleData.test.ts
 import { describe, test, expect } from 'vitest'
-import { ROOTS, SCALE_GROUPS, SCALES, CHORD_GROUPS, CHORDS, PROGRESSIONS } from './scaleData'
+import { ROOTS, SCALE_GROUPS, SCALES, CHORD_GROUPS, CHORDS, PROGRESSIONS, resolveProgressionVoicing } from './scaleData'
 
 describe('ROOTS', () => {
   test('12個のルート音がある', () => {
@@ -51,5 +51,27 @@ describe('PROGRESSIONS', () => {
         expect(d).toBeLessThanOrEqual(6)
       })
     })
+  })
+})
+
+describe('resolveProgressionVoicing', () => {
+  test('smooth on ignores common inversion when no preset is given', () => {
+    expect(resolveProgressionVoicing([0, 4, 7], null, true, 2)).toEqual([0, 4, 7])
+  })
+
+  test('smooth on applies preset octave offsets to each chord tone', () => {
+    expect(resolveProgressionVoicing([0, 4, 7], [12, 0, 0], true, 0)).toEqual([12, 4, 7])
+  })
+
+  test('smooth off applies common inversion', () => {
+    expect(resolveProgressionVoicing([0, 4, 7], null, false, 1)).toEqual([4, 7, 12])
+  })
+
+  test('does not mutate input arrays', () => {
+    const intervals = [0, 4, 7]
+    const smooth = [12, 0, 0]
+    resolveProgressionVoicing(intervals, smooth, true, 0)
+    expect(intervals).toEqual([0, 4, 7])
+    expect(smooth).toEqual([12, 0, 0])
   })
 })

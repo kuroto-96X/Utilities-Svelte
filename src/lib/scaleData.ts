@@ -71,6 +71,16 @@ export function applyInversion(intervals: number[], inv: number): number[] {
   return sorted.sort((a, b) => a - b);
 }
 
+export function resolveProgressionVoicing(
+  intervals: number[],
+  smoothVoicing: number[] | null,
+  useSmoothedBass: boolean,
+  inversion: number,
+): number[] {
+  if (!useSmoothedBass) return applyInversion(intervals, inversion)
+  return intervals.map((interval, i) => interval + (smoothVoicing?.[i] ?? 0))
+}
+
 export interface Progression { id: string; label: string; degrees: number[]; smoothVoicings: (number[] | null)[]; }
 export const PROGRESSIONS: Progression[] = [
   { id: 'kingRoad',     label: '王道進行（IV-V-iii-vi）',           degrees: [3,4,2,5],         smoothVoicings: [null, null, [12,0,0], null] },
