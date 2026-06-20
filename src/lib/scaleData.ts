@@ -74,15 +74,15 @@ export function applyInversion(intervals: number[], inv: number): number[] {
 export interface Progression { id: string; label: string; degrees: number[]; smoothVoicings: (number[] | null)[]; }
 export const PROGRESSIONS: Progression[] = [
   { id: 'kingRoad',     label: '王道進行（IV-V-iii-vi）',           degrees: [3,4,2,5],         smoothVoicings: [null, null, [12,0,0], null] },
-  { id: 'canon',        label: 'カノン進行（I-V-vi-iii-IV-I-IV-V）', degrees: [0,4,5,2,3,0,3,4], smoothVoicings: [null, [12,0,0], null, [12,0,0], null, [12,0,0], null, null] },
-  { id: 'axis',         label: 'ポップパンク（I-V-vi-IV）',          degrees: [0,4,5,3],         smoothVoicings: [null, [12,0,0], null, [12,0,0]] },
-  { id: 'fifties',      label: '50年代進行（I-vi-IV-V）',            degrees: [0,5,3,4],         smoothVoicings: [null, [12,12,0], null, null] },
-  { id: 'twoFiveOne',   label: 'ジャズ（ii-V-I）',                   degrees: [1,4,0],           smoothVoicings: [null, [12,0,0], null] },
-  { id: 'basicLoop',    label: '基本循環（I-IV-I-V）',               degrees: [0,3,0,4],         smoothVoicings: [null, null, [12,0,0], [12,12,0]] },
+  { id: 'canon',        label: 'カノン進行（I-V-vi-iii-IV-I-IV-V）', degrees: [0,4,5,2,3,0,3,4], smoothVoicings: [[12,12,12], [12,0,0], null, [12,0,0], null, [12,0,0], null, null] },
+  { id: 'axis',         label: 'ポップパンク（I-V-vi-IV）',          degrees: [0,4,5,3],         smoothVoicings: [[12,12,12], [12,0,0], null, [12,0,0]] },
+  { id: 'fifties',      label: '50年代進行（I-vi-IV-V）',            degrees: [0,5,3,4],         smoothVoicings: [null, [12,12,-12], null, null] },
+  { id: 'twoFiveOne',   label: 'ジャズ（ii-V-I）',                   degrees: [1,4,0],           smoothVoicings: [null, [12,0,0], [12,12,12]] },
+  { id: 'basicLoop',    label: '基本循環（I-IV-I-V）',               degrees: [0,3,0,4],         smoothVoicings: [null, null, [12,0,0], [0,0,-12]] },
   { id: 'letItBe',      label: 'Let It Be系（vi-IV-I-V）',           degrees: [5,3,0,4],         smoothVoicings: [null, [12,0,0], [12,12,0], null] },
-  { id: 'minorAnthem',  label: 'マイナーアンセム（i-VI-III-VII）',   degrees: [0,5,2,6],         smoothVoicings: [null, [12,0,0], [12,12,0], null] },
-  { id: 'rockLoop',     label: 'ロック往復（I-V-IV-V）',             degrees: [0,4,3,4],         smoothVoicings: [null, [12,0,0], [12,0,0], null] },
-  { id: 'jazzCircle',   label: 'ジャズ循環（I-vi-ii-V）',            degrees: [0,5,1,4],         smoothVoicings: [null, [12,12,0], [12,0,0], null] },
+  { id: 'minorAnthem',  label: 'マイナーアンセム（i-VI-III-VII）',   degrees: [0,5,2,6],         smoothVoicings: [[12,12,12], [12,0,0], [12,12,0], null] },
+  { id: 'rockLoop',     label: 'ロック往復（I-V-IV-V）',             degrees: [0,4,3,4],         smoothVoicings: [[12,12,12], [12,0,0], [12,0,0], null] },
+  { id: 'jazzCircle',   label: 'ジャズ循環（I-vi-ii-V）',            degrees: [0,5,1,4],         smoothVoicings: [null, [12,12,-12], [12,0,0], null] },
 ];
 
 // クロマティック（スケール外の音を含む）進行
