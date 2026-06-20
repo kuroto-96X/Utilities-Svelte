@@ -71,20 +71,18 @@ export function applyInversion(intervals: number[], inv: number): number[] {
   return sorted.sort((a, b) => a - b);
 }
 
-export interface Progression { id: string; label: string; degrees: number[]; }
+export interface Progression { id: string; label: string; degrees: number[]; smoothVoicings: (number[] | null)[]; }
 export const PROGRESSIONS: Progression[] = [
-  // 既存
-  { id: 'kingRoad',   label: '王道進行（IV-V-iii-vi）',          degrees: [3,4,2,5] },
-  { id: 'canon',      label: 'カノン進行（I-V-vi-iii-IV-I-IV-V）', degrees: [0,4,5,2,3,0,3,4] },
-  { id: 'axis',       label: 'ポップパンク（I-V-vi-IV）',         degrees: [0,4,5,3] },
-  { id: 'fifties',    label: '50年代進行（I-vi-IV-V）',           degrees: [0,5,3,4] },
-  { id: 'twoFiveOne', label: 'ジャズ（ii-V-I）',                  degrees: [1,4,0] },
-  // ダイアトニック循環追加
-  { id: 'basicLoop',    label: '基本循環（I-IV-I-V）',            degrees: [0,3,0,4] },
-  { id: 'letItBe',      label: 'Let It Be系（vi-IV-I-V）',        degrees: [5,3,0,4] },
-  { id: 'minorAnthem',  label: 'マイナーアンセム（i-VI-III-VII）', degrees: [0,5,2,6] },
-  { id: 'rockLoop',     label: 'ロック往復（I-V-IV-V）',          degrees: [0,4,3,4] },
-  { id: 'jazzCircle',   label: 'ジャズ循環（I-vi-ii-V）',         degrees: [0,5,1,4] },
+  { id: 'kingRoad',     label: '王道進行（IV-V-iii-vi）',           degrees: [3,4,2,5],         smoothVoicings: [null, null, [12,0,0], null] },
+  { id: 'canon',        label: 'カノン進行（I-V-vi-iii-IV-I-IV-V）', degrees: [0,4,5,2,3,0,3,4], smoothVoicings: [null, [12,0,0], null, [12,0,0], null, [12,0,0], null, null] },
+  { id: 'axis',         label: 'ポップパンク（I-V-vi-IV）',          degrees: [0,4,5,3],         smoothVoicings: [null, [12,0,0], null, [12,0,0]] },
+  { id: 'fifties',      label: '50年代進行（I-vi-IV-V）',            degrees: [0,5,3,4],         smoothVoicings: [null, [12,12,0], null, null] },
+  { id: 'twoFiveOne',   label: 'ジャズ（ii-V-I）',                   degrees: [1,4,0],           smoothVoicings: [null, [12,0,0], null] },
+  { id: 'basicLoop',    label: '基本循環（I-IV-I-V）',               degrees: [0,3,0,4],         smoothVoicings: [null, null, [12,0,0], [12,12,0]] },
+  { id: 'letItBe',      label: 'Let It Be系（vi-IV-I-V）',           degrees: [5,3,0,4],         smoothVoicings: [null, [12,0,0], [12,12,0], null] },
+  { id: 'minorAnthem',  label: 'マイナーアンセム（i-VI-III-VII）',   degrees: [0,5,2,6],         smoothVoicings: [null, [12,0,0], [12,12,0], null] },
+  { id: 'rockLoop',     label: 'ロック往復（I-V-IV-V）',             degrees: [0,4,3,4],         smoothVoicings: [null, [12,0,0], [12,0,0], null] },
+  { id: 'jazzCircle',   label: 'ジャズ循環（I-vi-ii-V）',            degrees: [0,5,1,4],         smoothVoicings: [null, [12,12,0], [12,0,0], null] },
 ];
 
 // クロマティック（スケール外の音を含む）進行
@@ -98,6 +96,7 @@ export interface ChromaticProgression {
   id: string;
   label: string;
   steps: ChromaticStep[];
+  smoothVoicings: (number[] | null)[];
 }
 
 export const CHROMATIC_PROGRESSIONS: ChromaticProgression[] = [
@@ -111,6 +110,7 @@ export const CHROMATIC_PROGRESSIONS: ChromaticProgression[] = [
       { semitone: 7, intervals: [0,4,7],    name: 'V' },
       { semitone: 0, intervals: [0,4,7],    name: 'I' },
     ],
+    smoothVoicings: [null, null, [12,12,0], null],
   },
   {
     id: 'secDom2',
@@ -122,6 +122,7 @@ export const CHROMATIC_PROGRESSIONS: ChromaticProgression[] = [
       { semitone: 7, intervals: [0,4,7,10], name: 'V7' },
       { semitone: 0, intervals: [0,4,7],    name: 'I' },
     ],
+    smoothVoicings: [null, null, [12,0,0], [12,0,0,0], null],
   },
   // 3.2 借用和音
   {
@@ -132,6 +133,7 @@ export const CHROMATIC_PROGRESSIONS: ChromaticProgression[] = [
       { semitone: 10, intervals: [0,4,7], name: 'bVII' },
       { semitone: 5,  intervals: [0,4,7], name: 'IV' },
     ],
+    smoothVoicings: [null, null, [12,0,0]],
   },
   {
     id: 'borrowedIV',
@@ -141,6 +143,7 @@ export const CHROMATIC_PROGRESSIONS: ChromaticProgression[] = [
       { semitone: 5, intervals: [0,3,7], name: 'iv' },
       { semitone: 0, intervals: [0,4,7], name: 'I' },
     ],
+    smoothVoicings: [null, [12,12,0], null],
   },
   {
     id: 'borrowedBVI',
@@ -151,6 +154,7 @@ export const CHROMATIC_PROGRESSIONS: ChromaticProgression[] = [
       { semitone: 10, intervals: [0,4,7], name: 'bVII' },
       { semitone: 0,  intervals: [0,4,7], name: 'I' },
     ],
+    smoothVoicings: [null, null, null, null],
   },
   // 3.3 トライトーン代理
   {
@@ -161,6 +165,7 @@ export const CHROMATIC_PROGRESSIONS: ChromaticProgression[] = [
       { semitone: 1, intervals: [0,4,7,10], name: 'bII7' },
       { semitone: 0, intervals: [0,4,7,11], name: 'Imaj7' },
     ],
+    smoothVoicings: [null, null, null],
   },
   // 3.4 パッシングディミニッシュ
   {
@@ -173,6 +178,7 @@ export const CHROMATIC_PROGRESSIONS: ChromaticProgression[] = [
       { semitone: 7, intervals: [0,4,7,10], name: 'V7' },
       { semitone: 0, intervals: [0,4,7],    name: 'I' },
     ],
+    smoothVoicings: [null, null, null, [12,12,0], null],
   },
   // 3.5 ナポリの6度
   {
@@ -185,6 +191,7 @@ export const CHROMATIC_PROGRESSIONS: ChromaticProgression[] = [
       { semitone: 7, intervals: [0,4,7], name: 'V' },
       { semitone: 0, intervals: [0,3,7], name: 'i' },
     ],
+    smoothVoicings: [null, [12,12,0], null, [12,0,0], null],
   },
 ];
 
@@ -197,6 +204,7 @@ export const TENSION_PROGRESSIONS: ChromaticProgression[] = [
       { semitone: 0, intervals: [0,5,7],       name: 'sus4' },
       { semitone: 0, intervals: [0,4,7],       name: 'I' },
     ],
+    smoothVoicings: [null, null],
   },
   {
     id: 'sus2ToMaj',
@@ -205,6 +213,7 @@ export const TENSION_PROGRESSIONS: ChromaticProgression[] = [
       { semitone: 0, intervals: [0,2,7],       name: 'sus2' },
       { semitone: 0, intervals: [0,4,7],       name: 'I' },
     ],
+    smoothVoicings: [null, null],
   },
   {
     id: 'sus4Sus2ToMaj',
@@ -214,6 +223,7 @@ export const TENSION_PROGRESSIONS: ChromaticProgression[] = [
       { semitone: 0, intervals: [0,2,7],       name: 'sus2' },
       { semitone: 0, intervals: [0,4,7],       name: 'I' },
     ],
+    smoothVoicings: [null, null, null],
   },
   {
     id: 'add9ToMaj',
@@ -222,6 +232,7 @@ export const TENSION_PROGRESSIONS: ChromaticProgression[] = [
       { semitone: 0, intervals: [0,2,4,7],     name: 'add9' },
       { semitone: 0, intervals: [0,4,7],       name: 'I' },
     ],
+    smoothVoicings: [null, null],
   },
   {
     id: 'minTension',
@@ -231,5 +242,6 @@ export const TENSION_PROGRESSIONS: ChromaticProgression[] = [
       { semitone: 0, intervals: [0,3,7,10],    name: 'im7' },
       { semitone: 0, intervals: [0,2,3,7,10],  name: 'im9' },
     ],
+    smoothVoicings: [null, null, null],
   },
 ];

@@ -84,6 +84,7 @@
 
   // ---- 再生ロジック ----
 
+  let useSmoothedBass = $state(false);
   let activeProgId = $state<string | null>(null);
   let activeStepIndex = $state(-1);
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -134,26 +135,11 @@
       const baseRoot = 57 + ((chordRoot - 9 + 12) % 12);
       const chordRootMidi = baseRoot < tonicMidi ? baseRoot + 12 : baseRoot;
       setPlayingChordName?.(NOTE_NAMES[chordRoot] + qualitySuffix(step.intervals));
-      applyInversion(step.intervals, inversion).forEach(interval => {
-        const midi = chordRootMidi + interval;
-        const pc = (chordRoot + interval) % 12;
-        const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
-        activeChordStopFns.push(stopFn);
-        activeChordPcs.push(pc);
-        activeChordMidis.push(midi);
-        addPlayingPc(pc);
-        addPlayingMidi?.(midi);
-      });
-    } else {
-      const degree = prog.degrees[activeStepIndex];
-      setPlayingChordName?.(chordNameForDegree(degree));
-      const chord = diatonicChords[degree];
-      if (chord) {
-        const baseRoot = 57 + ((chord.rootPc - 9 + 12) % 12);
-        const chordRootMidi = baseRoot < tonicMidi ? baseRoot + 12 : baseRoot;
-        applyInversion(chord.intervals, inversion).forEach(interval => {
-          const midi = chordRootMidi + interval;
-          const pc = (chord.rootPc + interval) % 12;
+      const smoothVoicing = useSmoothedBass ? prog.smoothVoicings[activeStepIndex] : null;
+      if (smoothVoicing) {
+        step.intervals.forEach((interval, i) => {
+          const midi = chordRootMidi + interval + (smoothVoicing[i] ?? 0);
+          const pc = ((chordRoot + interval) % 12 + 12) % 12;
           const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
           activeChordStopFns.push(stopFn);
           activeChordPcs.push(pc);
@@ -161,6 +147,49 @@
           addPlayingPc(pc);
           addPlayingMidi?.(midi);
         });
+      } else {
+        applyInversion(step.intervals, inversion).forEach(interval => {
+          const midi = chordRootMidi + interval;
+          const pc = (chordRoot + interval) % 12;
+          const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
+          activeChordStopFns.push(stopFn);
+          activeChordPcs.push(pc);
+          activeChordMidis.push(midi);
+          addPlayingPc(pc);
+          addPlayingMidi?.(midi);
+        });
+      }
+    } else {
+      const degree = prog.degrees[activeStepIndex];
+      setPlayingChordName?.(chordNameForDegree(degree));
+      const chord = diatonicChords[degree];
+      if (chord) {
+        const baseRoot = 57 + ((chord.rootPc - 9 + 12) % 12);
+        const chordRootMidi = baseRoot < tonicMidi ? baseRoot + 12 : baseRoot;
+        const smoothVoicing = useSmoothedBass ? prog.smoothVoicings[activeStepIndex] : null;
+        if (smoothVoicing) {
+          chord.intervals.forEach((interval, i) => {
+            const midi = chordRootMidi + interval + (smoothVoicing[i] ?? 0);
+            const pc = ((chord.rootPc + interval) % 12 + 12) % 12;
+            const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
+            activeChordStopFns.push(stopFn);
+            activeChordPcs.push(pc);
+            activeChordMidis.push(midi);
+            addPlayingPc(pc);
+            addPlayingMidi?.(midi);
+          });
+        } else {
+          applyInversion(chord.intervals, inversion).forEach(interval => {
+            const midi = chordRootMidi + interval;
+            const pc = (chord.rootPc + interval) % 12;
+            const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
+            activeChordStopFns.push(stopFn);
+            activeChordPcs.push(pc);
+            activeChordMidis.push(midi);
+            addPlayingPc(pc);
+            addPlayingMidi?.(midi);
+          });
+        }
       }
     }
 
@@ -182,7 +211,13 @@
 </script>
 
 <div>
-  <p class="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">コード進行プリセット</p>
+  <div class="flex items-center justify-between mb-2">
+    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">コード進行プリセット</p>
+    <label class="flex items-center gap-1 text-xs text-gray-300 cursor-pointer">
+      <input type="checkbox" bind:checked={useSmoothedBass} class="accent-teal-500" />
+      スムーズベース（転回形）
+    </label>
+  </div>
 
   <div class="flex flex-col md:flex-row gap-4">
     <!-- ダイアトニック -->
