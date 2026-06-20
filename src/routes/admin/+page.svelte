@@ -115,27 +115,29 @@
           <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">{cat.label}</h2>
           <div class="border border-slate-200 rounded-lg divide-y divide-slate-100">
             {#each catTools as tool (tool.href)}
-              <div class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50">
-                <input
-                  type="checkbox"
-                  checked={config.toolVisibility[tool.href] ?? true}
-                  onchange={() => toggle(tool.href)}
-                  class="w-4 h-4 text-teal-600 rounded border-slate-300 shrink-0"
-                />
-                <input
-                  type="text"
-                  bind:value={config.toolLabels[tool.href]}
-                  class="flex-1 text-sm text-slate-700 bg-transparent border-0 border-b border-transparent hover:border-slate-200 focus:border-teal-400 focus:outline-none py-0.5 min-w-0"
-                />
-                <label class="flex items-center gap-1 shrink-0">
+              <div class="px-4 py-2.5 hover:bg-slate-50">
+                <p class="text-xs text-slate-400 font-mono mb-1.5">{tool.href}</p>
+                <div class="flex items-center gap-3">
                   <input
                     type="checkbox"
-                    bind:checked={config.toolDevStatus[tool.href]}
-                    class="w-3.5 h-3.5 text-amber-500 rounded border-slate-300"
+                    checked={config.toolVisibility[tool.href] ?? true}
+                    onchange={() => toggle(tool.href)}
+                    class="w-4 h-4 text-teal-600 rounded border-slate-300 shrink-0"
                   />
-                  <span class="text-xs text-slate-500">開発中</span>
-                </label>
-                <span class="text-xs text-slate-400 shrink-0 font-mono">{tool.href}</span>
+                  <input
+                    type="text"
+                    bind:value={config.toolLabels[tool.href]}
+                    class="flex-1 text-sm text-slate-700 bg-transparent border-0 border-b border-transparent hover:border-slate-200 focus:border-teal-400 focus:outline-none py-0.5 min-w-0"
+                  />
+                  <label class="flex items-center gap-1 shrink-0">
+                    <input
+                      type="checkbox"
+                      bind:checked={config.toolDevStatus[tool.href]}
+                      class="w-3.5 h-3.5 text-amber-500 rounded border-slate-300"
+                    />
+                    <span class="text-xs text-slate-500">開発中</span>
+                  </label>
+                </div>
               </div>
             {/each}
           </div>
