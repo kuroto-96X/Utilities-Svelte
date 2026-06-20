@@ -48,18 +48,21 @@
   let isPlaying = $state(false);
   let currentNoteIdx = $state<number | null>(null);
 
-  // A3(57)〜G6(91) の固定スパン（34半音）でオクターブを展開
+  // A3(57)〜G6(91) の絶対範囲でオクターブ展開（ルートより下も許可）
   const extendedIntervals = $derived.by(() => {
-    const maxInterval = 91 - 57; // 34半音、ルートに関係なく固定
+    const baseMidi = 57 + ((rootPc - 9 + 12) % 12);
+    const minInterval = 57 - baseMidi; // A3
+    const maxInterval = 91 - baseMidi; // G6
     const result: number[] = [];
-    let oct = 0;
-    while (oct * 12 <= maxInterval) {
+    const minOct = Math.floor(minInterval / 12);
+    const maxOct = Math.floor(maxInterval / 12);
+    for (let oct = minOct; oct <= maxOct; oct++) {
       for (const iv of intervals) {
         const shifted = iv + oct * 12;
-        if (shifted <= maxInterval) result.push(shifted);
+        if (shifted >= minInterval && shifted <= maxInterval) result.push(shifted);
       }
-      oct++;
     }
+    result.sort((a, b) => a - b);
     return result;
   });
 
@@ -101,14 +104,15 @@
 
   // ルートと5度相当音のインデックスを収集（オクターブをまたいで対応）
   function getStableIndices(ivs: number[]): number[] {
+    const pc = (iv: number) => ((iv % 12) + 12) % 12;
     const result: number[] = [];
     const octaves = [...new Set(ivs.map(iv => Math.floor(iv / 12)))].sort((a, b) => a - b);
     for (const oct of octaves) {
       const items = ivs.map((iv, i) => ({ iv, i })).filter(({ iv }) => Math.floor(iv / 12) === oct);
-      const root = items.find(({ iv }) => iv % 12 === 0);
+      const root = items.find(({ iv }) => pc(iv) === 0);
       if (root) result.push(root.i);
       const fifth = items.reduce((best, cur) =>
-        Math.abs((cur.iv % 12) - 7) < Math.abs((best.iv % 12) - 7) ? cur : best, items[0]);
+        Math.abs(pc(cur.iv) - 7) < Math.abs(pc(best.iv) - 7) ? cur : best, items[0]);
       if (fifth && !result.includes(fifth.i)) result.push(fifth.i);
     }
     return result.length > 0 ? result : [0];
