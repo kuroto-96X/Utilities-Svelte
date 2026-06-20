@@ -125,10 +125,10 @@
 
   function biasRatioFor(pat: ContourPattern, progress: number): number {
     switch (pat) {
-      case 'ascending':  return 0.85;
-      case 'descending': return 0.15;
-      case 'arch':   return progress < 0.5 ? 0.85 : 0.15;
-      case 'valley': return progress < 0.5 ? 0.15 : 0.85;
+      case 'ascending':  return 0.93;
+      case 'descending': return 0.07;
+      case 'arch':   return progress < 0.5 ? 0.93 : 0.07;
+      case 'valley': return progress < 0.5 ? 0.07 : 0.93;
       default: return 0.5;
     }
   }
