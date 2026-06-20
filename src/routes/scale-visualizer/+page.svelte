@@ -1,10 +1,11 @@
 <!-- src/routes/scale-visualizer/+page.svelte -->
 <script lang="ts">
   import { untrack } from 'svelte';
+  import { page } from '$app/state';
   import { ROOTS, SCALES, CHORDS, NOTE_NAMES, applyInversion } from '$lib/scaleData';
   import { buildKeyboardWindow } from '$lib/pianoLayout';
   import { buildDiatonicChords } from '$lib/diatonicChords';
-  import { DEFAULT_BPM } from '$lib/noteDuration';
+  import { DEFAULT_BPM, clampBpm } from '$lib/noteDuration';
   import { getAudioContext, startNoteAt } from '$lib/audioEngine';
   import RootSelector from '$lib/components/RootSelector.svelte';
   import ScaleChordSelector from '$lib/components/ScaleChordSelector.svelte';
@@ -19,6 +20,14 @@
   let scaleId = $state('major');
   let chordId = $state('maj');
   let bpm = $state(DEFAULT_BPM);
+
+  $effect(() => {
+    const p = page.url.searchParams.get('bpm');
+    if (!p) return;
+    const n = parseFloat(p);
+    if (!Number.isNaN(n)) bpm = clampBpm(n);
+  });
+
   let anchorToRoot = $state(true);
   let octaves = $state(2);
   let playingPcs = $state(new Set<number>());
