@@ -1,6 +1,16 @@
 // src/lib/scaleData.test.ts
 import { describe, test, expect } from 'vitest'
-import { ROOTS, SCALE_GROUPS, SCALES, CHORD_GROUPS, CHORDS, PROGRESSIONS, resolveProgressionVoicing } from './scaleData'
+import {
+  ROOTS,
+  SCALE_GROUPS,
+  SCALES,
+  CHORD_GROUPS,
+  CHORDS,
+  PROGRESSIONS,
+  CHROMATIC_PROGRESSIONS,
+  TENSION_PROGRESSIONS,
+  resolveProgressionVoicing,
+} from './scaleData'
 
 describe('ROOTS', () => {
   test('12個のルート音がある', () => {
@@ -73,5 +83,42 @@ describe('resolveProgressionVoicing', () => {
     resolveProgressionVoicing(intervals, smooth, true, 0)
     expect(intervals).toEqual([0, 4, 7])
     expect(smooth).toEqual([12, 0, 0])
+  })
+})
+
+describe('smoothVoicings', () => {
+  test('全プリセットで進行とボイシングのステップ数が一致する', () => {
+    PROGRESSIONS.forEach(p => expect(p.smoothVoicings).toHaveLength(p.degrees.length))
+    ;[...CHROMATIC_PROGRESSIONS, ...TENSION_PROGRESSIONS].forEach(p => {
+      expect(p.smoothVoicings).toHaveLength(p.steps.length)
+    })
+  })
+
+  test.each([
+    ['basicLoop', [60, 65, 64, 62]],
+    ['fifties', [60, 64, 65, 62]],
+    ['jazzCircle', [60, 64, 65, 62]],
+  ])('%sはループ境界を含め最大5半音以内で動く', (id, expectedBass) => {
+    const majorRoots = [0, 2, 4, 5, 7, 9, 11]
+    const majorIntervals = [
+      [0, 4, 7], [0, 3, 7], [0, 3, 7], [0, 4, 7],
+      [0, 4, 7], [0, 3, 7], [0, 3, 6],
+    ]
+    const progression = PROGRESSIONS.find(p => p.id === id)!
+    const bass = progression.degrees.map((degree, i) => {
+      const rootMidi = 60 + majorRoots[degree]
+      const voiced = resolveProgressionVoicing(
+        majorIntervals[degree],
+        progression.smoothVoicings[i],
+        true,
+        0,
+      )
+      return Math.min(...voiced.map(interval => rootMidi + interval))
+    })
+    const looped = [...bass, bass[0]]
+    const maxMove = Math.max(...looped.slice(1).map((midi, i) => Math.abs(midi - looped[i])))
+
+    expect(bass).toEqual(expectedBass)
+    expect(maxMove).toBeLessThanOrEqual(5)
   })
 })
