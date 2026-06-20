@@ -22,6 +22,7 @@
     removePlayingMidi?: (midi: number) => void;
     setPlayingChordName?: (name: string) => void;
     stopProgression: () => void;
+    onplay?: () => void;
   } = $props();
 
   let pressedDegree = $state<number | null>(null);
@@ -49,6 +50,7 @@
   }
 
   function startChord(chord: DiatonicChord) {
+    onplay?.();
     stopProgression();
     stopCurrentChord();
     pressedDegree = chord.degreeIndex;

@@ -21,6 +21,7 @@
     removePlayingPc: (pc: number) => void;
     addPlayingMidi?: (midi: number) => void;
     removePlayingMidi?: (midi: number) => void;
+    onplay?: () => void;
   } = $props();
 
   const NOTE_LABELS = ['32分', '16分', '8分', '4分', '2分', '全'];
@@ -37,7 +38,7 @@
 
   let bars = $state(2);
   let octaveRange = $state<1 | 2>(1);
-  let minNoteIdx = $state(1); // 16分音符
+  let minNoteIdx = $state(2); // 8分音符
   let maxNoteIdx = $state(3); // 4分音符
   let useDotted = $state(false);
   let useTriplet = $state(false);
@@ -132,7 +133,7 @@
   }
 
   function weightedDelta(ms: number, biasRatio: number): number {
-    const weights: { delta: number; weight: number }[] = [{ delta: 0, weight: 10 }];
+    const weights: { delta: number; weight: number }[] = [{ delta: 0, weight: 3 }];
     for (let d = 1; d <= ms; d++) {
       const base = STEP_BASE_WEIGHTS[d - 1] ?? 1;
       weights.push({ delta:  d, weight: base * (biasRatio * 2) });
@@ -297,12 +298,14 @@
   }
 
   function handleGenerate() {
+    onplay?.();
     const seq = generateMelody();
     cachedMelody = seq;
     playMelodySeq(seq);
   }
 
   function handleReplay() {
+    onplay?.();
     if (cachedMelody) playMelodySeq(cachedMelody);
   }
 

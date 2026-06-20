@@ -67,6 +67,15 @@
     playingChordName = '';
   }
 
+  // 他コンポーネントの再生開始時に左サイドバーのスケール/コード再生を停止する
+  function stopMainPlay() {
+    playId++;
+    stopAllCurrentNotes();
+    playingPcs = new Set();
+    playingMidis = new Set();
+    playingChordName = '';
+  }
+
   $effect(() => {
     rootId; scaleId; chordId; mode; bpm;
     untrack(() => { progressionStopCount += 1; });
@@ -229,18 +238,21 @@
           {removePlayingMidi}
           {setPlayingChordName}
           stopProgression={() => { progressionStopCount += 1; }}
+          onplay={stopMainPlay}
         />
       {/if}
       <MelodyGenerator
         intervals={currentIntervals}
         rootPc={root.pc}
         {bpm} {addPlayingPc} {removePlayingPc} {addPlayingMidi} {removePlayingMidi}
+        onplay={stopMainPlay}
       />
       {#if diatonicChords}
         <ProgressionPlayer
           {diatonicChords} {bpm} {inversion} {addPlayingPc} {removePlayingPc} {addPlayingMidi} {removePlayingMidi}
           {setPlayingChordName}
           stopCount={progressionStopCount}
+          onplay={stopMainPlay}
         />
       {/if}
     </div>

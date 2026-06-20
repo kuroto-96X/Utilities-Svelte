@@ -25,6 +25,7 @@
     removePlayingMidi?: (midi: number) => void;
     setPlayingChordName?: (name: string) => void;
     stopCount?: number;
+    onplay?: () => void;
   } = $props();
 
   type AnyProg = Progression | ChromaticProgression;
@@ -164,6 +165,7 @@
     if (activeProgId === prog.id) {
       stopInternal();
     } else {
+      onplay?.();
       stopInternal();
       activeProgId = prog.id;
       playStep(prog.id, prog, 0);

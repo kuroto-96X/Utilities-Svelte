@@ -46,14 +46,14 @@
 
   function isActive(windowIndex: number, pc: number): boolean {
     return playingMidis
-      ? playingMidis.has(60 + windowIndex)
+      ? playingMidis.has(60 + startSemitone + windowIndex)
       : playingPcs.has(pc);
   }
 
   function handlePointerDown(key: LayoutKey) {
     addPlayingPc(key.pc);
-    addPlayingMidi?.(60 + key.windowIndex);
-    const stop = startNote(60 + key.windowIndex);
+    addPlayingMidi?.(60 + startSemitone + key.windowIndex);
+    const stop = startNote(60 + startSemitone + key.windowIndex);
     stopFns.set(key.windowIndex, stop);
   }
 
@@ -61,7 +61,7 @@
     const stop = stopFns.get(key.windowIndex);
     if (stop) { stop(); stopFns.delete(key.windowIndex); }
     removePlayingPc(key.pc);
-    removePlayingMidi?.(60 + key.windowIndex);
+    removePlayingMidi?.(60 + startSemitone + key.windowIndex);
   }
 </script>
 
