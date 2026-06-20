@@ -57,8 +57,11 @@
     pressedDegree = chord.degreeIndex;
     setPlayingChordName?.(chordName(chord));
     const ctx = getAudioContext();
+    const tonicMidi = 60 + (diatonicChords[0]?.rootPc ?? 0);
+    const baseRoot = 60 + chord.rootPc;
+    const chordRootMidi = baseRoot < tonicMidi ? baseRoot + 12 : baseRoot;
     applyInversion(chord.intervals, inversion).forEach(interval => {
-      const midi = 60 + chord.rootPc + interval;
+      const midi = chordRootMidi + interval;
       const pc = (chord.rootPc + interval) % 12;
       const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
       activeStopFns.push(stopFn);
