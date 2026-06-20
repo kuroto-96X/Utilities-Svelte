@@ -133,7 +133,7 @@ export const CHROMATIC_PROGRESSIONS: ChromaticProgression[] = [
       { semitone: 10, intervals: [0,4,7], name: 'bVII' },
       { semitone: 5,  intervals: [0,4,7], name: 'IV' },
     ],
-    smoothVoicings: [[12,12,12], null, [12,0,0]],
+    smoothVoicings: [[12,12,12], [0,0,0], [12,0,0]],
   },
   {
     id: 'borrowedIV',
