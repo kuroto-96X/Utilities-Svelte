@@ -17,13 +17,13 @@
 </script>
 
 <svelte:head>
-  <title>BPM Note Duration Calculator</title>
+  <title>Note Duration</title>
   <meta name="description" content="BPMを入力するだけで、全音符から32分音符までの長さを秒・msで自動計算。付点・3連符にも対応した楽曲制作向けツール。" />
 </svelte:head>
 
 <div class="max-w-lg mx-auto px-4 py-6 space-y-4">
   <div>
-    <h1 class="text-2xl font-bold text-slate-800">BPM Note Duration Calculator</h1>
+    <h1 class="text-2xl font-bold text-slate-800">Note Duration</h1>
     <p class="mt-1 text-sm text-slate-500">BPMを入力すると、32分音符から全音符までの長さを表示します。</p>
   </div>
 
@@ -35,6 +35,17 @@
   <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3 text-sm text-slate-600">
     <h2 class="font-semibold text-slate-700">使い方</h2>
     <p>BPM（Beats Per Minute）を入力すると、各音符の長さを秒・ミリ秒で自動計算します。DAW での遅延設定やシンセのエンベロープ調整など、楽曲制作に役立ててください。</p>
+    <h2 class="font-semibold text-slate-700">計算式</h2>
+    <div class="space-y-1 font-mono text-xs bg-white border border-slate-200 rounded p-3">
+      <p>1拍（4分音符） = 60 ÷ BPM （秒）</p>
+      <p>各音符 = 1拍 × 倍率</p>
+      <div class="pl-4 text-slate-400 space-y-0.5 mt-1">
+        <p>全音符 ×4　2分音符 ×2　4分音符 ×1</p>
+        <p>8分音符 ×½　16分音符 ×¼　32分音符 ×⅛</p>
+      </div>
+      <p class="mt-1">付点 = 基本値 × 1.5</p>
+      <p>3連符 = 基本値 × 2/3</p>
+    </div>
     <h2 class="font-semibold text-slate-700">表の見かた</h2>
     <ul class="space-y-1 list-disc list-inside">
       <li><span class="font-medium">通常</span>：基本の音符長さ</li>
