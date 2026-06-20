@@ -37,6 +37,7 @@
       flash = '保存しました'
       flashTimer = setTimeout(() => { flash = null }, 2000)
     } catch {
+      config.toolVisibility[href] = !config.toolVisibility[href]
       error = '保存に失敗しました'
     }
   }

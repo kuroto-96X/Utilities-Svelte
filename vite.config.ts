@@ -52,8 +52,8 @@ function adminApiPlugin(): Plugin {
           req.on('data', (chunk: Buffer) => { body += chunk.toString() })
           req.on('end', () => {
             try {
-              JSON.parse(body)
-              writeFileSync(configPath, body)
+              const parsed = JSON.parse(body)
+              writeFileSync(configPath, JSON.stringify(parsed, null, 2) + '\n')
               res.statusCode = 200
               res.end('ok')
             } catch {
