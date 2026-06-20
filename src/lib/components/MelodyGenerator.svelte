@@ -30,7 +30,7 @@
   } = $props();
 
   const NOTE_LABELS = ['32分', '16分', '8分', '4分', '2分', '全'];
-  const BARS_OPTIONS = [1, 2, 4, 8];
+  const BARS_OPTIONS = [1, 2, 4];
   const CONTOUR_OPTIONS = [
     { id: 'random',     label: 'ランダム' },
     { id: 'ascending',  label: '上昇傾向' },
@@ -213,7 +213,15 @@
       } else {
         const biasRatio = biasRatioFor(pat, progress);
         const delta = weightedDelta(ms, biasRatio);
-        currentIdx = Math.max(0, Math.min(ivs.length - 1, currentIdx + delta));
+        const raw = currentIdx + delta;
+        const last = ivs.length - 1;
+        if (raw < 0) {
+          currentIdx = Math.min(last, -raw);
+        } else if (raw > last) {
+          currentIdx = Math.max(0, 2 * last - raw);
+        } else {
+          currentIdx = raw;
+        }
       }
 
       const duration = pickDuration(pool, strong);
