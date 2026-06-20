@@ -45,7 +45,7 @@
       : CHORDS.find(c => c.id === chordId)!.intervals
   );
   const diatonicChords = $derived(buildDiatonicChords(currentIntervals, root.pc));
-  const keyboard = $derived(buildKeyboardWindow(anchorToRoot ? root.pc - 12 : 0, octaves));
+  const keyboard = $derived(buildKeyboardWindow(anchorToRoot ? root.pc - 12 : -3, octaves));
 
   function addPlayingPc(pc: number) { playingPcs = new Set(playingPcs).add(pc); }
   function removePlayingPc(pc: number) { const s = new Set(playingPcs); s.delete(pc); playingPcs = s; }
@@ -91,11 +91,12 @@
     playingMidis = new Set();
 
     const ctx = getAudioContext();
+    const base = 57 + ((root.pc - 9 + 12) % 12);
 
     if (mode === 'chord') {
       // コード：全音を同時に鳴らし、全音符の長さで自動停止
       applyInversion(currentIntervals, inversion).forEach(interval => {
-        const midi = 48 + root.pc + interval;
+        const midi = base + interval;
         const pc = (root.pc + interval) % 12;
         const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
         currentPlayStopFns.push(stopFn);
@@ -132,7 +133,7 @@
         if (stepIdx >= seq.length) return; // 終了
 
         const interval = seq[stepIdx];
-        const midi = 48 + root.pc + interval;
+        const midi = base + interval;
         const pc = (root.pc + interval) % 12;
 
         const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
@@ -181,7 +182,7 @@
             <button
               class="px-2 py-1 rounded {!anchorToRoot ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
               onclick={() => (anchorToRoot = false)}
-            >C基準</button>
+            >A基準</button>
             <button
               class="px-2 py-1 rounded {anchorToRoot ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
               onclick={() => (anchorToRoot = true)}
@@ -204,7 +205,7 @@
             totalWidth={keyboard.totalWidth}
             intervals={currentIntervals}
             rootPc={root.pc}
-            startSemitone={anchorToRoot ? root.pc - 12 : 0}
+            startSemitone={anchorToRoot ? root.pc - 12 : -3}
             {playingPcs}
             {playingMidis}
             {addPlayingPc}
