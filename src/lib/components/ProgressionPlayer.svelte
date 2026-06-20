@@ -124,13 +124,16 @@
 
     stopCurrentChord();
 
+    const tonicMidi = 60 + (diatonicChords[0]?.rootPc ?? 0);
+
     if (isChromatic(prog)) {
       const step = prog.steps[activeStepIndex];
       const keyRoot = ((diatonicChords[0]?.rootPc ?? 0) + 120);
       const chordRoot = (keyRoot + step.semitone) % 12;
       setPlayingChordName?.(NOTE_NAMES[chordRoot] + qualitySuffix(step.intervals));
       applyInversion(step.intervals, inversion).forEach(interval => {
-        const midi = 60 + chordRoot + interval;
+        let midi = 60 + chordRoot + interval;
+        if (midi < tonicMidi) midi += 12;
         const pc = (chordRoot + interval) % 12;
         const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
         activeChordStopFns.push(stopFn);
@@ -145,7 +148,8 @@
       const chord = diatonicChords[degree];
       if (chord) {
         applyInversion(chord.intervals, inversion).forEach(interval => {
-          const midi = 60 + chord.rootPc + interval;
+          let midi = 60 + chord.rootPc + interval;
+          if (midi < tonicMidi) midi += 12;
           const pc = (chord.rootPc + interval) % 12;
           const stopFn = startNoteAt(ctx, midi, ctx.currentTime);
           activeChordStopFns.push(stopFn);
