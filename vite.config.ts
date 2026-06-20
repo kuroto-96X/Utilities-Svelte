@@ -35,12 +35,18 @@ function kuromojiDictRawPlugin(): Plugin {
 function adminApiPlugin(): Plugin {
   return {
     name: 'admin-api',
+    enforce: 'pre',
     configureServer(server) {
       const configPath = path.resolve('src/lib/site.config.json')
       server.middlewares.use('/api/admin/config', (req, res) => {
         if (req.method === 'GET') {
-          res.setHeader('Content-Type', 'application/json')
-          res.end(readFileSync(configPath, 'utf-8'))
+          try {
+            res.setHeader('Content-Type', 'application/json')
+            res.end(readFileSync(configPath, 'utf-8'))
+          } catch {
+            res.statusCode = 500
+            res.end('error reading config')
+          }
         } else if (req.method === 'POST') {
           let body = ''
           req.on('data', (chunk: Buffer) => { body += chunk.toString() })
