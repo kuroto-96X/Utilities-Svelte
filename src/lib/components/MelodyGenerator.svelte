@@ -67,7 +67,7 @@
       const start = cum;
       cum += note.duration;
       return {
-        midi: 60 + rootPc + note.interval,
+        midi: 57 + ((rootPc - 9 + 12) % 12) + note.interval,
         pc: note.pc,
         start,
         end: cum,
@@ -282,7 +282,7 @@
 
       currentNoteIdx = stepIdx;
       const note = seq[stepIdx];
-      const midi = 60 + rootPc + note.interval;
+      const midi = 57 + ((rootPc - 9 + 12) % 12) + note.interval;
       const pc = note.pc;
 
       activeStopFn = startNoteAt(ctx, midi, ctx.currentTime);
