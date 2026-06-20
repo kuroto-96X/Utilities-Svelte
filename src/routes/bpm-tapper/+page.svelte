@@ -258,11 +258,15 @@
       左端では全タップの平均、右端では直近1タップのみの瞬間BPMを表示します。
       グラフの青い折れ線が平均範囲、灰色が対象外のタップを示しています。
     </p>
-    <div class="mt-4 pt-3 border-t border-slate-100 text-center">
+    <div class="mt-4 pt-3 border-t border-slate-100 flex justify-center gap-6">
       <a
         href="/note-duration?bpm={mainBpm !== null ? Math.round(mainBpm) : DEFAULT_BPM}"
         class="text-sm font-medium text-teal-700 hover:underline"
-      >音符換算で開く →</a>
+      >Note Duration →</a>
+      <a
+        href="/scale-visualizer"
+        class="text-sm font-medium text-teal-700 hover:underline"
+      >Scale Visualizer →</a>
     </div>
   </div>
 
