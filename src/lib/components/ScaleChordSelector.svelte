@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { SCALE_GROUPS, CHORD_GROUPS } from '$lib/scaleData';
+	import { SCALE_GROUPS, CHORD_GROUPS, CHORDS } from '$lib/scaleData';
 	let {
 		mode = $bindable(),
 		scaleId = $bindable(),
@@ -8,6 +8,17 @@
 		onchange,
 		onstop,
 	}: { mode: 'scale' | 'chord'; scaleId: string; chordId: string; inversion?: number; onchange?: () => void; onstop?: () => void } = $props();
+
+	const maxInversion = $derived(
+		mode === 'chord' ? (CHORDS.find(c => c.id === chordId)?.intervals.length ?? 3) - 1 : 2
+	);
+
+	// ページロード時など転回形が範囲外になっている場合にルートへリセット
+	$effect(() => {
+		if (mode === 'chord' && inversion > maxInversion) {
+			inversion = 0;
+		}
+	});
 </script>
 
 <div>
@@ -35,11 +46,13 @@
 			<p class="text-xs text-gray-500 mb-1">転回形</p>
 			<div class="flex flex-wrap gap-1">
 				{#each ['ルート', '1転', '2転', '3転'] as label, i}
-					<button
-						class="px-2 py-1 text-xs rounded
-							{inversion === i ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-						onclick={() => { inversion = i; onchange?.(); }}
-					>{label}</button>
+					{#if i <= maxInversion}
+						<button
+							class="px-2 py-1 text-xs rounded
+								{inversion === i ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+							onclick={() => { inversion = i; onchange?.(); }}
+						>{label}</button>
+					{/if}
 				{/each}
 			</div>
 		</div>
@@ -73,7 +86,12 @@
 							{chordId === item.id
 								? 'bg-teal-600 text-white'
 								: 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-						onclick={() => { chordId = item.id; onchange?.(); }}
+						onclick={() => {
+							const newMax = (CHORDS.find(c => c.id === item.id)?.intervals.length ?? 3) - 1;
+							if (inversion > newMax) inversion = 0;
+							chordId = item.id;
+							onchange?.();
+						}}
 					>
 						{item.label}
 					</button>

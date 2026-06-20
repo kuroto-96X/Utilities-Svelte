@@ -246,17 +246,13 @@
   }
 
   function handleRandom() {
-    if (activeProgId === randomProg?.id) {
-      stopInternal();
-    } else {
-      const prog = generateRandomProg();
-      randomProg = prog;
-      addToHistory(prog);
-      onplay?.();
-      stopInternal();
-      activeProgId = prog.id;
-      playStep(prog.id, prog, 0);
-    }
+    const prog = generateRandomProg();
+    randomProg = prog;
+    addToHistory(prog);
+    onplay?.();
+    stopInternal();
+    activeProgId = prog.id;
+    playStep(prog.id, prog, 0);
   }
 
   function playHistoryItem(entry: HistoryEntry) {
@@ -364,48 +360,33 @@
     <div class="flex-1 min-w-0">
       <p class="text-xs text-gray-500 mb-1">ランダム</p>
       <div class="space-y-1">
-        <!-- 生成ボタン -->
+        <!-- 生成ボタン（常にランダム生成・active なし） -->
         <button
-          class="w-full text-left px-3 py-2 text-sm rounded
-            {activeProgId === randomProg?.id
-              ? 'bg-pink-600 text-white'
-              : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+          class="w-full text-left px-3 py-2 text-sm rounded bg-gray-700 text-gray-200 hover:bg-gray-600"
           onclick={handleRandom}
         >
-          <span class="block">{activeProgId === randomProg?.id ? '⏹ ' : '🎲 '}ランダム進行</span>
-          {#if randomProg}
-            {@const names = progChordNames(randomProg)}
-            {@const activeIdx = activeProgId === randomProg.id ? activeStepIndex : -1}
-            <span class="block text-xs font-mono mt-0.5">
-              {#each names as name, i}
-                {#if i > 0}<span class="opacity-40"> → </span>{/if}
-                <span class="{activeIdx === i ? 'text-orange-400' : 'opacity-60'}">{name}</span>
-              {/each}
-            </span>
-          {/if}
+          ▶ ランダム進行
         </button>
         <!-- 履歴 -->
         {#each progressionHistory as entry, hi}
-          {#if entry.id !== randomProg?.id}
-            {@const prog = historyToProg(entry)}
-            {@const names = progChordNames(prog)}
-            {@const activeIdx = activeProgId === entry.id ? activeStepIndex : -1}
-            <button
-              class="w-full text-left px-2 py-1.5 text-xs rounded
-                {activeProgId === entry.id
-                  ? 'bg-pink-700 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'}"
-              onclick={() => playHistoryItem(entry)}
-            >
-              <span class="opacity-50 mr-1">{hi + 1}.</span>
-              <span class="font-mono">
-                {#each names as name, i}
-                  {#if i > 0}<span class="opacity-40"> → </span>{/if}
-                  <span class="{activeIdx === i ? 'text-orange-300' : ''}">{name}</span>
-                {/each}
-              </span>
-            </button>
-          {/if}
+          {@const prog = historyToProg(entry)}
+          {@const names = progChordNames(prog)}
+          {@const activeIdx = activeProgId === entry.id ? activeStepIndex : -1}
+          <button
+            class="w-full text-left px-2 py-1.5 text-xs rounded
+              {activeProgId === entry.id
+                ? 'bg-pink-700 text-white'
+                : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'}"
+            onclick={() => playHistoryItem(entry)}
+          >
+            <span class="opacity-50 mr-1">{hi + 1}.</span>
+            <span class="font-mono">
+              {#each names as name, i}
+                {#if i > 0}<span class="opacity-40"> → </span>{/if}
+                <span class="{activeIdx === i ? 'text-orange-300' : ''}">{name}</span>
+              {/each}
+            </span>
+          </button>
         {/each}
       </div>
     </div>
