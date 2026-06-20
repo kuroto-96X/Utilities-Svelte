@@ -1,0 +1,14 @@
+{
+  "toolVisibility": {
+    "/bpm-tapper": true,
+    "/note-duration": true,
+    "/scale-visualizer": true,
+    "/hepburn-converter": true,
+    "/image-tools": false,
+    "/sns-image-resize": true,
+    "/id-photo": true,
+    "/nisa-simple-calculator": true,
+    "/nisa-detailed-calculator": true,
+    "/nisa-accumulation-simulator": true
+  }
+}
