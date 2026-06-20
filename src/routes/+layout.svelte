@@ -4,6 +4,10 @@
   import authorIcon from '$lib/assets/96x_icon.png'
   import { page } from '$app/state'
   import { site } from '$lib/site'
+  import siteConfig from '$lib/site.config.json'
+
+  const isVisible = (href: string): boolean =>
+    (siteConfig.toolVisibility as Record<string, boolean>)[href] ?? true
 
   let { children } = $props()
   let routeId = $derived(page.route.id)
@@ -16,15 +20,15 @@
 
   // visible:true のツールが1件以上あるカテゴリーのみ表示
   const visibleCategories = site.categories.filter(cat =>
-    (site.tools as unknown as Array<{ category: string; visible: boolean }>)
-      .some(t => t.category === cat.id && t.visible)
+    (site.tools as unknown as Array<{ href: string; category: string }>)
+      .some(t => t.category === cat.id && isVisible(t.href))
   )
 
   // 現在カテゴリーの visible ツール一覧（カテゴリーバー用）
   let activeCategoryTools = $derived(
     activeCategory !== null
-      ? (site.tools as unknown as Array<{ href: string; label: string; category: string; visible: boolean }>)
-          .filter(t => t.category === activeCategory && t.visible)
+      ? (site.tools as unknown as Array<{ href: string; label: string; category: string }>)
+          .filter(t => t.category === activeCategory && isVisible(t.href))
       : []
   )
 
@@ -60,7 +64,7 @@
       {#each visibleCategories as cat (cat.id)}
         {@const isActive = cat.id === activeCategory}
         {@const isOpen = openCategory === cat.id}
-        {@const catTools = (site.tools as unknown as Array<{ href: string; label: string; category: string; visible: boolean }>).filter(t => t.category === cat.id && t.visible)}
+        {@const catTools = (site.tools as unknown as Array<{ href: string; label: string; category: string }>).filter(t => t.category === cat.id && isVisible(t.href))}
         <div class="relative">
           <button
             type="button"
