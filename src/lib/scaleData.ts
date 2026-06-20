@@ -122,7 +122,7 @@ export const CHROMATIC_PROGRESSIONS: ChromaticProgression[] = [
       { semitone: 7, intervals: [0,4,7,10], name: 'V7' },
       { semitone: 0, intervals: [0,4,7],    name: 'I' },
     ],
-    smoothVoicings: [[12,12,12], [12,12,12,12], [12,0,0], [12,0,0,0], null],
+    smoothVoicings: [[12,12,12], [12,12,12,12], [12,0,0], [12,0,0,0], [12,12,12]],
   },
   // 3.2 借用和音
   {
@@ -191,7 +191,7 @@ export const CHROMATIC_PROGRESSIONS: ChromaticProgression[] = [
       { semitone: 7, intervals: [0,4,7], name: 'V' },
       { semitone: 0, intervals: [0,3,7], name: 'i' },
     ],
-    smoothVoicings: [[12,12,12], [12,12,0], [12,12,12], [12,0,0], null],
+    smoothVoicings: [[12,12,12], [12,12,0], [12,12,12], [12,0,0], [12,12,12]],
   },
 ];
 
