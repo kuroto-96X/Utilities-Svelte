@@ -108,7 +108,7 @@
     const id = `rp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const len = Math.random() < 0.5 ? 4 : 3;
     const pool = [0, 1, 2, 3, 4, 5]; // I〜vi（vii°は除外）
-    const degrees = [0]; // 最初は常に I
+    const degrees: number[] = [];
     while (degrees.length < len) {
       degrees.push(pool[Math.floor(Math.random() * pool.length)]);
     }
@@ -379,7 +379,7 @@
                 : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'}"
             onclick={() => playHistoryItem(entry)}
           >
-            <span class="opacity-50 mr-1">{hi + 1}.</span>
+            <span class="mr-1">{activeProgId === entry.id ? '⏹' : '▶'}</span>
             <span class="font-mono">
               {#each names as name, i}
                 {#if i > 0}<span class="opacity-40"> → </span>{/if}
