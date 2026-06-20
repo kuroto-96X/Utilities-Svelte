@@ -19,7 +19,7 @@
   let scaleId = $state('major');
   let chordId = $state('maj');
   let bpm = $state(DEFAULT_BPM);
-  let anchorToRoot = $state(false);
+  let anchorToRoot = $state(true);
   let octaves = $state(2);
   let playingPcs = $state(new Set<number>());
   let playingMidis = $state(new Set<number>());
@@ -45,7 +45,7 @@
       : CHORDS.find(c => c.id === chordId)!.intervals
   );
   const diatonicChords = $derived(buildDiatonicChords(currentIntervals, root.pc));
-  const keyboard = $derived(buildKeyboardWindow(anchorToRoot ? root.pc : 0, octaves));
+  const keyboard = $derived(buildKeyboardWindow(anchorToRoot ? root.pc - 12 : 0, octaves));
 
   function addPlayingPc(pc: number) { playingPcs = new Set(playingPcs).add(pc); }
   function removePlayingPc(pc: number) { const s = new Set(playingPcs); s.delete(pc); playingPcs = s; }
@@ -204,7 +204,7 @@
             totalWidth={keyboard.totalWidth}
             intervals={currentIntervals}
             rootPc={root.pc}
-            startSemitone={anchorToRoot ? root.pc : 0}
+            startSemitone={anchorToRoot ? root.pc - 12 : 0}
             {playingPcs}
             {playingMidis}
             {addPlayingPc}
