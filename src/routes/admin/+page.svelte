@@ -7,65 +7,89 @@
     toolVisibility: Record<string, boolean>
   }
 
+  const tools = site.tools as unknown as Array<{ href: string; label: string; category: string }>
+
   let config = $state<Config | null>(null)
   let error = $state<string | null>(null)
   let flash = $state<string | null>(null)
   let flashTimer: ReturnType<typeof setTimeout> | null = null
 
-  onMount(async () => {
+  async function loadConfig() {
     try {
       const res = await fetch('/api/admin/config')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      config = await res.json() as Config
+      const data = await res.json() as Config
+      // bind:value には undefined が使えないので全ツールのエントリを初期化する
+      for (const tool of tools) {
+        if (data.toolLabels[tool.href] === undefined) {
+          data.toolLabels[tool.href] = ''
+        }
+      }
+      config = data
+      error = null
     } catch {
       error = 'メニュー管理APIに接続できません。npm run dev で起動してください。'
     }
-  })
+  }
+
+  onMount(loadConfig)
 
   onDestroy(() => {
     if (flashTimer) clearTimeout(flashTimer)
   })
 
-  async function save(): Promise<boolean> {
-    if (!config) return false
+  function toggle(href: string) {
+    if (!config) return
+    config.toolVisibility[href] = !config.toolVisibility[href]
+  }
+
+  async function save() {
+    if (!config) return
+    // 空文字エントリを除いてから保存する
+    const cleanLabels = Object.fromEntries(
+      Object.entries(config.toolLabels).filter(([, v]) => v.trim() !== '')
+    )
     try {
       const res = await fetch('/api/admin/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
+        body: JSON.stringify({ ...config, toolLabels: cleanLabels })
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      // ローカル状態を保存済み内容に同期する
+      config.toolLabels = cleanLabels
+      for (const tool of tools) {
+        if (config.toolLabels[tool.href] === undefined) {
+          config.toolLabels[tool.href] = ''
+        }
+      }
       if (flashTimer) clearTimeout(flashTimer)
       flash = '保存しました'
       flashTimer = setTimeout(() => { flash = null }, 2000)
-      return true
     } catch {
       error = '保存に失敗しました'
-      return false
     }
-  }
-
-  async function toggle(href: string) {
-    if (!config) return
-    config.toolVisibility[href] = !config.toolVisibility[href]
-    const ok = await save()
-    if (!ok) config.toolVisibility[href] = !config.toolVisibility[href]
-  }
-
-  async function saveLabel(href: string, value: string) {
-    if (!config) return
-    const trimmed = value.trim()
-    if (trimmed === '') {
-      delete config.toolLabels[href]
-    } else {
-      config.toolLabels[href] = trimmed
-    }
-    await save()
   }
 </script>
 
 <div class="max-w-lg mx-auto px-4 py-8">
-  <h1 class="text-2xl font-bold text-slate-800 mb-6">メニュー管理</h1>
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-slate-800">メニュー管理</h1>
+    <div class="flex gap-2">
+      <button
+        onclick={loadConfig}
+        class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+      >
+        リロード
+      </button>
+      <button
+        onclick={save}
+        class="text-sm px-3 py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition-colors"
+      >
+        保存
+      </button>
+    </div>
+  </div>
 
   {#if error}
     <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
@@ -81,8 +105,7 @@
 
   {#if config}
     {#each site.categories as cat (cat.id)}
-      {@const catTools = (site.tools as unknown as Array<{ href: string; label: string; category: string }>)
-        .filter(t => t.category === cat.id)}
+      {@const catTools = tools.filter(t => t.category === cat.id)}
       {#if catTools.length > 0}
         <div class="mb-6">
           <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">{cat.label}</h2>
@@ -97,9 +120,8 @@
                 />
                 <input
                   type="text"
-                  value={config.toolLabels[tool.href] ?? ''}
+                  bind:value={config.toolLabels[tool.href]}
                   placeholder={tool.label}
-                  onblur={(e) => saveLabel(tool.href, e.currentTarget.value)}
                   class="flex-1 text-sm text-slate-700 bg-transparent border-0 border-b border-transparent hover:border-slate-200 focus:border-teal-400 focus:outline-none py-0.5 min-w-0"
                 />
                 <span class="text-xs text-slate-400 shrink-0 font-mono">{tool.href}</span>
