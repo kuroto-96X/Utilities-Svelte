@@ -100,7 +100,7 @@
       id: 'random',
       label: 'ランダム',
       allowRepeat: false,
-      rootWeights: new Array(12).fill(1), // 使用しない（実スタイルに委譲）
+      rootWeights: new Array(12).fill(1), // 全方向均等（完全ランダム）
       tdWeights: { T: { T: 1, S: 1, D: 1 }, S: { T: 1, S: 1, D: 1 }, D: { T: 1, S: 1, D: 1 } },
     },
     {
@@ -224,20 +224,11 @@
 
   function generateRandomProg(styleId: string = 'random'): ChromaticProgression {
     const id = `rp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    const requestedStyle = STYLES.find(s => s.id === styleId) ?? STYLES[0];
-
-    // ランダムスタイルの場合、実スタイル（random以外）からランダム選択して重みを使用
-    const realStyles = STYLES.filter(s => s.id !== 'random');
-    const activeStyle = requestedStyle.id === 'random'
-      ? realStyles[Math.floor(Math.random() * realStyles.length)]
-      : requestedStyle;
-
-    // 履歴ラベルはリクエストされたスタイルのラベルを使用
-    const displayLabel = requestedStyle.label;
+    const style = STYLES.find(s => s.id === styleId) ?? STYLES[0];
 
     const pool = diatonicChordPool;
     if (pool.length === 0) {
-      return { id, label: displayLabel, steps: [{ semitone: 0, intervals: [0, 4, 7], name: '' }], smoothVoicings: [null] };
+      return { id, label: style.label, steps: [{ semitone: 0, intervals: [0, 4, 7], name: '' }], smoothVoicings: [null] };
     }
 
     const sortedSemitones = [...new Set(pool.map(c => c.semitone))].sort((a, b) => a - b);
@@ -256,18 +247,18 @@
 
       const weights = pool.map(c => {
         const interval = (c.semitone - prev.semitone + 12) % 12;
-        let w = activeStyle.rootWeights[interval];
+        let w = style.rootWeights[interval];
 
         if (use7Note) {
           const nextFn = getScaleFunction(c.semitone, sortedSemitones);
-          w *= activeStyle.tdWeights[prevFn][nextFn];
+          w *= style.tdWeights[prevFn][nextFn];
         }
 
         // トライアドの確率を上げる
         w *= chordComplexityMul(c.intervals);
 
         // allowRepeat=false のとき同一コード（同ルート・同インターバル）を禁止
-        if (!activeStyle.allowRepeat
+        if (!style.allowRepeat
           && c.semitone === prev.semitone
           && c.intervals.length === prev.intervals.length
           && c.intervals.every((v, i) => v === prev.intervals[i])) {
@@ -281,7 +272,7 @@
       steps.push({ semitone: pool[idx].semitone, intervals: pool[idx].intervals, name: '' });
     }
 
-    return { id, label: displayLabel, steps, smoothVoicings: steps.map(() => null) };
+    return { id, label: style.label, steps, smoothVoicings: steps.map(() => null) };
   }
 
   function addToHistory(prog: ChromaticProgression) {
