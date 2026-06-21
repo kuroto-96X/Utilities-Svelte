@@ -1,17 +1,39 @@
 <script lang="ts">
+  import { browser } from '$app/environment'
   import { findNearestNotes, NOTE_SYMBOLS } from '$lib/noteDuration'
   import type { NoteMatch } from '$lib/noteDuration'
   import RangeSlider from '$lib/components/RangeSlider.svelte'
   import NoteIcon from '$lib/components/NoteIcon.svelte'
 
-  let targetMs = $state('1000')
-  let bpmMin = $state(20)
-  let bpmMax = $state(300)
-  let includeDotted = $state(true)
-  let includeTriplet = $state(false)
-  let mode = $state<'topN' | 'tolerance'>('topN')
-  let topN = $state(10)
-  let tolerancePct = $state(5)
+  const STORAGE_KEY = 'note-reverse-search'
+
+  function loadPrefs(): Record<string, unknown> {
+    if (!browser) return {}
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      return raw ? JSON.parse(raw) : {}
+    } catch {
+      return {}
+    }
+  }
+
+  const prefs = loadPrefs()
+
+  let targetMs = $state<string>((prefs.targetMs as string) ?? '1000')
+  let bpmMin = $state<number>((prefs.bpmMin as number) ?? 20)
+  let bpmMax = $state<number>((prefs.bpmMax as number) ?? 300)
+  let includeDotted = $state<boolean>((prefs.includeDotted as boolean) ?? true)
+  let includeTriplet = $state<boolean>((prefs.includeTriplet as boolean) ?? false)
+  let mode = $state<'topN' | 'tolerance'>((prefs.mode as 'topN' | 'tolerance') ?? 'topN')
+  let topN = $state<number>((prefs.topN as number) ?? 10)
+  let tolerancePct = $state<number>((prefs.tolerancePct as number) ?? 5)
+
+  $effect(() => {
+    if (!browser) return
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      targetMs, bpmMin, bpmMax, includeDotted, includeTriplet, mode, topN, tolerancePct,
+    }))
+  })
 
   const results = $derived.by((): NoteMatch[] => {
     const ms = parseFloat(targetMs)
