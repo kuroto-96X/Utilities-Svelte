@@ -316,10 +316,10 @@
     </div>
   {/if}
 
-  <!-- タイトルバー -->
-  <div class="sm:flex-shrink-0 sm:flex sm:items-center sm:gap-4 sm:px-4 sm:py-2 sm:border-b sm:border-gray-700">
-    <h1 class="text-2xl font-bold mb-1 sm:mb-0">Scale / Chord Visualizer</h1>
-    <p class="text-xs text-yellow-400 mb-4 sm:mb-0">⚠ このページでは音が鳴ります。音量にご注意ください。</p>
+  <!-- タイトル（モバイルのみ。デスクトップはサイドバー内に表示） -->
+  <div class="sm:hidden">
+    <h1 class="text-2xl font-bold mb-1">Scale / Chord Visualizer</h1>
+    <p class="text-xs text-yellow-400 mb-4">⚠ このページでは音が鳴ります。音量にご注意ください。</p>
   </div>
 
   <!-- 3パネルエリア: モバイル=縦積み、デスクトップ=横並び -->
@@ -327,6 +327,10 @@
 
     <!-- Panel 1: サイドバー（デスクトップのみ・独立スクロール） -->
     <aside class="hidden sm:flex sm:flex-col sm:w-52 sm:flex-shrink-0 sm:overflow-y-auto sm:border-r sm:border-gray-700 sm:p-4 sm:space-y-4">
+      <div>
+        <h1 class="text-base font-bold text-gray-100 leading-snug">Scale / Chord Visualizer</h1>
+        <p class="text-[11px] text-yellow-400 mt-0.5">⚠ 音が鳴ります。音量にご注意ください。</p>
+      </div>
       <BpmSlider bind:bpm />
       <RootSelector bind:rootId onchange={playMain} />
       <ScaleChordSelector bind:mode bind:scaleId bind:chordId bind:inversion rootName={NOTE_NAMES[root.pc]} onchange={playMain} onstop={stopPlay} />

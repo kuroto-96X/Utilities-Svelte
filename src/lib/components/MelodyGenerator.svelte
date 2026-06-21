@@ -523,7 +523,7 @@
 
       <!-- 履歴（モバイルのみ: 設定の下） -->
       {#if melodyHistory.length > 0}
-        <div class="md:hidden space-y-1 border-t border-gray-700 pt-2 max-h-[160px] overflow-y-auto">
+        <div class="md:hidden space-y-1 border-t border-gray-700 pt-2">
           {#each melodyHistory as entry, hi}
             {@const isActive = isPlaying && activeHistoryId === entry.id}
             <button
@@ -597,7 +597,7 @@
 
   <!-- 履歴（デスクトップのみ: 設定・ピアノロールの下） -->
   {#if melodyHistory.length > 0}
-    <div class="hidden md:block space-y-1 border-t border-gray-700 mt-3 pt-2 max-h-[160px] overflow-y-auto">
+    <div class="hidden md:block space-y-1 border-t border-gray-700 mt-3 pt-2">
       {#each melodyHistory as entry, hi}
         {@const isActive = isPlaying && activeHistoryId === entry.id}
         <button
