@@ -84,5 +84,26 @@
     </div>
   {:else}
     <NoteReverseSearch bind:currentMs={reverseMs} />
+
+    <!-- 画面説明 -->
+    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3 text-sm text-slate-600">
+      <h2 class="font-semibold text-slate-700">使い方</h2>
+      <p>音符の長さ（ms）を入力すると、その長さに近いBPMと音符の組み合わせを検索します。DAWのサンプルディレイやリバーブのプリディレイ設定など、msから音符を逆引きしたいときに役立ててください。</p>
+      <h2 class="font-semibold text-slate-700">検索の仕組み</h2>
+      <p>BPM範囲内のすべての整数BPM × 有効な音符バリアント（通常・付点・3連符）を全列挙し、入力した ms との差が小さい順に並べて表示します。</p>
+      <div class="space-y-1 font-mono text-xs bg-white border border-slate-200 rounded p-3">
+        <p>durationMs = (60 ÷ BPM) × 倍率 × バリアント係数 × 1000</p>
+        <div class="pl-4 text-slate-400 space-y-0.5 mt-1">
+          <p>通常 ×1　付点 ×1.5　3連符 ×2/3</p>
+        </div>
+      </div>
+      <h2 class="font-semibold text-slate-700">表の見かた</h2>
+      <ul class="space-y-1 list-disc list-inside">
+        <li><span class="font-medium">BPM</span>：そのBPMで計算したときに最も近い</li>
+        <li><span class="font-medium">音符名</span>：付点・3連符はチェックで有効化</li>
+        <li><span class="font-medium">実際のms</span>：そのBPM・音符での正確な長さ</li>
+        <li><span class="font-medium">差分</span>：入力値との差（± ms）、0.0ms はぴったり一致</li>
+      </ul>
+    </div>
   {/if}
 </div>
