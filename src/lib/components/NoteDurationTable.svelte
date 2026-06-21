@@ -12,7 +12,7 @@
     const text = formatMsLarge(sec)
     navigator.clipboard.writeText(text).then(() => {
       if (fadeTimer) clearTimeout(fadeTimer)
-      copiedMsg = `${text} コピー`
+      copiedMsg = `Copied: ${text}`
       fadeTimer = setTimeout(() => { copiedMsg = '' }, 1500)
     })
   }

@@ -11,14 +11,7 @@
     max?: number
   } = $props()
 
-  const PRESETS = [
-    { bpm: 60,  label: 'Ballad' },
-    { bpm: 80,  label: 'R&B' },
-    { bpm: 100, label: 'J-Pop' },
-    { bpm: 120, label: 'House' },
-    { bpm: 140, label: 'Dubstep' },
-    { bpm: 160, label: 'Eurobeat' },
-  ]
+  const PRESETS = [60, 80, 100, 120, 140, 160, 180]
 
   let inputValue = $state(String(bpm))
 
@@ -48,14 +41,13 @@
     {#each PRESETS as preset}
       <button
         type="button"
-        onclick={() => { bpm = preset.bpm }}
-        class="flex flex-col items-center px-2 py-1 rounded text-center transition-colors
-          {bpm === preset.bpm
+        onclick={() => { bpm = preset }}
+        class="flex-1 py-1 rounded text-center tabular-nums text-sm font-bold transition-colors
+          {bpm === preset
             ? 'bg-teal-600 text-white'
             : 'bg-slate-100 text-slate-600 hover:bg-slate-200 active:bg-slate-300'}"
       >
-        <span class="text-sm font-bold tabular-nums leading-tight">{preset.bpm}</span>
-        <span class="text-[10px] leading-tight">{preset.label}</span>
+        {preset}
       </button>
     {/each}
   </div>
