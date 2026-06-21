@@ -143,7 +143,7 @@
         x={key.x + 2} y={2}
         width={WHITE_W - 5} height={WHITE_H - 4}
         fill="none"
-        stroke={60 + key.windowIndex === bassMidi ? '#c2410c' : '#f97316'}
+        stroke={60 + startSemitone + key.windowIndex === bassMidi ? '#c2410c' : '#f97316'}
         stroke-width={3}
         rx={2}
       />
@@ -155,7 +155,7 @@
         x={key.x + 2} y={2}
         width={BLACK_W - 4} height={BLACK_H - 4}
         fill="none"
-        stroke={60 + key.windowIndex === bassMidi ? '#c2410c' : '#f97316'}
+        stroke={60 + startSemitone + key.windowIndex === bassMidi ? '#c2410c' : '#f97316'}
         stroke-width={3}
         rx={2}
       />
