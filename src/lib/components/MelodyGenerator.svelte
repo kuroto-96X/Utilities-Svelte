@@ -392,11 +392,6 @@
     playMelodySeq(seq);
   }
 
-  function handleReplay() {
-    onplay?.();
-    if (cachedMelody) playMelodySeq(cachedMelody);
-  }
-
   function playHistoryEntry(entry: MelodyHistoryEntry) {
     if (isPlaying && activeHistoryId === entry.id) {
       stopMelody();
@@ -417,28 +412,34 @@
       <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">ランダムメロディ生成</p>
 
       <!-- 小節数 -->
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-gray-400 w-20 shrink-0">小節数</span>
-        <div class="flex gap-1">
-          {#each BARS_OPTIONS as b}
-            <button
-              class="px-3 py-1.5 text-xs rounded
-                {bars === b ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-              onclick={() => (bars = b)}
-            >{b}</button>
-          {/each}
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-400 w-20 shrink-0">小節数</span>
+          <div class="flex gap-1">
+            {#each BARS_OPTIONS as b}
+              <button
+                class="px-3 py-1.5 text-xs rounded
+                  {bars === b ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+                onclick={() => (bars = b)}
+              >{b}</button>
+            {/each}
+          </div>
         </div>
+        <p class="text-xs text-gray-500 pl-[5.5rem]">再生する小節数を決めます</p>
       </div>
 
       <!-- 音符範囲 -->
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-gray-400 w-20 shrink-0">音符</span>
-        <RangeSlider
-          min={0} max={5}
-          bind:low={minNoteIdx}
-          bind:high={maxNoteIdx}
-          formatter={(v) => NOTE_LABELS[v]}
-        />
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-400 w-20 shrink-0">音符</span>
+          <RangeSlider
+            min={0} max={5}
+            bind:low={minNoteIdx}
+            bind:high={maxNoteIdx}
+            formatter={(v) => NOTE_LABELS[v]}
+          />
+        </div>
+        <p class="text-xs text-gray-500 pl-[5.5rem]">使用する音符の種類の範囲を決めます</p>
       </div>
 
       <!-- 最大度数差 -->
@@ -491,8 +492,8 @@
         </label>
       </div>
 
-      <!-- ボタン + ノートチップ -->
-      <div class="flex flex-wrap items-center gap-2">
+      <!-- ボタン -->
+      <div class="flex items-center gap-2">
         {#if isPlaying}
           <button
             class="px-3 py-1.5 text-sm rounded bg-red-600 hover:bg-red-500 text-white flex-shrink-0"
@@ -507,24 +508,30 @@
           >
             🎲 生成 & 再生
           </button>
-          {#if cachedMelody}
-            <button
-              class="px-3 py-1.5 text-sm rounded bg-indigo-600 hover:bg-indigo-500 text-white flex-shrink-0"
-              onclick={handleReplay}
-            >
-              ▶ 再生
-            </button>
-          {/if}
-        {/if}
-        {#if cachedMelody}
-          {#each cachedMelody as note, i}
-            <span class="px-1.5 py-0.5 text-xs rounded font-mono
-              {currentNoteIdx === i ? 'bg-teal-500 text-white' : 'bg-gray-700 text-gray-300'}">
-              {NOTE_NAMES[note.pc]}
-            </span>
-          {/each}
         {/if}
       </div>
+
+      <!-- 履歴 -->
+      {#if melodyHistory.length > 0}
+        <div class="space-y-1 border-t border-gray-700 pt-2">
+          {#each melodyHistory as entry, hi}
+            {@const isActive = isPlaying && activeHistoryId === entry.id}
+            <button
+              class="w-full text-left px-2 py-1.5 text-xs rounded
+                {isActive
+                  ? 'bg-indigo-700 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'}"
+              onclick={() => playHistoryEntry(entry)}
+            >
+              <span class="text-[10px] opacity-50 block mb-0.5">
+                #{hi + 1} {NOTE_NAMES[entry.rootPc]}{entry.scaleName ? ` ${entry.scaleName}` : ''}
+              </span>
+              <span class="mr-1">{isActive ? '⏹' : '▶'}</span>
+              <span class="font-mono">{entry.notes.map(n => NOTE_NAMES[n.pc]).join(' ')}</span>
+            </button>
+          {/each}
+        </div>
+      {/if}
     </div>
 
     <!-- 右列: ピアノロール（上から表示） -->
@@ -573,27 +580,3 @@
 
   </div>
 </div>
-
-{#if melodyHistory.length > 0}
-  <div class="border border-gray-700 rounded-lg p-3 mt-3">
-    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">メロディ履歴</p>
-    <div class="space-y-1">
-      {#each melodyHistory as entry, hi}
-        {@const isActive = isPlaying && activeHistoryId === entry.id}
-        <button
-          class="w-full text-left px-2 py-1.5 text-xs rounded
-            {isActive
-              ? 'bg-indigo-700 text-white'
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'}"
-          onclick={() => playHistoryEntry(entry)}
-        >
-          <span class="text-[10px] opacity-50 block mb-0.5">
-            #{hi + 1} {NOTE_NAMES[entry.rootPc]}{entry.scaleName ? ` ${entry.scaleName}` : ''}
-          </span>
-          <span class="mr-1">{isActive ? '⏹' : '▶'}</span>
-          <span class="font-mono">{entry.notes.map(n => NOTE_NAMES[n.pc]).join(' ')}</span>
-        </button>
-      {/each}
-    </div>
-  </div>
-{/if}
