@@ -35,6 +35,10 @@ const NOTE_DEFS: Array<Omit<NoteDuration, 'normalSec' | 'dottedSec' | 'tripletSe
   { id: 'sixtyfourth',  label: '64分音符', fraction: '1/64', mult: 0.0625, symbol: { filled: true,  stem: true,  flags: 4 } },
 ]
 
+export const NOTE_SYMBOLS: Readonly<Record<NoteId, NoteSymbol>> = Object.fromEntries(
+  NOTE_DEFS.map(d => [d.id, d.symbol])
+) as Record<NoteId, NoteSymbol>
+
 /** bpm は clampBpm() で検証済みの値を渡すこと。bpm <= 0 の場合は DEFAULT_BPM にフォールバックするが、これは最終防衛ラインであり主要な検証パスではない。 */
 export function calculateNoteDurations(bpm: number): NoteDuration[] {
   const safeBpm = bpm > 0 ? bpm : DEFAULT_BPM

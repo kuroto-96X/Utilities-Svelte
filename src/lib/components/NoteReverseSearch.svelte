@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { findNearestNotes } from '$lib/noteDuration'
+  import { findNearestNotes, NOTE_SYMBOLS } from '$lib/noteDuration'
   import type { NoteMatch } from '$lib/noteDuration'
+  import RangeSlider from '$lib/components/RangeSlider.svelte'
+  import NoteIcon from '$lib/components/NoteIcon.svelte'
 
-  let targetMs = $state('')
+  let targetMs = $state('1000')
   let bpmMin = $state(20)
   let bpmMax = $state(300)
   let includeDotted = $state(true)
@@ -52,7 +54,7 @@
         type="number"
         min="0"
         step="0.1"
-        placeholder="433.0"
+        placeholder="1000"
         bind:value={targetMs}
         class="w-40 text-2xl font-semibold text-center border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-slate-800 tabular-nums"
       />
@@ -63,21 +65,8 @@
   <!-- BPM range -->
   <div class="flex items-center gap-2">
     <span class="text-sm font-medium text-slate-600 whitespace-nowrap">BPM範囲:</span>
-    <input
-      type="number"
-      min="1"
-      max="999"
-      bind:value={bpmMin}
-      class="w-20 text-sm text-center border border-slate-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-slate-800 tabular-nums"
-    />
-    <span class="text-sm text-slate-500">〜</span>
-    <input
-      type="number"
-      min="1"
-      max="999"
-      bind:value={bpmMax}
-      class="w-20 text-sm text-center border border-slate-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-slate-800 tabular-nums"
-    />
+    <RangeSlider min={20} max={300} bind:low={bpmMin} bind:high={bpmMax} showLabels={false} />
+    <span class="text-sm font-mono text-slate-700 whitespace-nowrap">{bpmMin} ~ {bpmMax}</span>
   </div>
 
   <!-- Checkboxes -->
@@ -116,7 +105,7 @@
       <input
         type="number"
         min="1"
-        max="100"
+        max="50"
         bind:value={topN}
         disabled={mode !== 'topN'}
         class="w-16 text-sm text-center border border-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-slate-800 tabular-nums disabled:opacity-40 disabled:cursor-not-allowed"
@@ -165,7 +154,19 @@
               {#each results as match (match.bpm + '-' + match.noteId + '-' + match.variant)}
                 <tr class="border-b border-slate-100 odd:bg-slate-50 hover:bg-teal-50 transition-colors">
                   <td class="py-1.5 pr-3 font-mono font-semibold text-slate-800 whitespace-nowrap">{match.bpm}</td>
-                  <td class="py-1.5 px-2 text-slate-700 whitespace-nowrap">{match.label}</td>
+                  <td class="py-1.5 px-2 text-slate-700 whitespace-nowrap">
+                    <div class="flex items-center gap-1">
+                      <span class="text-slate-600 shrink-0">
+                        <NoteIcon
+                          filled={NOTE_SYMBOLS[match.noteId].filled}
+                          stem={NOTE_SYMBOLS[match.noteId].stem}
+                          flags={NOTE_SYMBOLS[match.noteId].flags}
+                          size={16}
+                        />
+                      </span>
+                      {match.label}
+                    </div>
+                  </td>
                   <td class="py-1.5 px-2 text-right font-mono tabular-nums text-slate-800 whitespace-nowrap">{formatDuration(match.durationMs)}</td>
                   <td class="py-1.5 pl-2 text-right font-mono tabular-nums whitespace-nowrap {match.diffMs < 0.05 ? 'text-teal-600 font-semibold' : 'text-slate-500'}">
                     {formatDiff(match.diffMs, match.durationMs)}
