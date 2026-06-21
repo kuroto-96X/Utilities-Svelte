@@ -1,13 +1,22 @@
 <script lang="ts">
 	import { SCALE_GROUPS, CHORD_GROUPS, CHORDS } from '$lib/scaleData';
+
+	const CHORD_SUFFIX: Record<string, string> = {
+		maj: '', min: 'm', dim: 'dim', aug: '+',
+		maj7: 'maj7', min7: 'm7', dom7: '7',
+		sus2: 'sus2', sus4: 'sus4', add9: 'add9',
+		maj9: 'maj9', min9: 'm9', dom9: '9',
+	};
+
 	let {
 		mode = $bindable(),
 		scaleId = $bindable(),
 		chordId = $bindable(),
 		inversion = $bindable(0),
+		rootName = '',
 		onchange,
 		onstop,
-	}: { mode: 'scale' | 'chord'; scaleId: string; chordId: string; inversion?: number; onchange?: () => void; onstop?: () => void } = $props();
+	}: { mode: 'scale' | 'chord'; scaleId: string; chordId: string; inversion?: number; rootName?: string; onchange?: () => void; onstop?: () => void } = $props();
 
 	const maxInversion = $derived(
 		mode === 'chord' ? (CHORDS.find(c => c.id === chordId)?.intervals.length ?? 3) - 1 : 2
@@ -93,7 +102,10 @@
 							onchange?.();
 						}}
 					>
-						{item.label}
+						<span class="flex justify-between items-center gap-2">
+							<span>{item.label}</span>
+							<span class="font-mono text-xs opacity-60 shrink-0">{rootName}{CHORD_SUFFIX[item.id] ?? ''}</span>
+						</span>
 					</button>
 				{/each}
 			</div>

@@ -186,7 +186,7 @@
     <div class="md:w-52 flex-shrink-0 space-y-4">
       <BpmSlider bind:bpm />
       <RootSelector bind:rootId onchange={playMain} />
-      <ScaleChordSelector bind:mode bind:scaleId bind:chordId bind:inversion onchange={playMain} onstop={stopPlay} />
+      <ScaleChordSelector bind:mode bind:scaleId bind:chordId bind:inversion rootName={NOTE_NAMES[root.pc]} onchange={playMain} onstop={stopPlay} />
     </div>
 
     <!-- メインエリア -->
