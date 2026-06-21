@@ -222,9 +222,13 @@
     return 0.5;
   }
 
-  function generateRandomProg(styleId: string = 'random'): ChromaticProgression {
+  function generateRandomProg(styleId?: string): ChromaticProgression {
     const id = `rp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    const style = STYLES.find(s => s.id === styleId) ?? STYLES[0];
+    const realStyles = STYLES.filter(s => s.id !== 'random');
+    // styleId未指定のときは実スタイルをランダム選択（スタイル名を履歴に表示するため）
+    const style = styleId
+      ? (STYLES.find(s => s.id === styleId) ?? STYLES[0])
+      : realStyles[Math.floor(Math.random() * realStyles.length)];
 
     const pool = diatonicChordPool;
     if (pool.length === 0) {
