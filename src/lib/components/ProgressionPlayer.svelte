@@ -430,7 +430,7 @@
 
       let bestJ = 0, bestO = 0, bestDist = Infinity;
       for (let j = 0; j < step.intervals.length; j++) {
-        for (const o of [-1, 0]) {
+        for (const o of [-1, 0, 1]) {
           const dist = Math.abs(chordRootMidi + step.intervals[j] + o * 12 - prevBassMidi);
           if (dist < bestDist) { bestDist = dist; bestJ = j; bestO = o; }
         }
