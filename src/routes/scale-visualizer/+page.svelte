@@ -59,6 +59,14 @@
 
   function setPlayingChordName(name: string) { playingChordName = name; }
   let progressionStopCount = $state(0);
+  let melodyStopCount = $state(0);
+  const isAnyPlaying = $derived(playingPcs.size > 0);
+
+  function stopAll() {
+    stopPlay();
+    melodyStopCount += 1;
+  }
+
   let playId = 0;
   let currentPlayStopFns: Array<() => void> = [];
 
@@ -78,8 +86,23 @@
   );
   const diatonicChords = $derived(buildDiatonicChords(currentIntervals, root.pc));
 
-  // モバイルアコーディオン
+  // スマホ用: BPM/ルート/スケール設定のアコーディオン
   let controlsOpen = $state(false);
+
+  // スマホ用: 鍵盤が画面外に出たらスティッキーバーを表示
+  let keyboardVisible = $state(true);
+  let keyboardSentinel = $state<HTMLDivElement | null>(null);
+
+  $effect(() => {
+    if (!browser || !keyboardSentinel) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { keyboardVisible = entry.isIntersecting; },
+      { threshold: 0 }
+    );
+    obs.observe(keyboardSentinel);
+    return () => obs.disconnect();
+  });
+
   const keyboardStartSemitone = $derived(anchorToRoot ? (root.pc - 9 + 12) % 12 - 3 : -3);
   const keyboard = $derived(buildKeyboardWindow(keyboardStartSemitone, octaves));
 
@@ -191,20 +214,51 @@
 <div class="min-h-screen bg-gray-900 text-gray-100 p-4">
   <div class="ad-slot--top"></div>
 
-  <!-- スマホ用: sticky bar -->
-  <div class="sm:hidden sticky top-0 z-40 bg-gray-900/95 backdrop-blur-sm border-b border-gray-700 -mx-4 px-4 py-2 mb-3">
-    <button
-      class="w-full flex items-center justify-between text-xs text-gray-300"
-      onclick={() => (controlsOpen = !controlsOpen)}
-    >
-      <span class="flex gap-2">
-        <span class="font-mono">{NOTE_NAMES[root.pc]}</span>
-        <span class="text-gray-400 truncate max-w-[140px]">{currentModeName}</span>
-        <span class="text-gray-400">BPM {bpm}</span>
-      </span>
-      <span class="text-gray-500 ml-2">{controlsOpen ? '▲' : '▼'}</span>
-    </button>
-  </div>
+  <!-- スマホ用: 鍵盤スクロールアウト時のみ表示する fixed sticky bar -->
+  {#if !keyboardVisible}
+    <div class="sm:hidden fixed top-12 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-sm border-b border-gray-700 px-4 pt-1 pb-0.5">
+      <div class="overflow-x-auto flex justify-center">
+        <PianoKeyboard
+          whiteKeys={keyboard.whiteKeys}
+          blackKeys={keyboard.blackKeys}
+          totalWidth={keyboard.totalWidth}
+          intervals={currentIntervals}
+          rootPc={root.pc}
+          startSemitone={keyboardStartSemitone}
+          {playingPcs}
+          {playingMidis}
+          {addPlayingPc}
+          {removePlayingPc}
+          {addPlayingMidi}
+          {removePlayingMidi}
+        />
+      </div>
+      <div class="text-center font-mono text-xs min-h-[1.25rem]">
+        {#if playingPcs.size > 0}
+          {#if playingChordName}
+            <span class="text-orange-400 mr-1 font-bold">{playingChordName}</span>
+          {/if}
+          <span class="text-teal-400">
+            {[...playingPcs].sort((a, b) => a - b).map(pc => NOTE_NAMES[pc]).join(' · ')}
+          </span>
+        {/if}
+      </div>
+      <div class="flex items-center justify-between pb-0.5">
+        <div class="text-[11px] text-gray-400">
+          <span class="font-mono text-gray-200">BPM {bpm}</span>
+          <span class="text-gray-600 mx-1">·</span>
+          <span class="font-mono">{NOTE_NAMES[root.pc]}</span>
+          <span class="text-gray-600 mx-1">·</span>
+          <span>{currentModeName}</span>
+        </div>
+        <button
+          class="px-2 py-0.5 text-[11px] rounded ml-2 {isAnyPlaying ? 'bg-red-700 text-white hover:bg-red-600 cursor-pointer' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}"
+          disabled={!isAnyPlaying}
+          onclick={stopAll}
+        >⏹ 停止</button>
+      </div>
+    </div>
+  {/if}
 
   <h1 class="text-2xl font-bold mb-1">Scale / Chord Visualizer</h1>
   <p class="text-xs text-yellow-400 mb-4">⚠ このページでは音が鳴ります。音量にご注意ください。</p>
@@ -242,6 +296,8 @@
             >ルート基準</button>
           </div>
         </div>
+        <!-- スマホ用: 鍵盤の可視判定センチネル -->
+        <div bind:this={keyboardSentinel} class="sm:hidden" style="height:1px;"></div>
         <div class="overflow-x-auto flex justify-center">
           <PianoKeyboard
             whiteKeys={keyboard.whiteKeys}
@@ -269,18 +325,39 @@
             </span>
           {/if}
         </div>
+        <!-- 停止ボタン: 音名表示の下に常時表示・中央寄せ -->
+        <div class="flex justify-center">
+          <button
+            class="px-4 py-1 text-xs rounded {isAnyPlaying ? 'bg-red-700 text-white hover:bg-red-600 cursor-pointer' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}"
+            disabled={!isAnyPlaying}
+            onclick={stopAll}
+          >⏹ 停止</button>
+        </div>
       </div>
 
-      <!-- スマホ用アコーディオン -->
-      {#if controlsOpen}
-        <div class="sm:hidden border border-gray-700 rounded-lg px-3 pb-3 pt-2 space-y-4 bg-gray-800/50">
-          <BpmSlider bind:bpm />
-          <RootSelector bind:rootId onchange={playMain} />
-          <ScaleChordSelector bind:mode bind:scaleId bind:chordId bind:inversion rootName={NOTE_NAMES[root.pc]} onchange={playMain} onstop={stopPlay} />
-        </div>
-      {/if}
+<div class="ad-slot--in-content"></div>
 
-      <div class="ad-slot--in-content"></div>
+      <!-- スマホ用: BPM/ルート/スケール設定（ダイアトニックコードの直上、アコーディオン） -->
+      <div class="sm:hidden border border-gray-700 rounded-lg px-3">
+        <button
+          class="w-full flex items-center justify-between text-xs text-gray-300 py-2"
+          onclick={() => (controlsOpen = !controlsOpen)}
+        >
+          <span class="flex gap-2">
+            <span class="font-mono">{NOTE_NAMES[root.pc]}</span>
+            <span class="text-gray-400 truncate max-w-[160px]">{currentModeName}</span>
+            <span class="text-gray-400">BPM {bpm}</span>
+          </span>
+          <span class="text-gray-500 ml-2">{controlsOpen ? '▲' : '▼'}</span>
+        </button>
+        {#if controlsOpen}
+          <div class="border-t border-gray-700 pt-3 pb-3 space-y-3">
+            <BpmSlider bind:bpm />
+            <RootSelector bind:rootId onchange={playMain} />
+            <ScaleChordSelector bind:mode bind:scaleId bind:chordId bind:inversion rootName={NOTE_NAMES[root.pc]} onchange={playMain} onstop={stopPlay} />
+          </div>
+        {/if}
+      </div>
 
       <!-- 作曲のヒント -->
       <div class="border-t border-gray-700 pt-4 space-y-4">
@@ -305,6 +382,7 @@
           onplay={stopMainPlay}
           startSemitone={keyboardStartSemitone}
           {octaves}
+          stopCount={melodyStopCount}
         />
         {#if diatonicChords}
           <ProgressionPlayer

@@ -18,6 +18,7 @@
     addPlayingMidi,
     removePlayingMidi,
     onplay,
+    stopCount = 0,
   }: {
     intervals: number[];
     rootPc: number;
@@ -30,7 +31,13 @@
     addPlayingMidi?: (midi: number) => void;
     removePlayingMidi?: (midi: number) => void;
     onplay?: () => void;
+    stopCount?: number;
   } = $props();
+
+  $effect(() => {
+    if (stopCount === 0) return;
+    stopMelody();
+  });
 
   const NOTE_LABELS = ['32分', '16分', '8分', '4分', '2分', '全'];
   const BARS_OPTIONS = [1, 2, 4];
@@ -379,7 +386,6 @@
     onplay?.();
     const seq = generateMelody();
     cachedMelody = seq;
-    activeHistoryId = null;
     const entry: MelodyHistoryEntry = {
       id: `mel-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
       rootPc,
@@ -389,6 +395,7 @@
     const h = [entry, ...melodyHistory].slice(0, MAX_MELODY_HISTORY);
     melodyHistory = h;
     saveMelodyHistory(h);
+    activeHistoryId = entry.id;
     playMelodySeq(seq);
   }
 
@@ -408,7 +415,7 @@
   <div class="flex flex-col md:flex-row gap-4 items-start">
 
     <!-- 左列: タイトル・設定・ボタン・チップ -->
-    <div class="flex-1 min-w-0 space-y-3">
+    <div class="space-y-3">
       <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">ランダムメロディ生成</p>
 
       <!-- 小節数 -->
@@ -437,7 +444,9 @@
             bind:low={minNoteIdx}
             bind:high={maxNoteIdx}
             formatter={(v) => NOTE_LABELS[v]}
+            showLabels={false}
           />
+          <span class="text-xs text-gray-300 font-mono whitespace-nowrap">{NOTE_LABELS[minNoteIdx]} ~ {NOTE_LABELS[maxNoteIdx]}</span>
         </div>
         <p class="text-xs text-gray-500 pl-[5.5rem]">使用する音符の種類の範囲を決めます</p>
       </div>
@@ -511,9 +520,9 @@
         {/if}
       </div>
 
-      <!-- 履歴 -->
+      <!-- 履歴（モバイルのみ: 設定の下） -->
       {#if melodyHistory.length > 0}
-        <div class="space-y-1 border-t border-gray-700 pt-2">
+        <div class="md:hidden space-y-1 border-t border-gray-700 pt-2 max-h-[160px] overflow-y-auto">
           {#each melodyHistory as entry, hi}
             {@const isActive = isPlaying && activeHistoryId === entry.id}
             <button
@@ -527,7 +536,12 @@
                 #{hi + 1} {NOTE_NAMES[entry.rootPc]}{entry.scaleName ? ` ${entry.scaleName}` : ''}
               </span>
               <span class="mr-1">{isActive ? '⏹' : '▶'}</span>
-              <span class="font-mono">{entry.notes.map(n => NOTE_NAMES[n.pc]).join(' ')}</span>
+              <span class="font-mono">
+                {#each entry.notes as note, ni}
+                  {#if ni > 0}<span class="opacity-30"> </span>{/if}
+                  <span class="{isActive && currentNoteIdx === ni ? 'text-teal-300 font-bold' : ''}">{NOTE_NAMES[note.pc]}</span>
+                {/each}
+              </span>
             </button>
           {/each}
         </div>
@@ -579,4 +593,31 @@
     {/if}
 
   </div>
+
+  <!-- 履歴（デスクトップのみ: 設定・ピアノロールの下） -->
+  {#if melodyHistory.length > 0}
+    <div class="hidden md:block space-y-1 border-t border-gray-700 mt-3 pt-2 max-h-[160px] overflow-y-auto">
+      {#each melodyHistory as entry, hi}
+        {@const isActive = isPlaying && activeHistoryId === entry.id}
+        <button
+          class="w-full text-left px-2 py-1.5 text-xs rounded
+            {isActive
+              ? 'bg-indigo-700 text-white'
+              : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'}"
+          onclick={() => playHistoryEntry(entry)}
+        >
+          <span class="text-[10px] opacity-50 block mb-0.5">
+            #{hi + 1} {NOTE_NAMES[entry.rootPc]}{entry.scaleName ? ` ${entry.scaleName}` : ''}
+          </span>
+          <span class="mr-1">{isActive ? '⏹' : '▶'}</span>
+          <span class="font-mono">
+            {#each entry.notes as note, ni}
+              {#if ni > 0}<span class="opacity-30"> </span>{/if}
+              <span class="{isActive && currentNoteIdx === ni ? 'text-teal-300 font-bold' : ''}">{NOTE_NAMES[note.pc]}</span>
+            {/each}
+          </span>
+        </button>
+      {/each}
+    </div>
+  {/if}
 </div>

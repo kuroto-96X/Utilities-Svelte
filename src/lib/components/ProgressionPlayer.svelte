@@ -309,7 +309,7 @@
 
   // ---- 再生ロジック ----
 
-  let useSmoothedBass = $state(false);
+  let useSmoothedBass = $state(true);
   let activeProgId = $state<string | null>(null);
   let activeStepIndex = $state(-1);
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
