@@ -66,3 +66,78 @@ export function formatMsLarge(sec: number): string {
 export function formatHzSmall(sec: number): string {
   return (1 / sec).toFixed(2)
 }
+
+export type NoteVariant = 'normal' | 'dotted' | 'triplet'
+
+export interface NoteMatch {
+  bpm: number
+  noteId: NoteId
+  label: string
+  variant: NoteVariant
+  durationMs: number
+  diffMs: number
+  diffPct: number
+}
+
+export interface FindNearestNotesOptions {
+  bpmMin?: number
+  bpmMax?: number
+  includeDotted?: boolean
+  includeTriplet?: boolean
+  topN?: number
+  tolerancePct?: number
+  mode: 'topN' | 'tolerance'
+}
+
+export function findNearestNotes(targetMs: number, options: FindNearestNotesOptions): NoteMatch[] {
+  if (targetMs <= 0) return []
+
+  const {
+    bpmMin = MIN_BPM,
+    bpmMax = MAX_BPM,
+    includeDotted = true,
+    includeTriplet = false,
+    topN = 10,
+    tolerancePct = 5,
+    mode,
+  } = options
+
+  type VariantDef = { variant: NoteVariant; factor: number; prefix: string; suffix: string }
+  const variants: VariantDef[] = [
+    { variant: 'normal',  factor: 1,       prefix: '',     suffix: '' },
+    ...(includeDotted  ? [{ variant: 'dotted'  as NoteVariant, factor: 1.5,   prefix: '付点', suffix: '' }]         : []),
+    ...(includeTriplet ? [{ variant: 'triplet' as NoteVariant, factor: 2 / 3, prefix: '',     suffix: '（3連符）' }] : []),
+  ]
+
+  const results: NoteMatch[] = []
+
+  const safeMin = Math.max(MIN_BPM, Math.floor(bpmMin ?? MIN_BPM))
+  const safeMax = Math.min(MAX_BPM, Math.floor(bpmMax ?? MAX_BPM))
+
+  for (let bpm = safeMin; bpm <= safeMax; bpm++) {
+    const quarterMs = (60 / bpm) * 1000
+    for (const noteDef of NOTE_DEFS) {
+      for (const { variant, factor, prefix, suffix } of variants) {
+        const durationMs = quarterMs * noteDef.mult * factor
+        const diffMs = Math.abs(targetMs - durationMs)
+        const diffPct = (diffMs / targetMs) * 100
+        results.push({
+          bpm,
+          noteId: noteDef.id,
+          label: `${prefix}${noteDef.label}${suffix}`,
+          variant,
+          durationMs,
+          diffMs,
+          diffPct,
+        })
+      }
+    }
+  }
+
+  results.sort((a, b) => a.diffMs - b.diffMs)
+
+  if (mode === 'topN') {
+    return results.slice(0, Math.max(1, topN ?? 10))
+  }
+  return results.filter(r => r.diffPct <= (tolerancePct ?? 5))
+}
