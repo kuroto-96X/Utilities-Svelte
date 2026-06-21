@@ -1,5 +1,6 @@
 <!-- src/lib/components/MelodyGenerator.svelte -->
 <script lang="ts">
+  import { browser } from '$app/environment';
   import { calculateNoteDurations } from '$lib/noteDuration';
   import { NOTE_NAMES } from '$lib/scaleData';
   import { getAudioContext, startNoteAt } from '$lib/audioEngine';
@@ -9,6 +10,7 @@
     intervals,
     rootPc,
     bpm,
+    scaleName = '',
     startSemitone = -3,
     octaves = 2,
     addPlayingPc,
@@ -20,6 +22,7 @@
     intervals: number[];
     rootPc: number;
     bpm: number;
+    scaleName?: string;
     startSemitone?: number;
     octaves?: number;
     addPlayingPc: (pc: number) => void;
@@ -71,6 +74,36 @@
   });
 
   interface MelodyNote { degreeIndex: number; interval: number; pc: number; duration: number; }
+
+  const MELODY_HISTORY_KEY = 'melodyHistory';
+  const MAX_MELODY_HISTORY = 9;
+
+  interface MelodyHistoryEntry {
+    id: string;
+    rootPc: number;
+    scaleName: string;
+    notes: MelodyNote[];
+  }
+
+  function loadMelodyHistory(): MelodyHistoryEntry[] {
+    if (!browser) return [];
+    try {
+      const raw = JSON.parse(localStorage.getItem(MELODY_HISTORY_KEY) ?? '[]');
+      if (!Array.isArray(raw)) return [];
+      return raw.filter((e: unknown) =>
+        typeof (e as MelodyHistoryEntry).id === 'string' && Array.isArray((e as MelodyHistoryEntry).notes)
+      ) as MelodyHistoryEntry[];
+    } catch { return []; }
+  }
+
+  function saveMelodyHistory(h: MelodyHistoryEntry[]) {
+    if (!browser) return;
+    localStorage.setItem(MELODY_HISTORY_KEY, JSON.stringify(h));
+  }
+
+  let melodyHistory = $state<MelodyHistoryEntry[]>(loadMelodyHistory());
+  let activeHistoryId = $state<string | null>(null);
+
   let cachedMelody = $state<MelodyNote[] | null>(null);
 
   interface RollNote { midi: number; pc: number; start: number; end: number; }
@@ -303,6 +336,7 @@
     stopCurrentNote();
     isPlaying = false;
     currentNoteIdx = null;
+    activeHistoryId = null;
   }
 
   function playMelodySeq(seq: MelodyNote[]) {
@@ -345,12 +379,32 @@
     onplay?.();
     const seq = generateMelody();
     cachedMelody = seq;
+    activeHistoryId = null;
+    const entry: MelodyHistoryEntry = {
+      id: `mel-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+      rootPc,
+      scaleName,
+      notes: seq,
+    };
+    const h = [entry, ...melodyHistory].slice(0, MAX_MELODY_HISTORY);
+    melodyHistory = h;
+    saveMelodyHistory(h);
     playMelodySeq(seq);
   }
 
   function handleReplay() {
     onplay?.();
     if (cachedMelody) playMelodySeq(cachedMelody);
+  }
+
+  function playHistoryEntry(entry: MelodyHistoryEntry) {
+    if (isPlaying && activeHistoryId === entry.id) {
+      stopMelody();
+    } else {
+      onplay?.();
+      activeHistoryId = entry.id;
+      playMelodySeq(entry.notes);
+    }
   }
 
 </script>
@@ -368,7 +422,7 @@
         <div class="flex gap-1">
           {#each BARS_OPTIONS as b}
             <button
-              class="px-2 py-0.5 text-xs rounded
+              class="px-3 py-1.5 text-xs rounded
                 {bars === b ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
               onclick={() => (bars = b)}
             >{b}</button>
@@ -388,31 +442,37 @@
       </div>
 
       <!-- 最大度数差 -->
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-gray-400 w-20 shrink-0">最大度数差</span>
-        <div class="flex gap-1">
-          {#each [1, 2, 3, 4] as n}
-            <button
-              class="px-2 py-0.5 text-xs rounded
-                {maxStep === n ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-              onclick={() => (maxStep = n)}
-            >{n}度</button>
-          {/each}
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-400 w-20 shrink-0">最大度数差</span>
+          <div class="flex gap-1">
+            {#each [1, 2, 3, 4] as n}
+              <button
+                class="px-3 py-1.5 text-xs rounded
+                  {maxStep === n ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+                onclick={() => (maxStep = n)}
+              >{n}度</button>
+            {/each}
+          </div>
         </div>
+        <p class="text-xs text-gray-500 pl-[5.5rem]">隣の音との最大距離。小さいほどなだらかなメロディになります</p>
       </div>
 
       <!-- メロディの形 -->
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-gray-400 w-20 shrink-0">メロディの形</span>
-        <div class="flex flex-wrap gap-1">
-          {#each CONTOUR_OPTIONS as opt}
-            <button
-              class="px-2 py-0.5 text-xs rounded
-                {pattern === opt.id ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-              onclick={() => (pattern = opt.id)}
-            >{opt.label}</button>
-          {/each}
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-400 w-20 shrink-0">メロディの形</span>
+          <div class="flex flex-wrap gap-1">
+            {#each CONTOUR_OPTIONS as opt}
+              <button
+                class="px-3 py-1.5 text-xs rounded
+                  {pattern === opt.id ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+                onclick={() => (pattern = opt.id)}
+              >{opt.label}</button>
+            {/each}
+          </div>
         </div>
+        <p class="text-xs text-gray-500 pl-[5.5rem]">フレーズ全体の方向性を決めます</p>
       </div>
 
       <!-- チェックボックス -->
@@ -513,3 +573,27 @@
 
   </div>
 </div>
+
+{#if melodyHistory.length > 0}
+  <div class="border border-gray-700 rounded-lg p-3 mt-3">
+    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">メロディ履歴</p>
+    <div class="space-y-1">
+      {#each melodyHistory as entry, hi}
+        {@const isActive = isPlaying && activeHistoryId === entry.id}
+        <button
+          class="w-full text-left px-2 py-1.5 text-xs rounded
+            {isActive
+              ? 'bg-indigo-700 text-white'
+              : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'}"
+          onclick={() => playHistoryEntry(entry)}
+        >
+          <span class="text-[10px] opacity-50 block mb-0.5">
+            #{hi + 1} {NOTE_NAMES[entry.rootPc]}{entry.scaleName ? ` ${entry.scaleName}` : ''}
+          </span>
+          <span class="mr-1">{isActive ? '⏹' : '▶'}</span>
+          <span class="font-mono">{entry.notes.map(n => NOTE_NAMES[n.pc]).join(' ')}</span>
+        </button>
+      {/each}
+    </div>
+  </div>
+{/if}

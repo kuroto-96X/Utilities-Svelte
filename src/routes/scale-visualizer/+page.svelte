@@ -68,7 +68,26 @@
       ? SCALES.find(s => s.id === scaleId)!.intervals
       : CHORDS.find(c => c.id === chordId)!.intervals
   );
+  const currentModeName = $derived(
+    mode === 'scale'
+      ? (SCALES.find(s => s.id === scaleId)?.label ?? scaleId)
+      : (CHORDS.find(c => c.id === chordId)?.label ?? chordId)
+  );
+  const currentScaleName = $derived(
+    mode === 'scale' ? (SCALES.find(s => s.id === scaleId)?.label ?? '') : ''
+  );
   const diatonicChords = $derived(buildDiatonicChords(currentIntervals, root.pc));
+
+  // モバイルアコーディオン
+  let bpmOpen = $state(false);
+  let rootOpen = $state(false);
+  let scaleOpen = $state(false);
+
+  function openAccordion(id: 'bpm' | 'root' | 'scale') {
+    bpmOpen = id === 'bpm' ? !bpmOpen : false;
+    rootOpen = id === 'root' ? !rootOpen : false;
+    scaleOpen = id === 'scale' ? !scaleOpen : false;
+  }
   const keyboardStartSemitone = $derived(anchorToRoot ? (root.pc - 9 + 12) % 12 - 3 : -3);
   const keyboard = $derived(buildKeyboardWindow(keyboardStartSemitone, octaves));
 
@@ -179,12 +198,31 @@
 
 <div class="min-h-screen bg-gray-900 text-gray-100 p-4">
   <div class="ad-slot--top"></div>
+
+  <!-- スマホ用: sticky bar -->
+  <div class="sm:hidden sticky top-0 z-40 bg-gray-900/95 backdrop-blur-sm border-b border-gray-700 -mx-4 px-4 py-2 mb-3">
+    <div class="flex gap-2 text-xs">
+      <button
+        class="px-2 py-1 rounded {rootOpen ? 'bg-teal-700 text-white' : 'bg-gray-800 text-gray-300'}"
+        onclick={() => openAccordion('root')}
+      >{NOTE_NAMES[root.pc]}</button>
+      <button
+        class="px-2 py-1 rounded flex-1 text-left {scaleOpen ? 'bg-teal-700 text-white' : 'bg-gray-800 text-gray-300'} truncate"
+        onclick={() => openAccordion('scale')}
+      >{currentModeName}</button>
+      <button
+        class="px-2 py-1 rounded {bpmOpen ? 'bg-teal-700 text-white' : 'bg-gray-800 text-gray-300'}"
+        onclick={() => openAccordion('bpm')}
+      >BPM {bpm}</button>
+    </div>
+  </div>
+
   <h1 class="text-2xl font-bold mb-1">Scale / Chord Visualizer</h1>
   <p class="text-xs text-yellow-400 mb-4">⚠ このページでは音が鳴ります。音量にご注意ください。</p>
 
-  <div class="flex flex-col md:flex-row gap-4">
-    <!-- 左サイドバー -->
-    <div class="md:w-52 flex-shrink-0 space-y-4">
+  <div class="flex flex-col sm:flex-row gap-4">
+    <!-- デスクトップ用サイドバー -->
+    <div class="hidden sm:block sm:w-52 flex-shrink-0 space-y-4">
       <BpmSlider bind:bpm />
       <RootSelector bind:rootId onchange={playMain} />
       <ScaleChordSelector bind:mode bind:scaleId bind:chordId bind:inversion rootName={NOTE_NAMES[root.pc]} onchange={playMain} onstop={stopPlay} />
@@ -244,37 +282,92 @@
         </div>
       </div>
 
+      <!-- スマホ用アコーディオン -->
+      <div class="sm:hidden space-y-1">
+        <!-- BPM -->
+        <div class="border border-gray-700 rounded-lg overflow-hidden">
+          <button
+            class="w-full flex items-center justify-between px-3 py-2 text-xs text-gray-300 bg-gray-800 hover:bg-gray-700"
+            onclick={() => openAccordion('bpm')}
+          >
+            <span>BPM {bpm}</span>
+            <span class="text-gray-500">{bpmOpen ? '▲' : '▼'}</span>
+          </button>
+          {#if bpmOpen}
+            <div class="px-3 pb-3 pt-2 bg-gray-800/50">
+              <BpmSlider bind:bpm />
+            </div>
+          {/if}
+        </div>
+        <!-- ルート音 -->
+        <div class="border border-gray-700 rounded-lg overflow-hidden">
+          <button
+            class="w-full flex items-center justify-between px-3 py-2 text-xs text-gray-300 bg-gray-800 hover:bg-gray-700"
+            onclick={() => openAccordion('root')}
+          >
+            <span>ルート音: {NOTE_NAMES[root.pc]}</span>
+            <span class="text-gray-500">{rootOpen ? '▲' : '▼'}</span>
+          </button>
+          {#if rootOpen}
+            <div class="px-3 pb-3 pt-2 bg-gray-800/50">
+              <RootSelector bind:rootId onchange={playMain} />
+            </div>
+          {/if}
+        </div>
+        <!-- スケール/コード -->
+        <div class="border border-gray-700 rounded-lg overflow-hidden">
+          <button
+            class="w-full flex items-center justify-between px-3 py-2 text-xs text-gray-300 bg-gray-800 hover:bg-gray-700"
+            onclick={() => openAccordion('scale')}
+          >
+            <span>{mode === 'scale' ? 'スケール' : 'コード'}: {currentModeName}</span>
+            <span class="text-gray-500">{scaleOpen ? '▲' : '▼'}</span>
+          </button>
+          {#if scaleOpen}
+            <div class="px-3 pb-3 pt-2 bg-gray-800/50">
+              <ScaleChordSelector bind:mode bind:scaleId bind:chordId bind:inversion rootName={NOTE_NAMES[root.pc]} onchange={playMain} onstop={stopPlay} />
+            </div>
+          {/if}
+        </div>
+      </div>
+
       <div class="ad-slot--in-content"></div>
 
-      {#if diatonicChords}
-        <DiatonicChordPanel
-          {diatonicChords}
-          {inversion}
-          {addPlayingPc}
-          {removePlayingPc}
-          {addPlayingMidi}
-          {removePlayingMidi}
-          {setPlayingChordName}
-          stopProgression={() => { progressionStopCount += 1; }}
+      <!-- 作曲のヒント -->
+      <div class="border-t border-gray-700 pt-4 space-y-4">
+        <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wide">作曲のヒント</h2>
+
+        {#if diatonicChords}
+          <DiatonicChordPanel
+            {diatonicChords}
+            {inversion}
+            {addPlayingPc}
+            {removePlayingPc}
+            {addPlayingMidi}
+            {removePlayingMidi}
+            {setPlayingChordName}
+            stopProgression={() => { progressionStopCount += 1; }}
+            onplay={stopMainPlay}
+          />
+        {/if}
+        <MelodyGenerator
+          intervals={currentIntervals}
+          rootPc={root.pc}
+          scaleName={currentScaleName}
+          {bpm} {addPlayingPc} {removePlayingPc} {addPlayingMidi} {removePlayingMidi}
           onplay={stopMainPlay}
+          startSemitone={keyboardStartSemitone}
+          {octaves}
         />
-      {/if}
-      <MelodyGenerator
-        intervals={currentIntervals}
-        rootPc={root.pc}
-        {bpm} {addPlayingPc} {removePlayingPc} {addPlayingMidi} {removePlayingMidi}
-        onplay={stopMainPlay}
-        startSemitone={keyboardStartSemitone}
-        {octaves}
-      />
-      {#if diatonicChords}
-        <ProgressionPlayer
-          {diatonicChords} {bpm} {inversion} {addPlayingPc} {removePlayingPc} {addPlayingMidi} {removePlayingMidi}
-          {setPlayingChordName}
-          stopCount={progressionStopCount}
-          onplay={stopMainPlay}
-        />
-      {/if}
+        {#if diatonicChords}
+          <ProgressionPlayer
+            {diatonicChords} {bpm} {inversion} {addPlayingPc} {removePlayingPc} {addPlayingMidi} {removePlayingMidi}
+            {setPlayingChordName}
+            stopCount={progressionStopCount}
+            onplay={stopMainPlay}
+          />
+        {/if}
+      </div>
     </div>
   </div>
 

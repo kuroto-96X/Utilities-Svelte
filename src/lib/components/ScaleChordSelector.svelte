@@ -72,9 +72,10 @@
 		{#each SCALE_GROUPS as group}
 			<div class="mb-3">
 				<p class="text-xs text-gray-500 mb-1">{group.group}</p>
+				<div class="grid grid-cols-2 sm:grid-cols-1 gap-1 mb-1">
 				{#each group.items as item}
 					<button
-						class="w-full text-left px-2 py-1 text-sm rounded mb-0.5
+						class="w-full text-left px-2 py-1 text-sm rounded
 							{scaleId === item.id
 								? 'bg-teal-600 text-white'
 								: 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
@@ -83,15 +84,17 @@
 						{item.label}
 					</button>
 				{/each}
+				</div>
 			</div>
 		{/each}
 	{:else}
 		{#each CHORD_GROUPS as group}
 			<div class="mb-3">
 				<p class="text-xs text-gray-500 mb-1">{group.group}</p>
+				<div class="grid grid-cols-2 sm:grid-cols-1 gap-1 mb-1">
 				{#each group.items as item}
 					<button
-						class="w-full text-left px-2 py-1 text-sm rounded mb-0.5
+						class="w-full text-left px-2 py-1 text-sm rounded
 							{chordId === item.id
 								? 'bg-teal-600 text-white'
 								: 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
@@ -108,6 +111,7 @@
 						</span>
 					</button>
 				{/each}
+				</div>
 			</div>
 		{/each}
 	{/if}

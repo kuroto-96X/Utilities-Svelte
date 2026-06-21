@@ -89,7 +89,7 @@
           {pressedDegree === chord.degreeIndex
             ? 'bg-teal-500 text-white'
             : 'bg-gray-700 hover:bg-gray-600 text-gray-200'}"
-        style="touch-action: none;"
+        style="touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;"
         onpointerdown={() => startChord(chord)}
         onpointerup={stopChord}
         onpointerleave={stopChord}

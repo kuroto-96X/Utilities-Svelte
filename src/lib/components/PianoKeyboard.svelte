@@ -69,7 +69,7 @@
   viewBox="0 0 {totalWidth} {WHITE_H}"
   width={totalWidth}
   height={WHITE_H}
-  style="touch-action: none; user-select: none; display: block;"
+  style="touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; display: block;"
 >
   <!-- 白鍵ベース -->
   {#each whiteKeys as key (key.windowIndex)}
