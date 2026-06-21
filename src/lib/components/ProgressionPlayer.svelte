@@ -83,6 +83,14 @@
       : prog.degrees.map(d => chordNameForDegree(d));
   }
 
+  function stepDegreeNames(steps: Array<{ semitone: number }>): string[] {
+    const keyRoot = diatonicChords[0]?.rootPc ?? 0;
+    return steps.map(s => {
+      const rootPc = ((keyRoot + s.semitone) % 12 + 12) % 12;
+      return diatonicChords.find(c => c.rootPc === rootPc)?.roman ?? '?';
+    });
+  }
+
   // ---- ランダム進行スタイル定義 ----
 
   type ChordFunction = 'T' | 'S' | 'D';
@@ -585,6 +593,7 @@
           {@const prog = historyToProg(entry)}
           {@const names = progChordNames(prog)}
           {@const activeIdx = activeProgId === entry.id ? activeStepIndex : -1}
+          {@const degrees = stepDegreeNames(entry.steps)}
           <button
             class="w-full text-left px-2 py-1.5 text-xs rounded
               {activeProgId === entry.id
@@ -598,6 +607,12 @@
               {#each names as name, i}
                 {#if i > 0}<span class="opacity-40"> → </span>{/if}
                 <span class="{activeIdx === i ? 'text-orange-300' : ''}">{name}</span>
+              {/each}
+            </span>
+            <span class="block font-mono text-[10px] opacity-50 mt-0.5 pl-4">
+              {#each degrees as deg, i}
+                {#if i > 0}<span class="opacity-40"> → </span>{/if}
+                <span class="{activeIdx === i ? 'text-orange-300' : ''}">{deg}</span>
               {/each}
             </span>
           </button>
