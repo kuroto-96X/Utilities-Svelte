@@ -7,6 +7,7 @@
 
   let bpm = $state(DEFAULT_BPM)
   let activeTab = $state<'bpm' | 'reverse'>('bpm')
+  let reverseMs = $state('')
 
   $effect(() => {
     const p = page.url.searchParams.get('bpm')
@@ -19,7 +20,9 @@
 
   const pageTitle = $derived(
     activeTab === 'reverse'
-      ? `ms → 音符 | Note Duration – 96X's Tools`
+      ? reverseMs
+        ? `${reverseMs}ms → 音符 | Note Duration – 96X's Tools`
+        : `ms → 音符 | Note Duration – 96X's Tools`
       : `BPM ${bpm} | Note Duration – 96X's Tools`
   )
 </script>
@@ -80,6 +83,6 @@
       </ul>
     </div>
   {:else}
-    <NoteReverseSearch />
+    <NoteReverseSearch bind:currentMs={reverseMs} />
   {/if}
 </div>

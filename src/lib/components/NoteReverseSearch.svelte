@@ -17,6 +17,10 @@
     }
   }
 
+  let {
+    currentMs = $bindable(''),
+  }: { currentMs?: string } = $props()
+
   const prefs = loadPrefs()
 
   let targetMs = $state<string>((prefs.targetMs as string) ?? '1000')
@@ -27,6 +31,10 @@
   let mode = $state<'topN' | 'tolerance'>((prefs.mode as 'topN' | 'tolerance') ?? 'topN')
   let topN = $state<number>((prefs.topN as number) ?? 10)
   let tolerancePct = $state<number>((prefs.tolerancePct as number) ?? 5)
+
+  $effect(() => {
+    currentMs = targetMs
+  })
 
   $effect(() => {
     if (!browser) return
