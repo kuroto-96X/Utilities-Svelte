@@ -14,13 +14,10 @@
   const PRESETS = [
     { bpm: 60,  label: 'Ballad' },
     { bpm: 80,  label: 'R&B' },
-    { bpm: 90,  label: 'Hip Hop' },
     { bpm: 100, label: 'J-Pop' },
     { bpm: 120, label: 'House' },
-    { bpm: 128, label: 'EDM' },
     { bpm: 140, label: 'Dubstep' },
     { bpm: 160, label: 'Eurobeat' },
-    { bpm: 170, label: 'D&B' },
   ]
 
   let inputValue = $state(String(bpm))
@@ -47,7 +44,7 @@
   <!-- BPMプリセット -->
   <div class="w-full">
   <p class="text-xs text-slate-500 mb-1">プリセット</p>
-  <div class="flex flex-wrap gap-1">
+  <div class="flex gap-1">
     {#each PRESETS as preset}
       <button
         type="button"
