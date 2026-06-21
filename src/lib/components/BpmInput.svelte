@@ -45,7 +45,9 @@
 
 <div class="flex flex-col items-center gap-3 w-full max-w-xs mx-auto">
   <!-- BPMプリセット -->
-  <div class="flex flex-wrap gap-1 justify-center w-full">
+  <div class="w-full">
+  <p class="text-xs text-slate-500 mb-1">プリセット</p>
+  <div class="flex flex-wrap gap-1">
     {#each PRESETS as preset}
       <button
         type="button"
@@ -59,6 +61,7 @@
         <span class="text-[10px] leading-tight">{preset.label}</span>
       </button>
     {/each}
+  </div>
   </div>
   <div class="flex items-center gap-2 w-full">
     <button
