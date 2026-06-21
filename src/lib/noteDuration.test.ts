@@ -35,10 +35,10 @@ describe('calculateNoteDurations (BPM=120)', () => {
   const eighth       = durations.find(d => d.id === 'eighth')!
   const thirtysecond = durations.find(d => d.id === 'thirtysecond')!
 
-  test('6種類の音符を返す', () => {
-    expect(durations).toHaveLength(6)
+  test('7種類の音符を返す', () => {
+    expect(durations).toHaveLength(7)
     const ids = durations.map(d => d.id)
-    expect(ids).toEqual(['whole','half','quarter','eighth','sixteenth','thirtysecond'])
+    expect(ids).toEqual(['whole','half','quarter','eighth','sixteenth','thirtysecond','sixtyfourth'])
   })
 
   test('4分音符 normalSec = 0.5 (BPM=120)', () => {

@@ -3,7 +3,7 @@ export type NoteId = 'whole' | 'half' | 'quarter' | 'eighth' | 'sixteenth' | 'th
 export interface NoteSymbol {
   filled: boolean
   stem: boolean
-  flags: 0 | 1 | 2 | 3
+  flags: 0 | 1 | 2 | 3 | 4
 }
 
 export interface NoteDuration {
