@@ -116,7 +116,7 @@
           <div class="border border-slate-200 rounded-lg divide-y divide-slate-100">
             {#each catTools as tool (tool.href)}
               <div class="px-4 py-2.5 hover:bg-slate-50">
-                <p class="text-xs text-slate-400 font-mono mb-1.5">{tool.href}</p>
+                <a href={tool.href} target="_blank" class="text-xs text-slate-400 font-mono mb-1.5 hover:text-teal-600 hover:underline inline-block">{tool.href}</a>
                 <div class="flex items-center gap-3">
                   <input
                     type="checkbox"

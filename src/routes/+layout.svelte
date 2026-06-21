@@ -44,6 +44,12 @@
       .find(c => c.id === activeCategory)?.label ?? ''
   )
 
+  // 現在ページが開発中かどうか
+  let isDevPage = $derived(
+    routeId !== null &&
+    ((siteConfig.toolDevStatus as Record<string, boolean>)[routeId] ?? false)
+  )
+
   // 開いているドロップダウンのカテゴリー id
   let openCategory = $state<string | null>(null)
 
@@ -126,6 +132,17 @@
       {/each}
     </nav>
   </header>
+
+  {#if isDevPage}
+    <div class="bg-red-50 border-b border-red-200">
+      <div class="max-w-4xl mx-auto px-4 py-2 flex items-start gap-2">
+        <span class="text-red-500 text-sm font-bold shrink-0 mt-px">⚠</span>
+        <p class="text-red-700 text-sm">
+          このツールは現在開発中のため、計算結果や変換結果が正確でない場合があります。実際の用途では必ず別の手段でご確認ください。
+        </p>
+      </div>
+    </div>
+  {/if}
 
   <main class="flex-1">
     {@render children()}
