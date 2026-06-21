@@ -601,18 +601,20 @@
                 : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'}"
             onclick={() => playHistoryItem(entry)}
           >
-            <span class="block text-[10px] opacity-40 mb-0.5">#{hi + 1} {entry.styleLabel}</span>
+            <span class="flex items-center gap-1.5 text-[10px] opacity-40 mb-0.5">
+              <span>#{hi + 1} {entry.styleLabel}</span>
+              <span class="font-mono">
+                {#each degrees as deg, i}
+                  {#if i > 0}<span class="opacity-40"> → </span>{/if}
+                  <span class="{activeIdx === i ? 'text-orange-300' : ''}">{deg}</span>
+                {/each}
+              </span>
+            </span>
             <span class="mr-1">{activeProgId === entry.id ? '⏹' : '▶'}</span>
             <span class="font-mono">
               {#each names as name, i}
                 {#if i > 0}<span class="opacity-40"> → </span>{/if}
                 <span class="{activeIdx === i ? 'text-orange-300' : ''}">{name}</span>
-              {/each}
-            </span>
-            <span class="block font-mono text-[10px] opacity-50 mt-0.5 pl-4">
-              {#each degrees as deg, i}
-                {#if i > 0}<span class="opacity-40"> → </span>{/if}
-                <span class="{activeIdx === i ? 'text-orange-300' : ''}">{deg}</span>
               {/each}
             </span>
           </button>
