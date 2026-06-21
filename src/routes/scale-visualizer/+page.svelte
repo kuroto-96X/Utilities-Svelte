@@ -179,7 +179,8 @@
 
 <div class="min-h-screen bg-gray-900 text-gray-100 p-4">
   <div class="ad-slot--top"></div>
-  <h1 class="text-2xl font-bold mb-4">Scale / Chord Visualizer</h1>
+  <h1 class="text-2xl font-bold mb-1">Scale / Chord Visualizer</h1>
+  <p class="text-xs text-yellow-400 mb-4">⚠ このページでは音が鳴ります。音量にご注意ください。</p>
 
   <div class="flex flex-col md:flex-row gap-4">
     <!-- 左サイドバー -->
