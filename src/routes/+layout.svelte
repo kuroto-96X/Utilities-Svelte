@@ -58,8 +58,8 @@
   <link rel="icon" href={siteIcon} />
 </svelte:head>
 
-<div class="gradient-bg flex flex-col">
-  <header class="sticky top-0 z-10 border-b border-slate-200 bg-white shadow-sm">
+<div class="gradient-bg flex flex-col sm:h-screen sm:overflow-hidden">
+  <header class="sticky top-0 z-10 border-b border-slate-200 bg-white shadow-sm sm:flex-shrink-0">
     <nav class="max-w-4xl mx-auto px-4 py-2.5 flex items-center gap-1">
       <a
         href="/"
@@ -127,12 +127,12 @@
     </nav>
   </header>
 
-  <main class="flex-1">
+  <main class="flex-1 sm:min-h-0 sm:overflow-y-auto">
     {@render children()}
   </main>
 
   {#if activeCategory !== null && activeCategoryTools.length >= 1}
-    <div class="border-t border-slate-200 bg-white">
+    <div class="border-t border-slate-200 bg-white sm:flex-shrink-0">
       <div class="max-w-4xl mx-auto px-4 py-2 flex items-center gap-2 flex-wrap">
         <span class="text-xs font-semibold text-slate-400 shrink-0">
           {activeCategoryLabel}
@@ -159,7 +159,7 @@
     </div>
   {/if}
 
-  <footer class="border-t border-slate-200 bg-white">
+  <footer class="border-t border-slate-200 bg-white sm:flex-shrink-0">
     <div class="max-w-4xl mx-auto px-4 py-5 flex items-start justify-between gap-6">
       <div class="flex items-start gap-3">
         <img

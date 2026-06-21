@@ -404,6 +404,7 @@
       stopMelody();
     } else {
       onplay?.();
+      cachedMelody = entry.notes;
       activeHistoryId = entry.id;
       playMelodySeq(entry.notes);
     }
@@ -411,7 +412,7 @@
 
 </script>
 
-<div class="border border-gray-700 rounded-lg p-3">
+<div class="border-t border-gray-700 pt-3">
   <div class="flex flex-col md:flex-row gap-4 items-start">
 
     <!-- 左列: タイトル・設定・ボタン・チップ -->

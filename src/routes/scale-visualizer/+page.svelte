@@ -116,7 +116,6 @@
     currentPlayStopFns = [];
   }
 
-  // モード切替など「停止のみ」の操作
   function stopPlay() {
     progressionStopCount += 1;
     playId++;
@@ -126,7 +125,6 @@
     playingChordName = '';
   }
 
-  // 他コンポーネントの再生開始時に左サイドバーのスケール/コード再生を停止する
   function stopMainPlay() {
     playId++;
     stopAllCurrentNotes();
@@ -153,7 +151,6 @@
     const base = 57 + ((root.pc - 9 + 12) % 12);
 
     if (mode === 'chord') {
-      // コード：全音を同時に鳴らし、全音符の長さで自動停止
       applyInversion(currentIntervals, inversion).forEach(interval => {
         const midi = base + interval;
         const pc = (root.pc + interval) % 12;
@@ -172,7 +169,6 @@
         playingChordName = '';
       }, wholeDuration * 1000);
     } else {
-      // スケール：各音を次の音が始まるまで持続
       const seq = [...currentIntervals, ...currentIntervals.slice(0, -1).reverse()];
       const SPACING = (60 / bpm) * 0.5;
       let activeStopFn: (() => void) | null = null;
@@ -180,7 +176,6 @@
       let activeMidi: number | null = null;
 
       function playScaleStep(stepIdx: number) {
-        // 前の音を停止
         activeStopFn?.();
         if (activePc !== null) removePlayingPc(activePc);
         if (activeMidi !== null) removePlayingMidi(activeMidi);
@@ -188,8 +183,8 @@
         activePc = null;
         activeMidi = null;
 
-        if (playId !== myId) return; // 別の再生が始まったらキャンセル
-        if (stepIdx >= seq.length) return; // 終了
+        if (playId !== myId) return;
+        if (stepIdx >= seq.length) return;
 
         const interval = seq[stepIdx];
         const midi = base + interval;
@@ -211,7 +206,68 @@
   }
 </script>
 
-<div class="min-h-screen bg-gray-900 text-gray-100 p-4">
+<!-- 鍵盤エリアのスニペット（desktop Panel 2 / mobile Panel 3 共通） -->
+{#snippet keyboardPanel()}
+  <div class="flex flex-wrap items-center justify-center gap-3">
+    <div class="flex items-center gap-1 text-xs">
+      <span class="text-gray-400">オクターブ</span>
+      {#each [1, 2, 3] as o}
+        <button
+          class="px-2 py-1 rounded {octaves === o ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+          onclick={() => (octaves = o)}
+        >{o}</button>
+      {/each}
+    </div>
+    <div class="flex items-center gap-1 text-xs">
+      <button
+        class="px-2 py-1 rounded {!anchorToRoot ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+        onclick={() => (anchorToRoot = false)}
+      >A基準</button>
+      <button
+        class="px-2 py-1 rounded {anchorToRoot ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+        onclick={() => (anchorToRoot = true)}
+      >ルート基準</button>
+    </div>
+  </div>
+  <div class="overflow-x-auto flex justify-center">
+    <PianoKeyboard
+      whiteKeys={keyboard.whiteKeys}
+      blackKeys={keyboard.blackKeys}
+      totalWidth={keyboard.totalWidth}
+      intervals={currentIntervals}
+      rootPc={root.pc}
+      startSemitone={keyboardStartSemitone}
+      {playingPcs}
+      {playingMidis}
+      {addPlayingPc}
+      {removePlayingPc}
+      {addPlayingMidi}
+      {removePlayingMidi}
+    />
+  </div>
+  <!-- 再生中の音の表示 -->
+  <div class="text-center font-mono text-sm min-h-[1.5rem]">
+    {#if playingPcs.size > 0}
+      {#if playingChordName}
+        <span class="text-orange-400 mr-2 font-bold">{playingChordName}</span>
+      {/if}
+      <span class="text-teal-400">
+        {[...playingPcs].sort((a, b) => a - b).map(pc => NOTE_NAMES[pc]).join(' · ')}
+      </span>
+    {/if}
+  </div>
+  <!-- 停止ボタン -->
+  <div class="flex justify-center">
+    <button
+      class="px-4 py-1 text-xs rounded {isAnyPlaying ? 'bg-red-700 text-white hover:bg-red-600 cursor-pointer' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}"
+      disabled={!isAnyPlaying}
+      onclick={stopAll}
+    >⏹ 停止</button>
+  </div>
+{/snippet}
+
+<!-- ページ全体 -->
+<div class="bg-gray-900 text-gray-100 min-h-screen sm:min-h-0 sm:h-full sm:overflow-hidden sm:flex sm:flex-col p-4 sm:p-0">
   <div class="ad-slot--top"></div>
 
   <!-- スマホ用: 鍵盤スクロールアウト時のみ表示する fixed sticky bar -->
@@ -260,84 +316,40 @@
     </div>
   {/if}
 
-  <h1 class="text-2xl font-bold mb-1">Scale / Chord Visualizer</h1>
-  <p class="text-xs text-yellow-400 mb-4">⚠ このページでは音が鳴ります。音量にご注意ください。</p>
+  <!-- タイトルバー -->
+  <div class="sm:flex-shrink-0 sm:flex sm:items-center sm:gap-4 sm:px-4 sm:py-2 sm:border-b sm:border-gray-700">
+    <h1 class="text-2xl font-bold mb-1 sm:mb-0">Scale / Chord Visualizer</h1>
+    <p class="text-xs text-yellow-400 mb-4 sm:mb-0">⚠ このページでは音が鳴ります。音量にご注意ください。</p>
+  </div>
 
-  <div class="flex flex-col sm:flex-row gap-4">
-    <!-- デスクトップ用サイドバー -->
-    <div class="hidden sm:block sm:w-52 flex-shrink-0 space-y-4">
+  <!-- 3パネルエリア: モバイル=縦積み、デスクトップ=横並び -->
+  <div class="sm:flex-1 sm:min-h-0 sm:flex sm:flex-row sm:overflow-hidden">
+
+    <!-- Panel 1: サイドバー（デスクトップのみ・独立スクロール） -->
+    <aside class="hidden sm:flex sm:flex-col sm:w-52 sm:flex-shrink-0 sm:overflow-y-auto sm:border-r sm:border-gray-700 sm:p-4 sm:space-y-4">
       <BpmSlider bind:bpm />
       <RootSelector bind:rootId onchange={playMain} />
       <ScaleChordSelector bind:mode bind:scaleId bind:chordId bind:inversion rootName={NOTE_NAMES[root.pc]} onchange={playMain} onstop={stopPlay} />
+    </aside>
+
+    <!-- 右列: Panel 2（鍵盤）+ Panel 3（操作）を縦に並べる -->
+    <div class="sm:flex-1 sm:min-w-0 sm:flex sm:flex-col sm:overflow-hidden">
+
+    <!-- Panel 2: 鍵盤エリア（デスクトップのみ・スクロールなし） -->
+    <div class="hidden sm:flex sm:flex-col sm:flex-shrink-0 sm:border-b sm:border-gray-700 sm:p-4 sm:space-y-2">
+      {@render keyboardPanel()}
     </div>
 
-    <!-- メインエリア -->
-    <div class="flex-1 min-w-0 space-y-4">
-      <!-- 鍵盤エリア -->
-      <div class="space-y-2">
-        <div class="flex flex-wrap items-center justify-center gap-3">
-          <div class="flex items-center gap-1 text-xs">
-            <span class="text-gray-400">オクターブ</span>
-            {#each [1, 2, 3] as o}
-              <button
-                class="px-2 py-1 rounded {octaves === o ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-                onclick={() => (octaves = o)}
-              >{o}</button>
-            {/each}
-          </div>
-          <div class="flex items-center gap-1 text-xs">
-            <button
-              class="px-2 py-1 rounded {!anchorToRoot ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-              onclick={() => (anchorToRoot = false)}
-            >A基準</button>
-            <button
-              class="px-2 py-1 rounded {anchorToRoot ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
-              onclick={() => (anchorToRoot = true)}
-            >ルート基準</button>
-          </div>
-        </div>
-        <!-- スマホ用: 鍵盤の可視判定センチネル -->
-        <div bind:this={keyboardSentinel} class="sm:hidden" style="height:1px;"></div>
-        <div class="overflow-x-auto flex justify-center">
-          <PianoKeyboard
-            whiteKeys={keyboard.whiteKeys}
-            blackKeys={keyboard.blackKeys}
-            totalWidth={keyboard.totalWidth}
-            intervals={currentIntervals}
-            rootPc={root.pc}
-            startSemitone={keyboardStartSemitone}
-            {playingPcs}
-            {playingMidis}
-            {addPlayingPc}
-            {removePlayingPc}
-            {addPlayingMidi}
-            {removePlayingMidi}
-          />
-        </div>
-        <!-- 再生中の音の表示 -->
-        <div class="text-center font-mono text-sm min-h-[1.5rem]">
-          {#if playingPcs.size > 0}
-            {#if playingChordName}
-              <span class="text-orange-400 mr-2 font-bold">{playingChordName}</span>
-            {/if}
-            <span class="text-teal-400">
-              {[...playingPcs].sort((a, b) => a - b).map(pc => NOTE_NAMES[pc]).join(' · ')}
-            </span>
-          {/if}
-        </div>
-        <!-- 停止ボタン: 音名表示の下に常時表示・中央寄せ -->
-        <div class="flex justify-center">
-          <button
-            class="px-4 py-1 text-xs rounded {isAnyPlaying ? 'bg-red-700 text-white hover:bg-red-600 cursor-pointer' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}"
-            disabled={!isAnyPlaying}
-            onclick={stopAll}
-          >⏹ 停止</button>
-        </div>
+    <!-- Panel 3: 操作エリア（モバイル全体 / デスクトップ右列下段・独立スクロール） -->
+    <div class="sm:flex-1 sm:min-h-0 sm:overflow-y-auto sm:p-4 space-y-4">
+
+      <!-- モバイル専用: 鍵盤セクション（センチネル込み） -->
+      <div class="sm:hidden space-y-2">
+        <div bind:this={keyboardSentinel} style="height:1px;"></div>
+        {@render keyboardPanel()}
       </div>
 
-<div class="ad-slot--in-content"></div>
-
-      <!-- スマホ用: BPM/ルート/スケール設定（ダイアトニックコードの直上、アコーディオン） -->
+      <!-- モバイル専用: BPM/ルート/スケール設定アコーディオン -->
       <div class="sm:hidden border border-gray-700 rounded-lg px-3">
         <button
           class="w-full flex items-center justify-between text-xs text-gray-300 py-2"
@@ -359,64 +371,72 @@
         {/if}
       </div>
 
-      <!-- 作曲のヒント -->
-      <div class="border-t border-gray-700 pt-4 space-y-4">
-        {#if diatonicChords}
-          <DiatonicChordPanel
-            {diatonicChords}
-            {inversion}
-            {addPlayingPc}
-            {removePlayingPc}
-            {addPlayingMidi}
-            {removePlayingMidi}
-            {setPlayingChordName}
-            stopProgression={() => { progressionStopCount += 1; }}
-            onplay={stopMainPlay}
-          />
-        {/if}
-        <MelodyGenerator
-          intervals={currentIntervals}
-          rootPc={root.pc}
-          scaleName={currentScaleName}
-          {bpm} {addPlayingPc} {removePlayingPc} {addPlayingMidi} {removePlayingMidi}
+      <div class="ad-slot--in-content"></div>
+
+      <!-- ダイアトニックコード -->
+      {#if diatonicChords}
+        <DiatonicChordPanel
+          {diatonicChords}
+          {inversion}
+          {addPlayingPc}
+          {removePlayingPc}
+          {addPlayingMidi}
+          {removePlayingMidi}
+          {setPlayingChordName}
+          stopProgression={() => { progressionStopCount += 1; }}
           onplay={stopMainPlay}
-          startSemitone={keyboardStartSemitone}
-          {octaves}
-          stopCount={melodyStopCount}
         />
-        {#if diatonicChords}
+      {/if}
+
+      <!-- ランダムメロディ生成 -->
+      <MelodyGenerator
+        intervals={currentIntervals}
+        rootPc={root.pc}
+        scaleName={currentScaleName}
+        {bpm} {addPlayingPc} {removePlayingPc} {addPlayingMidi} {removePlayingMidi}
+        onplay={stopMainPlay}
+        startSemitone={keyboardStartSemitone}
+        {octaves}
+        stopCount={melodyStopCount}
+      />
+
+      <!-- コード進行プリセット -->
+      {#if diatonicChords}
+        <div class="border-t border-gray-700 pt-4">
           <ProgressionPlayer
             {diatonicChords} {bpm} {inversion} {addPlayingPc} {removePlayingPc} {addPlayingMidi} {removePlayingMidi}
             {setPlayingChordName}
             stopCount={progressionStopCount}
             onplay={stopMainPlay}
           />
-        {/if}
-      </div>
-    </div>
-  </div>
+        </div>
+      {/if}
 
-  <!-- 説明文 -->
-  <div class="mt-8 max-w-2xl mx-auto space-y-4 text-sm text-gray-400 border-t border-gray-700 pt-6">
-    <div>
-      <h2 class="text-gray-200 font-semibold mb-1">使い方</h2>
-      <p>ルート音とスケール（またはコード）を選ぶと、鍵盤上に構成音が表示され構成音を再生します。BPMスライダーで再生速度を調整してください。</p>
+      <!-- 説明文 -->
+      <div class="mt-4 space-y-4 text-sm text-gray-400 border-t border-gray-700 pt-6">
+        <div>
+          <h2 class="text-gray-200 font-semibold mb-1">使い方</h2>
+          <p>ルート音とスケール（またはコード）を選ぶと、鍵盤上に構成音が表示され構成音を再生します。BPMスライダーで再生速度を調整してください。</p>
+        </div>
+        <div>
+          <h2 class="text-gray-200 font-semibold mb-1">鍵盤表示</h2>
+          <p>「A基準」はA3を左端に固定した表示、「ルート基準」は選択中のルート音を左端に合わせた表示です。オクターブボタンで表示範囲を変更できます。鍵盤をクリック・タップして音を鳴らすこともできます。</p>
+        </div>
+        <div>
+          <h2 class="text-gray-200 font-semibold mb-1">ダイアトニックコード</h2>
+          <p>選択中のスケールから導かれる7つのコードを表示します。ボタンを押している間、コードが鳴ります。「転回形」ボタンでコードの積み方を変更できます。</p>
+        </div>
+        <div>
+          <h2 class="text-gray-200 font-semibold mb-1">コード進行プリセット</h2>
+          <p>定番のコード進行をワンクリックで再生できます。「スムーズベース（転回形）」をオンにすると、ベース音が滑らかに移動するよう各コードに転回形を適用します。</p>
+        </div>
+        <div>
+          <h2 class="text-gray-200 font-semibold mb-1">ランダムメロディ生成</h2>
+          <p>スケールの構成音を使ってランダムなメロディを生成・再生します。小節数、フレーズの輪郭（アーチ・上昇・下降・谷型）などを設定できます。</p>
+        </div>
+      </div>
+
     </div>
-    <div>
-      <h2 class="text-gray-200 font-semibold mb-1">鍵盤表示</h2>
-      <p>「A基準」はA3を左端に固定した表示、「ルート基準」は選択中のルート音を左端に合わせた表示です。オクターブボタンで表示範囲を変更できます。鍵盤をクリック・タップして音を鳴らすこともできます。</p>
-    </div>
-    <div>
-      <h2 class="text-gray-200 font-semibold mb-1">ダイアトニックコード</h2>
-      <p>選択中のスケールから導かれる7つのコードを表示します。ボタンを押している間、コードが鳴ります。「転回形」ボタンでコードの積み方を変更できます。</p>
-    </div>
-    <div>
-      <h2 class="text-gray-200 font-semibold mb-1">コード進行プリセット</h2>
-      <p>定番のコード進行をワンクリックで再生できます。「スムーズベース（転回形）」をオンにすると、ベース音が滑らかに移動するよう各コードに転回形を適用します。</p>
-    </div>
-    <div>
-      <h2 class="text-gray-200 font-semibold mb-1">ランダムメロディ生成</h2>
-      <p>スケールの構成音を使ってランダムなメロディを生成・再生します。小節数、フレーズの輪郭（アーチ・上昇・下降・谷型）などを設定できます。</p>
-    </div>
+    </div><!-- /右列 -->
   </div>
 </div>
