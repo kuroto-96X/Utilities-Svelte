@@ -42,10 +42,11 @@
       <button
         type="button"
         onclick={() => { bpm = preset }}
-        class="flex-1 py-1 rounded text-center tabular-nums text-sm font-bold transition-colors
+        style="touch-action: manipulation;"
+        class="flex-1 py-1 rounded text-center tabular-nums text-sm font-bold select-none transition-colors border
           {bpm === preset
-            ? 'bg-teal-600 text-white'
-            : 'bg-slate-100 text-slate-600 hover:bg-slate-200 active:bg-slate-300'}"
+            ? 'bg-teal-600 border-teal-700 text-white shadow-inner'
+            : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50 active:bg-slate-100 shadow-sm'}"
       >
         {preset}
       </button>
