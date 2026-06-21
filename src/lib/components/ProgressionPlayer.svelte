@@ -416,8 +416,9 @@
   ): (number[] | null)[] {
     const tonicMidi = 57 + ((keyRootPc - 9 + 12) % 12);
     let prevBassMidi: number | null = null;
+    let anyOctaveUp = false;
 
-    return steps.map((step) => {
+    const voicings = steps.map((step) => {
       const chordRoot = (keyRootPc + step.semitone) % 12;
       const baseRoot = 57 + ((chordRoot - 9 + 12) % 12);
       const chordRootMidi = baseRoot < tonicMidi ? baseRoot + 12 : baseRoot;
@@ -438,11 +439,19 @@
       const rawBass = chordRootMidi + step.intervals[bestJ] + bestO * 12;
       // ベース音がA3(MIDI 57)を下回る場合は全音を1オクターブ上げる
       const octaveUp = rawBass < 57 ? 1 : 0;
+      if (octaveUp) anyOctaveUp = true;
       const finalO = bestO + octaveUp;
       prevBassMidi = rawBass + octaveUp * 12;
       if (bestJ === 0 && finalO === 0) return null;
       return step.intervals.map((_, i) => (i < bestJ ? 12 : 0) + finalO * 12);
     });
+
+    // 後続コードで1オクターブ上がっていれば最初のコードも合わせて上げる
+    if (anyOctaveUp && voicings.length > 0) {
+      voicings[0] = steps[0].intervals.map(() => 12);
+    }
+
+    return voicings;
   }
 
   function handleRandom() {
