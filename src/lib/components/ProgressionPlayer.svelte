@@ -408,8 +408,43 @@
     }
   }
 
+  // スムーズベース用に転回形オフセットを計算する。
+  // 各コードのベース音が前コードから最も近くなる転回形 + オクターブを選択。
+  function computeSmoothVoicings(
+    steps: ChromaticStep[],
+    keyRootPc: number,
+  ): (number[] | null)[] {
+    const tonicMidi = 57 + ((keyRootPc - 9 + 12) % 12);
+    let prevBassMidi: number | null = null;
+
+    return steps.map((step) => {
+      const chordRoot = (keyRootPc + step.semitone) % 12;
+      const baseRoot = 57 + ((chordRoot - 9 + 12) % 12);
+      const chordRootMidi = baseRoot < tonicMidi ? baseRoot + 12 : baseRoot;
+
+      if (prevBassMidi === null) {
+        prevBassMidi = chordRootMidi; // 最初はルートポジション（intervals[0] = 0）
+        return null;
+      }
+
+      let bestJ = 0, bestO = 0, bestDist = Infinity;
+      for (let j = 0; j < step.intervals.length; j++) {
+        for (const o of [-1, 0]) {
+          const dist = Math.abs(chordRootMidi + step.intervals[j] + o * 12 - prevBassMidi);
+          if (dist < bestDist) { bestDist = dist; bestJ = j; bestO = o; }
+        }
+      }
+
+      prevBassMidi = chordRootMidi + step.intervals[bestJ] + bestO * 12;
+      if (bestJ === 0 && bestO === 0) return null;
+      return step.intervals.map((_, i) => (i < bestJ ? 12 : 0) + bestO * 12);
+    });
+  }
+
   function handleRandom() {
-    const prog = generateRandomProg();
+    const raw = generateRandomProg();
+    const smoothVoicings = computeSmoothVoicings(raw.steps, diatonicChords[0]?.rootPc ?? 0);
+    const prog: ChromaticProgression = { ...raw, smoothVoicings };
     randomProg = prog;
     addToHistory(prog);
     onplay?.();
@@ -419,10 +454,12 @@
   }
 
   function playHistoryItem(entry: HistoryEntry) {
-    const prog = historyToProg(entry);
     if (activeProgId === entry.id) {
       stopInternal();
     } else {
+      const steps = entry.steps.map(s => ({ semitone: s.semitone, intervals: s.intervals, name: '' }));
+      const smoothVoicings = computeSmoothVoicings(steps, diatonicChords[0]?.rootPc ?? 0);
+      const prog: ChromaticProgression = { id: entry.id, label: entry.styleLabel, steps, smoothVoicings };
       onplay?.();
       stopInternal();
       activeProgId = entry.id;
