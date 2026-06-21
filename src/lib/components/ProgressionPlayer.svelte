@@ -435,9 +435,13 @@
         }
       }
 
-      prevBassMidi = chordRootMidi + step.intervals[bestJ] + bestO * 12;
-      if (bestJ === 0 && bestO === 0) return null;
-      return step.intervals.map((_, i) => (i < bestJ ? 12 : 0) + bestO * 12);
+      const rawBass = chordRootMidi + step.intervals[bestJ] + bestO * 12;
+      // ベース音がA3(MIDI 57)を下回る場合は全音を1オクターブ上げる
+      const octaveUp = rawBass < 57 ? 1 : 0;
+      const finalO = bestO + octaveUp;
+      prevBassMidi = rawBass + octaveUp * 12;
+      if (bestJ === 0 && finalO === 0) return null;
+      return step.intervals.map((_, i) => (i < bestJ ? 12 : 0) + finalO * 12);
     });
   }
 
