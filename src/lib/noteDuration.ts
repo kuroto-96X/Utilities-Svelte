@@ -1,4 +1,4 @@
-export type NoteId = 'whole' | 'half' | 'quarter' | 'eighth' | 'sixteenth' | 'thirtysecond'
+export type NoteId = 'whole' | 'half' | 'quarter' | 'eighth' | 'sixteenth' | 'thirtysecond' | 'sixtyfourth'
 
 export interface NoteSymbol {
   filled: boolean
@@ -31,7 +31,8 @@ const NOTE_DEFS: Array<Omit<NoteDuration, 'normalSec' | 'dottedSec' | 'tripletSe
   { id: 'quarter',      label: '4分音符',  fraction: '1/4',  mult: 1,     symbol: { filled: true,  stem: true,  flags: 0 } },
   { id: 'eighth',       label: '8分音符',  fraction: '1/8',  mult: 0.5,   symbol: { filled: true,  stem: true,  flags: 1 } },
   { id: 'sixteenth',    label: '16分音符', fraction: '1/16', mult: 0.25,  symbol: { filled: true,  stem: true,  flags: 2 } },
-  { id: 'thirtysecond', label: '32分音符', fraction: '1/32', mult: 0.125, symbol: { filled: true,  stem: true,  flags: 3 } },
+  { id: 'thirtysecond',  label: '32分音符', fraction: '1/32', mult: 0.125,  symbol: { filled: true,  stem: true,  flags: 3 } },
+  { id: 'sixtyfourth',  label: '64分音符', fraction: '1/64', mult: 0.0625, symbol: { filled: true,  stem: true,  flags: 4 } },
 ]
 
 /** bpm は clampBpm() で検証済みの値を渡すこと。bpm <= 0 の場合は DEFAULT_BPM にフォールバックするが、これは最終防衛ラインであり主要な検証パスではない。 */
@@ -55,4 +56,13 @@ export function formatSec(sec: number): string {
 
 export function formatMs(sec: number): string {
   return (sec * 1000).toFixed(1)
+}
+
+export function formatMsLarge(sec: number): string {
+  const ms = sec * 1000
+  return Number.isInteger(ms) ? String(ms) : ms.toFixed(1).replace(/\.0$/, '')
+}
+
+export function formatHzSmall(sec: number): string {
+  return (1 / sec).toFixed(2)
 }

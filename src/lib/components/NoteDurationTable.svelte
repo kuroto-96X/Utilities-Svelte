@@ -1,10 +1,28 @@
 <script lang="ts">
   import type { NoteDuration } from '$lib/noteDuration'
-  import { formatSec, formatMs } from '$lib/noteDuration'
+  import { formatMsLarge, formatHzSmall } from '$lib/noteDuration'
   import NoteIcon from './NoteIcon.svelte'
 
   let { durations }: { durations: NoteDuration[] } = $props()
+
+  let copiedMsg = $state(false)
+  let fadeTimer: ReturnType<typeof setTimeout> | null = null
+
+  function copyValue(raw: number) {
+    const text = formatMsLarge(raw)
+    navigator.clipboard.writeText(text).then(() => {
+      if (fadeTimer) clearTimeout(fadeTimer)
+      copiedMsg = true
+      fadeTimer = setTimeout(() => { copiedMsg = false }, 1500)
+    })
+  }
 </script>
+
+{#if copiedMsg}
+  <div class="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white text-xs px-3 py-1.5 rounded shadow-lg pointer-events-none">
+    Copied!
+  </div>
+{/if}
 
 <div class="overflow-x-auto">
   <table class="w-full text-sm min-w-[400px]">
@@ -28,18 +46,16 @@
               <span class="text-xs text-slate-400 whitespace-nowrap">{d.fraction}</span>
             </div>
           </td>
-          <td class="py-2 px-3 text-right tabular-nums whitespace-nowrap">
-            <span class="font-semibold text-slate-800">{formatSec(d.normalSec)}s</span>
-            <br /><span class="text-xs text-slate-400">{formatMs(d.normalSec)}ms</span>
-          </td>
-          <td class="py-2 px-3 text-right tabular-nums whitespace-nowrap">
-            <span class="font-semibold text-slate-800">{formatSec(d.dottedSec)}s</span>
-            <br /><span class="text-xs text-slate-400">{formatMs(d.dottedSec)}ms</span>
-          </td>
-          <td class="py-2 pl-3 text-right tabular-nums whitespace-nowrap">
-            <span class="font-semibold text-slate-800">{formatSec(d.tripletSec)}s</span>
-            <br /><span class="text-xs text-slate-400">{formatMs(d.tripletSec)}ms</span>
-          </td>
+          {#each [d.normalSec, d.dottedSec, d.tripletSec] as sec, ci}
+            <td
+              class="py-2 {ci === 2 ? 'pl-3' : 'px-3'} text-right tabular-nums whitespace-nowrap cursor-pointer select-none hover:bg-teal-50 active:bg-teal-100 transition-colors"
+              onclick={() => copyValue(sec)}
+              title="クリックでコピー"
+            >
+              <span class="font-semibold text-slate-800">{formatMsLarge(sec)}ms</span>
+              <br /><span class="text-xs text-slate-400">{formatHzSmall(sec)}Hz</span>
+            </td>
+          {/each}
         </tr>
       {/each}
     </tbody>

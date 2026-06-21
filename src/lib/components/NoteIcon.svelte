@@ -7,7 +7,7 @@
   }: {
     filled: boolean
     stem: boolean
-    flags: 0 | 1 | 2 | 3
+    flags: 0 | 1 | 2 | 3 | 4
     size?: number
   } = $props()
 </script>

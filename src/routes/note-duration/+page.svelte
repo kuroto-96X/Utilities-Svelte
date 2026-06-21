@@ -14,10 +14,12 @@
   })
 
   const durations = $derived(calculateNoteDurations(bpm))
+
+  const pageTitle = $derived(`BPM ${bpm} | Note Duration – 96X's Tools`)
 </script>
 
 <svelte:head>
-  <title>Note Duration</title>
+  <title>{pageTitle}</title>
   <meta name="description" content="BPMを入力するだけで、全音符から32分音符までの長さを秒・msで自動計算。付点・3連符にも対応した楽曲制作向けツール。" />
 </svelte:head>
 
@@ -34,17 +36,18 @@
   <!-- 画面説明 -->
   <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3 text-sm text-slate-600">
     <h2 class="font-semibold text-slate-700">使い方</h2>
-    <p>BPM（Beats Per Minute）を入力すると、各音符の長さを秒・ミリ秒で自動計算します。DAW での遅延設定やシンセのエンベロープ調整など、楽曲制作に役立ててください。</p>
+    <p>BPM（Beats Per Minute）を入力すると、各音符の長さをミリ秒・Hzで自動計算します。DAW での遅延設定やシンセのエンベロープ調整など、楽曲制作に役立ててください。セルをクリックすると数値をコピーできます。</p>
     <h2 class="font-semibold text-slate-700">計算式</h2>
     <div class="space-y-1 font-mono text-xs bg-white border border-slate-200 rounded p-3">
       <p>1拍（4分音符） = 60 ÷ BPM （秒）</p>
       <p>各音符 = 1拍 × 倍率</p>
       <div class="pl-4 text-slate-400 space-y-0.5 mt-1">
         <p>全音符 ×4　2分音符 ×2　4分音符 ×1</p>
-        <p>8分音符 ×½　16分音符 ×¼　32分音符 ×⅛</p>
+        <p>8分音符 ×½　16分音符 ×¼　32分音符 ×⅛　64分音符 ×1/16</p>
       </div>
       <p class="mt-1">付点 = 基本値 × 1.5</p>
       <p>3連符 = 基本値 × 2/3</p>
+      <p class="mt-1">Hz = 1 ÷ 秒数</p>
     </div>
     <h2 class="font-semibold text-slate-700">表の見かた</h2>
     <ul class="space-y-1 list-disc list-inside">
