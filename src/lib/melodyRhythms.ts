@@ -17,8 +17,10 @@ export const RHYTHM_PATTERNS: RhythmPattern[] = [
   { id: 'tango',   label: 'タンゴ',           beats: [1, 1.5, 0.5, 1] },
 ]
 
-export function pickRhythmTemplate(bars: number, secPerBeat: number): number[] {
-  const pattern = RHYTHM_PATTERNS[Math.floor(Math.random() * RHYTHM_PATTERNS.length)]
+export function pickRhythmTemplate(bars: number, secPerBeat: number, patternId?: string): number[] {
+  const pattern = patternId
+    ? (RHYTHM_PATTERNS.find(p => p.id === patternId) ?? RHYTHM_PATTERNS[Math.floor(Math.random() * RHYTHM_PATTERNS.length)])
+    : RHYTHM_PATTERNS[Math.floor(Math.random() * RHYTHM_PATTERNS.length)]
   const oneMeasure = pattern.beats.map(b => b * secPerBeat)
   const result: number[] = []
   for (let i = 0; i < bars; i++) {

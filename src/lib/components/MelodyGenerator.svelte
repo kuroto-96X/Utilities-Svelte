@@ -5,7 +5,7 @@
   import { NOTE_NAMES } from '$lib/scaleData';
   import { getAudioContext, startNoteAt } from '$lib/audioEngine';
   import RangeSlider from '$lib/components/RangeSlider.svelte';
-  import { pickRhythmTemplate } from '$lib/melodyRhythms';
+  import { pickRhythmTemplate, RHYTHM_PATTERNS } from '$lib/melodyRhythms';
 
   let {
     intervals,
@@ -58,7 +58,7 @@
   let useDotted = $state(false);
   let useTriplet = $state(false);
   let useMotifRepeat = $state(true);
-  let useRhythmPattern = $state(true);
+  let rhythmPatternId = $state('random');
   let maxStep = $state(2);
   let pattern = $state<ContourPattern>('random');
   let isPlaying = $state(false);
@@ -362,8 +362,9 @@
     const secPerBeat = 60 / bpm;
     const ivs = extendedIntervals;
 
-    if (useRhythmPattern) {
-      const durations = pickRhythmTemplate(bars, secPerBeat);
+    if (rhythmPatternId !== 'none') {
+      const id = rhythmPatternId === 'random' ? undefined : rhythmPatternId;
+      const durations = pickRhythmTemplate(bars, secPerBeat, id);
       return generateWithRhythmTemplate(ivs, rootPc, durations, maxStep, pattern, secPerBeat);
     }
 
@@ -535,24 +536,33 @@
         <p class="text-xs text-gray-500 pl-[5.5rem]">フレーズ全体の方向性を決めます</p>
       </div>
 
-      <!-- チェックボックス -->
-      <div class="flex gap-3 text-xs">
-        <label class="flex items-center gap-1 cursor-pointer {useRhythmPattern ? 'opacity-40 pointer-events-none text-gray-500' : 'text-gray-300'}">
-          <input type="checkbox" bind:checked={useDotted} class="accent-teal-500" disabled={useRhythmPattern} />
+      <!-- チェックボックス + リズム型プルダウン -->
+      <div class="flex gap-3 text-xs items-center flex-wrap">
+        <label class="flex items-center gap-1 cursor-pointer {rhythmPatternId !== 'none' ? 'opacity-40 pointer-events-none text-gray-500' : 'text-gray-300'}">
+          <input type="checkbox" bind:checked={useDotted} class="accent-teal-500" disabled={rhythmPatternId !== 'none'} />
           付点
         </label>
-        <label class="flex items-center gap-1 cursor-pointer {useRhythmPattern ? 'opacity-40 pointer-events-none text-gray-500' : 'text-gray-300'}">
-          <input type="checkbox" bind:checked={useTriplet} class="accent-teal-500" disabled={useRhythmPattern} />
+        <label class="flex items-center gap-1 cursor-pointer {rhythmPatternId !== 'none' ? 'opacity-40 pointer-events-none text-gray-500' : 'text-gray-300'}">
+          <input type="checkbox" bind:checked={useTriplet} class="accent-teal-500" disabled={rhythmPatternId !== 'none'} />
           3連符
         </label>
-        <label class="flex items-center gap-1 cursor-pointer {useRhythmPattern ? 'opacity-40 pointer-events-none text-gray-500' : 'text-gray-300'}">
-          <input type="checkbox" bind:checked={useMotifRepeat} class="accent-teal-500" disabled={useRhythmPattern} />
+        <label class="flex items-center gap-1 cursor-pointer {rhythmPatternId !== 'none' ? 'opacity-40 pointer-events-none text-gray-500' : 'text-gray-300'}">
+          <input type="checkbox" bind:checked={useMotifRepeat} class="accent-teal-500" disabled={rhythmPatternId !== 'none'} />
           モチーフ反復
         </label>
-        <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
-          <input type="checkbox" bind:checked={useRhythmPattern} class="accent-teal-500" />
-          リズム型
-        </label>
+        <div class="flex items-center gap-1">
+          <span class="text-gray-400">リズム型</span>
+          <select
+            bind:value={rhythmPatternId}
+            class="text-xs bg-gray-700 text-gray-200 rounded px-1.5 py-0.5 border border-gray-600 cursor-pointer"
+          >
+            <option value="none">なし</option>
+            <option value="random">ランダム</option>
+            {#each RHYTHM_PATTERNS as pat (pat.id)}
+              <option value={pat.id}>{pat.label}</option>
+            {/each}
+          </select>
+        </div>
       </div>
 
       <!-- ボタン -->
