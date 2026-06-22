@@ -717,7 +717,7 @@
           <span class="font-mono">
             {#each entry.notes as note, ni}
               {#if ni > 0}<span class="opacity-30"> </span>{/if}
-              <span class="{isActive && currentNoteIdx === ni ? 'text-teal-300 font-bold' : ''}">{NOTE_NAMES[note.pc]}</span>
+              <span class="{isActive && currentNoteIdx === ni ? 'text-teal-300 font-bold' : ''}">{NOTE_NAMES[note.pc]}<span class="opacity-50 text-[9px]">{entry.bpm ? durationToNoteSymbol(note.duration, entry.bpm) : ''}</span></span>
             {/each}
           </span>
         </button>
