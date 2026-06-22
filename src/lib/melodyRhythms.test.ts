@@ -2,8 +2,8 @@ import { describe, expect, test } from 'vitest'
 import { RHYTHM_PATTERNS, pickRhythmTemplate } from './melodyRhythms'
 
 describe('RHYTHM_PATTERNS', () => {
-  test('パターン数が10', () => {
-    expect(RHYTHM_PATTERNS).toHaveLength(10)
+  test('パターン数が19', () => {
+    expect(RHYTHM_PATTERNS).toHaveLength(19)
   })
 
   test('全パターンのbeats合計が4になる', () => {

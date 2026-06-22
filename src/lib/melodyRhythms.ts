@@ -15,6 +15,15 @@ export const RHYTHM_PATTERNS: RhythmPattern[] = [
   { id: 'half',    label: '2分音符主体',      beats: [2, 1, 1] },
   { id: 'eighth',  label: '8分連打',          beats: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5] },
   { id: 'tango',   label: 'タンゴ',           beats: [1, 1.5, 0.5, 1] },
+  { id: 'habanera',   label: 'ハバネラ',       beats: [1, 0.5, 0.5, 1, 1] },
+  { id: 'dot8th',     label: '付点8分連打',    beats: [0.75, 0.25, 0.75, 0.25, 0.75, 0.25, 0.75, 0.25] },
+  { id: 'whole',      label: '全音符',         beats: [4] },
+  { id: 'halves',     label: '2分×2',         beats: [2, 2] },
+  { id: 'frontload',  label: '前半集中',       beats: [0.5, 0.5, 0.5, 0.5, 2] },
+  { id: 'backload',   label: '後半集中',       beats: [2, 0.5, 0.5, 0.5, 0.5] },
+  { id: 'hemiola',    label: 'ヘミオラ',       beats: [1.5, 1.5, 1] },
+  { id: 'clave',      label: 'クラーベ',       beats: [0.5, 1, 0.5, 1, 1] },
+  { id: 'rock',       label: 'ロック',         beats: [1, 0.5, 0.5, 1, 0.5, 0.5] },
 ]
 
 export function pickRhythmTemplate(bars: number, secPerBeat: number, patternId?: string): number[] {
