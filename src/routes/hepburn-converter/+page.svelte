@@ -350,10 +350,10 @@
       <span>{isSettingsPanelOpen ? '▲' : '▼'}</span>
     </button>
 
-    <div class:hidden={!isSettingsPanelOpen} class="sm:block p-4 space-y-4">
+    <div class:hidden={!isSettingsPanelOpen} class="sm:block py-4 sm:px-4 space-y-4">
 
       <!-- プリセット連動設定 -->
-      <div class="rounded-lg border border-teal-100 bg-teal-50 px-3 py-2.5 space-y-2.5">
+      <div class="sm:rounded-lg border border-teal-100 bg-teal-50 px-3 py-2.5 space-y-2.5">
         <div class="flex flex-wrap items-center gap-2">
           <label class="text-sm text-gray-600 w-24 shrink-0">プリセット</label>
           <select
