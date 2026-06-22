@@ -95,6 +95,26 @@
     scaleName: string;
     notes: MelodyNote[];
     rhythmPatternId?: string;
+    bpm?: number;
+  }
+
+  function durationToNoteSymbol(sec: number, bpmVal: number): string {
+    const beats = sec / (60 / bpmVal);
+    const r = Math.round(beats * 48) / 48;
+    if (Math.abs(r - 4)     < 0.05) return '○';
+    if (Math.abs(r - 3)     < 0.05) return '𝅗𝅥.';
+    if (Math.abs(r - 2)     < 0.05) return '𝅗𝅥';
+    if (Math.abs(r - 1.5)   < 0.05) return '♩.';
+    if (Math.abs(r - 4/3)   < 0.04) return '♩₃';
+    if (Math.abs(r - 1)     < 0.05) return '♩';
+    if (Math.abs(r - 0.75)  < 0.04) return '♪.';
+    if (Math.abs(r - 2/3)   < 0.04) return '♪₃';
+    if (Math.abs(r - 0.5)   < 0.05) return '♪';
+    if (Math.abs(r - 0.375) < 0.04) return '♬.';
+    if (Math.abs(r - 1/3)   < 0.04) return '♬₃';
+    if (Math.abs(r - 0.25)  < 0.05) return '♬';
+    if (Math.abs(r - 0.125) < 0.04) return '𝅘𝅥𝅰';
+    return '♩';
   }
 
   function loadMelodyHistory(): MelodyHistoryEntry[] {
@@ -449,6 +469,7 @@
       scaleName,
       notes: seq,
       rhythmPatternId: lastEffectiveRhythmId,
+      bpm,
     };
     const h = [entry, ...melodyHistory].slice(0, MAX_MELODY_HISTORY);
     melodyHistory = h;
@@ -619,7 +640,7 @@
               <span class="font-mono">
                 {#each entry.notes as note, ni}
                   {#if ni > 0}<span class="opacity-30"> </span>{/if}
-                  <span class="{isActive && currentNoteIdx === ni ? 'text-teal-300 font-bold' : ''}">{NOTE_NAMES[note.pc]}</span>
+                  <span class="{isActive && currentNoteIdx === ni ? 'text-teal-300 font-bold' : ''}">{NOTE_NAMES[note.pc]}<span class="opacity-50 text-[9px]">{entry.bpm ? durationToNoteSymbol(note.duration, entry.bpm) : ''}</span></span>
                 {/each}
               </span>
             </button>
