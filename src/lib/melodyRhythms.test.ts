@@ -13,10 +13,12 @@ describe('RHYTHM_PATTERNS', () => {
     }
   })
 
-  test('各パターンにid/label/beatsがある', () => {
+  test('各パターンにid/label/description/beatsがある', () => {
     for (const pat of RHYTHM_PATTERNS) {
       expect(typeof pat.id).toBe('string')
       expect(typeof pat.label).toBe('string')
+      expect(typeof pat.description).toBe('string')
+      expect(pat.description.length).toBeGreaterThan(0)
       expect(Array.isArray(pat.beats)).toBe(true)
       expect(pat.beats.length).toBeGreaterThan(0)
     }
