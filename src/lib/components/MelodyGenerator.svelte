@@ -5,6 +5,7 @@
   import { NOTE_NAMES } from '$lib/scaleData';
   import { getAudioContext, startNoteAt } from '$lib/audioEngine';
   import RangeSlider from '$lib/components/RangeSlider.svelte';
+  import { pickRhythmTemplate } from '$lib/melodyRhythms';
 
   let {
     intervals,
@@ -57,6 +58,7 @@
   let useDotted = $state(false);
   let useTriplet = $state(false);
   let useMotifRepeat = $state(true);
+  let useRhythmPattern = $state(true);
   let maxStep = $state(2);
   let pattern = $state<ContourPattern>('random');
   let isPlaying = $state(false);
@@ -314,12 +316,59 @@
     return [...motif, ...second];
   }
 
-  function generateMelody(): MelodyNote[] {
-    const { pool, tripletSet } = buildDurationPool();
+  function generateWithRhythmTemplate(
+    ivs: number[], rpc: number,
+    durations: number[], ms: number, pat: ContourPattern
+  ): MelodyNote[] {
+    const stableIndices = getStableIndices(ivs);
     const secPerBeat = 60 / bpm;
-    const targetSeconds = bars * 4 * secPerBeat;
+    const totalDur = durations.reduce((s, d) => s + d, 0);
+    const seq: MelodyNote[] = [];
+    let cumulative = 0;
+    let currentIdx = pickStartIndex(ivs.length, pat);
+
+    for (const duration of durations) {
+      const strong = isStrongBeat(cumulative, secPerBeat);
+      const progress = totalDur > 0 ? cumulative / totalDur : 0;
+
+      if (strong && Math.random() < 0.6) {
+        currentIdx = moveTowardStable(currentIdx, stableIndices, ms);
+      } else {
+        const biasRatio = biasRatioFor(pat, progress);
+        const delta = weightedDelta(ms, biasRatio);
+        const raw = currentIdx + delta;
+        const last = ivs.length - 1;
+        if (raw < 0) {
+          currentIdx = Math.min(last, -raw);
+        } else if (raw > last) {
+          currentIdx = Math.max(0, 2 * last - raw);
+        } else {
+          currentIdx = raw;
+        }
+      }
+
+      seq.push({
+        degreeIndex: currentIdx,
+        interval: ivs[currentIdx],
+        pc: (rpc + ivs[currentIdx]) % 12,
+        duration,
+      });
+      cumulative += duration;
+    }
+    return seq;
+  }
+
+  function generateMelody(): MelodyNote[] {
+    const secPerBeat = 60 / bpm;
     const ivs = extendedIntervals;
 
+    if (useRhythmPattern) {
+      const durations = pickRhythmTemplate(bars, secPerBeat);
+      return generateWithRhythmTemplate(ivs, rootPc, durations, maxStep, pattern);
+    }
+
+    const { pool, tripletSet } = buildDurationPool();
+    const targetSeconds = bars * 4 * secPerBeat;
     return useMotifRepeat
       ? buildPhraseWithMotif(ivs, rootPc, secPerBeat, pool, tripletSet, targetSeconds, maxStep, pattern)
       : generateStructuredPhrase(ivs, rootPc, secPerBeat, pool, tripletSet, targetSeconds, maxStep, pattern);
@@ -499,6 +548,10 @@
         <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
           <input type="checkbox" bind:checked={useMotifRepeat} class="accent-teal-500" />
           モチーフ反復
+        </label>
+        <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
+          <input type="checkbox" bind:checked={useRhythmPattern} class="accent-teal-500" />
+          リズム型
         </label>
       </div>
 
