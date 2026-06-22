@@ -11,6 +11,8 @@
     max?: number
   } = $props()
 
+  const PRESETS = [60, 80, 100, 120, 140, 160, 180]
+
   let inputValue = $state(String(bpm))
 
   $effect(() => {
@@ -32,6 +34,25 @@
 </script>
 
 <div class="flex flex-col items-center gap-3 w-full max-w-xs mx-auto">
+  <!-- BPMプリセット -->
+  <div class="w-full">
+  <p class="text-xs text-slate-500 mb-1">プリセット</p>
+  <div class="flex gap-1">
+    {#each PRESETS as preset}
+      <button
+        type="button"
+        onclick={() => { bpm = preset }}
+        style="touch-action: manipulation;"
+        class="flex-1 py-1 rounded text-center tabular-nums text-sm font-bold select-none transition-colors border
+          {bpm === preset
+            ? 'bg-teal-600 border-teal-700 text-white shadow-inner'
+            : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50 active:bg-slate-100 shadow-sm'}"
+      >
+        {preset}
+      </button>
+    {/each}
+  </div>
+  </div>
   <div class="flex items-center gap-2 w-full">
     <button
       type="button"

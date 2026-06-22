@@ -7,6 +7,7 @@
     low = $bindable(),
     high = $bindable(),
     formatter = (v: number) => String(v),
+    showLabels = true,
   }: {
     min: number;
     max: number;
@@ -14,6 +15,7 @@
     low: number;
     high: number;
     formatter?: (v: number) => string;
+    showLabels?: boolean;
   } = $props();
 
   const range = $derived(max - min || 1);
@@ -75,7 +77,9 @@
 </script>
 
 <div class="flex items-center gap-2">
-  <span class="text-xs text-gray-300 font-mono w-10 text-right">{formatter(low)}</span>
+  {#if showLabels}
+    <span class="text-xs text-gray-300 font-mono w-10 text-right">{formatter(low)}</span>
+  {/if}
   <div class="relative w-32 h-5 flex items-center">
     <div class="absolute w-full h-1.5 rounded-full bg-gray-600 pointer-events-none"></div>
     <div
@@ -93,7 +97,9 @@
       style="z-index: 4"
     />
   </div>
-  <span class="text-xs text-gray-300 font-mono w-10">{formatter(high)}</span>
+  {#if showLabels}
+    <span class="text-xs text-gray-300 font-mono w-10">{formatter(high)}</span>
+  {/if}
 </div>
 
 <style>

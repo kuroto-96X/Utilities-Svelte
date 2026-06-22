@@ -93,6 +93,7 @@ export const PROGRESSIONS: Progression[] = [
   { id: 'minorAnthem',  label: 'マイナーアンセム（i-VI-III-VII）',   degrees: [0,5,2,6],         smoothVoicings: [[12,12,12], [12,0,0], [12,12,0], null] },
   { id: 'rockLoop',     label: 'ロック往復（I-V-IV-V）',             degrees: [0,4,3,4],         smoothVoicings: [[12,12,12], [12,0,0], [12,0,0], null] },
   { id: 'jazzCircle',   label: 'ジャズ循環（I-vi-ii-V）',            degrees: [0,5,1,4],         smoothVoicings: [null, [0,0,-12], [12,0,0], [0,0,-12]] },
+  { id: 'minorCadence', label: 'マイナー終止（Ⅵ-Ⅶ-i）',            degrees: [5,6,0],           smoothVoicings: [null, null, [12,12,12]] },
 ];
 
 // クロマティック（スケール外の音を含む）進行

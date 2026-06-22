@@ -309,7 +309,7 @@
 
   // ---- 再生ロジック ----
 
-  let useSmoothedBass = $state(false);
+  let useSmoothedBass = $state(true);
   let activeProgId = $state<string | null>(null);
   let activeStepIndex = $state(-1);
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -490,13 +490,11 @@
 </script>
 
 <div>
-  <div class="flex items-center justify-between mb-2">
-    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">コード進行プリセット</p>
-    <label class="flex items-center gap-1 text-xs text-gray-300 cursor-pointer">
-      <input type="checkbox" bind:checked={useSmoothedBass} class="accent-teal-500" />
-      スムーズベース（転回形）
-    </label>
-  </div>
+  <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">コード進行プリセット</p>
+  <label class="flex items-center gap-1 text-xs text-gray-300 cursor-pointer mb-3">
+    <input type="checkbox" bind:checked={useSmoothedBass} class="accent-teal-500" />
+    スムーズベース（転回形）
+  </label>
 
   <div class="flex flex-col md:flex-row gap-4">
     <!-- ダイアトニック -->
