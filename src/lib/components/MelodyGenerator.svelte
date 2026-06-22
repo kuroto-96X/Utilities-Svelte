@@ -539,7 +539,7 @@
       </div>
 
       <!-- 音符範囲 -->
-      <div class="space-y-1 {rhythmPatternId !== 'none' ? 'opacity-40 pointer-events-none' : ''}">
+      <div class="space-y-1 {rhythmPatternId !== 'none' ? 'opacity-40' : ''}" inert={rhythmPatternId !== 'none'}>
         <div class="flex items-center gap-2">
           <span class="text-xs text-gray-400 w-20 shrink-0">音符</span>
           <RangeSlider
