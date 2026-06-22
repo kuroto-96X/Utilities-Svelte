@@ -318,10 +318,10 @@
 
   function generateWithRhythmTemplate(
     ivs: number[], rpc: number,
-    durations: number[], ms: number, pat: ContourPattern
+    durations: number[], ms: number, pat: ContourPattern,
+    secPerBeat: number
   ): MelodyNote[] {
     const stableIndices = getStableIndices(ivs);
-    const secPerBeat = 60 / bpm;
     const totalDur = durations.reduce((s, d) => s + d, 0);
     const seq: MelodyNote[] = [];
     let cumulative = 0;
@@ -364,7 +364,7 @@
 
     if (useRhythmPattern) {
       const durations = pickRhythmTemplate(bars, secPerBeat);
-      return generateWithRhythmTemplate(ivs, rootPc, durations, maxStep, pattern);
+      return generateWithRhythmTemplate(ivs, rootPc, durations, maxStep, pattern, secPerBeat);
     }
 
     const { pool, tripletSet } = buildDurationPool();
@@ -537,16 +537,16 @@
 
       <!-- チェックボックス -->
       <div class="flex gap-3 text-xs">
-        <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
-          <input type="checkbox" bind:checked={useDotted} class="accent-teal-500" />
+        <label class="flex items-center gap-1 cursor-pointer {useRhythmPattern ? 'opacity-40 pointer-events-none text-gray-500' : 'text-gray-300'}">
+          <input type="checkbox" bind:checked={useDotted} class="accent-teal-500" disabled={useRhythmPattern} />
           付点
         </label>
-        <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
-          <input type="checkbox" bind:checked={useTriplet} class="accent-teal-500" />
+        <label class="flex items-center gap-1 cursor-pointer {useRhythmPattern ? 'opacity-40 pointer-events-none text-gray-500' : 'text-gray-300'}">
+          <input type="checkbox" bind:checked={useTriplet} class="accent-teal-500" disabled={useRhythmPattern} />
           3連符
         </label>
-        <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
-          <input type="checkbox" bind:checked={useMotifRepeat} class="accent-teal-500" />
+        <label class="flex items-center gap-1 cursor-pointer {useRhythmPattern ? 'opacity-40 pointer-events-none text-gray-500' : 'text-gray-300'}">
+          <input type="checkbox" bind:checked={useMotifRepeat} class="accent-teal-500" disabled={useRhythmPattern} />
           モチーフ反復
         </label>
         <label class="flex items-center gap-1 text-gray-300 cursor-pointer">
