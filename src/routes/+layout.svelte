@@ -133,7 +133,6 @@
     </nav>
   </header>
 
-<<<<<<< HEAD
   {#if isDevPage}
     <div class="bg-red-50 border-b border-red-200">
       <div class="max-w-4xl mx-auto px-4 py-2 flex items-start gap-2">
@@ -145,10 +144,7 @@
     </div>
   {/if}
 
-  <main class="flex-1">
-=======
   <main class="flex-1 sm:min-h-0 sm:overflow-y-auto">
->>>>>>> feat
     {@render children()}
   </main>
 
