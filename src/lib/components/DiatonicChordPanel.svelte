@@ -80,12 +80,12 @@
   }
 </script>
 
-<div>
+<div style="user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;">
   <p class="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">ダイアトニックコード</p>
   <div class="flex flex-wrap gap-2">
     {#each diatonicChords as chord}
       <button
-        class="px-3 py-2 rounded font-mono leading-tight
+        class="w-14 text-center py-2 rounded font-mono leading-tight
           {pressedDegree === chord.degreeIndex
             ? 'bg-teal-500 text-white'
             : 'bg-gray-700 hover:bg-gray-600 text-gray-200'}"

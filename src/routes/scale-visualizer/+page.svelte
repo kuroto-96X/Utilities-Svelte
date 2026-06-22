@@ -208,12 +208,13 @@
 
 <!-- 鍵盤エリアのスニペット（desktop Panel 2 / mobile Panel 3 共通） -->
 {#snippet keyboardPanel()}
-  <div class="flex flex-wrap items-center justify-center gap-3">
+  <div class="flex flex-wrap items-center justify-center gap-3" style="user-select: none; -webkit-user-select: none;">
     <div class="flex items-center gap-1 text-xs">
       <span class="text-gray-400">オクターブ</span>
       {#each [1, 2, 3] as o}
         <button
           class="px-2 py-1 rounded {octaves === o ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+          style="touch-action: manipulation;"
           onclick={() => (octaves = o)}
         >{o}</button>
       {/each}
@@ -221,10 +222,12 @@
     <div class="flex items-center gap-1 text-xs">
       <button
         class="px-2 py-1 rounded {!anchorToRoot ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+        style="touch-action: manipulation;"
         onclick={() => (anchorToRoot = false)}
       >A基準</button>
       <button
         class="px-2 py-1 rounded {anchorToRoot ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}"
+        style="touch-action: manipulation;"
         onclick={() => (anchorToRoot = true)}
       >ルート基準</button>
     </div>
@@ -260,6 +263,7 @@
   <div class="flex justify-center">
     <button
       class="px-4 py-1 text-xs rounded {isAnyPlaying ? 'bg-red-700 text-white hover:bg-red-600 cursor-pointer' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}"
+      style="touch-action: manipulation;"
       disabled={!isAnyPlaying}
       onclick={stopAll}
     >⏹ 停止</button>
@@ -309,6 +313,7 @@
         </div>
         <button
           class="px-2 py-0.5 text-[11px] rounded ml-2 {isAnyPlaying ? 'bg-red-700 text-white hover:bg-red-600 cursor-pointer' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}"
+          style="touch-action: manipulation;"
           disabled={!isAnyPlaying}
           onclick={stopAll}
         >⏹ 停止</button>
