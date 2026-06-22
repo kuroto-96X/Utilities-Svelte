@@ -51,8 +51,8 @@ describe('CHORD_GROUPS / CHORDS', () => {
 })
 
 describe('PROGRESSIONS', () => {
-  test('10種類のプリセットがある', () => {
-    expect(PROGRESSIONS).toHaveLength(10)
+  test('11種類のプリセットがある', () => {
+    expect(PROGRESSIONS).toHaveLength(11)
   })
   test('全degreesは0〜6の範囲', () => {
     PROGRESSIONS.forEach(p => {
