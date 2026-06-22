@@ -486,24 +486,6 @@
         <p class="text-xs text-gray-500 pl-[5.5rem]">再生する小節数を決めます</p>
       </div>
 
-      <!-- リズム型 -->
-      <div class="space-y-1">
-        <div class="flex items-center gap-2">
-          <span class="text-xs text-gray-400 w-20 shrink-0">リズム型</span>
-          <select
-            bind:value={rhythmPatternId}
-            class="text-xs bg-gray-700 text-gray-200 rounded px-1.5 py-0.5 border border-gray-600 cursor-pointer"
-          >
-            <option value="none">なし</option>
-            <option value="random">ランダム</option>
-            {#each RHYTHM_PATTERNS as pat (pat.id)}
-              <option value={pat.id}>{pat.label}  {pat.notation}</option>
-            {/each}
-          </select>
-        </div>
-        <p class="text-xs text-gray-500 pl-[5.5rem]">なし＝音符・付点・モチーフ設定を使用可能</p>
-      </div>
-
       <!-- 最大度数差 -->
       <div class="space-y-1">
         <div class="flex items-center gap-2">
@@ -536,6 +518,24 @@
           </div>
         </div>
         <p class="text-xs text-gray-500 pl-[5.5rem]">フレーズ全体の方向性を決めます</p>
+      </div>
+
+      <!-- リズム型 -->
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-400 w-20 shrink-0">リズム型</span>
+          <select
+            bind:value={rhythmPatternId}
+            class="text-xs bg-gray-700 text-gray-200 rounded px-1.5 py-0.5 border border-gray-600 cursor-pointer"
+          >
+            <option value="none">なし</option>
+            <option value="random">ランダム</option>
+            {#each RHYTHM_PATTERNS as pat (pat.id)}
+              <option value={pat.id}>{pat.label}  {pat.notation}</option>
+            {/each}
+          </select>
+        </div>
+        <p class="text-xs text-gray-500 pl-[5.5rem]">なし＝音符・付点・モチーフ設定を使用可能</p>
       </div>
 
       <!-- 音符範囲 -->
