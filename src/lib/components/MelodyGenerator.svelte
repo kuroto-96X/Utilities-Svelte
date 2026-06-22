@@ -497,7 +497,7 @@
             <option value="none">なし</option>
             <option value="random">ランダム</option>
             {#each RHYTHM_PATTERNS as pat (pat.id)}
-              <option value={pat.id}>{pat.label} — {pat.description}</option>
+              <option value={pat.id}>{pat.label}  {pat.notation}</option>
             {/each}
           </select>
         </div>
