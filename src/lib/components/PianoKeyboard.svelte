@@ -39,6 +39,9 @@
   );
 
   const stopFns = new Map<number, () => void>();
+  let svgEl: SVGSVGElement | null = null;
+  let dragKey: LayoutKey | null = null;
+  let dragPointerId: number | null = null;
 
   function keyOctave(windowIndex: number): number {
     return Math.floor((60 + startSemitone + windowIndex) / 12) - 1;
@@ -50,26 +53,71 @@
       : playingPcs.has(pc);
   }
 
-  function handlePointerDown(key: LayoutKey) {
+  function startKey(key: LayoutKey) {
     addPlayingPc(key.pc);
     addPlayingMidi?.(60 + startSemitone + key.windowIndex);
     const stop = startNote(60 + startSemitone + key.windowIndex);
     stopFns.set(key.windowIndex, stop);
   }
 
-  function handlePointerUp(key: LayoutKey) {
+  function stopKey(key: LayoutKey) {
     const stop = stopFns.get(key.windowIndex);
     if (stop) { stop(); stopFns.delete(key.windowIndex); }
     removePlayingPc(key.pc);
     removePlayingMidi?.(60 + startSemitone + key.windowIndex);
   }
+
+  function keyAtSvgPoint(x: number, y: number): LayoutKey | null {
+    for (const key of blackKeys) {
+      if (x >= key.x && x < key.x + BLACK_W && y >= 0 && y < BLACK_H) return key;
+    }
+    for (const key of whiteKeys) {
+      if (x >= key.x && x < key.x + WHITE_W && y >= 0 && y < WHITE_H) return key;
+    }
+    return null;
+  }
+
+  function handlePointerDown(key: LayoutKey, e: PointerEvent) {
+    dragPointerId = e.pointerId;
+    dragKey = key;
+    startKey(key);
+  }
+
+  function handleSvgPointerMove(e: PointerEvent) {
+    if (dragPointerId !== e.pointerId || !dragKey || !svgEl) return;
+    const rect = svgEl.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (totalWidth / rect.width);
+    const y = (e.clientY - rect.top) * (WHITE_H / rect.height);
+    const newKey = keyAtSvgPoint(x, y);
+    if (!newKey) {
+      stopKey(dragKey);
+      dragKey = null;
+      dragPointerId = null;
+      return;
+    }
+    if (newKey.windowIndex === dragKey.windowIndex) return;
+    stopKey(dragKey);
+    dragKey = newKey;
+    startKey(newKey);
+  }
+
+  function handleSvgPointerUp(e: PointerEvent) {
+    if (dragPointerId !== e.pointerId || !dragKey) return;
+    stopKey(dragKey);
+    dragKey = null;
+    dragPointerId = null;
+  }
 </script>
 
 <svg
+  bind:this={svgEl}
   viewBox="0 0 {totalWidth} {WHITE_H}"
   width={totalWidth}
   height={WHITE_H}
   style="touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; display: block;"
+  onpointermove={handleSvgPointerMove}
+  onpointerup={handleSvgPointerUp}
+  onpointercancel={handleSvgPointerUp}
 >
   <!-- 白鍵ベース -->
   {#each whiteKeys as key (key.windowIndex)}
@@ -176,9 +224,7 @@
       width={WHITE_W} height={WHITE_H}
       fill="transparent"
       style="cursor: pointer;"
-      onpointerdown={() => handlePointerDown(key)}
-      onpointerup={() => handlePointerUp(key)}
-      onpointerleave={() => handlePointerUp(key)}
+      onpointerdown={(e) => handlePointerDown(key, e)}
     />
   {/each}
   {#each blackKeys as key (key.windowIndex)}
@@ -187,9 +233,7 @@
       width={BLACK_W} height={BLACK_H}
       fill="transparent"
       style="cursor: pointer;"
-      onpointerdown={() => handlePointerDown(key)}
-      onpointerup={() => handlePointerUp(key)}
-      onpointerleave={() => handlePointerUp(key)}
+      onpointerdown={(e) => handlePointerDown(key, e)}
     />
   {/each}
 </svg>
