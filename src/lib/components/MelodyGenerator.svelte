@@ -63,6 +63,8 @@
   let pattern = $state<ContourPattern>('random');
   let isPlaying = $state(false);
   let currentNoteIdx = $state<number | null>(null);
+  let rollContainerWidth = $state(0);
+  let lastEffectiveRhythmId: string = 'none';
 
   // 鍵盤の表示範囲に合わせてオクターブ展開
   const extendedIntervals = $derived.by(() => {
@@ -92,6 +94,7 @@
     rootPc: number;
     scaleName: string;
     notes: MelodyNote[];
+    rhythmPatternId?: string;
   }
 
   function loadMelodyHistory(): MelodyHistoryEntry[] {
@@ -363,11 +366,15 @@
     const ivs = extendedIntervals;
 
     if (rhythmPatternId !== 'none') {
-      const id = rhythmPatternId === 'random' ? undefined : rhythmPatternId;
+      const id = rhythmPatternId === 'random'
+        ? RHYTHM_PATTERNS[Math.floor(Math.random() * RHYTHM_PATTERNS.length)].id
+        : rhythmPatternId;
+      lastEffectiveRhythmId = id;
       const durations = pickRhythmTemplate(bars, secPerBeat, id);
       return generateWithRhythmTemplate(ivs, rootPc, durations, maxStep, pattern, secPerBeat);
     }
 
+    lastEffectiveRhythmId = 'none';
     const { pool, tripletSet } = buildDurationPool();
     const targetSeconds = bars * 4 * secPerBeat;
     return useMotifRepeat
@@ -441,6 +448,7 @@
       rootPc,
       scaleName,
       notes: seq,
+      rhythmPatternId: lastEffectiveRhythmId,
     };
     const h = [entry, ...melodyHistory].slice(0, MAX_MELODY_HISTORY);
     melodyHistory = h;
@@ -594,6 +602,9 @@
         <div class="md:hidden space-y-1 border-t border-gray-700 pt-2">
           {#each melodyHistory as entry, hi}
             {@const isActive = isPlaying && activeHistoryId === entry.id}
+            {@const rhythmLabel = entry.rhythmPatternId && entry.rhythmPatternId !== 'none'
+              ? RHYTHM_PATTERNS.find(p => p.id === entry.rhythmPatternId)?.label
+              : null}
             <button
               class="w-full text-left px-2 py-1.5 text-xs rounded
                 {isActive
@@ -602,7 +613,7 @@
               onclick={() => playHistoryEntry(entry)}
             >
               <span class="text-[10px] opacity-50 block mb-0.5">
-                #{hi + 1} {NOTE_NAMES[entry.rootPc]}{entry.scaleName ? ` ${entry.scaleName}` : ''}
+                #{hi + 1} {NOTE_NAMES[entry.rootPc]}{entry.scaleName ? ` ${entry.scaleName}` : ''}{rhythmLabel ? ` · ${rhythmLabel}` : ''}
               </span>
               <span class="mr-1">{isActive ? '⏹' : '▶'}</span>
               <span class="font-mono">
@@ -625,9 +636,9 @@
       {@const totalDur = rollNotes[rollNotes.length - 1].end}
       {@const ROW_H = 14}
       {@const LABEL_W = 26}
-      {@const rollW = Math.max(totalDur * 80, 200)}
+      {@const rollW = rollContainerWidth > LABEL_W + 50 ? rollContainerWidth - LABEL_W : Math.max(totalDur * 80, 200)}
       {@const pitchRange = maxMidi - minMidi + 1}
-      <div class="overflow-x-auto flex-shrink-0">
+      <div class="flex-1 min-w-0" bind:clientWidth={rollContainerWidth}>
         <svg width={rollW + LABEL_W} height={pitchRange * ROW_H} style="display: block;">
           <!-- 行背景 -->
           {#each Array.from({length: pitchRange}, (_, i) => maxMidi - i) as midi, rowIdx}
@@ -668,6 +679,9 @@
     <div class="hidden md:block space-y-1 border-t border-gray-700 mt-3 pt-2">
       {#each melodyHistory as entry, hi}
         {@const isActive = isPlaying && activeHistoryId === entry.id}
+        {@const rhythmLabel = entry.rhythmPatternId && entry.rhythmPatternId !== 'none'
+          ? RHYTHM_PATTERNS.find(p => p.id === entry.rhythmPatternId)?.label
+          : null}
         <button
           class="w-full text-left px-2 py-1.5 text-xs rounded
             {isActive
@@ -676,7 +690,7 @@
           onclick={() => playHistoryEntry(entry)}
         >
           <span class="text-[10px] opacity-50 block mb-0.5">
-            #{hi + 1} {NOTE_NAMES[entry.rootPc]}{entry.scaleName ? ` ${entry.scaleName}` : ''}
+            #{hi + 1} {NOTE_NAMES[entry.rootPc]}{entry.scaleName ? ` ${entry.scaleName}` : ''}{rhythmLabel ? ` · ${rhythmLabel}` : ''}
           </span>
           <span class="mr-1">{isActive ? '⏹' : '▶'}</span>
           <span class="font-mono">
