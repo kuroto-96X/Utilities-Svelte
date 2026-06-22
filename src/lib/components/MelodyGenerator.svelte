@@ -536,8 +536,26 @@
         <p class="text-xs text-gray-500 pl-[5.5rem]">フレーズ全体の方向性を決めます</p>
       </div>
 
-      <!-- チェックボックス + リズム型プルダウン -->
-      <div class="flex gap-3 text-xs items-center flex-wrap">
+      <!-- リズム型 -->
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-400 w-20 shrink-0">リズム型</span>
+          <select
+            bind:value={rhythmPatternId}
+            class="text-xs bg-gray-700 text-gray-200 rounded px-1.5 py-0.5 border border-gray-600 cursor-pointer"
+          >
+            <option value="none">なし</option>
+            <option value="random">ランダム</option>
+            {#each RHYTHM_PATTERNS as pat (pat.id)}
+              <option value={pat.id}>{pat.label}</option>
+            {/each}
+          </select>
+        </div>
+        <p class="text-xs text-gray-500 pl-[5.5rem]">なし＝音符・付点・モチーフ設定を使用</p>
+      </div>
+
+      <!-- チェックボックス -->
+      <div class="flex gap-3 text-xs">
         <label class="flex items-center gap-1 cursor-pointer {rhythmPatternId !== 'none' ? 'opacity-40 pointer-events-none text-gray-500' : 'text-gray-300'}">
           <input type="checkbox" bind:checked={useDotted} class="accent-teal-500" disabled={rhythmPatternId !== 'none'} />
           付点
@@ -550,19 +568,6 @@
           <input type="checkbox" bind:checked={useMotifRepeat} class="accent-teal-500" disabled={rhythmPatternId !== 'none'} />
           モチーフ反復
         </label>
-        <div class="flex items-center gap-1">
-          <span class="text-gray-400">リズム型</span>
-          <select
-            bind:value={rhythmPatternId}
-            class="text-xs bg-gray-700 text-gray-200 rounded px-1.5 py-0.5 border border-gray-600 cursor-pointer"
-          >
-            <option value="none">なし</option>
-            <option value="random">ランダム</option>
-            {#each RHYTHM_PATTERNS as pat (pat.id)}
-              <option value={pat.id}>{pat.label}</option>
-            {/each}
-          </select>
-        </div>
       </div>
 
       <!-- ボタン -->
