@@ -138,6 +138,7 @@
       value={pickerHex}
       oninput={onPickerInput}
       title="カラーピッカー（アルファは A 欄で指定）"
+      aria-label="カラーピッカー"
       class="w-16 h-9 shrink-0 rounded-lg border-2 border-slate-200 cursor-pointer p-0.5"
     />
   </div>
@@ -145,7 +146,7 @@
   <!-- スライダー + テキストボックス -->
   <div class="flex gap-3 mt-4">
     <!-- 左: ラベル＋スライダー -->
-    <div class="flex-1 flex flex-col gap-2">
+    <div class="flex-1 flex flex-col gap-2 color-sliders">
       {#each channels as ch}
         <div class="flex items-center gap-2 h-8">
           <span class="text-xs font-bold w-3 shrink-0 uppercase" style="color:{ch.color}">{ch.label}</span>
@@ -238,17 +239,17 @@
 </div>
 
 <style>
-  :global(input[type='range']) {
+  .color-sliders input[type='range'] {
     -webkit-appearance: none;
     appearance: none;
     background: transparent;
   }
-  :global(input[type='range']::-webkit-slider-runnable-track) {
+  .color-sliders input[type='range']::-webkit-slider-runnable-track {
     height: 4px;
     border-radius: 9999px;
     background: #e2e8f0;
   }
-  :global(input[type='range']::-webkit-slider-thumb) {
+  .color-sliders input[type='range']::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 16px;
     height: 16px;
@@ -257,12 +258,12 @@
     background: var(--thumb-color, #64748b);
     cursor: pointer;
   }
-  :global(input[type='range']::-moz-range-track) {
+  .color-sliders input[type='range']::-moz-range-track {
     height: 4px;
     border-radius: 9999px;
     background: #e2e8f0;
   }
-  :global(input[type='range']::-moz-range-thumb) {
+  .color-sliders input[type='range']::-moz-range-thumb {
     width: 16px;
     height: 16px;
     border-radius: 50%;
