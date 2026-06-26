@@ -173,7 +173,8 @@
             step="0.001"
             value={getFloat(ch.key)}
             oninput={(e) => onFloatInput(ch.key, e)}
-            class="bg-slate-50 border border-slate-200 rounded-md text-center text-sm font-medium h-8 w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+            style="border-color:{ch.color}; color:{ch.color}"
+            class="bg-slate-50 border rounded-md text-center text-sm font-medium h-8 w-full focus:outline-none"
           />
         {:else}
           <input
@@ -183,7 +184,8 @@
             step="1"
             value={getVal(ch.key)}
             oninput={(e) => onInt32Input(ch.key, e)}
-            class="bg-slate-50 border border-slate-200 rounded-md text-center text-sm font-medium h-8 w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+            style="border-color:{ch.color}; color:{ch.color}"
+            class="bg-slate-50 border rounded-md text-center text-sm font-medium h-8 w-full focus:outline-none"
           />
         {/if}
       {/each}
@@ -235,6 +237,17 @@
         </div>
       {/each}
     </div>
+  </div>
+
+  <!-- 説明 -->
+  <div class="mt-10 pt-6 border-t border-slate-100 space-y-3">
+    <p class="text-sm text-slate-500">Unity で使用される色の形式を相互変換するツールです。スライダーまたは数値入力で RGBA を調整すると、各形式の出力がリアルタイムで更新されます。</p>
+    <ul class="space-y-1.5 text-xs text-slate-400">
+      <li><span class="font-semibold text-slate-500">Color32</span> — R/G/B/A を 0〜255 の整数で表す形式。スプライトや UI の色設定によく使われます。</li>
+      <li><span class="font-semibold text-slate-500">Color (float)</span> — R/G/B/A を 0.0〜1.0 の浮動小数点で表す形式。シェーダーやマテリアルのプロパティに使われます。</li>
+      <li><span class="font-semibold text-slate-500">HEX #RRGGBBAA / #RRGGBB</span> — 16 進数表記。HEX 入力欄に貼り付けて変換することもできます。</li>
+      <li><span class="font-semibold text-slate-500">HTML rgba()</span> — CSS で使用できる rgba 記法。アルファ値は 0〜1 の小数で表されます。</li>
+    </ul>
   </div>
 </div>
 
