@@ -8,13 +8,13 @@
   import { buildDiatonicChords } from '$lib/music/diatonicChords';
   import { DEFAULT_BPM, clampBpm } from '$lib/music/noteDuration';
   import { getAudioContext, startNoteAt } from '$lib/music/audioEngine';
-  import RootSelector from '$lib/components/RootSelector.svelte';
-  import ScaleChordSelector from '$lib/components/ScaleChordSelector.svelte';
-  import PianoKeyboard from '$lib/components/PianoKeyboard.svelte';
-  import BpmSlider from '$lib/components/BpmSlider.svelte';
-  import DiatonicChordPanel from '$lib/components/DiatonicChordPanel.svelte';
-  import ProgressionPlayer from '$lib/components/ProgressionPlayer.svelte';
-  import MelodyGenerator from '$lib/components/MelodyGenerator.svelte';
+  import RootSelector from '$lib/components/music/RootSelector.svelte';
+  import ScaleChordSelector from '$lib/components/music/ScaleChordSelector.svelte';
+  import PianoKeyboard from '$lib/components/music/PianoKeyboard.svelte';
+  import BpmSlider from '$lib/components/music/BpmSlider.svelte';
+  import DiatonicChordPanel from '$lib/components/music/DiatonicChordPanel.svelte';
+  import ProgressionPlayer from '$lib/components/music/ProgressionPlayer.svelte';
+  import MelodyGenerator from '$lib/components/music/MelodyGenerator.svelte';
 
   const STORAGE_KEY = 'scaleVisualizer';
 

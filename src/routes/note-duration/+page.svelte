@@ -1,9 +1,9 @@
 <script lang="ts">
   import { page } from '$app/state'
   import { calculateNoteDurations, clampBpm, DEFAULT_BPM } from '$lib/music/noteDuration'
-  import BpmInput from '$lib/components/BpmInput.svelte'
-  import NoteDurationTable from '$lib/components/NoteDurationTable.svelte'
-  import NoteReverseSearch from '$lib/components/NoteReverseSearch.svelte'
+  import BpmInput from '$lib/components/music/BpmInput.svelte'
+  import NoteDurationTable from '$lib/components/music/NoteDurationTable.svelte'
+  import NoteReverseSearch from '$lib/components/music/NoteReverseSearch.svelte'
 
   let bpm = $state(DEFAULT_BPM)
   let activeTab = $state<'bpm' | 'reverse'>('bpm')

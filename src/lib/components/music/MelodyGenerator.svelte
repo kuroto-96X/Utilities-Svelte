@@ -4,7 +4,7 @@
   import { calculateNoteDurations } from '$lib/music/noteDuration';
   import { NOTE_NAMES } from '$lib/music/scaleData';
   import { getAudioContext, startNoteAt } from '$lib/music/audioEngine';
-  import RangeSlider from '$lib/components/RangeSlider.svelte';
+  import RangeSlider from '$lib/components/music/RangeSlider.svelte';
   import { pickRhythmTemplate, RHYTHM_PATTERNS } from '$lib/music/melodyRhythms';
 
   let {

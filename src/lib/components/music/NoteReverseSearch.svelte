@@ -2,8 +2,8 @@
   import { browser } from '$app/environment'
   import { findNearestNotes, NOTE_SYMBOLS } from '$lib/music/noteDuration'
   import type { NoteMatch } from '$lib/music/noteDuration'
-  import RangeSlider from '$lib/components/RangeSlider.svelte'
-  import NoteIcon from '$lib/components/NoteIcon.svelte'
+  import RangeSlider from '$lib/components/music/RangeSlider.svelte'
+  import NoteIcon from '$lib/components/music/NoteIcon.svelte'
 
   const STORAGE_KEY = 'note-reverse-search'
 
