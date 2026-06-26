@@ -26,8 +26,8 @@ describe('fStr', () => {
 describe('parseHex', () => {
   it('8桁（#付き）をパースする', () =>
     expect(parseHex('#FF8000C8')).toEqual({ r: 255, g: 128, b: 0, a: 200 }))
-  it('6桁（#付き）は a=255 を補完する', () =>
-    expect(parseHex('#FF8000')).toEqual({ r: 255, g: 128, b: 0, a: 255 }))
+  it('6桁（#付き）は a を含まずに返す', () =>
+    expect(parseHex('#FF8000')).toEqual({ r: 255, g: 128, b: 0 }))
   it('#なしでもパースする', () =>
     expect(parseHex('FF8000FF')).toEqual({ r: 255, g: 128, b: 0, a: 255 }))
   it('5桁は null を返す', () => expect(parseHex('#FF800')).toBeNull())

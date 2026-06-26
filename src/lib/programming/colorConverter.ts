@@ -12,7 +12,7 @@ export function fStr(n: number): string {
 
 export function parseHex(
   hex: string
-): { r: number; g: number; b: number; a: number } | null {
+): { r: number; g: number; b: number; a?: number } | null {
   const h = hex.replace('#', '').trim()
   if (h.length !== 6 && h.length !== 8) return null
 
@@ -23,7 +23,7 @@ export function parseHex(
   if (isNaN(r) || isNaN(g) || isNaN(b)) return null
 
   if (h.length === 6) {
-    return { r, g, b, a: 255 }
+    return { r, g, b }
   }
 
   const a = parseInt(h.slice(6, 8), 16)
