@@ -120,7 +120,7 @@
     <h2 class="mb-2 text-base font-semibold text-slate-700">JPGをWebPに変換する方法</h2>
     <p class="text-sm leading-relaxed text-slate-600">{data.seoText}</p>
     <p class="mt-2 text-sm text-slate-500">
-      <a href="/image-tools" class="text-teal-600 hover:underline">汎用画像変換ツールはこちら</a>
+      <a href="/image/image-tools" class="text-teal-600 hover:underline">汎用画像変換ツールはこちら</a>
     </p>
   </section>
 </div>

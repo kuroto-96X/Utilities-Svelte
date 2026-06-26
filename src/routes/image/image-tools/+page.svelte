@@ -141,9 +141,9 @@
     </p>
     <p class="mt-2 text-sm text-slate-500">
       関連:
-      <a href="/image-tools/png-to-jpg" class="text-teal-600 hover:underline">PNG→JPG変換</a> /
-      <a href="/image-tools/jpg-to-webp" class="text-teal-600 hover:underline">JPG→WebP変換</a> /
-      <a href="/image-tools/compress-image" class="text-teal-600 hover:underline">画像圧縮</a>
+      <a href="/image/image-tools/png-to-jpg" class="text-teal-600 hover:underline">PNG→JPG変換</a> /
+      <a href="/image/image-tools/jpg-to-webp" class="text-teal-600 hover:underline">JPG→WebP変換</a> /
+      <a href="/image/image-tools/compress-image" class="text-teal-600 hover:underline">画像圧縮</a>
     </p>
   </section>
 </div>

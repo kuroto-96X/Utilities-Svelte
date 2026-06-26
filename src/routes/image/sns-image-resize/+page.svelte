@@ -138,7 +138,7 @@
     </p>
     <p>
       画像のファイルサイズを圧縮したい場合や形式を変換したい場合は、
-      <a href="/image-tools" class="text-teal-700 underline hover:text-teal-800">画像圧縮・変換ツール</a>もご利用ください。
+      <a href="/image/image-tools" class="text-teal-700 underline hover:text-teal-800">画像圧縮・変換ツール</a>もご利用ください。
     </p>
   </section>
 </div>

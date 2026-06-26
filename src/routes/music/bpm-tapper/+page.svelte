@@ -264,11 +264,11 @@
       </p>
       <div class="flex justify-center gap-6">
         <a
-          href="/note-duration?bpm={mainBpm !== null ? Math.round(mainBpm) : DEFAULT_BPM}"
+          href="/music/note-duration?bpm={mainBpm !== null ? Math.round(mainBpm) : DEFAULT_BPM}"
           class="text-sm font-medium text-teal-700 hover:underline"
         >Note Duration →</a>
         <a
-          href="/scale-visualizer?bpm={mainBpm !== null ? Math.round(mainBpm) : DEFAULT_BPM}"
+          href="/music/scale-visualizer?bpm={mainBpm !== null ? Math.round(mainBpm) : DEFAULT_BPM}"
           class="text-sm font-medium text-teal-700 hover:underline"
         >Scale Visualizer →</a>
       </div>

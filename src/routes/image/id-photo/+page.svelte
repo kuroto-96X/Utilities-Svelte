@@ -194,8 +194,8 @@
     </p>
     <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
       <span>他のツールもどうぞ:</span>
-      <a href="/image-tools" class="text-teal-700 underline hover:text-teal-800">画像圧縮・変換ツール</a>
-      <a href="/sns-image-resize" class="text-teal-700 underline hover:text-teal-800">SNS画像リサイズツール</a>
+      <a href="/image/image-tools" class="text-teal-700 underline hover:text-teal-800">画像圧縮・変換ツール</a>
+      <a href="/image/sns-image-resize" class="text-teal-700 underline hover:text-teal-800">SNS画像リサイズツール</a>
     </div>
   </section>
 </div>
