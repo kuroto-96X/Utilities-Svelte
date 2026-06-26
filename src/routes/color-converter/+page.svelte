@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte'
   import {
     clamp, toHex2, parseHex,
     formatColor32, formatColorFloat, formatHex8, formatHex6, formatRgba
@@ -12,6 +13,8 @@
   let activeTab = $state<Tab>('color32')
   let copiedRow = $state<string | null>(null)
   let copyTimer: ReturnType<typeof setTimeout> | null = null
+
+  onDestroy(() => { if (copyTimer) clearTimeout(copyTimer) })
 
   const pickerHex = $derived(`#${toHex2(r)}${toHex2(g)}${toHex2(b)}`)
 
@@ -79,7 +82,11 @@
   }
 
   async function copyRow(label: string, text: string) {
-    await navigator.clipboard.writeText(text)
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch {
+      return
+    }
     if (copyTimer) clearTimeout(copyTimer)
     copiedRow = label
     copyTimer = setTimeout(() => { copiedRow = null }, 1200)
