@@ -1,10 +1,10 @@
 <!-- src/routes/id-photo/+page.svelte -->
 <script lang="ts">
   import type { PageData } from './$types'
-  import ImageUploader from '$lib/components/ImageUploader.svelte'
-  import PresetSelector from '$lib/components/PresetSelector.svelte'
-  import CropEditorWithGuide from '$lib/components/CropEditorWithGuide.svelte'
-  import SheetLayoutPreview from '$lib/components/SheetLayoutPreview.svelte'
+  import ImageUploader from '$lib/components/image/ImageUploader.svelte'
+  import PresetSelector from '$lib/components/image/PresetSelector.svelte'
+  import CropEditorWithGuide from '$lib/components/image/CropEditorWithGuide.svelte'
+  import SheetLayoutPreview from '$lib/components/image/SheetLayoutPreview.svelte'
   import { idPhotoPresets, type IdPhotoPreset } from '$lib/image/data/idPhotoPresets'
   import { printSheetSizes, type PrintSheetSize } from '$lib/image/data/printSheetSizes'
   import { cropToBlob, type PixelCrop } from '$lib/image/utils/cropToBlob'

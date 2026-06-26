@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { PageData } from './$types'
-  import ImageUploader from '$lib/components/ImageUploader.svelte'
-  import PresetSelector from '$lib/components/PresetSelector.svelte'
-  import CropEditor from '$lib/components/CropEditor.svelte'
+  import ImageUploader from '$lib/components/image/ImageUploader.svelte'
+  import PresetSelector from '$lib/components/image/PresetSelector.svelte'
+  import CropEditor from '$lib/components/image/CropEditor.svelte'
   import { snsPresets, type SnsPreset } from '$lib/image/data/snsPresets'
   import { cropToBlob, buildDownloadFileName, type PixelCrop } from '$lib/image/utils/cropToBlob'
 
