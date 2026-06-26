@@ -15,7 +15,13 @@
   let flash = $state<string | null>(null)
   let flashTimer: ReturnType<typeof setTimeout> | null = null
 
-  async function loadConfig() {
+  function showToast(message: string) {
+    if (flashTimer) clearTimeout(flashTimer)
+    flash = message
+    flashTimer = setTimeout(() => { flash = null }, 2000)
+  }
+
+  async function loadConfig(toast = false) {
     try {
       const res = await fetch('/api/admin/config')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -31,12 +37,13 @@
       }
       config = data
       error = null
+      if (toast) showToast('リロードしました')
     } catch {
       error = 'メニュー管理APIに接続できません。npm run dev で起動してください。'
     }
   }
 
-  onMount(loadConfig)
+  onMount(() => loadConfig())
 
   onDestroy(() => {
     if (flashTimer) clearTimeout(flashTimer)
@@ -67,9 +74,7 @@
         body: JSON.stringify(toPost)
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      if (flashTimer) clearTimeout(flashTimer)
-      flash = '保存しました'
-      flashTimer = setTimeout(() => { flash = null }, 2000)
+      showToast('保存しました')
     } catch {
       error = '保存に失敗しました'
     }
@@ -81,7 +86,7 @@
     <h1 class="text-2xl font-bold text-slate-800">メニュー管理</h1>
     <div class="flex gap-2">
       <button
-        onclick={loadConfig}
+        onclick={() => loadConfig(true)}
         class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
       >
         リロード
@@ -98,12 +103,6 @@
   {#if error}
     <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
       {error}
-    </div>
-  {/if}
-
-  {#if flash}
-    <div class="bg-teal-50 border border-teal-200 text-teal-700 px-4 py-3 rounded-lg mb-4">
-      {flash}
     </div>
   {/if}
 
@@ -148,3 +147,9 @@
     <p class="text-slate-500 text-sm">読み込み中...</p>
   {/if}
 </div>
+
+{#if flash}
+  <div class="fixed bottom-6 right-6 bg-slate-800 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg z-50">
+    {flash}
+  </div>
+{/if}
