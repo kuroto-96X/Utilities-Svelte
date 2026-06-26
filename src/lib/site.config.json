@@ -1,28 +1,28 @@
 {
   "toolLabels": {
-    "/scale-visualizer": "Scale Visualizer",
-    "/note-duration": "Note Duration"
+    "/music/scale-visualizer": "Scale Visualizer",
+    "/music/note-duration": "Note Duration"
   },
   "toolDevStatus": {
-    "/color-converter": true,
-    "/image-tools": true,
-    "/sns-image-resize": true,
-    "/id-photo": true,
-    "/nisa-simple-calculator": true,
-    "/nisa-detailed-calculator": true,
-    "/nisa-accumulation-simulator": true
+    "/programming/color-converter": true,
+    "/image/image-tools": true,
+    "/image/sns-image-resize": true,
+    "/image/id-photo": true,
+    "/investment/nisa-simple-calculator": true,
+    "/investment/nisa-detailed-calculator": true,
+    "/investment/nisa-accumulation-simulator": true
   },
   "toolVisibility": {
-    "/bpm-tapper": true,
-    "/note-duration": true,
-    "/scale-visualizer": true,
-    "/hepburn-converter": true,
-    "/color-converter": true,
-    "/image-tools": false,
-    "/sns-image-resize": false,
-    "/id-photo": false,
-    "/nisa-simple-calculator": false,
-    "/nisa-detailed-calculator": false,
-    "/nisa-accumulation-simulator": false
+    "/music/bpm-tapper": true,
+    "/music/note-duration": true,
+    "/music/scale-visualizer": true,
+    "/programming/hepburn-converter": true,
+    "/programming/color-converter": true,
+    "/image/image-tools": false,
+    "/image/sns-image-resize": false,
+    "/image/id-photo": false,
+    "/investment/nisa-simple-calculator": false,
+    "/investment/nisa-detailed-calculator": false,
+    "/investment/nisa-accumulation-simulator": false
   }
 }
