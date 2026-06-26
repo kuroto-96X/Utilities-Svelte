@@ -4,7 +4,6 @@
     "/music/note-duration": "Note Duration"
   },
   "toolDevStatus": {
-    "/programming/color-converter": true,
     "/image/image-tools": true,
     "/image/sns-image-resize": true,
     "/image/id-photo": true,
