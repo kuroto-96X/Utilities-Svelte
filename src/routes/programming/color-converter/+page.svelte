@@ -156,7 +156,7 @@
             max="255"
             value={getVal(ch.key)}
             oninput={(e) => onSliderInput(ch.key, e)}
-            style="--thumb-color:{ch.color}"
+            style="--thumb-color:{ch.color}; --fill-pct:{(getVal(ch.key)/255*100).toFixed(1)}%"
             class="flex-1"
           />
         </div>
@@ -173,8 +173,7 @@
             step="0.001"
             value={getFloat(ch.key)}
             oninput={(e) => onFloatInput(ch.key, e)}
-            style="border-color:{ch.color}; color:{ch.color}"
-            class="bg-slate-50 border rounded-md text-center text-sm font-medium h-8 w-full focus:outline-none"
+            class="bg-slate-50 border border-slate-200 rounded-md text-center text-sm font-medium h-8 w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
         {:else}
           <input
@@ -184,8 +183,7 @@
             step="1"
             value={getVal(ch.key)}
             oninput={(e) => onInt32Input(ch.key, e)}
-            style="border-color:{ch.color}; color:{ch.color}"
-            class="bg-slate-50 border rounded-md text-center text-sm font-medium h-8 w-full focus:outline-none"
+            class="bg-slate-50 border border-slate-200 rounded-md text-center text-sm font-medium h-8 w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
         {/if}
       {/each}
@@ -260,7 +258,7 @@
   .color-sliders input[type='range']::-webkit-slider-runnable-track {
     height: 4px;
     border-radius: 9999px;
-    background: #e2e8f0;
+    background: linear-gradient(to right, var(--thumb-color) 0%, var(--thumb-color) var(--fill-pct), #e2e8f0 var(--fill-pct), #e2e8f0 100%);
   }
   .color-sliders input[type='range']::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -275,6 +273,11 @@
     height: 4px;
     border-radius: 9999px;
     background: #e2e8f0;
+  }
+  .color-sliders input[type='range']::-moz-range-progress {
+    height: 4px;
+    border-radius: 9999px;
+    background: var(--thumb-color);
   }
   .color-sliders input[type='range']::-moz-range-thumb {
     width: 16px;
