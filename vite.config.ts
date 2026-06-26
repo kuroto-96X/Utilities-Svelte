@@ -75,6 +75,12 @@ export default defineConfig({
   build: {
     outDir: 'dist'
   },
+  server: {
+    watch: {
+      // 保存APIで書き換えるたびにHMRが発火してコンポーネントが再マウントされるのを防ぐ
+      ignored: ['**/site.config.json']
+    }
+  },
   resolve: {
     alias: {
       // kuromoji の browser field 置換が Vite/esbuild で機能しないため、
