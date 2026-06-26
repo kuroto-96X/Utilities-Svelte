@@ -1,4 +1,4 @@
-<!-- src/routes/scale-visualizer/+page.svelte -->
+<!-- src/routes/music/scale-visualizer/+page.svelte -->
 <script lang="ts">
   import { untrack } from 'svelte';
   import { browser } from '$app/environment';

@@ -1,4 +1,4 @@
-<!-- src/routes/id-photo/+page.svelte -->
+<!-- src/routes/image/id-photo/+page.svelte -->
 <script lang="ts">
   import type { PageData } from './$types'
   import ImageUploader from '$lib/components/image/ImageUploader.svelte'
