@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { simulate, type Frequency } from '$lib/nisa-accumulation-simulator'
+  import { simulate, type Frequency } from '$lib/investment/nisa-accumulation-simulator'
 
   let frequency = $state<Frequency>('monthly')
   let amountStr = $state('30000')

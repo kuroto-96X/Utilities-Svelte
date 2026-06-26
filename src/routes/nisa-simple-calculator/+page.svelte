@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { calculate, type CalcResult } from '$lib/nisa-calculator'
+  import { calculate, type CalcResult } from '$lib/investment/nisa-calculator'
 
   let startMonth = $state('')
   let frequency = $state<'monthly' | 'yearly'>('monthly')

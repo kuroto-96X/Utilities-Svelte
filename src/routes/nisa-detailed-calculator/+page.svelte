@@ -4,7 +4,7 @@
     type DetailedCalcResult,
     type Frequency,
     type InvestmentRecord
-  } from '$lib/nisa-detailed-calculator'
+  } from '$lib/investment/nisa-detailed-calculator'
 
   type EditableRecord = {
     id: string
