@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { MIN_BPM, MAX_BPM, clampBpm } from '$lib/noteDuration'
+  import { MIN_BPM, MAX_BPM, clampBpm } from '$lib/music/noteDuration'
 
   let {
     bpm = $bindable(),

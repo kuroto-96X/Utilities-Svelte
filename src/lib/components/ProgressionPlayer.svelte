@@ -1,10 +1,10 @@
 <!-- src/lib/components/ProgressionPlayer.svelte -->
 <script lang="ts">
   import { browser } from '$app/environment';
-  import type { DiatonicChord } from '$lib/diatonicChords';
-  import { PROGRESSIONS, CHROMATIC_PROGRESSIONS, TENSION_PROGRESSIONS, CHORDS, NOTE_NAMES, resolveProgressionVoicing } from '$lib/scaleData';
-  import type { Progression, ChromaticProgression, ChromaticStep } from '$lib/scaleData';
-  import { getAudioContext, startNoteAt } from '$lib/audioEngine';
+  import type { DiatonicChord } from '$lib/music/diatonicChords';
+  import { PROGRESSIONS, CHROMATIC_PROGRESSIONS, TENSION_PROGRESSIONS, CHORDS, NOTE_NAMES, resolveProgressionVoicing } from '$lib/music/scaleData';
+  import type { Progression, ChromaticProgression, ChromaticStep } from '$lib/music/scaleData';
+  import { getAudioContext, startNoteAt } from '$lib/music/audioEngine';
 
   let {
     diatonicChords,

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { DEFAULT_BPM } from '$lib/noteDuration'
+  import { DEFAULT_BPM } from '$lib/music/noteDuration'
 
   type TapRecord = {
     index: number;

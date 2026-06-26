@@ -1,9 +1,9 @@
 <!-- src/lib/components/PianoKeyboard.svelte -->
 <script lang="ts">
-  import type { LayoutKey } from '$lib/pianoLayout';
-  import { WHITE_W, WHITE_H, BLACK_W, BLACK_H, TOTAL_WIDTH } from '$lib/pianoLayout';
-  import { NOTE_NAMES } from '$lib/scaleData';
-  import { startNote } from '$lib/audioEngine';
+  import type { LayoutKey } from '$lib/music/pianoLayout';
+  import { WHITE_W, WHITE_H, BLACK_W, BLACK_H, TOTAL_WIDTH } from '$lib/music/pianoLayout';
+  import { NOTE_NAMES } from '$lib/music/scaleData';
+  import { startNote } from '$lib/music/audioEngine';
 
   let {
     whiteKeys,

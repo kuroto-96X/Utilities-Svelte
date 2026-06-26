@@ -3,11 +3,11 @@
   import { untrack } from 'svelte';
   import { browser } from '$app/environment';
   import { page } from '$app/state';
-  import { ROOTS, SCALES, CHORDS, NOTE_NAMES, applyInversion } from '$lib/scaleData';
-  import { buildKeyboardWindow } from '$lib/pianoLayout';
-  import { buildDiatonicChords } from '$lib/diatonicChords';
-  import { DEFAULT_BPM, clampBpm } from '$lib/noteDuration';
-  import { getAudioContext, startNoteAt } from '$lib/audioEngine';
+  import { ROOTS, SCALES, CHORDS, NOTE_NAMES, applyInversion } from '$lib/music/scaleData';
+  import { buildKeyboardWindow } from '$lib/music/pianoLayout';
+  import { buildDiatonicChords } from '$lib/music/diatonicChords';
+  import { DEFAULT_BPM, clampBpm } from '$lib/music/noteDuration';
+  import { getAudioContext, startNoteAt } from '$lib/music/audioEngine';
   import RootSelector from '$lib/components/RootSelector.svelte';
   import ScaleChordSelector from '$lib/components/ScaleChordSelector.svelte';
   import PianoKeyboard from '$lib/components/PianoKeyboard.svelte';

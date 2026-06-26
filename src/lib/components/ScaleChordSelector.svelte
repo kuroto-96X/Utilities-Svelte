@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { SCALE_GROUPS, CHORD_GROUPS, CHORDS } from '$lib/scaleData';
+	import { SCALE_GROUPS, CHORD_GROUPS, CHORDS } from '$lib/music/scaleData';
 
 	const CHORD_SUFFIX: Record<string, string> = {
 		maj: '', min: 'm', dim: 'dim', aug: '+',

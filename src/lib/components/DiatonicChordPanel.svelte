@@ -1,8 +1,8 @@
 <!-- src/lib/components/DiatonicChordPanel.svelte -->
 <script lang="ts">
-  import type { DiatonicChord } from '$lib/diatonicChords';
-  import { NOTE_NAMES, applyInversion } from '$lib/scaleData';
-  import { getAudioContext, startNoteAt } from '$lib/audioEngine';
+  import type { DiatonicChord } from '$lib/music/diatonicChords';
+  import { NOTE_NAMES, applyInversion } from '$lib/music/scaleData';
+  import { getAudioContext, startNoteAt } from '$lib/music/audioEngine';
 
   let {
     diatonicChords,

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { MIN_BPM, MAX_BPM, DEFAULT_BPM, clampBpm } from '$lib/noteDuration';
+  import { MIN_BPM, MAX_BPM, DEFAULT_BPM, clampBpm } from '$lib/music/noteDuration';
   let { bpm = $bindable() }: { bpm: number } = $props();
 
   const sliderPercent = $derived(((bpm - MIN_BPM) / (MAX_BPM - MIN_BPM)) * 100);

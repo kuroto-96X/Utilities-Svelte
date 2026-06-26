@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ROOTS } from '$lib/scaleData';
+	import { ROOTS } from '$lib/music/scaleData';
 	let { rootId = $bindable(), onchange }: { rootId: string; onchange?: () => void } = $props();
 </script>
 

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment'
-  import { findNearestNotes, NOTE_SYMBOLS } from '$lib/noteDuration'
-  import type { NoteMatch } from '$lib/noteDuration'
+  import { findNearestNotes, NOTE_SYMBOLS } from '$lib/music/noteDuration'
+  import type { NoteMatch } from '$lib/music/noteDuration'
   import RangeSlider from '$lib/components/RangeSlider.svelte'
   import NoteIcon from '$lib/components/NoteIcon.svelte'
 

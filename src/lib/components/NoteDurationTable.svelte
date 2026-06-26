@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { NoteDuration } from '$lib/noteDuration'
-  import { formatMsLarge, formatHzSmall } from '$lib/noteDuration'
+  import type { NoteDuration } from '$lib/music/noteDuration'
+  import { formatMsLarge, formatHzSmall } from '$lib/music/noteDuration'
   import NoteIcon from './NoteIcon.svelte'
 
   let { durations }: { durations: NoteDuration[] } = $props()

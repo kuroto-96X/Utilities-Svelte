@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state'
-  import { calculateNoteDurations, clampBpm, DEFAULT_BPM } from '$lib/noteDuration'
+  import { calculateNoteDurations, clampBpm, DEFAULT_BPM } from '$lib/music/noteDuration'
   import BpmInput from '$lib/components/BpmInput.svelte'
   import NoteDurationTable from '$lib/components/NoteDurationTable.svelte'
   import NoteReverseSearch from '$lib/components/NoteReverseSearch.svelte'
