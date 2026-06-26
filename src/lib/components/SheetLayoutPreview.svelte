@@ -1,10 +1,10 @@
 <!-- src/lib/components/SheetLayoutPreview.svelte -->
 <script lang="ts">
-  import type { IdPhotoPreset } from '$lib/data/idPhotoPresets'
-  import type { PrintSheetSize } from '$lib/data/printSheetSizes'
-  import type { PixelCrop } from '$lib/utils/cropToBlob'
-  import { printSheetSizes } from '$lib/data/printSheetSizes'
-  import { mmToPx } from '$lib/utils/mmToPx'
+  import type { IdPhotoPreset } from '$lib/image/data/idPhotoPresets'
+  import type { PrintSheetSize } from '$lib/image/data/printSheetSizes'
+  import type { PixelCrop } from '$lib/image/utils/cropToBlob'
+  import { printSheetSizes } from '$lib/image/data/printSheetSizes'
+  import { mmToPx } from '$lib/image/utils/mmToPx'
 
   interface Props {
     imageFile: File | null

@@ -1,8 +1,8 @@
 <!-- src/lib/components/CropEditorWithGuide.svelte -->
 <script lang="ts">
   import Cropper from 'svelte-easy-crop'
-  import type { IdPhotoPreset } from '$lib/data/idPhotoPresets'
-  import type { PixelCrop } from '$lib/utils/cropToBlob'
+  import type { IdPhotoPreset } from '$lib/image/data/idPhotoPresets'
+  import type { PixelCrop } from '$lib/image/utils/cropToBlob'
   import type { OnCropCompleteEvent } from 'svelte-easy-crop'
 
   interface Props {

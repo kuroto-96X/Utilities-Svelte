@@ -3,8 +3,8 @@
   import ImageUploader from '$lib/components/ImageUploader.svelte'
   import PresetSelector from '$lib/components/PresetSelector.svelte'
   import CropEditor from '$lib/components/CropEditor.svelte'
-  import { snsPresets, type SnsPreset } from '$lib/data/snsPresets'
-  import { cropToBlob, buildDownloadFileName, type PixelCrop } from '$lib/utils/cropToBlob'
+  import { snsPresets, type SnsPreset } from '$lib/image/data/snsPresets'
+  import { cropToBlob, buildDownloadFileName, type PixelCrop } from '$lib/image/utils/cropToBlob'
 
   let { data }: { data: PageData } = $props()
 

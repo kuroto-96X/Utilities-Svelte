@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { isSupported } from '$lib/utils/imageProcessor'
+  import { isSupported } from '$lib/image/utils/imageProcessor'
 
   interface Props {
     onfiles: (files: File[]) => void

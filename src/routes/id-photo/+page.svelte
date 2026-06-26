@@ -5,11 +5,11 @@
   import PresetSelector from '$lib/components/PresetSelector.svelte'
   import CropEditorWithGuide from '$lib/components/CropEditorWithGuide.svelte'
   import SheetLayoutPreview from '$lib/components/SheetLayoutPreview.svelte'
-  import { idPhotoPresets, type IdPhotoPreset } from '$lib/data/idPhotoPresets'
-  import { printSheetSizes, type PrintSheetSize } from '$lib/data/printSheetSizes'
-  import { cropToBlob, type PixelCrop } from '$lib/utils/cropToBlob'
-  import { compositeSheet } from '$lib/utils/sheetCompositor'
-  import { mmToPx } from '$lib/utils/mmToPx'
+  import { idPhotoPresets, type IdPhotoPreset } from '$lib/image/data/idPhotoPresets'
+  import { printSheetSizes, type PrintSheetSize } from '$lib/image/data/printSheetSizes'
+  import { cropToBlob, type PixelCrop } from '$lib/image/utils/cropToBlob'
+  import { compositeSheet } from '$lib/image/utils/sheetCompositor'
+  import { mmToPx } from '$lib/image/utils/mmToPx'
 
   let { data }: { data: PageData } = $props()
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ConvertResult } from '$lib/utils/imageProcessor'
+  import type { ConvertResult } from '$lib/image/utils/imageProcessor'
 
   interface Props {
     result: ConvertResult

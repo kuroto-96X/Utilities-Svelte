@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { OutputFormat } from '$lib/utils/imageProcessor'
+  import type { OutputFormat } from '$lib/image/utils/imageProcessor'
 
   interface Props {
     format: OutputFormat

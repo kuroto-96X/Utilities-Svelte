@@ -3,8 +3,8 @@
   import ImageUploader from '$lib/components/ImageUploader.svelte'
   import ImageSettings from '$lib/components/ImageSettings.svelte'
   import ImageComparison from '$lib/components/ImageComparison.svelte'
-  import { convertImage, type OutputFormat, type ConvertResult } from '$lib/utils/imageProcessor'
-  import { downloadAllAsZip } from '$lib/utils/zipDownload'
+  import { convertImage, type OutputFormat, type ConvertResult } from '$lib/image/utils/imageProcessor'
+  import { downloadAllAsZip } from '$lib/image/utils/zipDownload'
 
   let { data }: { data: PageData } = $props()
 
