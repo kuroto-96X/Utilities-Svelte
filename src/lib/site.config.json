@@ -4,6 +4,7 @@
     "/note-duration": "Note Duration"
   },
   "toolDevStatus": {
+    "/color-converter": true,
     "/image-tools": true,
     "/sns-image-resize": true,
     "/id-photo": true,
@@ -16,6 +17,7 @@
     "/note-duration": true,
     "/scale-visualizer": true,
     "/hepburn-converter": true,
+    "/color-converter": true,
     "/image-tools": false,
     "/sns-image-resize": false,
     "/id-photo": false,

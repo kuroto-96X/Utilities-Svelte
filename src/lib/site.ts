@@ -43,6 +43,12 @@ export const site = {
       category: 'programming',
     },
     {
+      href: "/color-converter",
+      label: "Color32/Color変換",
+      description: "Unity の Color32・Color・HEX を相互変換するツール",
+      category: 'programming',
+    },
+    {
       href: "/image-tools",
       label: "画像変換",
       description: "画像の圧縮・リサイズ・形式変換ツール",
