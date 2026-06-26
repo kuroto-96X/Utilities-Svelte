@@ -64,7 +64,10 @@
   function onHexTextInput(e: Event) {
     const parsed = parseHex((e.target as HTMLInputElement).value)
     if (!parsed) return
-    r = parsed.r; g = parsed.g; b = parsed.b; a = parsed.a
+    r = parsed.r
+    g = parsed.g
+    b = parsed.b
+    if (parsed.a !== undefined) a = parsed.a
   }
 
   function onSliderInput(ch: 'r' | 'g' | 'b' | 'a', e: Event) {
