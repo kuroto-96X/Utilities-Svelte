@@ -9,7 +9,7 @@
   let g = $state(0)
   let b = $state(0)
   let a = $state(255)
-  type Tab = 'color32' | 'float' | 'hex'
+  type Tab = 'color32' | 'float'
   let activeTab = $state<Tab>('color32')
   let copiedRow = $state<string | null>(null)
   let copyTimer: ReturnType<typeof setTimeout> | null = null
@@ -28,7 +28,6 @@
   const tabs: { id: Tab; label: string }[] = [
     { id: 'color32', label: 'Color32' },
     { id: 'float', label: 'Color (float)' },
-    { id: 'hex', label: 'HEX' },
   ]
 
   function getVal(ch: 'r' | 'g' | 'b' | 'a'): number {
@@ -105,57 +104,47 @@
   <h1 class="text-xl font-bold text-slate-900">Color32 / Color 変換</h1>
   <p class="text-sm text-slate-500 mt-1">Unity の色形式をリアルタイム変換</p>
 
-  <!-- タブ行 + カラーピッカー（同じ flex 構成） -->
-  <div class="flex items-stretch gap-3 mt-6">
-    <!-- タブ群（flex:1、border-bottom あり） -->
-    <div class="flex-1 flex items-stretch border-b border-slate-200">
-      {#each tabs as tab}
-        {@const isActive = activeTab === tab.id}
-        <button
-          type="button"
-          onclick={() => { activeTab = tab.id }}
-          class="px-4 py-2.5 text-sm border-b-2 transition-colors"
-          class:font-semibold={isActive}
-          class:text-teal-700={isActive}
-          class:border-teal-700={isActive}
-          class:text-slate-500={!isActive}
-          class:border-transparent={!isActive}
-        >
-          {tab.label}
-        </button>
-      {/each}
-      <!-- 縦区切り線 -->
-      <div class="w-px bg-slate-200 my-1.5 ml-auto shrink-0"></div>
-    </div>
-    <!-- カラーピッカー（64px = テキストボックス列と同幅、border-bottom なし） -->
-    <div class="w-16 shrink-0 flex items-center py-1.5">
-      <input
-        type="color"
-        value={pickerHex}
-        oninput={onPickerInput}
-        title="カラーピッカー（アルファは A 欄で指定）"
-        class="w-full h-9 rounded-lg border-2 border-slate-200 cursor-pointer p-0.5"
-      />
-    </div>
+  <!-- タブ行 -->
+  <div class="mt-6 flex border-b border-slate-200">
+    {#each tabs as tab}
+      {@const isActive = activeTab === tab.id}
+      <button
+        type="button"
+        onclick={() => { activeTab = tab.id }}
+        class="px-4 py-2.5 text-sm border-b-2 transition-colors"
+        class:font-semibold={isActive}
+        class:text-teal-700={isActive}
+        class:border-teal-700={isActive}
+        class:text-slate-500={!isActive}
+        class:border-transparent={!isActive}
+      >
+        {tab.label}
+      </button>
+    {/each}
   </div>
 
-  <!-- HEX タブのテキスト入力欄 -->
-  {#if activeTab === 'hex'}
-    <div class="mt-3">
-      <input
-        type="text"
-        placeholder="#RRGGBBAA"
-        value={formatHex8(r, g, b, a)}
-        oninput={onHexTextInput}
-        maxlength="9"
-        class="w-full font-mono text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
-      />
-    </div>
-  {/if}
+  <!-- HEX 入力 + カラーピッカー（スライダーの上） -->
+  <div class="flex items-center gap-3 mt-3">
+    <input
+      type="text"
+      placeholder="#RRGGBBAA"
+      value={formatHex8(r, g, b, a)}
+      oninput={onHexTextInput}
+      maxlength="9"
+      class="flex-1 font-mono text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
+    />
+    <input
+      type="color"
+      value={pickerHex}
+      oninput={onPickerInput}
+      title="カラーピッカー（アルファは A 欄で指定）"
+      class="w-16 h-9 shrink-0 rounded-lg border-2 border-slate-200 cursor-pointer p-0.5"
+    />
+  </div>
 
-  <!-- スライダー + テキストボックス（同じ flex 構成） -->
+  <!-- スライダー + テキストボックス -->
   <div class="flex gap-3 mt-4">
-    <!-- 左: ラベル＋スライダー（flex:1） -->
+    <!-- 左: ラベル＋スライダー -->
     <div class="flex-1 flex flex-col gap-2">
       {#each channels as ch}
         <div class="flex items-center gap-2 h-8">
@@ -166,7 +155,7 @@
             max="255"
             value={getVal(ch.key)}
             oninput={(e) => onSliderInput(ch.key, e)}
-            style="accent-color:{ch.color}"
+            style="--thumb-color:{ch.color}"
             class="flex-1"
           />
         </div>
@@ -247,3 +236,38 @@
     </div>
   </div>
 </div>
+
+<style>
+  :global(input[type='range']) {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+  }
+  :global(input[type='range']::-webkit-slider-runnable-track) {
+    height: 4px;
+    border-radius: 9999px;
+    background: #e2e8f0;
+  }
+  :global(input[type='range']::-webkit-slider-thumb) {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin-top: -6px;
+    background: var(--thumb-color, #64748b);
+    cursor: pointer;
+  }
+  :global(input[type='range']::-moz-range-track) {
+    height: 4px;
+    border-radius: 9999px;
+    background: #e2e8f0;
+  }
+  :global(input[type='range']::-moz-range-thumb) {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: none;
+    background: var(--thumb-color, #64748b);
+    cursor: pointer;
+  }
+</style>
