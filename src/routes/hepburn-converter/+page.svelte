@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte'
-  import { convert } from '$lib/hepburn/converter'
-  import { VU_ENTRIES } from '$lib/hepburn/table'
+  import { convert } from '$lib/programming/hepburn/converter'
+  import { VU_ENTRIES } from '$lib/programming/hepburn/table'
   import {
     DEFAULT_SETTINGS,
     loadSettings,
@@ -18,7 +18,7 @@
     type Width,
     type CaseMode,
     type VuStyle
-  } from '$lib/hepburn/settings'
+  } from '$lib/programming/hepburn/settings'
 
   // --- 状態 ---
   let inputText = $state('')

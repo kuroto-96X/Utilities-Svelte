@@ -3,7 +3,7 @@
   import {
     clamp, toHex2, parseHex,
     formatColor32, formatColorFloat, formatHex8, formatHex6, formatRgba
-  } from '$lib/colorConverter'
+  } from '$lib/programming/colorConverter'
 
   let r = $state(255)
   let g = $state(0)
