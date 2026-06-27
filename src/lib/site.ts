@@ -55,6 +55,12 @@ export const site = {
       category: 'programming',
     },
     {
+      href: "/programming/sql-extract-format",
+      label: "SQL抽出・整形(開発中)",
+      description: "コードに埋め込まれた SQL を抽出・整形するツール",
+      category: 'programming',
+    },
+    {
       href: "/image/image-tools",
       label: "画像変換",
       description: "画像の圧縮・リサイズ・形式変換ツール",

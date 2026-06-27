@@ -4,6 +4,7 @@
     "/music/note-duration": "Note Duration"
   },
   "toolDevStatus": {
+    "/programming/sql-extract-format": true,
     "/programming/vector3-visualizer": true,
     "/image/image-tools": true,
     "/image/sns-image-resize": true,
@@ -19,6 +20,7 @@
     "/programming/hepburn-converter": true,
     "/programming/color-converter": true,
     "/programming/vector3-visualizer": true,
+    "/programming/sql-extract-format": true,
     "/image/image-tools": false,
     "/image/sns-image-resize": false,
     "/image/id-photo": false,
