@@ -70,16 +70,18 @@ describe('csharpExtractor.extract', () => {
   })
 
   describe('補間 verbatim ($@"..." / @$"...")', () => {
-    it('$@ 形式を処理する', () => {
-      const code = `string sql = $@"SELECT *\nFROM users\nWHERE id = {userId}";`
+    it('$@ 形式を処理する（verbatim はバックスラッシュをエスケープしない）', () => {
+      // C# ソース: $@"SELECT *\nFROM users WHERE id = {userId}"
+      // verbatim なので \n は改行ではなくバックスラッシュ+n の2文字
+      const code = `string sql = $@"SELECT *\\nFROM users WHERE id = {userId}";`
       const r = csharpExtractor.extract(code)[0].rawJoined
-      expect(r).toContain('SELECT *')
-      expect(r).toContain('{userId}')
+      expect(r).toBe('SELECT *\\nFROM users WHERE id = {userId}')
     })
 
     it('@$ 形式を処理する', () => {
       const code = `string sql = @$"SELECT * FROM users WHERE id = {userId}";`
-      expect(csharpExtractor.extract(code)[0].rawJoined).toContain('{userId}')
+      const r = csharpExtractor.extract(code)[0].rawJoined
+      expect(r).toBe('SELECT * FROM users WHERE id = {userId}')
     })
   })
 
