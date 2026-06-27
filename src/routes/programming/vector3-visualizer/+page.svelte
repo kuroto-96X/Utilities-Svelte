@@ -18,6 +18,7 @@
   let threeRenderer: { dispose: () => void } | null = null
   let removeWindowListeners: (() => void) | null = null
   let updateArrows: ((ax: number, ay: number, az: number, bx: number, by: number, bz: number, tab: Tab, t: number) => void) | null = null
+  let cleanupArrows: (() => void) | null = null
 
   // ── ベクトル成分（$derived）────────────────────────────────────────
   const p = (s: string) => parseFloat(s) || 0
@@ -192,9 +193,19 @@
     // ArrowHelper 管理
     let arrowHelpers: THREE.ArrowHelper[] = []
 
-    updateArrows = (ax, ay, az, bx, by, bz, tab, t) => {
-      for (const a of arrowHelpers) scene.remove(a)
+    const disposeArrows = () => {
+      for (const a of arrowHelpers) {
+        scene.remove(a)
+        a.line.geometry.dispose()
+        ;(a.line.material as import('three').Material).dispose()
+        a.cone.geometry.dispose()
+        ;(a.cone.material as import('three').Material).dispose()
+      }
       arrowHelpers = []
+    }
+
+    updateArrows = (ax, ay, az, bx, by, bz, tab, t) => {
+      disposeArrows()
 
       const addArrow = (x: number, y: number, z: number, color: number) => {
         const len = Math.sqrt(x * x + y * y + z * z)
@@ -221,6 +232,8 @@
         addArrow(n.x, n.y, n.z, 0x1D9E75)
       }
     }
+
+    cleanupArrows = disposeArrows
 
     // アニメーションループ
     const animate = () => {
@@ -278,6 +291,10 @@
     window.addEventListener('resize', onResize)
 
     removeWindowListeners = () => {
+      canvasEl.removeEventListener('mousedown', onMouseDown)
+      canvasEl.removeEventListener('touchstart', onTouchStart)
+      canvasEl.removeEventListener('touchmove', onTouchMove)
+      canvasEl.removeEventListener('wheel', onWheel)
       window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('mouseup', onMouseUp)
       window.removeEventListener('resize', onResize)
@@ -288,6 +305,7 @@
 
   onDestroy(() => {
     if (browser) cancelAnimationFrame(animId)
+    cleanupArrows?.()
     threeRenderer?.dispose()
     removeWindowListeners?.()
     if (copyTimer) clearTimeout(copyTimer)
