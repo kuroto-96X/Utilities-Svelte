@@ -6,12 +6,14 @@ const SQL_KEYWORDS = [
   'SELECT', 'UPDATE', 'FROM', 'WHERE', 'JOIN', 'VALUES', 'SET',
 ] as const
 
+// モジュールレベルで一度だけコンパイル（scoreSql は候補ごとに呼ばれるため）
+const SQL_PATTERNS = SQL_KEYWORDS.map(
+  kw => new RegExp(`\\b${kw.replace(' ', '\\s+')}\\b`)
+)
+
 export function scoreSql(text: string): number {
   const upper = text.toUpperCase()
-  return SQL_KEYWORDS.reduce((acc, kw) => {
-    const pattern = new RegExp(`\\b${kw.replace(' ', '\\s+')}\\b`)
-    return acc + (pattern.test(upper) ? 1 : 0)
-  }, 0)
+  return SQL_PATTERNS.reduce((acc, pattern) => acc + (pattern.test(upper) ? 1 : 0), 0)
 }
 
 export function scoreAndSort(candidates: ExtractedCandidate[]): ExtractedCandidate[] {
