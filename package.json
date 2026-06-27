@@ -43,6 +43,7 @@
 	"dependencies": {
 		"jszip": "^3.10.1",
 		"kuromoji": "^0.1.2",
+		"sql-formatter": "^15.8.2",
 		"svelte-easy-crop": "^5.0.1",
 		"three": "^0.185.0"
 	}
