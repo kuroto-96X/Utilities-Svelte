@@ -37,4 +37,11 @@ describe('placeholderize', () => {
     const result = placeholderize('SELECT * FROM {{schema}}.users WHERE id = {userId}')
     expect(result.text).toBe('SELECT * FROM {schema}.users WHERE id = :userId')
   })
+
+  it('{param1} が先に登場した場合、複雑な式のフォールバックは :param2 になる', () => {
+    const result = placeholderize('WHERE id = {param1} AND name = {GetName()}')
+    expect(result.text).toBe('WHERE id = :param1 AND name = :param2')
+    expect(result.placeholders[0].name).toBe('param1')
+    expect(result.placeholders[1].name).toBe('param2')
+  })
 })

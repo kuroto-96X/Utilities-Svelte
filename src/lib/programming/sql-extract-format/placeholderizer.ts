@@ -1,7 +1,7 @@
 import type { PlaceholderResult } from './types'
 
 // C# 識別子またはプロパティアクセスチェーン（ドット区切り）
-const IDENTIFIER_RE = /^[a-zA-Z_][a-zA-Z0-9_.]*$/
+const IDENTIFIER_RE = /^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*$/
 
 export function placeholderize(rawJoined: string): PlaceholderResult {
   const placeholders: { name: string; originalExpr: string }[] = []
@@ -27,7 +27,9 @@ export function placeholderize(rawJoined: string): PlaceholderResult {
         name = candidate
       }
     } else {
-      name = `param${++paramCount}`
+      do {
+        name = `param${++paramCount}`
+      } while (placeholders.some(p => p.name === name))
     }
 
     placeholders.push({ name, originalExpr: trimmed })
