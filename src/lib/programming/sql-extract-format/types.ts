@@ -1,10 +1,3 @@
-// TODO: sql-formatter の FormatOptions に commaPosition オプションが存在しない（v15時点）。
-// Task 5 の formatEngine.ts でカンマ移動の後処理を手動で実装すること。
-// 確認バージョンの FormatOptions に存在するオプション:
-//   tabWidth, useTabs, keywordCase, identifierCase, dataTypeCase, functionCase,
-//   indentStyle, logicalOperatorNewline ('before' | 'after'), expressionWidth,
-//   linesBetweenQueries, denseOperators, newlineBeforeSemicolon, params, paramTypes
-
 export type SourceLanguage = 'csharp' | 'java' | 'python' | 'javascript' | 'vb'
 
 export interface ExtractedCandidate {
