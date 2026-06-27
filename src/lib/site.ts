@@ -56,7 +56,7 @@ export const site = {
     },
     {
       href: "/programming/sql-extract-format",
-      label: "SQL抽出・整形(開発中)",
+      label: "SQL抽出・整形",
       description: "コードに埋め込まれた SQL を抽出・整形するツール",
       category: 'programming',
     },
