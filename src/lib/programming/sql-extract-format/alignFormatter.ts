@@ -19,14 +19,27 @@ function alignGroup(lines: string[]): string[] {
   let maxPreAs = 0
   for (const line of lines) {
     const m = line.match(/^(\s+\S.*?)\s+AS\b/i)
-    if (m) maxPreAs = Math.max(maxPreAs, m[1].length)
+    if (m) {
+      maxPreAs = Math.max(maxPreAs, m[1].length)
+    } else {
+      // Non-AS line: expression length is the trimmed line (without trailing comma)
+      const expr = line.replace(/,\s*$/, '')
+      maxPreAs = Math.max(maxPreAs, expr.length)
+    }
   }
 
   return lines.map(line => {
     const m = line.match(/^(\s+\S.*?)\s+AS\b(.*)$/i)
-    if (!m) return line
-    const padding = ' '.repeat(maxPreAs - m[1].length + 1)
-    return m[1] + padding + 'AS' + m[2]
+    if (m) {
+      const padding = ' '.repeat(maxPreAs - m[1].length + 1)
+      return m[1] + padding + 'AS' + m[2]
+    } else {
+      // Non-AS line: pad expression to maxPreAs
+      const trailingComma = /,\s*$/.test(line) ? line.match(/,\s*$/)?.[0] ?? '' : ''
+      const expr = line.replace(/,\s*$/, '')
+      const padding = ' '.repeat(Math.max(0, maxPreAs - expr.length))
+      return expr + padding + trailingComma
+    }
   })
 }
 

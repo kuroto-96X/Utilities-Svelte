@@ -46,4 +46,28 @@ describe('alignSelectColumns', () => {
     const input = 'SELECT id FROM users'
     expect(alignSelectColumns(input)).toBe(input)
   })
+
+  it('AS なしのカラムはカラム式の末尾位置を揃える', () => {
+    const input = [
+      'SELECT',
+      '  id AS UserId,',
+      '  user_name AS UserName,',
+      '  email',
+      'FROM users',
+    ].join('\n')
+
+    const result = alignSelectColumns(input)
+    const lines = result.split('\n')
+    const emailLine = lines.find(l => l.includes('email') && !l.includes('AS'))
+    const userNameLine = lines.find(l => l.includes('AS UserName'))
+
+    expect(emailLine).toBeDefined()
+    expect(userNameLine).toBeDefined()
+
+    // email line should be padded to match pre-AS position of the longest AS line
+    // '  user_name AS UserName,' → ' AS ' starts at index 11 (= maxPreAs = length('  user_name'))
+    const asPos = userNameLine!.indexOf(' AS ')
+    // email padded to maxPreAs = 11 chars (trailing spaces preserved, not trimmed)
+    expect(emailLine!.length).toBe(asPos)
+  })
 })
