@@ -51,16 +51,16 @@ describe('formatSql', () => {
   })
 
   it('postgresql 方言で整形できる', () => {
-    const result = formatSql('select * from users', 'postgresql')
+    const result = formatSql('select id::text, name from users where id = 1', 'postgresql')
     expect(result).toContain('SELECT')
-    expect(result).toContain('FROM')
+    expect(result).toContain('::text')  // PostgreSQL cast syntax preserved
     expect(result).not.toContain('select')
   })
 
   it('plsql 方言で整形できる', () => {
-    const result = formatSql('select * from dual', 'plsql')
+    const result = formatSql('select sysdate from dual', 'plsql')
     expect(result).toContain('SELECT')
-    expect(result).toContain('FROM')
+    expect(result).toContain('dual')   // Oracle pseudo-table preserved (sql-formatter keeps dual lowercase in plsql mode)
     expect(result).not.toContain('select')
   })
 })
