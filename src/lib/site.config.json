@@ -4,6 +4,7 @@
     "/music/note-duration": "Note Duration"
   },
   "toolDevStatus": {
+    "/programming/vector3-visualizer": true,
     "/image/image-tools": true,
     "/image/sns-image-resize": true,
     "/image/id-photo": true,
@@ -17,6 +18,7 @@
     "/music/scale-visualizer": true,
     "/programming/hepburn-converter": true,
     "/programming/color-converter": true,
+    "/programming/vector3-visualizer": false,
     "/image/image-tools": false,
     "/image/sns-image-resize": false,
     "/image/id-photo": false,

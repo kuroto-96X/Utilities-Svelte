@@ -22,6 +22,7 @@
 		"@sveltejs/kit": "^2.63.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"@types/node": "^24",
+		"@types/three": "^0.185.0",
 		"autoprefixer": "^10.4.20",
 		"eslint": "^10.4.1",
 		"eslint-config-prettier": "^10.1.8",
@@ -42,6 +43,7 @@
 	"dependencies": {
 		"jszip": "^3.10.1",
 		"kuromoji": "^0.1.2",
-		"svelte-easy-crop": "^5.0.1"
+		"svelte-easy-crop": "^5.0.1",
+		"three": "^0.185.0"
 	}
 }

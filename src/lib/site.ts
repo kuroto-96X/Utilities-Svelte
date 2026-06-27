@@ -49,6 +49,12 @@ export const site = {
       category: 'programming',
     },
     {
+      href: "/programming/vector3-visualizer",
+      label: "Vector3演算ビジュアライザー",
+      description: "Unity の Vector3 演算をリアルタイムで3D表示するツール",
+      category: 'programming',
+    },
+    {
       href: "/image/image-tools",
       label: "画像変換",
       description: "画像の圧縮・リサイズ・形式変換ツール",
