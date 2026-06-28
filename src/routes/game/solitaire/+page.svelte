@@ -122,8 +122,16 @@
         if (flyCard) flyCard = { ...flyCard, moving: true }
       })
     })
-    await new Promise<void>(r => setTimeout(r, 380))
+    await new Promise<void>(r => setTimeout(r, 200))
     flyCard = null
+  }
+
+  function flyingToWaste(): boolean {
+    return flyCard !== null && flyCard.dest === 'waste'
+  }
+
+  function flyingToFoundation(i: number): boolean {
+    return flyCard !== null && flyCard.dest !== 'waste' && (flyCard.dest as { pile: 'foundation'; index: number }).index === i
   }
 
   async function handleStockClick(e: MouseEvent) {
@@ -536,7 +544,7 @@
         class:bg-green-900={state.waste.length === 0}
       >
         {#if state.waste.length > 0}
-          <div class="absolute inset-0">
+          <div class="absolute inset-0" style="opacity:{flyingToWaste() ? 0 : 1};">
             {@render cardFace(state.waste[state.waste.length - 1], true)}
           </div>
         {/if}
@@ -566,7 +574,7 @@
               <span class="text-green-500 text-2xl opacity-60">{SUIT_SYMBOL[suit]}</span>
             </div>
           {:else}
-            <div class="absolute inset-0">
+            <div class="absolute inset-0" style="opacity:{flyingToFoundation(i) ? 0 : 1};">
               {@render cardFace(state.foundation[i][state.foundation[i].length - 1], true)}
             </div>
           {/if}
@@ -664,16 +672,16 @@
   {#if flyCard}
     <div
       class="pointer-events-none fixed z-[500] w-16 h-[98px] overflow-hidden rounded-lg"
-      style="left:{flyCard.moving ? flyCard.toX : flyCard.fromX}px; top:{flyCard.moving ? flyCard.toY : flyCard.fromY}px; transition: left 0.35s cubic-bezier(0.4,0,0.2,1), top 0.35s cubic-bezier(0.4,0,0.2,1);"
+      style="left:{flyCard.moving ? flyCard.toX : flyCard.fromX}px; top:{flyCard.moving ? flyCard.toY : flyCard.fromY}px; transition: left 0.175s cubic-bezier(0.4,0,0.2,1), top 0.175s cubic-bezier(0.4,0,0.2,1);"
     >
       {#if flyCard.flip}
         <div
           class="absolute inset-0 rounded-lg border border-indigo-500/50"
-          style="{CARD_BACK_STYLE} transition: transform 0.175s linear; transform: perspective(600px) rotateY({flyCard.moving ? 90 : 0}deg);"
+          style="{CARD_BACK_STYLE} transition: transform 0.09s linear; transform: perspective(600px) rotateY({flyCard.moving ? 90 : 0}deg);"
         ></div>
         <div
           class="absolute inset-0"
-          style="transition: transform 0.175s linear 0.175s; transform: perspective(600px) rotateY({flyCard.moving ? 0 : -90}deg);"
+          style="transition: transform 0.09s linear 0.09s; transform: perspective(600px) rotateY({flyCard.moving ? 0 : -90}deg);"
         >
           {@render cardFace(flyCard.card, true)}
         </div>
@@ -694,7 +702,7 @@
       {#each getDragCards() as card, i (i)}
         <div
           class="absolute w-16 rounded-lg border border-slate-200 shadow-2xl overflow-hidden"
-          style="top:{i * 28}px; height:{i === getDragCards().length - 1 ? 98 : 28}px; opacity:0.9;"
+          style="top:{i * 28}px; height:{i === getDragCards().length - 1 ? 98 : 46}px; opacity:0.9;"
         >
           {@render cardFace(card, i === getDragCards().length - 1)}
         </div>
