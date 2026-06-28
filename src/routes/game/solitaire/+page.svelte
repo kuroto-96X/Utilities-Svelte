@@ -152,6 +152,20 @@
     return selected?.pile === pile && selected?.index === index
   }
 
+  // ---- カードビジュアル ----
+  const CARD_BACK_STYLE =
+    'background:#0f172a;' +
+    'background-image:' +
+    'repeating-linear-gradient(0deg,transparent,transparent 7px,rgba(99,102,241,0.25) 7px,rgba(99,102,241,0.25) 8px),' +
+    'repeating-linear-gradient(90deg,transparent,transparent 7px,rgba(99,102,241,0.25) 7px,rgba(99,102,241,0.25) 8px);'
+
+  function stockLayers(): number {
+    if (state.stock.length === 0) return 0
+    if (state.stock.length <= 10) return 1
+    if (state.stock.length <= 20) return 2
+    return 3
+  }
+
   onMount(() => () => { stopTimer(); if (autoInterval) clearInterval(autoInterval) })
 </script>
 
@@ -200,19 +214,24 @@
       <!-- 山札 -->
       <button
         onclick={handleStockClick}
-        class="w-16 h-24 rounded-lg border-2 border-green-600 bg-green-900 flex items-center justify-center text-2xl hover:bg-green-700 transition-colors"
+        class="w-16 h-[98px] rounded-lg border-2 border-green-600 bg-green-900 relative hover:bg-green-700 transition-colors flex items-center justify-center"
       >
         {#if state.stock.length > 0}
-          <span class="text-white opacity-50">🂠</span>
+          {#each { length: stockLayers() } as _, i}
+            <div
+              class="absolute w-14 h-[90px] rounded-md border border-indigo-500/50"
+              style="{CARD_BACK_STYLE} top:{(stockLayers() - 1 - i) * 2 + 4}px; left:{(stockLayers() - 1 - i) * 2 + 4}px;"
+            ></div>
+          {/each}
         {:else}
-          <span class="text-green-500 text-lg">↺</span>
+          <span class="text-green-500 text-lg relative z-10">↺</span>
         {/if}
       </button>
 
       <!-- 捨て札 -->
       <button
         onclick={() => handleCardClick('waste', 0)}
-        class="w-16 h-24 rounded-lg border-2 transition-colors relative overflow-hidden"
+        class="w-16 h-[98px] rounded-lg border-2 transition-colors relative overflow-hidden"
         class:border-yellow-400={isHintedFrom('waste', 0) || isSelected('waste', 0)}
         class:border-green-600={!isHintedFrom('waste', 0) && !isSelected('waste', 0)}
         class:bg-green-900={state.waste.length === 0}
@@ -239,7 +258,7 @@
       {#each FOUNDATION_SUIT as suit, i (suit)}
         <button
           onclick={() => handleCardClick('foundation', i)}
-          class="w-16 h-24 rounded-lg border-2 transition-colors flex items-center justify-center"
+          class="w-16 h-[98px] rounded-lg border-2 transition-colors flex items-center justify-center"
           class:border-yellow-400={isSelected('foundation', i)}
           class:border-green-600={!isSelected('foundation', i)}
           class:bg-green-700={state.foundation[i].length === 0}
@@ -261,7 +280,7 @@
     <!-- タブロー 7列 -->
     <div class="flex gap-2">
       {#each state.tableau as col, colIdx (colIdx)}
-        <div class="flex-1 relative" style="min-height: {Math.max(96, col.length * 28 + 68)}px;">
+        <div class="flex-1 relative" style="min-height: {Math.max(98, col.length * 28 + 70)}px;">
           <!-- 空列クリック領域 -->
           <button
             onclick={() => { if (selected !== null) handleCardClick('tableau', colIdx) }}
@@ -273,7 +292,7 @@
             <button
               onclick={() => handleCardClick('tableau', colIdx, cardIdx)}
               class="absolute left-0 right-0 rounded-lg border transition-all"
-              style="top: {cardIdx * 28}px; height: {cardIdx === col.length - 1 ? 96 : 28}px; z-index: {cardIdx + 1};"
+              style="top: {cardIdx * 28}px; height: {cardIdx === col.length - 1 ? 98 : 28}px; z-index: {cardIdx + 1};"
               class:border-yellow-400={
                 (isHintedFrom('tableau', colIdx) && cardIdx === col.findIndex(c => c.faceUp)) ||
                 (isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0))
@@ -299,8 +318,8 @@
                   {/if}
                 </div>
               {:else}
-                <div class="h-full rounded-lg border border-blue-700"
-                  style="background: repeating-linear-gradient(45deg, #1e3a5f, #1e3a5f 4px, #1d4ed8 4px, #1d4ed8 8px);">
+                <div class="h-full rounded-lg border border-indigo-500/50"
+                  style="{CARD_BACK_STYLE}">
                 </div>
               {/if}
             </button>
