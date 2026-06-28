@@ -127,11 +127,15 @@
   }
 
   function handleHint() {
+    if (showHints && hints.length > 0) {
+      hintIndex = (hintIndex + 1) % hints.length
+      return
+    }
     const h = getHints(state)
     if (h.length === 0) return
     hints = h
     showHints = true
-    hintIndex = (hintIndex + 1) % h.length
+    hintIndex = 0
   }
 
   function handleUndo() {
@@ -161,10 +165,9 @@
     return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
   }
 
-  function isHintedFrom(pile: 'tableau' | 'waste' | 'foundation', index: number): boolean {
-    if (!showHints || hints.length === 0) return false
-    const h = hints[hintIndex % hints.length]
-    return h.from.pile === pile && h.from.index === index
+  function currentHint(): Move | null {
+    if (!showHints || hints.length === 0) return null
+    return hints[hintIndex % hints.length]
   }
 
   function isSelected(pile: 'tableau' | 'waste' | 'foundation', index: number): boolean {
@@ -252,10 +255,10 @@
         onclick={() => handleCardClick('waste', 0)}
         ondblclick={() => state.waste.length > 0 ? handleDoubleClick('waste', 0) : undefined}
         class="w-16 h-[98px] rounded-lg border-2 transition-colors relative overflow-hidden"
-        class:border-yellow-400={isHintedFrom('waste', 0) && !isSelected('waste', 0)}
+        class:border-yellow-400={currentHint()?.from.pile === 'waste'}
         class:ring-2={isSelected('waste', 0)}
         class:ring-blue-400={isSelected('waste', 0)}
-        class:border-green-600={!isHintedFrom('waste', 0) && !isSelected('waste', 0)}
+        class:border-green-600={currentHint()?.from.pile !== 'waste' && !isSelected('waste', 0)}
         class:bg-green-900={state.waste.length === 0}
       >
         {#if state.waste.length > 0}
@@ -281,10 +284,10 @@
         <button
           onclick={() => handleCardClick('foundation', i)}
           class="w-16 h-[98px] rounded-lg border-2 transition-colors flex items-center justify-center"
-          class:border-yellow-400={isHintedFrom('foundation', i) && !isSelected('foundation', i)}
-          class:ring-2={isSelected('foundation', i)}
+          class:ring-2={isSelected('foundation', i) || (currentHint()?.from.pile === 'foundation' && currentHint()?.from.index === i)}
           class:ring-blue-400={isSelected('foundation', i)}
-          class:border-green-600={!isSelected('foundation', i) && !isHintedFrom('foundation', i)}
+          class:ring-yellow-400={currentHint()?.from.pile === 'foundation' && currentHint()?.from.index === i && !isSelected('foundation', i)}
+          class:border-green-600={!isSelected('foundation', i) && !(currentHint()?.from.pile === 'foundation' && currentHint()?.from.index === i)}
           class:bg-green-700={state.foundation[i].length === 0}
           class:bg-white={state.foundation[i].length > 0}
         >
@@ -313,16 +316,17 @@
           ></button>
           <!-- カード -->
           {#each col as card, cardIdx (cardIdx)}
+            {@const hint = currentHint()}
             <button
               onclick={() => handleCardClick('tableau', colIdx, cardIdx)}
               ondblclick={() => card.faceUp ? handleDoubleClick('tableau', colIdx, cardIdx) : undefined}
               class="absolute left-0 right-0 rounded-lg transition-all"
               style="top: {cardIdx * 28}px; height: {cardIdx === col.length - 1 ? 98 : 28}px; z-index: {cardIdx + 1};"
               class:ring-2={
-                (isHintedFrom('tableau', colIdx) && cardIdx === col.findIndex(c => c.faceUp)) ||
+                (hint?.from.pile === 'tableau' && hint?.from.index === colIdx && cardIdx >= col.length - hint.count) ||
                 (isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0))
               }
-              class:ring-yellow-400={isHintedFrom('tableau', colIdx) && cardIdx === col.findIndex(c => c.faceUp) && !isSelected('tableau', colIdx)}
+              class:ring-yellow-400={hint?.from.pile === 'tableau' && hint?.from.index === colIdx && cardIdx >= col.length - hint.count && !isSelected('tableau', colIdx)}
               class:ring-blue-400={isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0)}
               class:-translate-y-1={isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0)}
             >
