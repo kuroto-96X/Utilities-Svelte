@@ -381,6 +381,22 @@ describe('canAutoComplete', () => {
     })
     expect(canAutoComplete(state)).toBe(false)
   })
+
+  test('foundation に何枚かあり残り tableau が全て表向きでも true', () => {
+    const state = makeState({
+      tableau: [
+        [{ suit: 'spades', rank: 2, faceUp: true }],
+        [], [], [], [], [], [],
+      ],
+      stock: [],
+      waste: [],
+      foundation: [
+        [{ suit: 'spades', rank: 1, faceUp: true }], // A♠ 積み済み
+        [], [], [],
+      ],
+    })
+    expect(canAutoComplete(state)).toBe(true)
+  })
 })
 
 describe('autoCompleteStep', () => {
