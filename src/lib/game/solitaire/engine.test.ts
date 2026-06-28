@@ -277,4 +277,26 @@ describe('moveCards', () => {
     })
     expect(next.history).toHaveLength(1)
   })
+
+  test('foundation → tableau: score は 0 未満にならない', () => {
+    const state = makeState({
+      tableau: [
+        [{ suit: 'spades', rank: 3, faceUp: true }],
+        [], [], [], [], [], [],
+      ],
+      foundation: [
+        [], [{ suit: 'hearts', rank: 1, faceUp: true }, { suit: 'hearts', rank: 2, faceUp: true }],
+        [], [],
+      ],
+      waste: [],
+      stock: [],
+      score: 10,  // 10 - 15 = -5 → should clamp to 0
+    })
+    const next = moveCards(state, {
+      from: { pile: 'foundation', index: 1 },
+      to: { pile: 'tableau', index: 0 },
+      count: 1,
+    })
+    expect(next.score).toBe(0)
+  })
 })

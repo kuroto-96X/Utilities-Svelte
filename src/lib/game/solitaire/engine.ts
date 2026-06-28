@@ -93,6 +93,7 @@ export function moveCards(state: GameState, move: Move): GameState {
     movingCards = col.slice(col.length - count)
     if (!movingCards[0].faceUp) return state
   } else {
+    if (count !== 1) return state
     const pile = state.foundation[from.index]
     if (pile.length === 0) return state
     movingCards = [pile[pile.length - 1]]
