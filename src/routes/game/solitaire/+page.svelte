@@ -79,6 +79,8 @@
   let _effectId = 0
   const CONFETTI_COLORS = ['#f43f5e','#f97316','#eab308','#22c55e','#3b82f6','#a855f7','#ec4899','#06b6d4','#fbbf24']
   let confettiCanvas: HTMLCanvasElement | null = null
+  let timerPulseId = $state(0)
+  let timerPulseType = $state<'small' | 'large'>('small')
 
   // ---- LocalStorage自動保存 ----
   $effect(() => {
@@ -86,6 +88,13 @@
   })
   $effect(() => {
     try { localStorage.setItem('solitaire-settings', JSON.stringify({ useSeed, seedInput, pendingMode })) } catch {}
+  })
+
+  // ---- タイマーパルス ----
+  $effect(() => {
+    const s = state.elapsed
+    if (s > 0 && s % 60 === 0) { timerPulseType = 'large'; timerPulseId += 1 }
+    else if (s > 0 && s % 30 === 0) { timerPulseType = 'small'; timerPulseId += 1 }
   })
 
   // ---- タイマー ----
@@ -587,6 +596,21 @@
   const SUIT_COLOR: Record<string, string> = { spades: 'text-slate-900', hearts: 'text-red-600', diamonds: 'text-red-600', clubs: 'text-slate-900' }
   const FOUNDATION_SUIT = ['spades', 'hearts', 'diamonds', 'clubs'] as const
 
+  const PIP_LAYOUTS: Record<number, [number, number, boolean][]> = {
+    1:  [[50, 50, false]],
+    2:  [[50, 18, false], [50, 82, true]],
+    3:  [[50, 14, false], [50, 50, false], [50, 86, true]],
+    4:  [[25, 18, false], [75, 18, false], [25, 82, true], [75, 82, true]],
+    5:  [[25, 18, false], [75, 18, false], [50, 50, false], [25, 82, true], [75, 82, true]],
+    6:  [[25, 15, false], [75, 15, false], [25, 50, false], [75, 50, false], [25, 85, true], [75, 85, true]],
+    7:  [[25, 13, false], [75, 13, false], [50, 30, false], [25, 52, false], [75, 52, false], [25, 85, true], [75, 85, true]],
+    8:  [[25, 11, false], [75, 11, false], [50, 28, false], [25, 50, false], [75, 50, false], [50, 72, true], [25, 89, true], [75, 89, true]],
+    9:  [[25, 11, false], [75, 11, false], [25, 32, false], [75, 32, false], [50, 50, false], [25, 68, true], [75, 68, true], [25, 89, true], [75, 89, true]],
+    10: [[25, 9, false], [75, 9, false], [50, 25, false], [25, 41, false], [75, 41, false], [25, 59, true], [75, 59, true], [50, 75, true], [25, 91, true], [75, 91, true]],
+  }
+
+  const FACE_CHAR: Record<number, string> = { 11: '♞', 12: '♛', 13: '♚' }
+
   function formatTime(s: number): string {
     return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
   }
@@ -672,16 +696,31 @@
 </script>
 
 {#snippet cardFace(card: Card, full: boolean)}
-  <div class="absolute inset-0 rounded-lg border border-indigo-500/50 p-1 flex flex-col items-start overflow-hidden bg-white">
+  <div class="absolute inset-0 rounded-lg border border-indigo-500/50 p-1 flex flex-col items-start overflow-hidden"
+    class:bg-white={card.rank <= 10}
+    class:bg-indigo-50={card.rank === 11}
+    class:bg-rose-50={card.rank === 12}
+    class:bg-amber-50={card.rank === 13}
+  >
     <div class="leading-none {SUIT_COLOR[card.suit]}">
       <div class="text-sm font-bold leading-none">{rankLabel(card.rank)}</div>
       <div class="text-xs leading-none">{SUIT_SYMBOL[card.suit]}</div>
     </div>
     {#if full}
-      <div class="w-full flex-1 flex items-center justify-center gap-1 {SUIT_COLOR[card.suit]}">
-        <span class="text-2xl font-bold leading-none">{rankLabel(card.rank)}</span>
-        <span class="text-xl leading-none">{SUIT_SYMBOL[card.suit]}</span>
-      </div>
+      {#if card.rank <= 10}
+        <div class="w-full flex-1 relative {SUIT_COLOR[card.suit]}">
+          {#each (PIP_LAYOUTS[card.rank] ?? []) as [x, y, rot], i (i)}
+            <span
+              class="absolute leading-none select-none"
+              style="left:{x}%; top:{y}%; transform:translate(-50%,-50%){rot ? ' rotate(180deg)' : ''}; font-size:{card.rank === 1 ? 18 : card.rank <= 4 ? 11 : card.rank <= 7 ? 10 : 9}px;"
+            >{SUIT_SYMBOL[card.suit]}</span>
+          {/each}
+        </div>
+      {:else}
+        <div class="w-full flex-1 flex items-center justify-center {SUIT_COLOR[card.suit]}">
+          <span class="leading-none" style="font-size:26px;">{FACE_CHAR[card.rank]}</span>
+        </div>
+      {/if}
       <div class="rotate-180 self-end leading-none {SUIT_COLOR[card.suit]}">
         <div class="text-sm font-bold leading-none">{rankLabel(card.rank)}</div>
         <div class="text-xs leading-none">{SUIT_SYMBOL[card.suit]}</div>
@@ -735,7 +774,10 @@
 
   <!-- ゲーム情報行 -->
   <div class="flex items-center gap-3 flex-wrap">
-    <span class="text-sm text-amber-600 font-mono">⏱ {formatTime(state.elapsed)}</span>
+    {#key timerPulseId}<span class="text-sm text-amber-600 font-mono"
+      class:timer-small={timerPulseId > 0 && timerPulseType === 'small'}
+      class:timer-large={timerPulseId > 0 && timerPulseType === 'large'}
+    >⏱ {formatTime(state.elapsed)}</span>{/key}
     {#key state.score}<span class="text-sm text-emerald-600 font-mono score-bounce">🏆 {state.score}pt</span>{/key}
     <span class="text-xs text-slate-400 font-mono">DRAW:{state.drawMode} / seed:{state.seed}</span>
     <div class="ml-auto flex items-center gap-2">
@@ -1050,6 +1092,19 @@
   display: inline-block;
   animation: scoreBounce 0.45s ease-out;
 }
+
+@keyframes timerPulseSmall {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.25); color: #f97316; }
+  100% { transform: scale(1); }
+}
+@keyframes timerPulseLarge {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.55); color: #ef4444; }
+  100% { transform: scale(1); }
+}
+.timer-small { display: inline-block; animation: timerPulseSmall 0.4s ease-out; }
+.timer-large { display: inline-block; animation: timerPulseLarge 0.65s ease-out; }
 
 @keyframes glowPulse {
   0%   { box-shadow: 0 0 0 3px #fbbf24, 0 0 20px 8px rgba(251,191,36,0.65); opacity: 1; }
