@@ -493,6 +493,18 @@
     if (!autoCompleting && canAutoComplete(state)) startAutoComplete()
   }
 
+  function debugTriggerClear() {
+    stopTimer()
+    const suits = ['spades', 'hearts', 'diamonds', 'clubs'] as const
+    const foundation = suits.map(suit =>
+      Array.from({ length: 13 }, (_, i) => ({ suit, rank: (i + 1) as Card['rank'], faceUp: true }))
+    )
+    state = { ...state, foundation, tableau: [[], [], [], [], [], [], []], stock: [], waste: [], history: [] }
+    clearRank = saveToTop10(state.score, state.elapsed, state.drawMode, state.seed)
+    showVictory = true
+    launchConfetti()
+  }
+
   // ---- ドラッグ操作 ----
   function getDragCards(): import('$lib/game/solitaire/types').Card[] {
     if (!dragInfo) return []
@@ -728,6 +740,16 @@
       />
     </div>
   </div>
+
+  {#if import.meta.env.DEV}
+    <div class="flex items-center gap-2 px-1">
+      <span class="text-xs font-bold text-orange-400">DEV</span>
+      <button
+        onclick={debugTriggerClear}
+        class="px-2 py-1 text-xs rounded border border-orange-300 bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors"
+      >クリア演出テスト</button>
+    </div>
+  {/if}
 
   <!-- ゲームエリア -->
   <div class="bg-green-800 rounded-xl p-4 select-none" style="min-height: 520px;">
