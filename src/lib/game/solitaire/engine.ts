@@ -1,6 +1,6 @@
 // src/lib/game/solitaire/engine.ts
 import { createDeck, shuffle } from './deck'
-import type { Card, GameState, Snapshot, Suit } from './types'
+import type { Card, GameState, Move, Snapshot, Suit } from './types'
 
 // ---- 内部ユーティリティ ----
 
@@ -75,6 +75,84 @@ export function drawFromStock(state: GameState): GameState {
     ...state,
     stock: state.stock.slice(0, -count),
     waste: [...state.waste, ...drawn],
+    history: [...state.history, snap],
+  }
+}
+
+export function moveCards(state: GameState, move: Move): GameState {
+  const { from, to, count } = move
+
+  // 1. 移動するカードを特定（合法性チェック込み）
+  let movingCards: Card[]
+  if (from.pile === 'waste') {
+    if (state.waste.length === 0) return state
+    movingCards = [state.waste[state.waste.length - 1]]
+  } else if (from.pile === 'tableau') {
+    const col = state.tableau[from.index]
+    if (col.length < count) return state
+    movingCards = col.slice(col.length - count)
+    if (!movingCards[0].faceUp) return state
+  } else {
+    const pile = state.foundation[from.index]
+    if (pile.length === 0) return state
+    movingCards = [pile[pile.length - 1]]
+  }
+
+  // 2. 移動先の合法性チェック
+  if (to.pile === 'foundation') {
+    if (!canPlaceOnFoundation(movingCards[0], state.foundation[to.index])) return state
+  } else {
+    const targetCol = state.tableau[to.index]
+    const targetTop = targetCol[targetCol.length - 1]
+    if (from.pile === 'foundation') {
+      // foundation→tableau: 降順ランクのみチェック（色制約なし）
+      if (targetTop && movingCards[0].rank !== targetTop.rank - 1) return state
+    } else if (from.pile === 'tableau' && !targetTop) {
+      // tableau→tableau 空列へ: 任意のカードを許可
+    } else {
+      // waste/tableau→tableau（非空列）: 標準ルール（交互色・降順）
+      if (!canPlaceOnTableau(movingCards[0], targetTop)) return state
+    }
+  }
+
+  // 3. 合法なので実行
+  const snap = snapshot(state)
+  let scoreAdd = 0
+  const newTableau = state.tableau.map(col => [...col])
+  let newWaste = [...state.waste]
+  const newFoundation = state.foundation.map(pile => [...pile])
+
+  // 移動元を更新
+  if (from.pile === 'waste') {
+    newWaste = state.waste.slice(0, -1)
+  } else if (from.pile === 'tableau') {
+    const col = [...state.tableau[from.index]]
+    col.splice(col.length - count, count)
+    if (col.length > 0 && !col[col.length - 1].faceUp) {
+      col[col.length - 1] = { ...col[col.length - 1], faceUp: true }
+      scoreAdd += 5 // めくりボーナス
+    }
+    newTableau[from.index] = col
+  } else {
+    newFoundation[from.index] = state.foundation[from.index].slice(0, -1)
+    scoreAdd -= 15 // foundation→tableau ペナルティ
+  }
+
+  // 移動先を更新
+  if (to.pile === 'foundation') {
+    newFoundation[to.index] = [...newFoundation[to.index], ...movingCards]
+    scoreAdd += 10 // →foundation +10
+  } else {
+    newTableau[to.index] = [...newTableau[to.index], ...movingCards]
+    if (from.pile === 'waste') scoreAdd += 5 // waste→tableau +5
+  }
+
+  return {
+    ...state,
+    tableau: newTableau,
+    waste: newWaste,
+    foundation: newFoundation,
+    score: Math.max(0, state.score + scoreAdd),
     history: [...state.history, snap],
   }
 }
