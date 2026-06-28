@@ -148,3 +148,89 @@ export function moveCards(state: GameState, move: Move): GameState {
     history: [...state.history, snap],
   }
 }
+
+export function undo(state: GameState): GameState {
+  if (state.history.length === 0) return state
+  const prev = state.history[state.history.length - 1]
+  return {
+    ...prev,
+    score: Math.max(0, prev.score - 10),
+    history: state.history.slice(0, -1),
+  }
+}
+
+export function getHints(state: GameState): Move[] {
+  const hints: Move[] = []
+
+  if (state.waste.length > 0) {
+    const top = state.waste[state.waste.length - 1]
+    state.tableau.forEach((col, i) => {
+      if (canPlaceOnTableau(top, col[col.length - 1])) {
+        hints.push({ from: { pile: 'waste', index: 0 }, to: { pile: 'tableau', index: i }, count: 1 })
+      }
+    })
+    state.foundation.forEach((pile, i) => {
+      if (canPlaceOnFoundation(top, pile)) {
+        hints.push({ from: { pile: 'waste', index: 0 }, to: { pile: 'foundation', index: i }, count: 1 })
+      }
+    })
+  }
+
+  state.tableau.forEach((col, fromIdx) => {
+    const faceUpStart = col.findIndex(c => c.faceUp)
+    if (faceUpStart === -1) return
+    for (let start = faceUpStart; start < col.length; start++) {
+      const movingCards = col.slice(start)
+      const count = movingCards.length
+      state.tableau.forEach((targetCol, toIdx) => {
+        if (toIdx === fromIdx) return
+        if (canPlaceOnTableau(movingCards[0], targetCol[targetCol.length - 1])) {
+          hints.push({ from: { pile: 'tableau', index: fromIdx }, to: { pile: 'tableau', index: toIdx }, count })
+        }
+      })
+      if (count === 1) {
+        state.foundation.forEach((pile, i) => {
+          if (canPlaceOnFoundation(movingCards[0], pile)) {
+            hints.push({ from: { pile: 'tableau', index: fromIdx }, to: { pile: 'foundation', index: i }, count: 1 })
+          }
+        })
+      }
+    }
+  })
+
+  return hints
+}
+
+export function canAutoComplete(state: GameState): boolean {
+  return (
+    state.stock.length === 0 &&
+    state.waste.length === 0 &&
+    state.tableau.every(col => col.every(c => c.faceUp))
+  )
+}
+
+export function autoCompleteStep(state: GameState): GameState {
+  if (state.waste.length > 0) {
+    const top = state.waste[state.waste.length - 1]
+    for (let i = 0; i < state.foundation.length; i++) {
+      if (canPlaceOnFoundation(top, state.foundation[i])) {
+        return moveCards(state, { from: { pile: 'waste', index: 0 }, to: { pile: 'foundation', index: i }, count: 1 })
+      }
+    }
+  }
+  for (let col = 0; col < state.tableau.length; col++) {
+    const column = state.tableau[col]
+    if (column.length === 0) continue
+    const top = column[column.length - 1]
+    for (let i = 0; i < state.foundation.length; i++) {
+      if (canPlaceOnFoundation(top, state.foundation[i])) {
+        return moveCards(state, { from: { pile: 'tableau', index: col }, to: { pile: 'foundation', index: i }, count: 1 })
+      }
+    }
+  }
+  return state
+}
+
+export function isVictory(state: GameState): boolean {
+  return state.foundation.every(pile => pile.length === 13)
+}

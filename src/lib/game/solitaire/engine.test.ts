@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest'
-import { dealInitial, drawFromStock, moveCards } from './engine'
-import type { GameState, Card } from './types'
+import { dealInitial, drawFromStock, moveCards, undo, getHints, canAutoComplete, autoCompleteStep, isVictory } from './engine'
+import type { GameState, Card, Rank } from './types'
 
 describe('dealInitial', () => {
   test('タブロー7列を生成する', () => {
@@ -298,5 +298,132 @@ describe('moveCards', () => {
       count: 1,
     })
     expect(next.score).toBe(0)
+  })
+})
+
+describe('undo', () => {
+  test('直前の状態に戻る', () => {
+    const initial = dealInitial(1)
+    const after = drawFromStock(initial)
+    const reverted = undo(after)
+    expect(reverted.waste).toHaveLength(initial.waste.length)
+    expect(reverted.stock).toHaveLength(initial.stock.length)
+  })
+
+  test('history が空のときは state を変更しない', () => {
+    const state = dealInitial(1)
+    expect(undo(state)).toBe(state)
+  })
+
+  test('アンドゥ後は score が 10 減る（最低 0）', () => {
+    const base = dealInitial(1)
+    const withScore: GameState = { ...base, score: 8, history: [{ ...base, history: [] as any }] }
+    expect(undo(withScore).score).toBe(0) // max(0, 8-10)
+  })
+
+  test('アンドゥ後の history は1つ減る', () => {
+    const state = dealInitial(1)
+    const after = drawFromStock(state)
+    const reverted = undo(after)
+    expect(reverted.history).toHaveLength(0)
+  })
+})
+
+describe('getHints', () => {
+  test('移動可能なカードがある場合 Move を返す', () => {
+    const state = makeState({
+      tableau: [
+        [{ suit: 'hearts', rank: 11, faceUp: true }],
+        [], [], [], [], [], [],
+      ],
+      waste: [{ suit: 'spades', rank: 10, faceUp: true }],
+      stock: [],
+    })
+    const hints = getHints(state)
+    expect(hints.length).toBeGreaterThan(0)
+    expect(hints[0].from.pile).toBe('waste')
+  })
+
+  test('詰み局面では空配列を返す', () => {
+    const state = makeState({
+      tableau: [
+        [{ suit: 'spades', rank: 2, faceUp: true }],
+        [{ suit: 'clubs', rank: 2, faceUp: true }],
+        [], [], [], [], [],
+      ],
+      waste: [],
+      stock: [],
+    })
+    const hints = getHints(state)
+    expect(hints).toHaveLength(0)
+  })
+})
+
+describe('canAutoComplete', () => {
+  test('stock が空かつ全カード表向きのとき true', () => {
+    const state = makeState({
+      tableau: [[{ suit: 'spades', rank: 5, faceUp: true }]],
+      stock: [],
+      waste: [],
+    })
+    expect(canAutoComplete(state)).toBe(true)
+  })
+
+  test('stock にカードがある場合 false', () => {
+    const state = dealInitial(1)
+    expect(canAutoComplete(state)).toBe(false)
+  })
+
+  test('tableau に裏向きカードがある場合 false', () => {
+    const state = makeState({
+      tableau: [[{ suit: 'spades', rank: 5, faceUp: false }]],
+      stock: [],
+    })
+    expect(canAutoComplete(state)).toBe(false)
+  })
+})
+
+describe('autoCompleteStep', () => {
+  test('foundation に置けるカードを1枚移動する', () => {
+    const state = makeState({
+      tableau: [
+        [{ suit: 'spades', rank: 1, faceUp: true }],
+        [], [], [], [], [], [],
+      ],
+      stock: [],
+      waste: [],
+    })
+    const next = autoCompleteStep(state)
+    expect(next.foundation.some(pile => pile.length > 0)).toBe(true)
+    expect(next.tableau[0]).toHaveLength(0)
+  })
+
+  test('置けるカードがない場合 state を変更しない', () => {
+    const state = makeState({
+      tableau: [[{ suit: 'spades', rank: 5, faceUp: true }]],
+      stock: [],
+      waste: [],
+    })
+    const next = autoCompleteStep(state)
+    expect(next.foundation.every(pile => pile.length === 0)).toBe(true)
+  })
+})
+
+describe('isVictory', () => {
+  test('foundation 4つが全て13枚（K まで）なら true', () => {
+    const suits = ['spades', 'hearts', 'diamonds', 'clubs'] as const
+    const fullPile = (suit: typeof suits[number]) =>
+      Array.from({ length: 13 }, (_, i) => ({ suit, rank: (i + 1) as Rank, faceUp: true }))
+    const state = makeState({
+      foundation: suits.map(s => fullPile(s)),
+      tableau: [[], [], [], [], [], [], []],
+      stock: [],
+      waste: [],
+    })
+    expect(isVictory(state)).toBe(true)
+  })
+
+  test('未完成なら false', () => {
+    expect(isVictory(dealInitial(1))).toBe(false)
   })
 })
