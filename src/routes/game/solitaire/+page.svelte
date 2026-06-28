@@ -544,7 +544,6 @@
     cardIndex?: number
   ) {
     e.preventDefault()
-    showHints = false
     let count = 1
     if (pile === 'tableau') {
       if (cardIndex === undefined) return
@@ -974,7 +973,7 @@
 
   <!-- 勝利モーダル -->
   {#if showVictory}
-    <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-[900]"
       onclick={() => showVictory = false}>
       <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center relative"
         onclick={(e) => e.stopPropagation()}>
