@@ -544,9 +544,17 @@
         class:bg-green-900={state.waste.length === 0}
       >
         {#if state.waste.length > 0}
-          <div class="absolute inset-0" style="opacity:{flyingToWaste() ? 0 : 1};">
-            {@render cardFace(state.waste[state.waste.length - 1], true)}
-          </div>
+          {#if flyingToWaste()}
+            {#if state.waste.length >= 2}
+              <div class="absolute inset-0">
+                {@render cardFace(state.waste[state.waste.length - 2], true)}
+              </div>
+            {/if}
+          {:else}
+            <div class="absolute inset-0">
+              {@render cardFace(state.waste[state.waste.length - 1], true)}
+            </div>
+          {/if}
         {/if}
       </button>
 
@@ -569,12 +577,22 @@
           class:bg-green-700={state.foundation[i].length === 0}
           class:bg-white={state.foundation[i].length > 0}
         >
-          {#if state.foundation[i].length === 0}
+          {#if flyingToFoundation(i)}
+            {#if state.foundation[i].length >= 2}
+              <div class="absolute inset-0">
+                {@render cardFace(state.foundation[i][state.foundation[i].length - 2], true)}
+              </div>
+            {:else}
+              <div class="absolute inset-0 flex items-center justify-center">
+                <span class="text-green-500 text-2xl opacity-60">{SUIT_SYMBOL[suit]}</span>
+              </div>
+            {/if}
+          {:else if state.foundation[i].length === 0}
             <div class="absolute inset-0 flex items-center justify-center">
               <span class="text-green-500 text-2xl opacity-60">{SUIT_SYMBOL[suit]}</span>
             </div>
           {:else}
-            <div class="absolute inset-0" style="opacity:{flyingToFoundation(i) ? 0 : 1};">
+            <div class="absolute inset-0">
               {@render cardFace(state.foundation[i][state.foundation[i].length - 1], true)}
             </div>
           {/if}
@@ -609,7 +627,7 @@
               onclick={() => handleCardClick('tableau', colIdx, cardIdx)}
               ondblclick={(e) => card.faceUp ? handleDoubleClick(e, 'tableau', colIdx, cardIdx) : undefined}
               class="absolute left-0 right-0 rounded-lg transition-all"
-              style="top: {cardIdx * 28}px; height: {cardIdx === col.length - 1 ? 98 : 46}px; z-index: {cardIdx + 1}; opacity: {dragInfo?.isDragging && dragInfo.pile === 'tableau' && dragInfo.pileIndex === colIdx && cardIdx >= col.length - dragInfo.count ? 0.4 : 1};"
+              style="top: {cardIdx * 28}px; height: {cardIdx >= col.length - 2 ? 98 : 46}px; z-index: {cardIdx + 1}; opacity: {dragInfo?.isDragging && dragInfo.pile === 'tableau' && dragInfo.pileIndex === colIdx && cardIdx >= col.length - dragInfo.count ? 0.4 : 1};"
               class:ring-2={
                 (hint?.from.pile === 'tableau' && hint?.from.index === colIdx && cardIdx >= col.length - hint.count) ||
                 (isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0))
@@ -620,7 +638,7 @@
             >
               {#if card.faceUp}
                 <div class="absolute inset-0" in:flipIn={{ duration: 200 }}>
-                  {@render cardFace(card, cardIdx === col.length - 1)}
+                  {@render cardFace(card, cardIdx >= col.length - 2)}
                 </div>
               {:else}
                 <div class="absolute inset-0 rounded-lg border border-indigo-500/50" style="{CARD_BACK_STYLE}"></div>
