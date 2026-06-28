@@ -44,6 +44,15 @@
     duration: number
   }
 
+  // ---- エフェクト型 ----
+  interface FloatScore { id: number; delta: number; x: number; y: number }
+  interface GlowEffect { id: number; x: number; y: number; w: number; h: number }
+  interface ConfettiParticle {
+    x: number; y: number; vx: number; vy: number
+    rotation: number; rotSpeed: number
+    color: string; w: number; h: number; life: number
+  }
+
   // ---- 状態 ----
   // loadSavedGame / loadSavedSettings / loadTop10 は関数宣言のためホイスト済み
   const _sg = loadSavedGame()
@@ -65,6 +74,11 @@
   let flyCard = $state<FlyCard | null>(null)
   let top10 = $state<ScoreEntry[]>(loadTop10())
   let clearRank = $state(0)
+  let floatScores = $state<FloatScore[]>([])
+  let glowEffects = $state<GlowEffect[]>([])
+  let _effectId = 0
+  const CONFETTI_COLORS = ['#f43f5e','#f97316','#eab308','#22c55e','#3b82f6','#a855f7','#ec4899','#06b6d4','#fbbf24']
+  let confettiCanvas: HTMLCanvasElement | null = null
 
   // ---- LocalStorage自動保存 ----
   $effect(() => {
@@ -114,16 +128,20 @@
         ? state.waste[state.waste.length - 1]
         : state.tableau[move.from.index][state.tableau[move.from.index].length - 1]
 
+      const prevScore = state.score
       state = autoCompleteStep(state)
+      const delta = state.score - prevScore
 
       await startFlyAnimation(card, fromX, fromY, toEl, false, { pile: 'foundation', index: foundIdx }, 70)
 
+      if (delta > 0) triggerScoreEffects(delta, toEl)
       if (!autoCompleting) break
 
       if (isVictory(state)) {
         stopTimer()
         clearRank = saveToTop10(state.score, state.elapsed, state.drawMode, state.seed)
         showVictory = true
+        launchConfetti()
         autoCompleting = false
         return
       }
@@ -141,6 +159,8 @@
     selected = null; hints = []; showHints = false; hintIndex = 0
     showVictory = false; autoCompleting = false; gameStarted = false; clearRank = 0
     flyCard = null
+    floatScores = []
+    glowEffects = []
   }
 
   function ensureStarted() {
@@ -178,6 +198,7 @@
 
   async function handleStockClick(e: MouseEvent) {
     ensureStarted()
+    showHints = false
     if (state.stock.length > 0) {
       const card = { ...state.stock[state.stock.length - 1], faceUp: true }
       const toEl = document.querySelector('[data-waste]')
@@ -224,9 +245,11 @@
       to: { pile, index: pileIndex },
       count: selected.count,
     }
+    const prevScore = state.score
     const next = moveCards(state, move)
     if (next !== state) {
       state = next
+      triggerScoreEffects(state.score - prevScore, getDestEl(move.to.pile, move.to.index))
       checkAfterMove()
     }
     selected = null
@@ -251,11 +274,14 @@
     const card = pile === 'waste'
       ? state.waste[state.waste.length - 1]
       : state.tableau[pileIndex][state.tableau[pileIndex].length - 1]
+    const prevScore = state.score
     state = moveCards(state, hint)
+    const delta = state.score - prevScore
     selected = null
     showHints = false
     const fromRect = (e.currentTarget as Element).getBoundingClientRect()
     if (toEl) await startFlyAnimation(card, fromRect.left, fromRect.top, toEl, false, { pile: 'foundation', index: foundIdx })
+    if (delta > 0 && toEl) triggerScoreEffects(delta, toEl)
     checkAfterMove()
   }
 
@@ -335,11 +361,133 @@
     return rank > 0 ? rank : 0
   }
 
+  function getDestEl(pile: 'tableau' | 'foundation', index: number): Element | null {
+    return document.querySelector(`[data-pile="${pile}"][data-pile-index="${index}"]`)
+  }
+
+  function triggerScoreEffects(delta: number, destEl: Element | null) {
+    if (delta <= 0 || !destEl) return
+    const rect = destEl.getBoundingClientRect()
+    const fid = _effectId++
+    floatScores = [...floatScores, { id: fid, delta, x: rect.left + rect.width / 2, y: rect.top + 10 }]
+    setTimeout(() => { floatScores = floatScores.filter(f => f.id !== fid) }, 1100)
+    const gid = _effectId++
+    glowEffects = [...glowEffects, { id: gid, x: rect.left, y: rect.top, w: rect.width, h: rect.height }]
+    setTimeout(() => { glowEffects = glowEffects.filter(g => g.id !== gid) }, 650)
+  }
+
+  function createCrackerBurst(ox: number, oy: number, vxMin: number, vxMax: number, vyMin: number, vyMax: number, count: number): ConfettiParticle[] {
+    const out: ConfettiParticle[] = []
+    for (let i = 0; i < count; i++) {
+      out.push({
+        x: ox + (Math.random() - 0.5) * 20,
+        y: oy + (Math.random() - 0.5) * 5,
+        vx: vxMin + Math.random() * (vxMax - vxMin),
+        vy: vyMin + Math.random() * (vyMax - vyMin),
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.3,
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        w: 7 + Math.random() * 9,
+        h: 3 + Math.random() * 5,
+        life: 180 + Math.random() * 80,
+      })
+    }
+    return out
+  }
+
+  async function launchConfetti() {
+    await tick()
+    if (!confettiCanvas) return
+    const ctx = confettiCanvas.getContext('2d')
+    if (!ctx) return
+    const W = window.innerWidth, H = window.innerHeight
+    confettiCanvas.width = W
+    confettiCanvas.height = H
+
+    const bursts: ConfettiParticle[] = [
+      // 下からのクラッカー（上向き）
+      ...createCrackerBurst(W * 0.05, H * 0.92, -2, 14, -22, -6, 40),
+      ...createCrackerBurst(W * 0.95, H * 0.92, -14, 2, -22, -6, 40),
+      ...createCrackerBurst(W * 0.5,  H * 0.98, -10, 10, -24, -8, 35),
+      // 上からのクラッカー（下向き）
+      ...createCrackerBurst(W * 0.05, H * 0.08, -2, 14, 6, 22, 40),
+      ...createCrackerBurst(W * 0.95, H * 0.08, -14, 2, 6, 22, 40),
+      ...createCrackerBurst(W * 0.5,  H * 0.02, -10, 10, 8, 24, 35),
+    ]
+
+    // 降り注ぐ紙吹雪（モーダル表示中に連続生成）
+    const snow: ConfettiParticle[] = []
+
+    function renderFrame() {
+      if (!confettiCanvas) return
+      ctx.clearRect(0, 0, W, H)
+
+      if (showVictory) {
+        for (let i = 0; i < 2; i++) {
+          snow.push({
+            x: Math.random() * W,
+            y: -15,
+            vx: (Math.random() - 0.5) * 2.5,
+            vy: 2 + Math.random() * 2.5,
+            rotation: Math.random() * Math.PI * 2,
+            rotSpeed: (Math.random() - 0.5) * 0.15,
+            color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+            w: 7 + Math.random() * 8,
+            h: 3 + Math.random() * 5,
+            life: 999,
+          })
+        }
+      }
+
+      let alive = 0
+
+      for (const p of bursts) {
+        if (p.life <= 0) continue
+        alive++
+        p.vy += 0.38
+        p.vx *= 0.992
+        p.x += p.vx
+        p.y += p.vy
+        p.rotation += p.rotSpeed
+        p.life--
+        ctx.save()
+        ctx.globalAlpha = Math.min(1, p.life / 45)
+        ctx.translate(p.x, p.y)
+        ctx.rotate(p.rotation)
+        ctx.fillStyle = p.color
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h)
+        ctx.restore()
+      }
+
+      for (let i = snow.length - 1; i >= 0; i--) {
+        const p = snow[i]
+        if (p.y > H + 20) { snow.splice(i, 1); continue }
+        alive++
+        p.vy += 0.06
+        p.vx += (Math.random() - 0.5) * 0.1
+        p.x += p.vx
+        p.y += p.vy
+        p.rotation += p.rotSpeed
+        ctx.save()
+        ctx.globalAlpha = 0.9
+        ctx.translate(p.x, p.y)
+        ctx.rotate(p.rotation)
+        ctx.fillStyle = p.color
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h)
+        ctx.restore()
+      }
+
+      if (alive > 0 || showVictory) requestAnimationFrame(renderFrame)
+    }
+    requestAnimationFrame(renderFrame)
+  }
+
   function checkAfterMove() {
     if (isVictory(state)) {
       stopTimer()
       clearRank = saveToTop10(state.score, state.elapsed, state.drawMode, state.seed)
       showVictory = true
+      launchConfetti()
       return
     }
     if (!autoCompleting && canAutoComplete(state)) startAutoComplete()
@@ -384,6 +532,7 @@
     cardIndex?: number
   ) {
     e.preventDefault()
+    showHints = false
     let count = 1
     if (pile === 'tableau') {
       if (cardIndex === undefined) return
@@ -478,9 +627,11 @@
             to: { pile: dropTarget.pile, index: dropTarget.index },
             count: dragInfo.count,
           }
+          const prevScore = state.score
           const next = moveCards(state, move)
           if (next !== state) {
             state = next
+            triggerScoreEffects(next.score - prevScore, getDestEl(dropTarget.pile, dropTarget.index))
             selected = null
             showHints = false
             checkAfterMove()
@@ -544,7 +695,7 @@
     </div>
     <div class="ml-auto flex items-center gap-3">
       <span class="text-sm text-amber-600 font-mono">⏱ {formatTime(state.elapsed)}</span>
-      <span class="text-sm text-emerald-600 font-mono">🏆 {state.score}pt</span>
+      {#key state.score}<span class="text-sm text-emerald-600 font-mono score-bounce">🏆 {state.score}pt</span>{/key}
       <button onclick={handleUndo} disabled={state.history.length === 0}
         class="px-2 py-1 text-xs rounded border border-slate-300 bg-white text-slate-600 disabled:opacity-40 hover:bg-slate-50">
         ↩ アンドゥ
@@ -612,6 +763,7 @@
         class:ring-blue-400={isSelected('waste', 0)}
         class:border-green-600={currentHint()?.from.pile !== 'waste' && !isSelected('waste', 0)}
         class:bg-green-900={state.waste.length === 0}
+        class:opacity-40={dragInfo?.isDragging && dragInfo?.pile === 'waste'}
       >
         {#if state.waste.length > 0}
           {#if flyingToWaste()}
@@ -800,8 +952,14 @@
 
   <!-- 勝利モーダル -->
   {#if showVictory}
-    <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
+    <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      onclick={() => showVictory = false}>
+      <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center relative"
+        onclick={(e) => e.stopPropagation()}>
+        <button
+          onclick={() => showVictory = false}
+          class="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors text-xl leading-none"
+        >×</button>
         <div class="text-5xl mb-4">🎉</div>
         <h2 class="text-2xl font-bold text-slate-800 mb-2">クリア！</h2>
         {#if clearRank > 0}
@@ -820,3 +978,56 @@
     </div>
   {/if}
 </div>
+
+{#each floatScores as fs (fs.id)}
+  <div class="float-score" style="left:{fs.x}px; top:{fs.y}px;">+{fs.delta}</div>
+{/each}
+
+{#each glowEffects as g (g.id)}
+  <div class="glow-ring" style="left:{g.x}px; top:{g.y}px; width:{g.w}px; height:{g.h}px;"></div>
+{/each}
+
+{#if showVictory}
+  <canvas bind:this={confettiCanvas} class="fixed inset-0 pointer-events-none z-[800]"></canvas>
+{/if}
+
+<style>
+@keyframes floatUp {
+  0%   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.3); }
+  20%  { opacity: 1; transform: translateX(-50%) translateY(-12px) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-55px) scale(0.85); }
+}
+.float-score {
+  position: fixed;
+  pointer-events: none;
+  z-index: 600;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: #f59e0b;
+  text-shadow: 0 0 8px rgba(251,191,36,0.8), 0 1px 3px rgba(0,0,0,0.4);
+  animation: floatUp 1.1s ease-out forwards;
+  white-space: nowrap;
+}
+
+@keyframes scoreBounce {
+  0%   { transform: scale(1.65); color: #f59e0b; }
+  60%  { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+.score-bounce {
+  display: inline-block;
+  animation: scoreBounce 0.45s ease-out;
+}
+
+@keyframes glowPulse {
+  0%   { box-shadow: 0 0 0 3px #fbbf24, 0 0 20px 8px rgba(251,191,36,0.65); opacity: 1; }
+  100% { box-shadow: 0 0 0 0 rgba(251,191,36,0), 0 0 0 0 rgba(251,191,36,0); opacity: 0; }
+}
+.glow-ring {
+  position: fixed;
+  pointer-events: none;
+  z-index: 550;
+  border-radius: 0.5rem;
+  animation: glowPulse 0.65s ease-out forwards;
+}
+</style>
