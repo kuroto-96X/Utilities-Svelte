@@ -1,6 +1,8 @@
 <!-- src/routes/game/solitaire/+page.svelte -->
 <script lang="ts">
   import { onMount } from 'svelte'
+  import { scale } from 'svelte/transition'
+  import { cubicOut } from 'svelte/easing'
   import type { GameState, Move, Card } from '$lib/game/solitaire/types'
   import {
     dealInitial, drawFromStock, moveCards,
@@ -33,6 +35,7 @@
   // ---- 状態 ----
   let state = $state<GameState>(dealInitial(1))
   let seedInput = $state(String(state.seed))
+  let useSeed = $state(false)
   let selected = $state<{ pile: 'tableau' | 'waste' | 'foundation'; index: number; count: number } | null>(null)
   let hints = $state<Move[]>([])
   let hintIndex = $state(0)
@@ -80,7 +83,7 @@
     stopTimer()
     if (autoInterval) { clearInterval(autoInterval); autoInterval = null }
     const parsed = parseInt(seedInput, 10)
-    const seed = Number.isInteger(parsed) && parsed > 0 ? parsed : undefined
+    const seed = useSeed && Number.isInteger(parsed) && parsed > 0 ? parsed : undefined
     state = dealInitial(mode, seed)
     seedInput = String(state.seed)
     selected = null; hints = []; showHints = false; hintIndex = 0
@@ -314,6 +317,14 @@
     'repeating-linear-gradient(0deg,transparent,transparent 7px,rgba(99,102,241,0.25) 7px,rgba(99,102,241,0.25) 8px),' +
     'repeating-linear-gradient(90deg,transparent,transparent 7px,rgba(99,102,241,0.25) 7px,rgba(99,102,241,0.25) 8px);'
 
+  function flipIn(_: Element, { duration = 220 }: { duration?: number } = {}) {
+    return {
+      duration,
+      easing: cubicOut,
+      css: (t: number) => `transform: perspective(600px) rotateY(${(1 - t) * 90}deg); opacity: ${t};`,
+    }
+  }
+
   function stockLayers(): number {
     if (state.stock.length === 0) return 0
     if (state.stock.length === 1) return 1
@@ -421,12 +432,23 @@
         class="px-2 py-1 text-xs rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50">
         ↺ 新ゲーム
       </button>
+      <label class="flex items-center gap-1 cursor-pointer select-none">
+        <input type="checkbox" bind:checked={useSeed} class="cursor-pointer" />
+        <span class="text-xs text-slate-400">seed:</span>
+      </label>
       <input
         type="text"
         inputmode="numeric"
         bind:value={seedInput}
-        placeholder="seed"
-        class="w-20 px-1.5 py-1 text-xs rounded border border-slate-300 font-mono text-slate-600 bg-white"
+        disabled={!useSeed}
+        placeholder="指定なし"
+        class="w-20 px-1.5 py-1 text-xs rounded border font-mono transition-colors"
+        class:border-slate-300={useSeed}
+        class:text-slate-600={useSeed}
+        class:bg-white={useSeed}
+        class:border-slate-200={!useSeed}
+        class:text-slate-300={!useSeed}
+        class:bg-slate-50={!useSeed}
       />
     </div>
   </div>
@@ -466,7 +488,11 @@
         class:bg-green-900={state.waste.length === 0}
       >
         {#if state.waste.length > 0}
-          {@render cardFace(state.waste[state.waste.length - 1], true)}
+          {#key state.waste.length}
+            <div class="absolute inset-0" in:flipIn={{ duration: 220 }}>
+              {@render cardFace(state.waste[state.waste.length - 1], true)}
+            </div>
+          {/key}
         {/if}
       </button>
 
@@ -494,8 +520,11 @@
               <span class="text-green-500 text-2xl opacity-60">{SUIT_SYMBOL[suit]}</span>
             </div>
           {:else}
-            {@const top = state.foundation[i][state.foundation[i].length - 1]}
-            {@render cardFace(top, true)}
+            {#key state.foundation[i].length}
+              <div class="absolute inset-0" in:scale={{ start: 0.82, duration: 180, easing: cubicOut }}>
+                {@render cardFace(state.foundation[i][state.foundation[i].length - 1], true)}
+              </div>
+            {/key}
           {/if}
         </button>
       {/each}
@@ -538,7 +567,9 @@
               class:-translate-y-1={isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0)}
             >
               {#if card.faceUp}
-                {@render cardFace(card, cardIdx === col.length - 1)}
+                <div class="absolute inset-0" in:flipIn={{ duration: 200 }}>
+                  {@render cardFace(card, cardIdx === col.length - 1)}
+                </div>
               {:else}
                 <div class="absolute inset-0 rounded-lg border border-indigo-500/50" style="{CARD_BACK_STYLE}"></div>
               {/if}
