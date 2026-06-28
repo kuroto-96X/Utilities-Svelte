@@ -79,7 +79,7 @@
     if (autoInterval) { clearInterval(autoInterval); autoInterval = null }
     state = dealInitial(mode)
     selected = null; hints = []; showHints = false; hintIndex = 0
-    showVictory = false; autoCompleting = false; gameStarted = false
+    showVictory = false; autoCompleting = false; gameStarted = false; clearRank = 0
   }
 
   function ensureStarted() {
