@@ -694,21 +694,6 @@
 
   <!-- 設定行 -->
   <div class="flex items-center gap-2 flex-wrap">
-    <span class="text-xs font-bold text-slate-500">DRAW</span>
-    <div class="flex gap-1">
-      {#each [1, 3] as mode (mode)}
-        <button
-          onclick={() => { pendingMode = mode as 1 | 3 }}
-          class="px-3 py-1 text-xs rounded border transition-colors"
-          class:bg-teal-600={pendingMode === mode}
-          class:text-white={pendingMode === mode}
-          class:border-teal-600={pendingMode === mode}
-          class:bg-white={pendingMode !== mode}
-          class:text-slate-600={pendingMode !== mode}
-          class:border-slate-300={pendingMode !== mode}
-        >{mode}枚</button>
-      {/each}
-    </div>
     <button onclick={() => newGame()}
       class="px-2 py-1 text-xs rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50">
       ↺ 新ゲーム
@@ -731,6 +716,21 @@
       class:text-slate-300={!useSeed}
       class:bg-slate-50={!useSeed}
     />
+    <div class="ml-auto flex items-center gap-1">
+      <span class="text-xs font-bold text-slate-500">DRAW</span>
+      {#each [1, 3] as mode (mode)}
+        <button
+          onclick={() => { pendingMode = mode as 1 | 3 }}
+          class="px-3 py-1 text-xs rounded border transition-colors"
+          class:bg-teal-600={pendingMode === mode}
+          class:text-white={pendingMode === mode}
+          class:border-teal-600={pendingMode === mode}
+          class:bg-white={pendingMode !== mode}
+          class:text-slate-600={pendingMode !== mode}
+          class:border-slate-300={pendingMode !== mode}
+        >{mode}枚</button>
+      {/each}
+    </div>
   </div>
 
   <!-- ゲーム情報行 -->
