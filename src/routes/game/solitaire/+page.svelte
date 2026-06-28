@@ -692,26 +692,53 @@
 
 <div class="max-w-[560px] mx-auto px-4 py-4 flex flex-col gap-4">
 
-  <!-- ツールバー -->
-  <div class="flex items-center gap-3 flex-wrap">
+  <!-- 設定行 -->
+  <div class="flex items-center gap-2 flex-wrap">
     <span class="text-xs font-bold text-slate-500">DRAW</span>
     <div class="flex gap-1">
       {#each [1, 3] as mode (mode)}
         <button
-          onclick={() => { pendingMode = mode as 1 | 3; newGame(mode as 1 | 3) }}
+          onclick={() => { pendingMode = mode as 1 | 3 }}
           class="px-3 py-1 text-xs rounded border transition-colors"
-          class:bg-teal-600={state.drawMode === mode}
-          class:text-white={state.drawMode === mode}
-          class:border-teal-600={state.drawMode === mode}
-          class:bg-white={state.drawMode !== mode}
-          class:text-slate-600={state.drawMode !== mode}
-          class:border-slate-300={state.drawMode !== mode}
+          class:bg-teal-600={pendingMode === mode}
+          class:text-white={pendingMode === mode}
+          class:border-teal-600={pendingMode === mode}
+          class:bg-white={pendingMode !== mode}
+          class:text-slate-600={pendingMode !== mode}
+          class:border-slate-300={pendingMode !== mode}
         >{mode}枚</button>
       {/each}
     </div>
-    <div class="ml-auto flex items-center gap-3">
-      <span class="text-sm text-amber-600 font-mono">⏱ {formatTime(state.elapsed)}</span>
-      {#key state.score}<span class="text-sm text-emerald-600 font-mono score-bounce">🏆 {state.score}pt</span>{/key}
+    <button onclick={() => newGame()}
+      class="px-2 py-1 text-xs rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50">
+      ↺ 新ゲーム
+    </button>
+    <label class="flex items-center gap-1 cursor-pointer select-none">
+      <input type="checkbox" bind:checked={useSeed} class="cursor-pointer" />
+      <span class="text-xs text-slate-400">seed:</span>
+    </label>
+    <input
+      type="text"
+      inputmode="numeric"
+      bind:value={seedInput}
+      disabled={!useSeed}
+      placeholder="指定なし"
+      class="w-20 px-1.5 py-1 text-xs rounded border font-mono transition-colors"
+      class:border-slate-300={useSeed}
+      class:text-slate-600={useSeed}
+      class:bg-white={useSeed}
+      class:border-slate-200={!useSeed}
+      class:text-slate-300={!useSeed}
+      class:bg-slate-50={!useSeed}
+    />
+  </div>
+
+  <!-- ゲーム情報行 -->
+  <div class="flex items-center gap-3 flex-wrap">
+    <span class="text-sm text-amber-600 font-mono">⏱ {formatTime(state.elapsed)}</span>
+    {#key state.score}<span class="text-sm text-emerald-600 font-mono score-bounce">🏆 {state.score}pt</span>{/key}
+    <span class="text-xs text-slate-400 font-mono">DRAW:{state.drawMode} / seed:{state.seed}</span>
+    <div class="ml-auto flex items-center gap-2">
       <button onclick={handleUndo} disabled={state.history.length === 0}
         class="px-2 py-1 text-xs rounded border border-slate-300 bg-white text-slate-600 disabled:opacity-40 hover:bg-slate-50">
         ↩ アンドゥ
@@ -720,28 +747,6 @@
         class="px-2 py-1 text-xs rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50">
         💡 ヒント
       </button>
-      <button onclick={() => newGame()}
-        class="px-2 py-1 text-xs rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50">
-        ↺ 新ゲーム
-      </button>
-      <label class="flex items-center gap-1 cursor-pointer select-none">
-        <input type="checkbox" bind:checked={useSeed} class="cursor-pointer" />
-        <span class="text-xs text-slate-400">seed:</span>
-      </label>
-      <input
-        type="text"
-        inputmode="numeric"
-        bind:value={seedInput}
-        disabled={!useSeed}
-        placeholder="指定なし"
-        class="w-20 px-1.5 py-1 text-xs rounded border font-mono transition-colors"
-        class:border-slate-300={useSeed}
-        class:text-slate-600={useSeed}
-        class:bg-white={useSeed}
-        class:border-slate-200={!useSeed}
-        class:text-slate-300={!useSeed}
-        class:bg-slate-50={!useSeed}
-      />
     </div>
   </div>
 
@@ -756,7 +761,8 @@
   {/if}
 
   <!-- ゲームエリア -->
-  <div class="bg-green-800 rounded-xl p-4 select-none" style="min-height: 520px;">
+  <div class="bg-green-800 rounded-xl p-4 select-none" style="min-height: 520px;"
+    class:pointer-events-none={isVictory(state)}>
 
     <!-- 上段: 山札・捨て札・組札 -->
     <div class="flex gap-2 mb-4">
