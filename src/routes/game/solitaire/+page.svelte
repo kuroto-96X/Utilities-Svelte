@@ -45,21 +45,34 @@
   }
 
   // ---- 状態 ----
-  let state = $state<GameState>(dealInitial(1))
-  let seedInput = $state(String(state.seed))
-  let useSeed = $state(false)
+  // loadSavedGame / loadSavedSettings / loadTop10 は関数宣言のためホイスト済み
+  const _sg = loadSavedGame()
+  const _init: GameState = (_sg && !isVictory(_sg)) ? _sg : dealInitial(1)
+  const _sets = loadSavedSettings(_init.seed, _init.drawMode)
+
+  let state = $state<GameState>(_init)
+  let seedInput = $state(_sets.seedInput)
+  let useSeed = $state(_sets.useSeed)
   let selected = $state<{ pile: 'tableau' | 'waste' | 'foundation'; index: number; count: number } | null>(null)
   let hints = $state<Move[]>([])
   let hintIndex = $state(0)
   let showHints = $state(false)
   let showVictory = $state(false)
   let autoCompleting = $state(false)
-  let pendingMode = $state<1 | 3>(1)
+  let pendingMode = $state<1 | 3>(_sets.pendingMode)
   let dragInfo = $state<DragInfo | null>(null)
   let dropTarget = $state<{ pile: 'tableau' | 'foundation'; index: number } | null>(null)
   let flyCard = $state<FlyCard | null>(null)
   let top10 = $state<ScoreEntry[]>(loadTop10())
   let clearRank = $state(0)
+
+  // ---- LocalStorage自動保存 ----
+  $effect(() => {
+    try { localStorage.setItem('solitaire-game', JSON.stringify({ state })) } catch {}
+  })
+  $effect(() => {
+    try { localStorage.setItem('solitaire-settings', JSON.stringify({ useSeed, seedInput, pendingMode })) } catch {}
+  })
 
   // ---- タイマー ----
   let timerInterval: ReturnType<typeof setInterval> | null = null
@@ -268,6 +281,32 @@
   function handleUndo() {
     state = undo(state)
     selected = null; showHints = false
+  }
+
+  function loadSavedGame(): GameState | null {
+    try {
+      const saved = localStorage.getItem('solitaire-game')
+      if (!saved) return null
+      const parsed = JSON.parse(saved) as { state?: GameState }
+      return parsed?.state ?? null
+    } catch {
+      return null
+    }
+  }
+
+  function loadSavedSettings(defaultSeed: number, defaultDrawMode: 1 | 3): { useSeed: boolean; seedInput: string; pendingMode: 1 | 3 } {
+    try {
+      const saved = localStorage.getItem('solitaire-settings')
+      if (saved) {
+        const p = JSON.parse(saved)
+        return {
+          useSeed: typeof p.useSeed === 'boolean' ? p.useSeed : false,
+          seedInput: typeof p.seedInput === 'string' ? p.seedInput : String(defaultSeed),
+          pendingMode: (p.pendingMode === 1 || p.pendingMode === 3) ? p.pendingMode as 1 | 3 : defaultDrawMode,
+        }
+      }
+    } catch {}
+    return { useSeed: false, seedInput: String(defaultSeed), pendingMode: defaultDrawMode }
   }
 
   function loadTop10(): ScoreEntry[] {
