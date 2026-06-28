@@ -696,12 +696,7 @@
 </script>
 
 {#snippet cardFace(card: Card, full: boolean)}
-  <div class="absolute inset-0 rounded-lg border border-indigo-500/50 p-1 flex flex-col items-start overflow-hidden"
-    class:bg-white={card.rank <= 10}
-    class:bg-indigo-50={card.rank === 11}
-    class:bg-rose-50={card.rank === 12}
-    class:bg-amber-50={card.rank === 13}
-  >
+  <div class="absolute inset-0 rounded-lg border border-indigo-500/50 p-1 flex flex-col items-start overflow-hidden bg-white">
     <div class="leading-none {SUIT_COLOR[card.suit]}">
       <div class="text-sm font-bold leading-none">{rankLabel(card.rank)}</div>
       <div class="text-xs leading-none">{SUIT_SYMBOL[card.suit]}</div>
