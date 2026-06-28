@@ -1,7 +1,7 @@
 <!-- src/routes/game/solitaire/+page.svelte -->
 <script lang="ts">
   import { onMount } from 'svelte'
-  import type { GameState, Move } from '$lib/game/solitaire/types'
+  import type { GameState, Move, Card } from '$lib/game/solitaire/types'
   import {
     dealInitial, drawFromStock, moveCards,
     undo, getHints, canAutoComplete, autoCompleteStep, isVictory
@@ -150,6 +150,13 @@
     selected = null
     showHints = false
     checkAfterMove()
+  }
+
+  function cardBg(rank: number): string {
+    if (rank === 13) return 'bg-amber-50'
+    if (rank === 12) return 'bg-rose-50'
+    if (rank === 11) return 'bg-indigo-50'
+    return 'bg-white'
   }
 
   function handleHint() {
@@ -355,7 +362,26 @@
   })
 </script>
 
-<div class="max-w-4xl mx-auto px-4 py-4 flex flex-col gap-4">
+{#snippet cardFace(card: Card, full: boolean)}
+  <div class="absolute inset-0 rounded-lg border border-indigo-500/50 p-1 flex flex-col items-start overflow-hidden bg-white">
+    <div class="leading-none {SUIT_COLOR[card.suit]}">
+      <div class="text-sm font-bold leading-none">{rankLabel(card.rank)}</div>
+      <div class="text-xs leading-none">{SUIT_SYMBOL[card.suit]}</div>
+    </div>
+    {#if full}
+      <div class="w-full flex-1 flex flex-col items-center justify-center {SUIT_COLOR[card.suit]}">
+        <span class="text-xl font-bold leading-none">{rankLabel(card.rank)}</span>
+        <span class="text-sm leading-none">{SUIT_SYMBOL[card.suit]}</span>
+      </div>
+      <div class="rotate-180 self-end leading-none {SUIT_COLOR[card.suit]}">
+        <div class="text-sm font-bold leading-none">{rankLabel(card.rank)}</div>
+        <div class="text-xs leading-none">{SUIT_SYMBOL[card.suit]}</div>
+      </div>
+    {/if}
+  </div>
+{/snippet}
+
+<div class="max-w-[560px] mx-auto px-4 py-4 flex flex-col gap-4">
 
   <!-- ツールバー -->
   <div class="flex items-center gap-3 flex-wrap">
@@ -400,13 +426,13 @@
       <!-- 山札 -->
       <button
         onclick={handleStockClick}
-        class="w-16 h-[98px] rounded-lg border-2 border-green-600 bg-green-900 relative hover:bg-green-700 transition-colors flex items-center justify-center"
+        class="w-16 h-[98px] rounded-lg border-2 border-green-600 bg-green-900 relative hover:bg-green-700 transition-colors flex items-center justify-center overflow-hidden"
       >
         {#if state.stock.length > 0}
           {#each { length: stockLayers() } as _, i}
             <div
               class="absolute w-14 h-[90px] rounded-md border border-indigo-500/50"
-              style="{CARD_BACK_STYLE} top:{(stockLayers() - 1 - i) * 2 + 4}px; left:{(stockLayers() - 1 - i) * 2 + 4}px;"
+              style="{CARD_BACK_STYLE} top:{(stockLayers() - 1 - i) * 2}px; left:{(stockLayers() - 1 - i) * 2}px;"
             ></div>
           {/each}
         {:else}
@@ -427,18 +453,7 @@
         class:bg-green-900={state.waste.length === 0}
       >
         {#if state.waste.length > 0}
-          {#each state.waste.slice(-3) as card, i (i)}
-            {@const isTop = i === Math.min(2, state.waste.length - 1)}
-            <div
-              class="absolute inset-0 rounded-lg bg-white flex flex-col p-1"
-              style="left: {i * 6}px; z-index: {i};"
-            >
-              {#if isTop}
-                <span class="text-xs font-bold leading-none {SUIT_COLOR[card.suit]}">{rankLabel(card.rank)}{SUIT_SYMBOL[card.suit]}</span>
-                <span class="text-2xl flex-1 flex items-center justify-center {SUIT_COLOR[card.suit]}">{SUIT_SYMBOL[card.suit]}</span>
-              {/if}
-            </div>
-          {/each}
+          {@render cardFace(state.waste[state.waste.length - 1], true)}
         {/if}
       </button>
 
@@ -451,7 +466,7 @@
           onclick={() => handleCardClick('foundation', i)}
           data-pile="foundation"
           data-pile-index={i}
-          class="w-16 h-[98px] rounded-lg border-2 transition-colors flex items-center justify-center"
+          class="w-16 h-[98px] rounded-lg border-2 transition-colors relative overflow-hidden"
           class:ring-2={isSelected('foundation', i) || (currentHint()?.from.pile === 'foundation' && currentHint()?.from.index === i)}
           class:ring-blue-400={isSelected('foundation', i)}
           class:ring-yellow-400={currentHint()?.from.pile === 'foundation' && currentHint()?.from.index === i && !isSelected('foundation', i)}
@@ -462,13 +477,12 @@
           class:bg-white={state.foundation[i].length > 0}
         >
           {#if state.foundation[i].length === 0}
-            <span class="text-green-500 text-2xl opacity-60">{SUIT_SYMBOL[suit]}</span>
+            <div class="absolute inset-0 flex items-center justify-center">
+              <span class="text-green-500 text-2xl opacity-60">{SUIT_SYMBOL[suit]}</span>
+            </div>
           {:else}
             {@const top = state.foundation[i][state.foundation[i].length - 1]}
-            <div class="h-full w-full flex flex-col p-1">
-              <span class="text-xs font-bold leading-none {SUIT_COLOR[top.suit]}">{rankLabel(top.rank)}{SUIT_SYMBOL[top.suit]}</span>
-              <span class="text-2xl flex-1 flex items-center justify-center {SUIT_COLOR[top.suit]}">{SUIT_SYMBOL[top.suit]}</span>
-            </div>
+            {@render cardFace(top, true)}
           {/if}
         </button>
       {/each}
@@ -478,7 +492,7 @@
     <div class="flex gap-2">
       {#each state.tableau as col, colIdx (colIdx)}
         <div
-          class="flex-1 relative"
+          class="w-16 shrink-0 relative"
           data-pile="tableau"
           data-pile-index={colIdx}
           style="min-height: {Math.max(98, col.length * 28 + 70)}px;"
@@ -486,7 +500,7 @@
           <!-- 空列クリック領域 -->
           <button
             onclick={() => { if (selected !== null) handleCardClick('tableau', colIdx) }}
-            class="absolute inset-0 rounded-lg border-2 z-0 transition-colors"
+            class="absolute inset-x-0 top-0 h-[98px] rounded-lg border-2 z-0 transition-colors"
             class:border-blue-400={dropTarget?.pile === 'tableau' && dropTarget?.index === colIdx}
             class:border-dashed={dropTarget?.pile === 'tableau' && dropTarget?.index === colIdx}
             class:border-green-600={!(dropTarget?.pile === 'tableau' && dropTarget?.index === colIdx)}
@@ -501,7 +515,7 @@
               onclick={() => handleCardClick('tableau', colIdx, cardIdx)}
               ondblclick={() => card.faceUp ? handleDoubleClick('tableau', colIdx, cardIdx) : undefined}
               class="absolute left-0 right-0 rounded-lg transition-all"
-              style="top: {cardIdx * 28}px; height: {cardIdx === col.length - 1 ? 98 : 28}px; z-index: {cardIdx + 1}; opacity: {dragInfo?.isDragging && dragInfo.pile === 'tableau' && dragInfo.pileIndex === colIdx && cardIdx >= col.length - dragInfo.count ? 0.4 : 1};"
+              style="top: {cardIdx * 28}px; height: {cardIdx === col.length - 1 ? 98 : 46}px; z-index: {cardIdx + 1}; opacity: {dragInfo?.isDragging && dragInfo.pile === 'tableau' && dragInfo.pileIndex === colIdx && cardIdx >= col.length - dragInfo.count ? 0.4 : 1};"
               class:ring-2={
                 (hint?.from.pile === 'tableau' && hint?.from.index === colIdx && cardIdx >= col.length - hint.count) ||
                 (isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0))
@@ -511,16 +525,9 @@
               class:-translate-y-1={isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0)}
             >
               {#if card.faceUp}
-                <div class="h-full bg-white rounded-lg p-1 flex flex-col overflow-hidden">
-                  <span class="text-xs font-bold leading-none {SUIT_COLOR[card.suit]}">{rankLabel(card.rank)}{SUIT_SYMBOL[card.suit]}</span>
-                  {#if cardIdx === col.length - 1}
-                    <span class="text-2xl flex-1 flex items-center justify-center {SUIT_COLOR[card.suit]}">{SUIT_SYMBOL[card.suit]}</span>
-                  {/if}
-                </div>
+                {@render cardFace(card, cardIdx === col.length - 1)}
               {:else}
-                <div class="h-full rounded-lg border border-indigo-500/50"
-                  style="{CARD_BACK_STYLE}">
-                </div>
+                <div class="absolute inset-0 rounded-lg border border-indigo-500/50" style="{CARD_BACK_STYLE}"></div>
               {/if}
             </button>
           {/each}
@@ -571,13 +578,10 @@
     >
       {#each getDragCards() as card, i (i)}
         <div
-          class="absolute w-16 bg-white rounded-lg border border-slate-200 p-1 flex flex-col shadow-2xl"
+          class="absolute w-16 rounded-lg border border-slate-200 shadow-2xl overflow-hidden"
           style="top:{i * 28}px; height:{i === getDragCards().length - 1 ? 98 : 28}px; opacity:0.9;"
         >
-          <span class="text-xs font-bold leading-none {SUIT_COLOR[card.suit]}">{rankLabel(card.rank)}{SUIT_SYMBOL[card.suit]}</span>
-          {#if i === getDragCards().length - 1}
-            <span class="text-2xl flex-1 flex items-center justify-center {SUIT_COLOR[card.suit]}">{SUIT_SYMBOL[card.suit]}</span>
-          {/if}
+          {@render cardFace(card, i === getDragCards().length - 1)}
         </div>
       {/each}
     </div>
