@@ -212,6 +212,28 @@ export function canAutoComplete(state: GameState): boolean {
   )
 }
 
+export function getAutoCompleteMove(state: GameState): Move | null {
+  if (state.waste.length > 0) {
+    const top = state.waste[state.waste.length - 1]
+    for (let i = 0; i < state.foundation.length; i++) {
+      if (canPlaceOnFoundation(top, state.foundation[i])) {
+        return { from: { pile: 'waste', index: 0 }, to: { pile: 'foundation', index: i }, count: 1 }
+      }
+    }
+  }
+  for (let col = 0; col < state.tableau.length; col++) {
+    const column = state.tableau[col]
+    if (column.length === 0) continue
+    const top = column[column.length - 1]
+    for (let i = 0; i < state.foundation.length; i++) {
+      if (canPlaceOnFoundation(top, state.foundation[i])) {
+        return { from: { pile: 'tableau', index: col }, to: { pile: 'foundation', index: i }, count: 1 }
+      }
+    }
+  }
+  return null
+}
+
 export function autoCompleteStep(state: GameState): GameState {
   if (state.waste.length > 0) {
     const top = state.waste[state.waste.length - 1]

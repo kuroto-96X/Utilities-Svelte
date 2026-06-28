@@ -5,7 +5,7 @@
   import type { GameState, Move, Card } from '$lib/game/solitaire/types'
   import {
     dealInitial, drawFromStock, moveCards,
-    undo, getHints, canAutoComplete, autoCompleteStep, isVictory
+    undo, getHints, canAutoComplete, autoCompleteStep, getAutoCompleteMove, isVictory
   } from '$lib/game/solitaire/engine'
 
   // ---- TOP10スコア型 ----
@@ -41,6 +41,7 @@
     flip: boolean
     dest: 'waste' | { pile: 'foundation'; index: number }
     moving: boolean
+    duration: number
   }
 
   // ---- 状態 ----
@@ -75,31 +76,58 @@
   }
 
   // ---- オートコンプリート ----
-  let autoInterval: ReturnType<typeof setInterval> | null = null
-
-  function startAutoComplete() {
+  async function startAutoComplete() {
     autoCompleting = true
-    autoInterval = setInterval(() => {
+    while (autoCompleting) {
+      const move = getAutoCompleteMove(state)
+      if (!move || !autoCompleting) break
+
+      const foundIdx = move.to.index
+      const toEl = document.querySelector(`[data-pile="foundation"][data-pile-index="${foundIdx}"]`)
+      if (!toEl) break
+
+      let fromX = 0, fromY = 0
+      if (move.from.pile === 'waste') {
+        const r = document.querySelector('[data-waste]')?.getBoundingClientRect()
+        fromX = r?.left ?? 0; fromY = r?.top ?? 0
+      } else {
+        const col = state.tableau[move.from.index]
+        const r = document.querySelector(`[data-pile="tableau"][data-pile-index="${move.from.index}"]`)?.getBoundingClientRect()
+        fromX = r?.left ?? 0
+        fromY = (r?.top ?? 0) + (col.length - 1) * 28
+      }
+
+      const card = move.from.pile === 'waste'
+        ? state.waste[state.waste.length - 1]
+        : state.tableau[move.from.index][state.tableau[move.from.index].length - 1]
+
       state = autoCompleteStep(state)
+
+      await startFlyAnimation(card, fromX, fromY, toEl, false, { pile: 'foundation', index: foundIdx }, 70)
+
+      if (!autoCompleting) break
+
       if (isVictory(state)) {
-        clearInterval(autoInterval!); autoInterval = null
         stopTimer()
+        clearRank = saveToTop10(state.score, state.elapsed, state.drawMode, state.seed)
         showVictory = true
         autoCompleting = false
+        return
       }
-    }, 300)
+    }
+    autoCompleting = false
   }
 
   // ---- ゲーム操作 ----
   function newGame(mode: 1 | 3 = pendingMode) {
     stopTimer()
-    if (autoInterval) { clearInterval(autoInterval); autoInterval = null }
     const parsed = parseInt(seedInput, 10)
     const seed = useSeed && Number.isInteger(parsed) && parsed > 0 ? parsed : undefined
     state = dealInitial(mode, seed)
     seedInput = String(state.seed)
     selected = null; hints = []; showHints = false; hintIndex = 0
     showVictory = false; autoCompleting = false; gameStarted = false; clearRank = 0
+    flyCard = null
   }
 
   function ensureStarted() {
@@ -108,21 +136,22 @@
 
   async function startFlyAnimation(
     card: Card,
-    fromEl: Element,
+    fromX: number,
+    fromY: number,
     toEl: Element,
     flip: boolean,
-    dest: 'waste' | { pile: 'foundation'; index: number }
+    dest: 'waste' | { pile: 'foundation'; index: number },
+    duration = 175
   ) {
-    const fromRect = fromEl.getBoundingClientRect()
     const toRect = toEl.getBoundingClientRect()
-    flyCard = { card, fromX: fromRect.left, fromY: fromRect.top, toX: toRect.left, toY: toRect.top, flip, dest, moving: false }
+    flyCard = { card, fromX, fromY, toX: toRect.left, toY: toRect.top, flip, dest, moving: false, duration }
     await tick()
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (flyCard) flyCard = { ...flyCard, moving: true }
       })
     })
-    await new Promise<void>(r => setTimeout(r, 200))
+    await new Promise<void>(r => setTimeout(r, duration + 25))
     flyCard = null
   }
 
@@ -139,9 +168,10 @@
     if (state.stock.length > 0) {
       const card = { ...state.stock[state.stock.length - 1], faceUp: true }
       const toEl = document.querySelector('[data-waste]')
+      const fromRect = (e.currentTarget as Element).getBoundingClientRect()
       state = drawFromStock(state)
       selected = null
-      if (toEl) await startFlyAnimation(card, e.currentTarget as Element, toEl, true, 'waste')
+      if (toEl) await startFlyAnimation(card, fromRect.left, fromRect.top, toEl, true, 'waste')
     } else {
       state = drawFromStock(state)
       selected = null
@@ -211,7 +241,8 @@
     state = moveCards(state, hint)
     selected = null
     showHints = false
-    if (toEl) await startFlyAnimation(card, e.currentTarget as Element, toEl, false, { pile: 'foundation', index: foundIdx })
+    const fromRect = (e.currentTarget as Element).getBoundingClientRect()
+    if (toEl) await startFlyAnimation(card, fromRect.left, fromRect.top, toEl, false, { pile: 'foundation', index: foundIdx })
     checkAfterMove()
   }
 
@@ -427,7 +458,7 @@
     window.addEventListener('pointerup', onPointerUp)
     return () => {
       stopTimer()
-      if (autoInterval) clearInterval(autoInterval)
+      autoCompleting = false
       window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('pointerup', onPointerUp)
     }
@@ -690,16 +721,16 @@
   {#if flyCard}
     <div
       class="pointer-events-none fixed z-[500] w-16 h-[98px] overflow-hidden rounded-lg"
-      style="left:{flyCard.moving ? flyCard.toX : flyCard.fromX}px; top:{flyCard.moving ? flyCard.toY : flyCard.fromY}px; transition: left 0.175s cubic-bezier(0.4,0,0.2,1), top 0.175s cubic-bezier(0.4,0,0.2,1);"
+      style="left:{flyCard.moving ? flyCard.toX : flyCard.fromX}px; top:{flyCard.moving ? flyCard.toY : flyCard.fromY}px; transition: left {flyCard.duration}ms cubic-bezier(0.4,0,0.2,1), top {flyCard.duration}ms cubic-bezier(0.4,0,0.2,1);"
     >
       {#if flyCard.flip}
         <div
           class="absolute inset-0 rounded-lg border border-indigo-500/50"
-          style="{CARD_BACK_STYLE} transition: transform 0.09s linear; transform: perspective(600px) rotateY({flyCard.moving ? 90 : 0}deg);"
+          style="{CARD_BACK_STYLE} transition: transform {Math.round(flyCard.duration/2)}ms linear; transform: perspective(600px) rotateY({flyCard.moving ? 90 : 0}deg);"
         ></div>
         <div
           class="absolute inset-0"
-          style="transition: transform 0.09s linear 0.09s; transform: perspective(600px) rotateY({flyCard.moving ? 0 : -90}deg);"
+          style="transition: transform {Math.round(flyCard.duration/2)}ms linear {Math.round(flyCard.duration/2)}ms; transform: perspective(600px) rotateY({flyCard.moving ? 0 : -90}deg);"
         >
           {@render cardFace(flyCard.card, true)}
         </div>
