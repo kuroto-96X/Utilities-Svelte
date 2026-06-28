@@ -716,7 +716,7 @@
       class:text-slate-300={!useSeed}
       class:bg-slate-50={!useSeed}
     />
-    <div class="ml-auto flex items-center gap-1">
+    <div class="flex items-center gap-1">
       <span class="text-xs font-bold text-slate-500">DRAW</span>
       {#each [1, 3] as mode (mode)}
         <button
