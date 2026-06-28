@@ -7,6 +7,14 @@
     undo, getHints, canAutoComplete, autoCompleteStep, isVictory
   } from '$lib/game/solitaire/engine'
 
+  // ---- TOP10スコア型 ----
+  interface ScoreEntry {
+    score: number
+    elapsed: number
+    drawMode: 1 | 3
+    date: string
+  }
+
   // ---- ドラッグ型 ----
   interface DragInfo {
     pile: 'tableau' | 'waste' | 'foundation'
@@ -32,6 +40,8 @@
   let pendingMode = $state<1 | 3>(1)
   let dragInfo = $state<DragInfo | null>(null)
   let dropTarget = $state<{ pile: 'tableau' | 'foundation'; index: number } | null>(null)
+  let top10 = $state<ScoreEntry[]>(loadTop10())
+  let clearRank = $state(0)
 
   // ---- タイマー ----
   let timerInterval: ReturnType<typeof setInterval> | null = null
@@ -159,8 +169,38 @@
     selected = null; showHints = false
   }
 
+  function loadTop10(): ScoreEntry[] {
+    try {
+      return JSON.parse(localStorage.getItem('solitaire-top10') ?? '[]') as ScoreEntry[]
+    } catch {
+      return []
+    }
+  }
+
+  function saveToTop10(score: number, elapsed: number, drawMode: 1 | 3): number {
+    const entries = loadTop10()
+    const newEntry: ScoreEntry = {
+      score,
+      elapsed,
+      drawMode,
+      date: new Date().toISOString().slice(0, 10),
+    }
+    entries.push(newEntry)
+    entries.sort((a, b) => b.score - a.score || a.elapsed - b.elapsed)
+    const ranked = entries.slice(0, 10)
+    const rank = ranked.findIndex(e => e === newEntry) + 1
+    localStorage.setItem('solitaire-top10', JSON.stringify(ranked))
+    top10 = ranked
+    return rank > 0 ? rank : 0
+  }
+
   function checkAfterMove() {
-    if (isVictory(state)) { stopTimer(); showVictory = true; return }
+    if (isVictory(state)) {
+      stopTimer()
+      clearRank = saveToTop10(state.score, state.elapsed, state.drawMode)
+      showVictory = true
+      return
+    }
     if (!autoCompleting && canAutoComplete(state)) startAutoComplete()
   }
 
@@ -489,6 +529,40 @@
     </div>
   </div>
 
+  <!-- TOP10スコア -->
+  <div class="mt-2 border border-slate-200 rounded-lg overflow-hidden">
+    <div class="bg-slate-100 px-3 py-2 text-sm font-bold text-slate-700">🏆 TOP 10</div>
+    {#if top10.length === 0}
+      <p class="text-xs text-slate-400 px-3 py-3">まだ記録がありません。クリアして登録しよう！</p>
+    {:else}
+      <table class="w-full text-xs">
+        <thead>
+          <tr class="bg-slate-50 border-b border-slate-200">
+            <th class="px-2 py-1 text-left text-slate-500 font-medium">#</th>
+            <th class="px-2 py-1 text-right text-slate-500 font-medium">スコア</th>
+            <th class="px-2 py-1 text-right text-slate-500 font-medium">タイム</th>
+            <th class="px-2 py-1 text-center text-slate-500 font-medium">ドロー</th>
+            <th class="px-2 py-1 text-right text-slate-500 font-medium">日付</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each top10 as entry, i (i)}
+            <tr
+              class="border-b border-slate-100 last:border-0"
+              class:bg-amber-50={i + 1 === clearRank}
+            >
+              <td class="px-2 py-1.5 font-mono text-slate-600">{i + 1}</td>
+              <td class="px-2 py-1.5 text-right font-mono font-bold text-emerald-600">{entry.score}pt</td>
+              <td class="px-2 py-1.5 text-right font-mono text-slate-600">{formatTime(entry.elapsed)}</td>
+              <td class="px-2 py-1.5 text-center text-slate-500">{entry.drawMode}枚</td>
+              <td class="px-2 py-1.5 text-right text-slate-500">{entry.date.slice(5).replace('-', '/')}</td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    {/if}
+  </div>
+
   <!-- ドラッグゴースト -->
   {#if dragInfo?.isDragging}
     <div
@@ -515,6 +589,9 @@
       <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
         <div class="text-5xl mb-4">🎉</div>
         <h2 class="text-2xl font-bold text-slate-800 mb-2">クリア！</h2>
+        {#if clearRank > 0}
+          <p class="text-amber-500 font-bold text-lg mb-2">🏆 {clearRank}位入り！</p>
+        {/if}
         <p class="text-slate-500 mb-1">タイム: <span class="font-mono font-bold text-slate-700">{formatTime(state.elapsed)}</span></p>
         <p class="text-slate-500 mb-6">スコア: <span class="font-bold text-emerald-600">{state.score} pt</span></p>
         <button
