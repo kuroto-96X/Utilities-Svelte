@@ -7,6 +7,20 @@
     undo, getHints, canAutoComplete, autoCompleteStep, isVictory
   } from '$lib/game/solitaire/engine'
 
+  // ---- ドラッグ型 ----
+  interface DragInfo {
+    pile: 'tableau' | 'waste' | 'foundation'
+    pileIndex: number
+    cardIndex: number | undefined
+    count: number
+    startX: number
+    startY: number
+    currentX: number
+    currentY: number
+    isDragging: boolean
+    pointerId: number
+  }
+
   // ---- 状態 ----
   let state = $state<GameState>(dealInitial(1))
   let selected = $state<{ pile: 'tableau' | 'waste' | 'foundation'; index: number; count: number } | null>(null)
@@ -16,6 +30,8 @@
   let showVictory = $state(false)
   let autoCompleting = $state(false)
   let pendingMode = $state<1 | 3>(1)
+  let dragInfo = $state<DragInfo | null>(null)
+  let dropTarget = $state<{ pile: 'tableau' | 'foundation'; index: number } | null>(null)
 
   // ---- タイマー ----
   let timerInterval: ReturnType<typeof setInterval> | null = null
@@ -148,6 +164,70 @@
     if (!autoCompleting && canAutoComplete(state)) startAutoComplete()
   }
 
+  // ---- ドラッグ操作 ----
+  function getDragCards(): import('$lib/game/solitaire/types').Card[] {
+    if (!dragInfo) return []
+    if (dragInfo.pile === 'waste') return state.waste.slice(-1)
+    if (dragInfo.pile === 'foundation') return [state.foundation[dragInfo.pileIndex].at(-1)!]
+    const col = state.tableau[dragInfo.pileIndex]
+    return col.slice(col.length - dragInfo.count)
+  }
+
+  function updateDropTarget(x: number, y: number) {
+    if (!dragInfo) return
+    const els = document.elementsFromPoint(x, y)
+    for (const el of els) {
+      const target = (el as HTMLElement).closest?.('[data-pile]') as HTMLElement | null
+      if (!target) continue
+      const pile = target.dataset.pile as 'tableau' | 'foundation'
+      const index = parseInt(target.dataset.pileIndex ?? '0')
+      const move: Move = {
+        from: { pile: dragInfo.pile, index: dragInfo.pileIndex },
+        to: { pile, index },
+        count: dragInfo.count,
+      }
+      if (moveCards(state, move) !== state) {
+        dropTarget = { pile, index }
+      } else {
+        dropTarget = null
+      }
+      return
+    }
+    dropTarget = null
+  }
+
+  function onCardPointerDown(
+    e: PointerEvent,
+    pile: 'tableau' | 'waste' | 'foundation',
+    pileIndex: number,
+    cardIndex?: number
+  ) {
+    e.preventDefault()
+    let count = 1
+    if (pile === 'tableau') {
+      if (cardIndex === undefined) return
+      const col = state.tableau[pileIndex]
+      if (!col[cardIndex]?.faceUp) return
+      count = col.length - cardIndex
+    } else if (pile === 'waste') {
+      if (state.waste.length === 0) return
+    } else {
+      if (state.foundation[pileIndex].length === 0) return
+    }
+    dragInfo = {
+      pile,
+      pileIndex,
+      cardIndex,
+      count,
+      startX: e.clientX,
+      startY: e.clientY,
+      currentX: e.clientX,
+      currentY: e.clientY,
+      isDragging: false,
+      pointerId: e.pointerId,
+    }
+  }
+
   // ---- 表示ヘルパー ----
   function rankLabel(rank: number): string {
     if (rank === 1) return 'A'
@@ -188,7 +268,51 @@
     return 3
   }
 
-  onMount(() => () => { stopTimer(); if (autoInterval) clearInterval(autoInterval) })
+  onMount(() => {
+    function onPointerMove(e: PointerEvent) {
+      if (!dragInfo || e.pointerId !== dragInfo.pointerId) return
+      dragInfo = { ...dragInfo, currentX: e.clientX, currentY: e.clientY }
+      const dx = e.clientX - dragInfo.startX
+      const dy = e.clientY - dragInfo.startY
+      if (!dragInfo.isDragging && Math.sqrt(dx * dx + dy * dy) > 5) {
+        dragInfo = { ...dragInfo, isDragging: true }
+      }
+      if (dragInfo.isDragging) updateDropTarget(e.clientX, e.clientY)
+    }
+
+    function onPointerUp(e: PointerEvent) {
+      if (!dragInfo || e.pointerId !== dragInfo.pointerId) return
+      if (dragInfo.isDragging) {
+        if (dropTarget) {
+          const move: Move = {
+            from: { pile: dragInfo.pile, index: dragInfo.pileIndex },
+            to: { pile: dropTarget.pile, index: dropTarget.index },
+            count: dragInfo.count,
+          }
+          const next = moveCards(state, move)
+          if (next !== state) {
+            state = next
+            selected = null
+            showHints = false
+            checkAfterMove()
+          }
+        }
+      } else {
+        handleCardClick(dragInfo.pile, dragInfo.pileIndex, dragInfo.cardIndex)
+      }
+      dragInfo = null
+      dropTarget = null
+    }
+
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerup', onPointerUp)
+    return () => {
+      stopTimer()
+      if (autoInterval) clearInterval(autoInterval)
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerup', onPointerUp)
+    }
+  })
 </script>
 
 <div class="max-w-4xl mx-auto px-4 py-4 flex flex-col gap-4">
@@ -252,6 +376,7 @@
 
       <!-- 捨て札 -->
       <button
+        onpointerdown={(e) => onCardPointerDown(e, 'waste', 0)}
         onclick={() => handleCardClick('waste', 0)}
         ondblclick={() => state.waste.length > 0 ? handleDoubleClick('waste', 0) : undefined}
         class="w-16 h-[98px] rounded-lg border-2 transition-colors relative overflow-hidden"
@@ -282,12 +407,17 @@
       <!-- 組札 4つ -->
       {#each FOUNDATION_SUIT as suit, i (suit)}
         <button
+          onpointerdown={(e) => onCardPointerDown(e, 'foundation', i)}
           onclick={() => handleCardClick('foundation', i)}
+          data-pile="foundation"
+          data-pile-index={i}
           class="w-16 h-[98px] rounded-lg border-2 transition-colors flex items-center justify-center"
           class:ring-2={isSelected('foundation', i) || (currentHint()?.from.pile === 'foundation' && currentHint()?.from.index === i)}
           class:ring-blue-400={isSelected('foundation', i)}
           class:ring-yellow-400={currentHint()?.from.pile === 'foundation' && currentHint()?.from.index === i && !isSelected('foundation', i)}
-          class:border-green-600={!isSelected('foundation', i) && !(currentHint()?.from.pile === 'foundation' && currentHint()?.from.index === i)}
+          class:border-blue-400={dropTarget?.pile === 'foundation' && dropTarget?.index === i}
+          class:border-dashed={dropTarget?.pile === 'foundation' && dropTarget?.index === i}
+          class:border-green-600={!isSelected('foundation', i) && !(currentHint()?.from.pile === 'foundation' && currentHint()?.from.index === i) && !(dropTarget?.pile === 'foundation' && dropTarget?.index === i)}
           class:bg-green-700={state.foundation[i].length === 0}
           class:bg-white={state.foundation[i].length > 0}
         >
@@ -307,21 +437,31 @@
     <!-- タブロー 7列 -->
     <div class="flex gap-2">
       {#each state.tableau as col, colIdx (colIdx)}
-        <div class="flex-1 relative" style="min-height: {Math.max(98, col.length * 28 + 70)}px;">
+        <div
+          class="flex-1 relative"
+          data-pile="tableau"
+          data-pile-index={colIdx}
+          style="min-height: {Math.max(98, col.length * 28 + 70)}px;"
+        >
           <!-- 空列クリック領域 -->
           <button
             onclick={() => { if (selected !== null) handleCardClick('tableau', colIdx) }}
-            class="absolute inset-0 rounded-lg border-2 border-dashed border-green-600 z-0"
+            class="absolute inset-0 rounded-lg border-2 z-0 transition-colors"
+            class:border-blue-400={dropTarget?.pile === 'tableau' && dropTarget?.index === colIdx}
+            class:border-dashed={dropTarget?.pile === 'tableau' && dropTarget?.index === colIdx}
+            class:border-green-600={!(dropTarget?.pile === 'tableau' && dropTarget?.index === colIdx)}
+            class:border-dotted={!(dropTarget?.pile === 'tableau' && dropTarget?.index === colIdx)}
             aria-label="列{colIdx + 1}"
           ></button>
           <!-- カード -->
           {#each col as card, cardIdx (cardIdx)}
             {@const hint = currentHint()}
             <button
+              onpointerdown={(e) => onCardPointerDown(e, 'tableau', colIdx, cardIdx)}
               onclick={() => handleCardClick('tableau', colIdx, cardIdx)}
               ondblclick={() => card.faceUp ? handleDoubleClick('tableau', colIdx, cardIdx) : undefined}
               class="absolute left-0 right-0 rounded-lg transition-all"
-              style="top: {cardIdx * 28}px; height: {cardIdx === col.length - 1 ? 98 : 28}px; z-index: {cardIdx + 1};"
+              style="top: {cardIdx * 28}px; height: {cardIdx === col.length - 1 ? 98 : 28}px; z-index: {cardIdx + 1}; opacity: {dragInfo?.isDragging && dragInfo.pile === 'tableau' && dragInfo.pileIndex === colIdx && cardIdx >= col.length - dragInfo.count ? 0.4 : 1};"
               class:ring-2={
                 (hint?.from.pile === 'tableau' && hint?.from.index === colIdx && cardIdx >= col.length - hint.count) ||
                 (isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0))
@@ -348,6 +488,26 @@
       {/each}
     </div>
   </div>
+
+  <!-- ドラッグゴースト -->
+  {#if dragInfo?.isDragging}
+    <div
+      class="pointer-events-none fixed z-[200]"
+      style="left:{dragInfo.currentX - 32}px; top:{dragInfo.currentY - 20}px;"
+    >
+      {#each getDragCards() as card, i (i)}
+        <div
+          class="absolute w-16 bg-white rounded-lg border border-slate-200 p-1 flex flex-col shadow-2xl"
+          style="top:{i * 28}px; height:{i === getDragCards().length - 1 ? 98 : 28}px; opacity:0.9;"
+        >
+          <span class="text-xs font-bold leading-none {SUIT_COLOR[card.suit]}">{rankLabel(card.rank)}{SUIT_SYMBOL[card.suit]}</span>
+          {#if i === getDragCards().length - 1}
+            <span class="text-2xl flex-1 flex items-center justify-center {SUIT_COLOR[card.suit]}">{SUIT_SYMBOL[card.suit]}</span>
+          {/if}
+        </div>
+      {/each}
+    </div>
+  {/if}
 
   <!-- 勝利モーダル -->
   {#if showVictory}
