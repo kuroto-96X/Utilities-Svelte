@@ -606,7 +606,7 @@
     7:  [[25, 13, false], [75, 13, false], [50, 30, false], [25, 52, false], [75, 52, false], [25, 85, true], [75, 85, true]],
     8:  [[25, 11, false], [75, 11, false], [50, 28, false], [25, 50, false], [75, 50, false], [50, 72, true], [25, 89, true], [75, 89, true]],
     9:  [[25, 11, false], [75, 11, false], [25, 32, false], [75, 32, false], [50, 50, false], [25, 68, true], [75, 68, true], [25, 89, true], [75, 89, true]],
-    10: [[25, 10, false], [75, 10, false], [25, 30, false], [75, 30, false], [25, 50, false], [75, 50, false], [25, 70, true], [75, 70, true], [25, 90, true], [75, 90, true]],
+    10: [[25, 10, false], [75, 10, false], [50, 26, false], [25, 42, false], [75, 42, false], [25, 58, true], [75, 58, true], [50, 74, true], [25, 90, true], [75, 90, true]],
   }
 
   const FACE_CHAR: Record<number, string> = { 11: '♞', 12: '♛', 13: '♚' }
