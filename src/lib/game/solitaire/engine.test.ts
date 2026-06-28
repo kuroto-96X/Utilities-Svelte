@@ -145,7 +145,7 @@ describe('moveCards', () => {
           { suit: 'hearts', rank: 12, faceUp: true },
           { suit: 'clubs', rank: 11, faceUp: true },
         ],
-        [],
+        [{ suit: 'spades', rank: 13, faceUp: true }],
         [], [], [], [], [],
       ],
       waste: [],
@@ -157,7 +157,7 @@ describe('moveCards', () => {
       count: 2, // 赤Q + 黒J
     })
     expect(next.tableau[0]).toHaveLength(1)
-    expect(next.tableau[1]).toHaveLength(2)
+    expect(next.tableau[1]).toHaveLength(3)
   })
 
   test('tableau → tableau: 移動後に列の新しい最上段が表向きになる', () => {
@@ -223,7 +223,7 @@ describe('moveCards', () => {
   test('foundation → tableau: -15 ペナルティが付く', () => {
     const state = makeState({
       tableau: [
-        [{ suit: 'hearts', rank: 3, faceUp: true }],
+        [{ suit: 'spades', rank: 3, faceUp: true }],
         [], [], [], [], [], [],
       ],
       foundation: [

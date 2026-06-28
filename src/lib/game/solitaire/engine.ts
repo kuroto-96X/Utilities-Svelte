@@ -103,16 +103,7 @@ export function moveCards(state: GameState, move: Move): GameState {
     if (!canPlaceOnFoundation(movingCards[0], state.foundation[to.index])) return state
   } else {
     const targetCol = state.tableau[to.index]
-    const targetTop = targetCol[targetCol.length - 1]
-    if (from.pile === 'foundation') {
-      // foundation→tableau: 降順ランクのみチェック（色制約なし）
-      if (targetTop && movingCards[0].rank !== targetTop.rank - 1) return state
-    } else if (from.pile === 'tableau' && !targetTop) {
-      // tableau→tableau 空列へ: 任意のカードを許可
-    } else {
-      // waste/tableau→tableau（非空列）: 標準ルール（交互色・降順）
-      if (!canPlaceOnTableau(movingCards[0], targetTop)) return state
-    }
+    if (!canPlaceOnTableau(movingCards[0], targetCol[targetCol.length - 1])) return state
   }
 
   // 3. 合法なので実行
