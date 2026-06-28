@@ -107,6 +107,25 @@
     selected = null
   }
 
+  function handleDoubleClick(
+    pile: 'tableau' | 'waste',
+    pileIndex: number,
+    cardIndex?: number
+  ) {
+    ensureStarted()
+    const hint = getHints(state).find(h =>
+      h.from.pile === pile &&
+      h.from.index === pileIndex &&
+      h.to.pile === 'foundation' &&
+      (pile !== 'tableau' || (cardIndex !== undefined && cardIndex === state.tableau[pileIndex].length - 1))
+    )
+    if (!hint) return
+    state = moveCards(state, hint)
+    selected = null
+    showHints = false
+    checkAfterMove()
+  }
+
   function handleHint() {
     const h = getHints(state)
     if (h.length === 0) return
@@ -231,6 +250,7 @@
       <!-- 捨て札 -->
       <button
         onclick={() => handleCardClick('waste', 0)}
+        ondblclick={() => state.waste.length > 0 ? handleDoubleClick('waste', 0) : undefined}
         class="w-16 h-[98px] rounded-lg border-2 transition-colors relative overflow-hidden"
         class:border-yellow-400={isHintedFrom('waste', 0) && !isSelected('waste', 0)}
         class:ring-2={isSelected('waste', 0)}
@@ -295,6 +315,7 @@
           {#each col as card, cardIdx (cardIdx)}
             <button
               onclick={() => handleCardClick('tableau', colIdx, cardIdx)}
+              ondblclick={() => card.faceUp ? handleDoubleClick('tableau', colIdx, cardIdx) : undefined}
               class="absolute left-0 right-0 rounded-lg transition-all"
               style="top: {cardIdx * 28}px; height: {cardIdx === col.length - 1 ? 98 : 28}px; z-index: {cardIdx + 1};"
               class:ring-2={
