@@ -84,7 +84,7 @@
 
   // ---- LocalStorage自動保存 ----
   $effect(() => {
-    try { localStorage.setItem('solitaire-game', JSON.stringify({ state })) } catch {}
+    try { localStorage.setItem('solitaire-game', JSON.stringify({ state: { ...state, history: [] } })) } catch {}
   })
   $effect(() => {
     try { localStorage.setItem('solitaire-settings', JSON.stringify({ useSeed, seedInput, pendingMode })) } catch {}
@@ -326,7 +326,9 @@
       const saved = localStorage.getItem('solitaire-game')
       if (!saved) return null
       const parsed = JSON.parse(saved) as { state?: GameState }
-      return parsed?.state ?? null
+      const s = parsed?.state
+      if (!s) return null
+      return { ...s, history: [] }
     } catch {
       return null
     }
