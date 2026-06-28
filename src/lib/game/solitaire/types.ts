@@ -27,4 +27,5 @@ export interface GameState {
   elapsed: number      // 経過秒数
   history: Snapshot[]  // アンドゥ用スナップショット列（古い順）
   isComplete: boolean
+  seed: number
 }

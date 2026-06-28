@@ -13,6 +13,7 @@
     elapsed: number
     drawMode: 1 | 3
     date: string
+    seed?: number
   }
 
   // ---- ドラッグ型 ----
@@ -31,6 +32,7 @@
 
   // ---- 状態 ----
   let state = $state<GameState>(dealInitial(1))
+  let seedInput = $state(String(state.seed))
   let selected = $state<{ pile: 'tableau' | 'waste' | 'foundation'; index: number; count: number } | null>(null)
   let hints = $state<Move[]>([])
   let hintIndex = $state(0)
@@ -77,7 +79,10 @@
   function newGame(mode: 1 | 3 = pendingMode) {
     stopTimer()
     if (autoInterval) { clearInterval(autoInterval); autoInterval = null }
-    state = dealInitial(mode)
+    const parsed = parseInt(seedInput, 10)
+    const seed = Number.isInteger(parsed) && parsed > 0 ? parsed : undefined
+    state = dealInitial(mode, seed)
+    seedInput = String(state.seed)
     selected = null; hints = []; showHints = false; hintIndex = 0
     showVictory = false; autoCompleting = false; gameStarted = false; clearRank = 0
   }
@@ -184,13 +189,14 @@
     }
   }
 
-  function saveToTop10(score: number, elapsed: number, drawMode: 1 | 3): number {
+  function saveToTop10(score: number, elapsed: number, drawMode: 1 | 3, seed: number): number {
     const entries = loadTop10()
     const newEntry: ScoreEntry = {
       score,
       elapsed,
       drawMode,
       date: new Date().toISOString().slice(0, 10),
+      seed,
     }
     entries.push(newEntry)
     entries.sort((a, b) => b.score - a.score || a.elapsed - b.elapsed)
@@ -204,7 +210,7 @@
   function checkAfterMove() {
     if (isVictory(state)) {
       stopTimer()
-      clearRank = saveToTop10(state.score, state.elapsed, state.drawMode)
+      clearRank = saveToTop10(state.score, state.elapsed, state.drawMode, state.seed)
       showVictory = true
       return
     }
@@ -310,7 +316,7 @@
 
   function stockLayers(): number {
     if (state.stock.length === 0) return 0
-    if (state.stock.length <= 10) return 1
+    if (state.stock.length === 1) return 1
     if (state.stock.length <= 20) return 2
     return 3
   }
@@ -369,9 +375,9 @@
       <div class="text-xs leading-none">{SUIT_SYMBOL[card.suit]}</div>
     </div>
     {#if full}
-      <div class="w-full flex-1 flex flex-col items-center justify-center {SUIT_COLOR[card.suit]}">
-        <span class="text-xl font-bold leading-none">{rankLabel(card.rank)}</span>
-        <span class="text-sm leading-none">{SUIT_SYMBOL[card.suit]}</span>
+      <div class="w-full flex-1 flex items-center justify-center gap-1 {SUIT_COLOR[card.suit]}">
+        <span class="text-2xl font-bold leading-none">{rankLabel(card.rank)}</span>
+        <span class="text-xl leading-none">{SUIT_SYMBOL[card.suit]}</span>
       </div>
       <div class="rotate-180 self-end leading-none {SUIT_COLOR[card.suit]}">
         <div class="text-sm font-bold leading-none">{rankLabel(card.rank)}</div>
@@ -415,6 +421,13 @@
         class="px-2 py-1 text-xs rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50">
         ↺ 新ゲーム
       </button>
+      <input
+        type="text"
+        inputmode="numeric"
+        bind:value={seedInput}
+        placeholder="seed"
+        class="w-20 px-1.5 py-1 text-xs rounded border border-slate-300 font-mono text-slate-600 bg-white"
+      />
     </div>
   </div>
 
@@ -550,6 +563,7 @@
             <th class="px-2 py-1 text-right text-slate-500 font-medium">タイム</th>
             <th class="px-2 py-1 text-center text-slate-500 font-medium">ドロー</th>
             <th class="px-2 py-1 text-right text-slate-500 font-medium">日付</th>
+            <th class="px-2 py-1 text-right text-slate-500 font-medium">シード</th>
           </tr>
         </thead>
         <tbody>
@@ -563,6 +577,7 @@
               <td class="px-2 py-1.5 text-right font-mono text-slate-600">{formatTime(entry.elapsed)}</td>
               <td class="px-2 py-1.5 text-center text-slate-500">{entry.drawMode}枚</td>
               <td class="px-2 py-1.5 text-right text-slate-500">{entry.date.slice(5).replace('-', '/')}</td>
+              <td class="px-2 py-1.5 text-right font-mono text-slate-400">{entry.seed ?? '-'}</td>
             </tr>
           {/each}
         </tbody>
@@ -597,7 +612,8 @@
           <p class="text-amber-500 font-bold text-lg mb-2">🏆 {clearRank}位入り！</p>
         {/if}
         <p class="text-slate-500 mb-1">タイム: <span class="font-mono font-bold text-slate-700">{formatTime(state.elapsed)}</span></p>
-        <p class="text-slate-500 mb-6">スコア: <span class="font-bold text-emerald-600">{state.score} pt</span></p>
+        <p class="text-slate-500 mb-1">スコア: <span class="font-bold text-emerald-600">{state.score} pt</span></p>
+        <p class="text-slate-400 text-xs mb-6">シード: <span class="font-mono">{state.seed}</span></p>
         <button
           onclick={() => newGame()}
           class="w-full py-3 rounded-xl bg-teal-600 text-white font-bold text-lg hover:bg-teal-700 transition-colors"

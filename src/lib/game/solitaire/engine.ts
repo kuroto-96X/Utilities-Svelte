@@ -1,5 +1,5 @@
 // src/lib/game/solitaire/engine.ts
-import { createDeck, shuffle } from './deck'
+import { createDeck, shuffleWithSeed, generateSeed } from './deck'
 import type { Card, GameState, Move, Snapshot, Suit } from './types'
 
 // ---- 内部ユーティリティ ----
@@ -18,6 +18,7 @@ function snapshot(state: GameState): Snapshot {
     score: state.score,
     elapsed: state.elapsed,
     isComplete: state.isComplete,
+    seed: state.seed,
   }
 }
 
@@ -34,8 +35,9 @@ function canPlaceOnFoundation(card: Card, pile: Card[]): boolean {
 
 // ---- エクスポート関数 ----
 
-export function dealInitial(drawMode: 1 | 3): GameState {
-  const deck = shuffle(createDeck())
+export function dealInitial(drawMode: 1 | 3, seed?: number): GameState {
+  const gameSeed = seed ?? generateSeed()
+  const deck = shuffleWithSeed(createDeck(), gameSeed)
   const tableau: Card[][] = []
   let idx = 0
   for (let col = 0; col < 7; col++) {
@@ -56,6 +58,7 @@ export function dealInitial(drawMode: 1 | 3): GameState {
     elapsed: 0,
     history: [],
     isComplete: false,
+    seed: gameSeed,
   }
 }
 
