@@ -197,6 +197,7 @@
   }
 
   async function handleStockClick(e: MouseEvent) {
+    if (isVictory(state)) return
     ensureStarted()
     showHints = false
     if (state.stock.length > 0) {
@@ -218,6 +219,7 @@
     pileIndex: number,
     cardIndex?: number
   ) {
+    if (isVictory(state)) return
     ensureStarted()
     showHints = false
 
@@ -261,6 +263,7 @@
     pileIndex: number,
     cardIndex?: number
   ) {
+    if (isVictory(state)) return
     ensureStarted()
     const hint = getHints(state).find(h =>
       h.from.pile === pile &&
@@ -344,6 +347,7 @@
   }
 
   function saveToTop10(score: number, elapsed: number, drawMode: 1 | 3, seed: number): number {
+    if (score === 0 && elapsed === 0) return 0
     const entries = loadTop10()
     const newEntry: ScoreEntry = {
       score,
@@ -500,7 +504,7 @@
       Array.from({ length: 13 }, (_, i) => ({ suit, rank: (i + 1) as Card['rank'], faceUp: true }))
     )
     state = { ...state, foundation, tableau: [[], [], [], [], [], [], []], stock: [], waste: [], history: [] }
-    clearRank = saveToTop10(state.score, state.elapsed, state.drawMode, state.seed)
+    clearRank = 0
     showVictory = true
     launchConfetti()
   }
@@ -543,6 +547,7 @@
     pileIndex: number,
     cardIndex?: number
   ) {
+    if (isVictory(state)) return
     e.preventDefault()
     let count = 1
     if (pile === 'tableau') {
