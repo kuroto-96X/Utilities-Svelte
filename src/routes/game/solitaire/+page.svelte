@@ -1,7 +1,6 @@
 <!-- src/routes/game/solitaire/+page.svelte -->
 <script lang="ts">
-  import { onMount } from 'svelte'
-  import { scale } from 'svelte/transition'
+  import { onMount, tick } from 'svelte'
   import { cubicOut } from 'svelte/easing'
   import type { GameState, Move, Card } from '$lib/game/solitaire/types'
   import {
@@ -32,6 +31,18 @@
     pointerId: number
   }
 
+  // ---- フライングカード型 ----
+  interface FlyCard {
+    card: Card
+    fromX: number
+    fromY: number
+    toX: number
+    toY: number
+    flip: boolean
+    dest: 'waste' | { pile: 'foundation'; index: number }
+    moving: boolean
+  }
+
   // ---- 状態 ----
   let state = $state<GameState>(dealInitial(1))
   let seedInput = $state(String(state.seed))
@@ -45,6 +56,7 @@
   let pendingMode = $state<1 | 3>(1)
   let dragInfo = $state<DragInfo | null>(null)
   let dropTarget = $state<{ pile: 'tableau' | 'foundation'; index: number } | null>(null)
+  let flyCard = $state<FlyCard | null>(null)
   let top10 = $state<ScoreEntry[]>(loadTop10())
   let clearRank = $state(0)
 
@@ -94,10 +106,38 @@
     if (!gameStarted) { gameStarted = true; startTimer() }
   }
 
-  function handleStockClick() {
+  async function startFlyAnimation(
+    card: Card,
+    fromEl: Element,
+    toEl: Element,
+    flip: boolean,
+    dest: 'waste' | { pile: 'foundation'; index: number }
+  ) {
+    const fromRect = fromEl.getBoundingClientRect()
+    const toRect = toEl.getBoundingClientRect()
+    flyCard = { card, fromX: fromRect.left, fromY: fromRect.top, toX: toRect.left, toY: toRect.top, flip, dest, moving: false }
+    await tick()
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (flyCard) flyCard = { ...flyCard, moving: true }
+      })
+    })
+    await new Promise<void>(r => setTimeout(r, 380))
+    flyCard = null
+  }
+
+  async function handleStockClick(e: MouseEvent) {
     ensureStarted()
-    state = drawFromStock(state)
-    selected = null
+    if (state.stock.length > 0) {
+      const card = { ...state.stock[state.stock.length - 1], faceUp: true }
+      const toEl = document.querySelector('[data-waste]')
+      state = drawFromStock(state)
+      selected = null
+      if (toEl) await startFlyAnimation(card, e.currentTarget as Element, toEl, true, 'waste')
+    } else {
+      state = drawFromStock(state)
+      selected = null
+    }
     checkAfterMove()
   }
 
@@ -141,7 +181,8 @@
     selected = null
   }
 
-  function handleDoubleClick(
+  async function handleDoubleClick(
+    e: MouseEvent,
     pile: 'tableau' | 'waste',
     pileIndex: number,
     cardIndex?: number
@@ -154,9 +195,15 @@
       (pile !== 'tableau' || (cardIndex !== undefined && cardIndex === state.tableau[pileIndex].length - 1))
     )
     if (!hint) return
+    const foundIdx = hint.to.index
+    const toEl = document.querySelector(`[data-pile="foundation"][data-pile-index="${foundIdx}"]`)
+    const card = pile === 'waste'
+      ? state.waste[state.waste.length - 1]
+      : state.tableau[pileIndex][state.tableau[pileIndex].length - 1]
     state = moveCards(state, hint)
     selected = null
     showHints = false
+    if (toEl) await startFlyAnimation(card, e.currentTarget as Element, toEl, false, { pile: 'foundation', index: foundIdx })
     checkAfterMove()
   }
 
@@ -460,7 +507,7 @@
     <div class="flex gap-2 mb-4">
       <!-- 山札 -->
       <button
-        onclick={handleStockClick}
+        onclick={(e) => handleStockClick(e)}
         class="w-16 h-[98px] rounded-lg border-2 border-green-600 bg-green-900 relative hover:bg-green-700 transition-colors flex items-center justify-center overflow-hidden"
       >
         {#if state.stock.length > 0}
@@ -477,9 +524,10 @@
 
       <!-- 捨て札 -->
       <button
+        data-waste
         onpointerdown={(e) => onCardPointerDown(e, 'waste', 0)}
         onclick={() => handleCardClick('waste', 0)}
-        ondblclick={() => state.waste.length > 0 ? handleDoubleClick('waste', 0) : undefined}
+        ondblclick={(e) => state.waste.length > 0 ? handleDoubleClick(e, 'waste', 0) : undefined}
         class="w-16 h-[98px] rounded-lg border-2 transition-colors relative overflow-hidden"
         class:border-yellow-400={currentHint()?.from.pile === 'waste'}
         class:ring-2={isSelected('waste', 0)}
@@ -488,11 +536,9 @@
         class:bg-green-900={state.waste.length === 0}
       >
         {#if state.waste.length > 0}
-          {#key state.waste.length}
-            <div class="absolute inset-0" in:flipIn={{ duration: 220 }}>
-              {@render cardFace(state.waste[state.waste.length - 1], true)}
-            </div>
-          {/key}
+          <div class="absolute inset-0">
+            {@render cardFace(state.waste[state.waste.length - 1], true)}
+          </div>
         {/if}
       </button>
 
@@ -520,11 +566,9 @@
               <span class="text-green-500 text-2xl opacity-60">{SUIT_SYMBOL[suit]}</span>
             </div>
           {:else}
-            {#key state.foundation[i].length}
-              <div class="absolute inset-0" in:scale={{ start: 0.82, duration: 180, easing: cubicOut }}>
-                {@render cardFace(state.foundation[i][state.foundation[i].length - 1], true)}
-              </div>
-            {/key}
+            <div class="absolute inset-0">
+              {@render cardFace(state.foundation[i][state.foundation[i].length - 1], true)}
+            </div>
           {/if}
         </button>
       {/each}
@@ -555,7 +599,7 @@
             <button
               onpointerdown={(e) => onCardPointerDown(e, 'tableau', colIdx, cardIdx)}
               onclick={() => handleCardClick('tableau', colIdx, cardIdx)}
-              ondblclick={() => card.faceUp ? handleDoubleClick('tableau', colIdx, cardIdx) : undefined}
+              ondblclick={(e) => card.faceUp ? handleDoubleClick(e, 'tableau', colIdx, cardIdx) : undefined}
               class="absolute left-0 right-0 rounded-lg transition-all"
               style="top: {cardIdx * 28}px; height: {cardIdx === col.length - 1 ? 98 : 46}px; z-index: {cardIdx + 1}; opacity: {dragInfo?.isDragging && dragInfo.pile === 'tableau' && dragInfo.pileIndex === colIdx && cardIdx >= col.length - dragInfo.count ? 0.4 : 1};"
               class:ring-2={
@@ -615,6 +659,31 @@
       </table>
     {/if}
   </div>
+
+  <!-- フライングカード -->
+  {#if flyCard}
+    <div
+      class="pointer-events-none fixed z-[500] w-16 h-[98px] overflow-hidden rounded-lg"
+      style="left:{flyCard.moving ? flyCard.toX : flyCard.fromX}px; top:{flyCard.moving ? flyCard.toY : flyCard.fromY}px; transition: left 0.35s cubic-bezier(0.4,0,0.2,1), top 0.35s cubic-bezier(0.4,0,0.2,1);"
+    >
+      {#if flyCard.flip}
+        <div
+          class="absolute inset-0 rounded-lg border border-indigo-500/50"
+          style="{CARD_BACK_STYLE} transition: transform 0.175s linear; transform: perspective(600px) rotateY({flyCard.moving ? 90 : 0}deg);"
+        ></div>
+        <div
+          class="absolute inset-0"
+          style="transition: transform 0.175s linear 0.175s; transform: perspective(600px) rotateY({flyCard.moving ? 0 : -90}deg);"
+        >
+          {@render cardFace(flyCard.card, true)}
+        </div>
+      {:else}
+        <div class="absolute inset-0">
+          {@render cardFace(flyCard.card, true)}
+        </div>
+      {/if}
+    </div>
+  {/if}
 
   <!-- ドラッグゴースト -->
   {#if dragInfo?.isDragging}
