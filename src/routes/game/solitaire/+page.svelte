@@ -232,7 +232,9 @@
       <button
         onclick={() => handleCardClick('waste', 0)}
         class="w-16 h-[98px] rounded-lg border-2 transition-colors relative overflow-hidden"
-        class:border-yellow-400={isHintedFrom('waste', 0) || isSelected('waste', 0)}
+        class:border-yellow-400={isHintedFrom('waste', 0) && !isSelected('waste', 0)}
+        class:ring-2={isSelected('waste', 0)}
+        class:ring-blue-400={isSelected('waste', 0)}
         class:border-green-600={!isHintedFrom('waste', 0) && !isSelected('waste', 0)}
         class:bg-green-900={state.waste.length === 0}
       >
@@ -259,8 +261,10 @@
         <button
           onclick={() => handleCardClick('foundation', i)}
           class="w-16 h-[98px] rounded-lg border-2 transition-colors flex items-center justify-center"
-          class:border-yellow-400={isSelected('foundation', i)}
-          class:border-green-600={!isSelected('foundation', i)}
+          class:border-yellow-400={isHintedFrom('foundation', i) && !isSelected('foundation', i)}
+          class:ring-2={isSelected('foundation', i)}
+          class:ring-blue-400={isSelected('foundation', i)}
+          class:border-green-600={!isSelected('foundation', i) && !isHintedFrom('foundation', i)}
           class:bg-green-700={state.foundation[i].length === 0}
           class:bg-white={state.foundation[i].length > 0}
         >
@@ -291,24 +295,15 @@
           {#each col as card, cardIdx (cardIdx)}
             <button
               onclick={() => handleCardClick('tableau', colIdx, cardIdx)}
-              class="absolute left-0 right-0 rounded-lg border transition-all"
+              class="absolute left-0 right-0 rounded-lg transition-all"
               style="top: {cardIdx * 28}px; height: {cardIdx === col.length - 1 ? 98 : 28}px; z-index: {cardIdx + 1};"
-              class:border-yellow-400={
+              class:ring-2={
                 (isHintedFrom('tableau', colIdx) && cardIdx === col.findIndex(c => c.faceUp)) ||
                 (isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0))
               }
-              class:shadow-yellow-400={
-                (isHintedFrom('tableau', colIdx) && cardIdx === col.findIndex(c => c.faceUp)) ||
-                (isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0))
-              }
-              class:shadow-md={
-                (isHintedFrom('tableau', colIdx) && cardIdx === col.findIndex(c => c.faceUp)) ||
-                (isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0))
-              }
-              class:border-transparent={
-                !(isHintedFrom('tableau', colIdx) && cardIdx === col.findIndex(c => c.faceUp)) &&
-                !(isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0))
-              }
+              class:ring-yellow-400={isHintedFrom('tableau', colIdx) && cardIdx === col.findIndex(c => c.faceUp) && !isSelected('tableau', colIdx)}
+              class:ring-blue-400={isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0)}
+              class:-translate-y-1={isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0)}
             >
               {#if card.faceUp}
                 <div class="h-full bg-white rounded-lg p-1 flex flex-col overflow-hidden">
