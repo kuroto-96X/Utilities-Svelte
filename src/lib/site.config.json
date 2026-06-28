@@ -11,7 +11,8 @@
     "/image/id-photo": true,
     "/investment/nisa-simple-calculator": true,
     "/investment/nisa-detailed-calculator": true,
-    "/investment/nisa-accumulation-simulator": true
+    "/investment/nisa-accumulation-simulator": true,
+    "/game/solitaire": true
   },
   "toolVisibility": {
     "/music/bpm-tapper": true,
@@ -19,13 +20,14 @@
     "/music/scale-visualizer": true,
     "/programming/hepburn-converter": true,
     "/programming/color-converter": true,
-    "/programming/vector3-visualizer": true,
-    "/programming/sql-extract-format": true,
+    "/programming/vector3-visualizer": false,
+    "/programming/sql-extract-format": false,
     "/image/image-tools": false,
     "/image/sns-image-resize": false,
     "/image/id-photo": false,
     "/investment/nisa-simple-calculator": false,
     "/investment/nisa-detailed-calculator": false,
-    "/investment/nisa-accumulation-simulator": false
+    "/investment/nisa-accumulation-simulator": false,
+    "/game/solitaire": true
   }
 }

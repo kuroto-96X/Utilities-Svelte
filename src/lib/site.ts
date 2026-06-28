@@ -16,6 +16,7 @@ export const site = {
     { id: 'programming', label: 'プログラミング' },
     { id: 'image',       label: '画像' },
     { id: 'investment',  label: '投資' },
+    { id: 'game',        label: 'ゲーム' },
   ],
   tools: [
     {
@@ -95,6 +96,12 @@ export const site = {
       label: "NISA積立シミュレーター",
       description: "毎月・毎年の積立投資の将来評価額と資産推移をシミュレーションするツール",
       category: 'investment',
+    },
+    {
+      href: "/game/solitaire",
+      label: "ソリティア",
+      description: "クロンダイクソリティア。ドロー1・ドロー3を選んで遊べる",
+      category: 'game',
     },
   ],
 } as const
