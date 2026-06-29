@@ -65,10 +65,12 @@ export function dealInitial(drawMode: 1 | 3, seed?: number): GameState {
 export function drawFromStock(state: GameState): GameState {
   const snap = snapshot(state)
   if (state.stock.length === 0) {
+    const recyclePenalty = state.drawMode === 3 ? 50 : 100
     return {
       ...state,
       stock: [...state.waste].reverse().map(c => ({ ...c, faceUp: false })),
       waste: [],
+      score: Math.max(0, state.score - recyclePenalty),
       history: [...state.history, snap],
     }
   }
@@ -125,21 +127,19 @@ export function moveCards(state: GameState, move: Move): GameState {
     col.splice(col.length - count, count)
     if (col.length > 0 && !col[col.length - 1].faceUp) {
       col[col.length - 1] = { ...col[col.length - 1], faceUp: true }
-      scoreAdd += 5 // めくりボーナス
     }
     newTableau[from.index] = col
   } else {
     newFoundation[from.index] = state.foundation[from.index].slice(0, -1)
-    scoreAdd -= 15 // foundation→tableau ペナルティ
+    scoreAdd -= 50 // foundation→tableau ペナルティ
   }
 
   // 移動先を更新
   if (to.pile === 'foundation') {
     newFoundation[to.index] = [...newFoundation[to.index], ...movingCards]
-    scoreAdd += 10 // →foundation +10
+    scoreAdd += 100 // →foundation +100
   } else {
     newTableau[to.index] = [...newTableau[to.index], ...movingCards]
-    if (from.pile === 'waste') scoreAdd += 5 // waste→tableau +5
   }
 
   return {
@@ -157,7 +157,6 @@ export function undo(state: GameState): GameState {
   const prev = state.history[state.history.length - 1]
   return {
     ...prev,
-    score: Math.max(0, prev.score - 10),
     history: state.history.slice(0, -1),
   }
 }

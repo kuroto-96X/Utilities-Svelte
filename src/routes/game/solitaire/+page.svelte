@@ -56,8 +56,10 @@
   // ---- 状態 ----
   // loadSavedGame / loadSavedSettings / loadTop10 は関数宣言のためホイスト済み
   const _sg = loadSavedGame()
-  const _init: GameState = (_sg && !isVictory(_sg)) ? _sg : dealInitial(1)
+  const _init: GameState = (_sg && !isVictory(_sg.state)) ? _sg.state : dealInitial(1)
   const _sets = loadSavedSettings(_init.seed, _init.drawMode)
+  const _initUndo = (_sg && !isVictory(_sg.state)) ? (_sg.undoCount ?? 0) : 0
+  const _initHint = (_sg && !isVictory(_sg.state)) ? (_sg.hintCount ?? 0) : 0
 
   let state = $state<GameState>(_init)
   let seedInput = $state(_sets.seedInput)
@@ -81,10 +83,20 @@
   let confettiCanvas: HTMLCanvasElement | null = null
   let timerPulseId = $state(0)
   let timerPulseType = $state<'small' | 'large'>('small')
+  let prevWasteFan = $state<Card[]>([])
+  let undoCount = $state(_initUndo)
+  let hintCount = $state(_initHint)
+  interface ClearBreakdown {
+    baseScore: number; timeBonus: number
+    undoCount: number; undoPenalty: number
+    hintCount: number; hintPenalty: number
+    subtotal: number; draw3Mult: number; finalScore: number
+  }
+  let clearBreakdown = $state<ClearBreakdown | null>(null)
 
   // ---- LocalStorage自動保存 ----
   $effect(() => {
-    try { localStorage.setItem('solitaire-game', JSON.stringify({ state: { ...state, history: [] } })) } catch {}
+    try { localStorage.setItem('solitaire-game', JSON.stringify({ state: { ...state, history: [] }, undoCount, hintCount })) } catch {}
   })
   $effect(() => {
     try { localStorage.setItem('solitaire-settings', JSON.stringify({ useSeed, seedInput, pendingMode })) } catch {}
@@ -145,7 +157,9 @@
 
       if (isVictory(state)) {
         stopTimer()
-        clearRank = saveToTop10(state.score, state.elapsed, state.drawMode, state.seed)
+        const bd = computeClearBreakdown()
+        clearBreakdown = bd
+        clearRank = saveToTop10(bd.finalScore, state.elapsed, state.drawMode, state.seed)
         showVictory = true
         launchConfetti()
         autoCompleting = false
@@ -167,6 +181,7 @@
     flyCard = null
     floatScores = []
     glowEffects = []
+    undoCount = 0; hintCount = 0; clearBreakdown = null
   }
 
   function ensureStarted() {
@@ -209,6 +224,7 @@
     if (state.stock.length > 0) {
       const card = { ...state.stock[state.stock.length - 1], faceUp: true }
       const fromRect = (e.currentTarget as Element).getBoundingClientRect()
+      prevWasteFan = state.waste.slice(-3)
       state = drawFromStock(state)
       selected = null
       await tick()
@@ -303,30 +319,33 @@
   }
 
   function handleHint() {
+    hintCount += 1
     if (showHints && hints.length > 0) {
       hintIndex = (hintIndex + 1) % hints.length
       return
     }
     const h = getHints(state)
-    if (h.length === 0) return
+    if (h.length === 0) { hintCount -= 1; return }
     hints = h
     showHints = true
     hintIndex = 0
   }
 
   function handleUndo() {
+    if (state.history.length === 0) return
+    undoCount += 1
     state = undo(state)
     selected = null; showHints = false
   }
 
-  function loadSavedGame(): GameState | null {
+  function loadSavedGame(): { state: GameState; undoCount: number; hintCount: number } | null {
     try {
       const saved = localStorage.getItem('solitaire-game')
       if (!saved) return null
-      const parsed = JSON.parse(saved) as { state?: GameState }
+      const parsed = JSON.parse(saved) as { state?: GameState; undoCount?: number; hintCount?: number }
       const s = parsed?.state
       if (!s) return null
-      return { ...s, history: [] }
+      return { state: { ...s, history: [] }, undoCount: parsed.undoCount ?? 0, hintCount: parsed.hintCount ?? 0 }
     } catch {
       return null
     }
@@ -495,10 +514,27 @@
     requestAnimationFrame(renderFrame)
   }
 
+  function computeClearBreakdown(): ClearBreakdown {
+    const timeBonus = Math.max(0, 3000 - state.elapsed * 10)
+    const uPenalty = undoCount * 50
+    const hPenalty = hintCount * 20
+    const subtotal = Math.max(0, state.score + timeBonus - uPenalty - hPenalty)
+    const draw3Mult = state.drawMode === 3 ? 1.5 : 1
+    return {
+      baseScore: state.score, timeBonus,
+      undoCount, undoPenalty: uPenalty,
+      hintCount, hintPenalty: hPenalty,
+      subtotal, draw3Mult,
+      finalScore: Math.floor(subtotal * draw3Mult),
+    }
+  }
+
   function checkAfterMove() {
     if (isVictory(state)) {
       stopTimer()
-      clearRank = saveToTop10(state.score, state.elapsed, state.drawMode, state.seed)
+      const bd = computeClearBreakdown()
+      clearBreakdown = bd
+      clearRank = saveToTop10(bd.finalScore, state.elapsed, state.drawMode, state.seed)
       showVictory = true
       launchConfetti()
       return
@@ -513,6 +549,8 @@
       Array.from({ length: 13 }, (_, i) => ({ suit, rank: (i + 1) as Card['rank'], faceUp: true }))
     )
     state = { ...state, foundation, tableau: [[], [], [], [], [], [], []], stock: [], waste: [], history: [] }
+    const bd = computeClearBreakdown()
+    clearBreakdown = bd
     clearRank = 0
     showVictory = true
     launchConfetti()
@@ -726,12 +764,27 @@
 
 <div class="max-w-[560px] mx-auto px-4 py-4 flex flex-col gap-4">
 
-  <!-- 設定行 -->
+  <!-- 行1: 設定行 -->
   <div class="flex items-center gap-2 flex-wrap">
     <button onclick={() => newGame()}
       class="px-2 py-1 text-xs rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50">
       ↺ 新ゲーム
     </button>
+    <div class="flex items-center gap-1">
+      <span class="text-xs font-bold text-slate-500">DRAW</span>
+      {#each [1, 3] as mode (mode)}
+        <button
+          onclick={() => { pendingMode = mode as 1 | 3 }}
+          class="px-3 py-1 text-xs rounded border transition-colors"
+          class:bg-teal-600={pendingMode === mode}
+          class:text-white={pendingMode === mode}
+          class:border-teal-600={pendingMode === mode}
+          class:bg-white={pendingMode !== mode}
+          class:text-slate-600={pendingMode !== mode}
+          class:border-slate-300={pendingMode !== mode}
+        >{mode}枚</button>
+      {/each}
+    </div>
     <label class="flex items-center gap-1 cursor-pointer select-none">
       <input type="checkbox" bind:checked={useSeed} class="cursor-pointer" />
       <span class="text-xs text-slate-400">seed:</span>
@@ -750,56 +803,47 @@
       class:text-slate-300={!useSeed}
       class:bg-slate-50={!useSeed}
     />
-    <div class="flex items-center gap-1">
-      <span class="text-xs font-bold text-slate-500">DRAW</span>
-      {#each [1, 3] as mode (mode)}
-        <button
-          onclick={() => { pendingMode = mode as 1 | 3 }}
-          class="px-3 py-1 text-xs rounded border transition-colors"
-          class:bg-teal-600={pendingMode === mode}
-          class:text-white={pendingMode === mode}
-          class:border-teal-600={pendingMode === mode}
-          class:bg-white={pendingMode !== mode}
-          class:text-slate-600={pendingMode !== mode}
-          class:border-slate-300={pendingMode !== mode}
-        >{mode}枚</button>
-      {/each}
-    </div>
-  </div>
-
-  <!-- ゲーム情報行 -->
-  <div class="flex items-center gap-3 flex-wrap">
-    {#key timerPulseId}<span class="text-sm text-amber-600 font-mono"
-      class:timer-small={timerPulseId > 0 && timerPulseType === 'small'}
-      class:timer-large={timerPulseId > 0 && timerPulseType === 'large'}
-    >⏱ {formatTime(state.elapsed)}</span>{/key}
-    {#key state.score}<span class="text-sm text-emerald-600 font-mono score-bounce">🏆 {state.score}pt</span>{/key}
-    <span class="text-xs text-slate-400 font-mono">DRAW:{state.drawMode} / seed:{state.seed}</span>
-    <div class="ml-auto flex items-center gap-2">
-      <button onclick={handleUndo} disabled={state.history.length === 0}
-        class="px-2 py-1 text-xs rounded border border-slate-300 bg-white text-slate-600 disabled:opacity-40 hover:bg-slate-50">
-        ↩ アンドゥ
-      </button>
-      <button onclick={handleHint}
-        class="px-2 py-1 text-xs rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50">
-        💡 ヒント
-      </button>
-    </div>
-  </div>
-
-  {#if import.meta.env.DEV}
-    <div class="flex items-center gap-2 px-1">
-      <span class="text-xs font-bold text-orange-400">DEV</span>
+    {#if import.meta.env.DEV}
       <button
         onclick={debugTriggerClear}
-        class="px-2 py-1 text-xs rounded border border-orange-300 bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors"
+        class="ml-auto px-2 py-1 text-xs rounded border border-orange-300 bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors"
       >クリア演出テスト</button>
-    </div>
-  {/if}
+    {/if}
+  </div>
 
   <!-- ゲームエリア -->
   <div class="bg-green-800 rounded-xl p-4 select-none" style="min-height: 520px;"
     class:pointer-events-none={isVictory(state)}>
+
+    <!-- スコア・ボタン行 -->
+    <div class="flex items-start justify-between mb-3">
+      <!-- 左: 得点・タイマー・タイムボーナス -->
+      <div class="flex items-center gap-3">
+        {#key state.score}<span class="text-sm text-emerald-300 font-mono score-bounce">🏆 {state.score}pt</span>{/key}
+        {#key timerPulseId}<span class="text-sm text-amber-300 font-mono"
+          class:timer-small={timerPulseId > 0 && timerPulseType === 'small'}
+          class:timer-large={timerPulseId > 0 && timerPulseType === 'large'}
+        >⏱ {formatTime(state.elapsed)}</span>{/key}
+        <span class="text-xs text-teal-300 font-mono">+{Math.max(0, 3000 - state.elapsed * 10)}pt ▲</span>
+      </div>
+      <!-- 右: アンドゥ・ヒント（各ボタンの上に回数表示） -->
+      <div class="flex items-end gap-2">
+        <div class="flex flex-col items-center gap-0.5">
+          <span class="text-xs text-green-300/70 font-mono leading-none">{undoCount}回 <span class="text-red-300">(-{undoCount * 50}pt)</span></span>
+          <button onclick={handleUndo} disabled={state.history.length === 0}
+            class="px-2 py-1 text-xs rounded border border-green-600 bg-green-700 text-green-100 disabled:opacity-40 hover:bg-green-600 transition-colors">
+            ↩ アンドゥ
+          </button>
+        </div>
+        <div class="flex flex-col items-center gap-0.5">
+          <span class="text-xs text-green-300/70 font-mono leading-none">{hintCount}回 <span class="text-red-300">(-{hintCount * 20}pt)</span></span>
+          <button onclick={handleHint}
+            class="px-2 py-1 text-xs rounded border border-green-600 bg-green-700 text-green-100 hover:bg-green-600 transition-colors">
+            💡 ヒント
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- 上段: 山札・捨て札・組札 -->
     <div class="flex gap-2 mb-4">
@@ -822,8 +866,7 @@
 
       <!-- 捨て札 -->
       {#if state.drawMode === 3}
-        {@const _base = flyingToWaste() ? state.waste.slice(0, -1) : state.waste}
-        {@const _fan = _base.slice(-3)}
+        {@const _fan = flyingToWaste() ? prevWasteFan : state.waste.slice(-3)}
         <div class="relative h-[98px] flex-shrink-0" style="width:64px; overflow:visible;">
           {#if _fan.length === 0}
             <div class="absolute w-16 inset-y-0 rounded-lg border-2 border-green-600 bg-green-900"></div>
@@ -927,6 +970,7 @@
           {/if}
         </button>
       {/each}
+
     </div>
 
     <!-- タブロー 7列 -->
@@ -976,6 +1020,11 @@
           {/each}
         </div>
       {/each}
+    </div>
+
+    <!-- DRAW・SEED表示（右下） -->
+    <div class="flex justify-end mt-2">
+      <span class="text-xs text-green-400/60 font-mono">DRAW:{state.drawMode} / seed:{state.seed}</span>
     </div>
   </div>
 
@@ -1072,8 +1121,46 @@
         {#if clearRank > 0}
           <p class="text-amber-500 font-bold text-lg mb-2">🏆 {clearRank}位入り！</p>
         {/if}
-        <p class="text-slate-500 mb-1">タイム: <span class="font-mono font-bold text-slate-700">{formatTime(state.elapsed)}</span></p>
-        <p class="text-slate-500 mb-1">スコア: <span class="font-bold text-emerald-600">{state.score} pt</span></p>
+        <p class="text-slate-500 mb-3">タイム: <span class="font-mono font-bold text-slate-700">{formatTime(state.elapsed)}</span></p>
+
+        {#if clearBreakdown}
+          {@const bd = clearBreakdown}
+          <table class="w-full text-sm mb-4 border border-slate-200 rounded-lg overflow-hidden">
+            <tbody>
+              <tr class="border-b border-slate-100">
+                <td class="px-3 py-1.5 text-left text-slate-500">ゲームスコア</td>
+                <td class="px-3 py-1.5 text-right font-mono text-slate-700">+{bd.baseScore}pt</td>
+              </tr>
+              <tr class="border-b border-slate-100">
+                <td class="px-3 py-1.5 text-left text-slate-500">タイムボーナス</td>
+                <td class="px-3 py-1.5 text-right font-mono text-teal-600">+{bd.timeBonus}pt</td>
+              </tr>
+              {#if bd.undoCount > 0}
+                <tr class="border-b border-slate-100">
+                  <td class="px-3 py-1.5 text-left text-slate-500">↩ アンドゥ {bd.undoCount}回</td>
+                  <td class="px-3 py-1.5 text-right font-mono text-red-400">-{bd.undoPenalty}pt</td>
+                </tr>
+              {/if}
+              {#if bd.hintCount > 0}
+                <tr class="border-b border-slate-100">
+                  <td class="px-3 py-1.5 text-left text-slate-500">💡 ヒント {bd.hintCount}回</td>
+                  <td class="px-3 py-1.5 text-right font-mono text-red-400">-{bd.hintPenalty}pt</td>
+                </tr>
+              {/if}
+              {#if bd.draw3Mult > 1}
+                <tr class="border-b border-slate-100">
+                  <td class="px-3 py-1.5 text-left text-slate-500">DRAW3ボーナス</td>
+                  <td class="px-3 py-1.5 text-right font-mono text-purple-500">×{bd.draw3Mult}</td>
+                </tr>
+              {/if}
+              <tr class="bg-slate-50">
+                <td class="px-3 py-2 text-left font-bold text-slate-700">最終スコア</td>
+                <td class="px-3 py-2 text-right font-mono font-bold text-emerald-600 text-base">{bd.finalScore}pt</td>
+              </tr>
+            </tbody>
+          </table>
+        {/if}
+
         <p class="text-slate-400 text-xs mb-6">シード: <span class="font-mono">{state.seed}</span></p>
         <button
           onclick={() => newGame()}
