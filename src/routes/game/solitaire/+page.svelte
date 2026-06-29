@@ -432,7 +432,7 @@
   function triggerImpactBounce(cx: number, cy: number) {
     const c = cfg.impactBounce
 
-    // 組み札・捨て札: 単体でスケールバウンス（手前に浮く）
+    // 組み札・捨て札: 各要素の中心からの距離で delay を決定
     const singleEls: Element[] = [...document.querySelectorAll('[data-pile="foundation"]')]
     const wasteEl = document.querySelector('[data-waste]')
     if (wasteEl) singleEls.push(wasteEl)
@@ -452,31 +452,28 @@
       ], { duration: 400, delay: Math.round(dist * c.delayFactor), easing: 'ease-out', fill: 'none' })
     })
 
-    // タブロー: カードごとに深さ依存のスケールバウンス
+    // タブロー: 各カードの実際の画面位置から距離を計算→真の円形リップル
     document.querySelectorAll('[data-pile="tableau"]').forEach(colEl => {
-      const colR = colEl.getBoundingClientRect()
-      const dist = Math.hypot(colR.left + colR.width / 2 - cx, colR.top + colR.height / 2 - cy)
-      if (dist < c.minDistPx || dist > c.maxDistPx) return
-      const colFactor = 1 - dist / c.maxDistPx
-      const baseDelay = Math.round(dist * c.delayFactor)
-
       const cardEls = colEl.querySelectorAll('[data-card-idx]')
       const total = cardEls.length
       if (total === 0) return
 
       cardEls.forEach(cardEl => {
         const cardIdx = parseInt((cardEl as HTMLElement).dataset.cardIdx ?? '0')
+        const r = cardEl.getBoundingClientRect()
+        const dist = Math.hypot(r.left + r.width / 2 - cx, r.top + r.height / 2 - cy)
+        if (dist < c.minDistPx || dist > c.maxDistPx) return
+        const factor = 1 - dist / c.maxDistPx
         const depthFactor = (cardIdx + 1) / total
-        const maxScale = +(colFactor * depthFactor * c.tableauMaxScale).toFixed(3)
+        const maxScale = +(factor * depthFactor * c.tableauMaxScale).toFixed(3)
         if (maxScale < 0.01) return
         const duration = c.tableauDurationMinMs + Math.round(depthFactor * c.tableauDurationRangeMs)
-
         cardEl.animate([
           { transform: 'scale(1)' },
           { transform: `scale(${(1 + maxScale).toFixed(3)})` },
           { transform: `scale(${(1 + maxScale * 0.08).toFixed(3)})` },
           { transform: 'scale(1)' },
-        ], { duration, delay: baseDelay, easing: 'ease-out', fill: 'none', composite: 'add' })
+        ], { duration, delay: Math.round(dist * c.delayFactor), easing: 'ease-out', fill: 'none', composite: 'add' })
       })
     })
   }
