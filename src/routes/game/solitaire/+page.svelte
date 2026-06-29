@@ -535,9 +535,9 @@
       const tx = slamAnim!.toX - slamAnim!.fromX
       const ty = slamAnim!.toY - slamAnim!.fromY
       ghostEl.animate([
-        { transform: 'translate(0,0) scale(1) rotate(0deg)',                                                                                                                     offset: 0 },
-        { transform: `translate(${tx*0.02}px,${ty*0.02}px) scale(${sc.peakScale}) rotate(${sc.peakRotateDeg}deg) translateY(${sc.peakLiftPx}px)`,                               offset: sc.peakAt },
-        { transform: `translate(${tx*0.99}px,${ty*0.99}px) scale(${sc.landScale}) rotate(${sc.landRotateDeg}deg)`,                                                              offset: sc.landAt },
+        { transform: 'translate(0,0) scale(1) rotate(0deg)',                                                                                                                     offset: 0,        easing: 'cubic-bezier(0.2,0,0.4,1)' },
+        { transform: `translate(${tx*0.02}px,${ty*0.02}px) scale(${sc.peakScale}) rotate(${sc.peakRotateDeg}deg) translateY(${sc.peakLiftPx}px)`,                               offset: sc.peakAt, easing: 'cubic-bezier(0.8,0,1,1)' },
+        { transform: `translate(${tx*0.99}px,${ty*0.99}px) scale(${sc.landScale}) rotate(${sc.landRotateDeg}deg)`,                                                              offset: sc.landAt, easing: 'ease-out' },
         { transform: `translate(${tx}px,${ty}px) scale(1) rotate(0deg)`,                                                                                                        offset: 1 },
       ], { duration: sc.durationMs, easing: 'linear', fill: 'forwards' })
     }
