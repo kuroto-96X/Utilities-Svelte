@@ -185,9 +185,10 @@
       const prevScore = state.score
       state = autoCompleteStep(state) // 即時反映（元カードがDOMから消える）
       const delta = state.score - prevScore
+      const isLast = getAutoCompleteMove(state) === null
 
       // fire-and-forget でアニメーション開始
-      animPromises.push(fireAutoSlamAnim(card, fromX, fromY, toX, toY, move.to.index, delta))
+      animPromises.push(fireAutoSlamAnim(card, fromX, fromY, toX, toY, move.to.index, delta, isLast))
 
       await new Promise<void>(r => setTimeout(r, STAGGER_MS))
     }
@@ -579,9 +580,10 @@
   async function fireAutoSlamAnim(
     card: Card, fromX: number, fromY: number,
     toX: number, toY: number,
-    foundIdx: number, delta: number
+    foundIdx: number, delta: number,
+    isLast: boolean
   ): Promise<void> {
-    const sc = animFile.slamDrop['large']
+    const sc = animFile.slamDrop[isLast ? 'large' : 'small']
     const animId = `as-${_effectId++}`
     slamAnims = [...slamAnims, {
       id: animId, cards: [card], fromX, fromY, toX, toY,
@@ -606,7 +608,7 @@
     }
 
     await new Promise<void>(r => setTimeout(r, Math.round(sc.durationMs * sc.landAt)))
-    triggerImpactBounce(toX + 32, toY + 49)
+    if (isLast) { triggerScreenShake(); triggerImpactBounce(toX + 32, toY + 49) }
     if (delta > 0) triggerScoreEffects(delta, getDestEl('foundation', foundIdx))
     triggerScoreDisplayEffect(delta)
 
