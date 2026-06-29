@@ -155,45 +155,19 @@
       const move = getAutoCompleteMove(state)
       if (!move || !autoCompleting) break
 
-      const foundIdx = move.to.index
-      const toEl = document.querySelector(`[data-pile="foundation"][data-pile-index="${foundIdx}"]`)
-      if (!toEl) break
-
-      let fromX = 0, fromY = 0
-      if (move.from.pile === 'waste') {
-        const r = document.querySelector('[data-waste]')?.getBoundingClientRect()
-        fromX = r?.left ?? 0; fromY = r?.top ?? 0
-      } else {
-        const col = state.tableau[move.from.index]
-        const r = document.querySelector(`[data-pile="tableau"][data-pile-index="${move.from.index}"]`)?.getBoundingClientRect()
-        fromX = r?.left ?? 0
-        fromY = (r?.top ?? 0) + (col.length - 1) * 28
-      }
-
-      const card = move.from.pile === 'waste'
-        ? state.waste[state.waste.length - 1]
-        : state.tableau[move.from.index][state.tableau[move.from.index].length - 1]
-
       const prevScore = state.score
-      state = autoCompleteStep(state)
-      const delta = state.score - prevScore
-
-      await startFlyAnimation(card, fromX, fromY, toEl, false, { pile: 'foundation', index: foundIdx }, 70)
-
-      if (delta > 0) triggerScoreEffects(delta, toEl)
-      triggerScoreDisplayEffect(delta)
-      if (!autoCompleting) break
-
-      if (isVictory(state)) {
-        stopTimer()
-        const bd = computeClearBreakdown()
-        clearBreakdown = bd
-        clearRank = saveToTop10(bd.finalScore, state.elapsed, state.drawMode, state.seed)
-        showVictory = true
-        launchConfetti()
-        autoCompleting = false
-        return
+      const next = autoCompleteStep(state)
+      const di: DragInfo = {
+        pile: move.from.pile as 'waste' | 'tableau',
+        pileIndex: move.from.index,
+        cardIndex: move.from.pile === 'tableau' ? state.tableau[move.from.index].length - 1 : undefined,
+        count: 1,
+        startX: 0, startY: 0, currentX: 0, currentY: 0,
+        isDragging: false,
+        pointerId: -1,
       }
+      await performSlamDrop(di, { pile: 'foundation', index: move.to.index }, next, prevScore)
+      if (!autoCompleting) break
     }
     autoCompleting = false
   }
