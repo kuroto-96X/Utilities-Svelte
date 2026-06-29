@@ -1208,6 +1208,7 @@
           <!-- カード -->
           {#each col as card, cardIdx (cardIdx)}
             {@const hint = currentHint()}
+            {@const isHoverTarget = dropTarget?.pile === 'tableau' && dropTarget?.index === colIdx}
             <button
               data-card-idx={cardIdx}
               onpointerdown={(e) => onCardPointerDown(e, 'tableau', colIdx, cardIdx)}
@@ -1221,7 +1222,11 @@
               }
               class:ring-yellow-400={hint?.from.pile === 'tableau' && hint?.from.index === colIdx && cardIdx >= col.length - hint.count && !isSelected('tableau', colIdx)}
               class:ring-blue-400={isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0)}
-              class:-translate-y-1={isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0)}
+              class:brightness-110={isHoverTarget}
+              class:-translate-y-1={
+                (isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0)) ||
+                (isHoverTarget && cardIdx === col.length - 1)
+              }
             >
               {#if card.faceUp}
                 <div class="absolute inset-0" in:flipIn={{ duration: 200 }}>
