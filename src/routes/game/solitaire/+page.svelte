@@ -90,12 +90,6 @@
     try { localStorage.setItem('solitaire-settings', JSON.stringify({ useSeed, seedInput, pendingMode })) } catch {}
   })
 
-  // ---- タイマーパルス ----
-  $effect(() => {
-    const s = state.elapsed
-    if (s > 0 && s % 60 === 0) { timerPulseType = 'large'; timerPulseId += 1 }
-    else if (s > 0 && s % 30 === 0) { timerPulseType = 'small'; timerPulseId += 1 }
-  })
 
   // ---- タイマー ----
   let timerInterval: ReturnType<typeof setInterval> | null = null
@@ -104,7 +98,10 @@
   function startTimer() {
     if (timerInterval) return
     timerInterval = setInterval(() => {
-      state = { ...state, elapsed: state.elapsed + 1 }
+      const newElapsed = state.elapsed + 1
+      state = { ...state, elapsed: newElapsed }
+      if (newElapsed % 60 === 0) { timerPulseType = 'large'; timerPulseId += 1 }
+      else if (newElapsed % 30 === 0) { timerPulseType = 'small'; timerPulseId += 1 }
     }, 1000)
   }
   function stopTimer() {
