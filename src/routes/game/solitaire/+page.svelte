@@ -8,18 +8,21 @@
     undo, getHints, canAutoComplete, autoCompleteStep, getAutoCompleteMove, isVictory
   } from '$lib/game/solitaire/engine'
   import animConfigJson from '$lib/game/solitaire/anim.config.json'
-  import type { AnimConfigFile } from '$lib/game/solitaire/anim.config.schema'
+  import type { AnimConfigFile, AnimSize } from '$lib/game/solitaire/anim.config.schema'
 
   const animFile = animConfigJson as AnimConfigFile
 
-  // Each animation picks its own size independently — change these constants to tune per-use-site
-  const cfg = {
-    slamDrop:     animFile.slamDrop['medium'],
-    screenShake:  animFile.screenShake['medium'],
-    impactBounce: animFile.impactBounce['medium'],
-    sparkle:      animFile.sparkle['medium'],
-    scoreDelta:   animFile.scoreDelta['medium'],
+  function cfgForSize(size: AnimSize) {
+    return {
+      slamDrop:     animFile.slamDrop[size],
+      screenShake:  animFile.screenShake[size],
+      impactBounce: animFile.impactBounce[size],
+      sparkle:      animFile.sparkle[size],
+      scoreDelta:   animFile.scoreDelta[size],
+    }
   }
+  // 通常は medium。組み札への投下時のみ performSlamDrop 内で large に差し替える
+  let cfg = cfgForSize('medium')
 
   // ---- TOP10スコア型 ----
   interface ScoreEntry {
@@ -495,6 +498,7 @@
     next: GameState,
     prevScore: number
   ) {
+    cfg = cfgForSize(dt.pile === 'foundation' ? 'large' : 'medium')
     const cards = di.pile === 'waste'
       ? state.waste.slice(-1)
       : di.pile === 'foundation'
@@ -562,6 +566,7 @@
     slamAnim = null
     state = next
     showHints = false; selected = null
+    cfg = cfgForSize('medium')
     checkAfterMove()
   }
 
