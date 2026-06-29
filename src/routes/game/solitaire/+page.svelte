@@ -87,6 +87,7 @@
   let showVictory = $state(false)
   let autoCompleting = $state(false)
   let pendingMode = $state<1 | 3>(_sets.pendingMode)
+  let animEnabled = $state(_sets.animEnabled)
   let dragInfo = $state<DragInfo | null>(null)
   let dropTarget = $state<{ pile: 'tableau' | 'foundation'; index: number } | null>(null)
   let flyCard = $state<FlyCard | null>(null)
@@ -129,7 +130,7 @@
     try { localStorage.setItem('solitaire-game', JSON.stringify({ state: { ...state, history: [] }, undoCount, hintCount })) } catch {}
   })
   $effect(() => {
-    try { localStorage.setItem('solitaire-settings', JSON.stringify({ useSeed, seedInput, pendingMode })) } catch {}
+    try { localStorage.setItem('solitaire-settings', JSON.stringify({ useSeed, seedInput, pendingMode, animEnabled })) } catch {}
   })
 
 
@@ -388,7 +389,7 @@
     }
   }
 
-  function loadSavedSettings(defaultSeed: number, defaultDrawMode: 1 | 3): { useSeed: boolean; seedInput: string; pendingMode: 1 | 3 } {
+  function loadSavedSettings(defaultSeed: number, defaultDrawMode: 1 | 3): { useSeed: boolean; seedInput: string; pendingMode: 1 | 3; animEnabled: boolean } {
     try {
       const saved = localStorage.getItem('solitaire-settings')
       if (saved) {
@@ -397,10 +398,11 @@
           useSeed: typeof p.useSeed === 'boolean' ? p.useSeed : false,
           seedInput: typeof p.seedInput === 'string' ? p.seedInput : String(defaultSeed),
           pendingMode: (p.pendingMode === 1 || p.pendingMode === 3) ? p.pendingMode as 1 | 3 : defaultDrawMode,
+          animEnabled: typeof p.animEnabled === 'boolean' ? p.animEnabled : true,
         }
       }
     } catch {}
-    return { useSeed: false, seedInput: String(defaultSeed), pendingMode: defaultDrawMode }
+    return { useSeed: false, seedInput: String(defaultSeed), pendingMode: defaultDrawMode, animEnabled: true }
   }
 
   function loadTop10(): ScoreEntry[] {
@@ -506,6 +508,13 @@
       di.count >= 2            ? 'medium' :
                                  'small'
     )
+    if (!animEnabled) {
+      state = next
+      showHints = false; selected = null
+      cfg = cfgForSize('medium')
+      checkAfterMove()
+      return
+    }
     const cards = di.pile === 'waste'
       ? state.waste.slice(-1)
       : di.pile === 'foundation'
@@ -1287,6 +1296,12 @@
     <!-- DRAW・SEED表示（左下） -->
     <div class="absolute bottom-3 left-4">
       <span class="text-xs text-green-400/60 font-mono">DRAW:{state.drawMode} / seed:{state.seed}</span>
+    </div>
+
+    <!-- アニメーション切り替え（右下） -->
+    <div class="absolute bottom-3 right-4 flex items-center gap-1.5">
+      <input type="checkbox" id="anim-toggle" bind:checked={animEnabled} class="w-3.5 h-3.5 accent-green-400 cursor-pointer" />
+      <label for="anim-toggle" class="text-xs text-green-400/60 font-mono select-none cursor-pointer">ANIM</label>
     </div>
   </div>
 
