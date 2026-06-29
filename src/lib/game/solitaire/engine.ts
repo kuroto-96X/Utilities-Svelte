@@ -181,23 +181,24 @@ export function getHints(state: GameState): Move[] {
   state.tableau.forEach((col, fromIdx) => {
     const faceUpStart = col.findIndex(c => c.faceUp)
     if (faceUpStart === -1) return
-    for (let start = faceUpStart; start < col.length; start++) {
-      const movingCards = col.slice(start)
-      const count = movingCards.length
-      state.tableau.forEach((targetCol, toIdx) => {
-        if (toIdx === fromIdx) return
-        if (canPlaceOnTableau(movingCards[0], targetCol[targetCol.length - 1])) {
-          hints.push({ from: { pile: 'tableau', index: fromIdx }, to: { pile: 'tableau', index: toIdx }, count })
-        }
-      })
-      if (count === 1) {
-        state.foundation.forEach((pile, i) => {
-          if (canPlaceOnFoundation(movingCards[0], pile)) {
-            hints.push({ from: { pile: 'tableau', index: fromIdx }, to: { pile: 'foundation', index: i }, count: 1 })
-          }
-        })
+
+    // 他タブローへ: 裏面カードのすぐ下（一番上の表向きカード）から始まる列全体を対象
+    const topFaceUpCard = col[faceUpStart]
+    const fullRunCount = col.length - faceUpStart
+    state.tableau.forEach((targetCol, toIdx) => {
+      if (toIdx === fromIdx) return
+      if (canPlaceOnTableau(topFaceUpCard, targetCol[targetCol.length - 1])) {
+        hints.push({ from: { pile: 'tableau', index: fromIdx }, to: { pile: 'tableau', index: toIdx }, count: fullRunCount })
       }
-    }
+    })
+
+    // 組み札へ: 一番下（一番表）のカードのみを対象
+    const bottomCard = col[col.length - 1]
+    state.foundation.forEach((pile, i) => {
+      if (canPlaceOnFoundation(bottomCard, pile)) {
+        hints.push({ from: { pile: 'tableau', index: fromIdx }, to: { pile: 'foundation', index: i }, count: 1 })
+      }
+    })
   })
 
   return hints
