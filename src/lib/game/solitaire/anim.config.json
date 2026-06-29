@@ -1,0 +1,41 @@
+{
+  "slamDrop": {
+    "durationMs": 480,
+    "peakAt": 0.38,
+    "landAt": 0.84,
+    "peakScale": 1.85,
+    "peakRotateDeg": -10,
+    "peakLiftPx": -60,
+    "landScale": 1.06,
+    "landRotateDeg": -1
+  },
+  "screenShake": {
+    "durationMs": 400,
+    "frames": [
+      { "x": -7, "y": -4, "rotateDeg": -0.4 },
+      { "x":  7, "y":  5, "rotateDeg":  0.4 },
+      { "x": -5, "y": -3, "rotateDeg": -0.3 },
+      { "x":  6, "y":  4, "rotateDeg":  0.3 },
+      { "x": -3, "y": -2, "rotateDeg":  0 },
+      { "x":  3, "y":  2, "rotateDeg":  0 },
+      { "x": -1, "y": -1, "rotateDeg":  0 }
+    ]
+  },
+  "impactBounce": {
+    "minDistPx": 40,
+    "maxDistPx": 460,
+    "delayFactor": 0.55,
+    "singleMaxScale": 0.18,
+    "tableauMaxScale": 0.22,
+    "tableauDurationMinMs": 280,
+    "tableauDurationRangeMs": 260
+  },
+  "sparkle": {
+    "count": 14,
+    "radiusPx": 90,
+    "durationMs": 780
+  },
+  "scoreDelta": {
+    "durationMs": 1100
+  }
+}
