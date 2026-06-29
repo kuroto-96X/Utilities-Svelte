@@ -70,15 +70,53 @@ function adminApiPlugin(): Plugin {
   }
 }
 
+function animConfigApiPlugin(): Plugin {
+  return {
+    name: 'anim-config-api',
+    enforce: 'pre',
+    configureServer(server) {
+      const configPath = path.resolve('src/lib/game/solitaire/anim.config.json')
+      server.middlewares.use('/api/admin/anim-config', (req, res) => {
+        if (req.method === 'GET') {
+          try {
+            res.setHeader('Content-Type', 'application/json')
+            res.end(readFileSync(configPath, 'utf-8'))
+          } catch {
+            res.statusCode = 500
+            res.end('error reading config')
+          }
+        } else if (req.method === 'POST') {
+          let body = ''
+          req.on('data', (chunk: Buffer) => { body += chunk.toString() })
+          req.on('end', () => {
+            try {
+              const parsed = JSON.parse(body)
+              writeFileSync(configPath, JSON.stringify(parsed, null, 2) + '\n')
+              res.statusCode = 200
+              res.end('ok')
+            } catch {
+              res.statusCode = 400
+              res.end('invalid JSON')
+            }
+          })
+        } else {
+          res.statusCode = 405
+          res.end('method not allowed')
+        }
+      })
+    }
+  }
+}
+
 export default defineConfig({
-  plugins: [sveltekit(), kuromojiDictRawPlugin(), adminApiPlugin()],
+  plugins: [sveltekit(), kuromojiDictRawPlugin(), adminApiPlugin(), animConfigApiPlugin()],
   build: {
     outDir: 'dist'
   },
   server: {
     watch: {
       // 保存APIで書き換えるたびにHMRが発火してコンポーネントが再マウントされるのを防ぐ
-      ignored: ['**/site.config.json']
+      ignored: ['**/site.config.json', '**/anim.config.json']
     }
   },
   resolve: {
