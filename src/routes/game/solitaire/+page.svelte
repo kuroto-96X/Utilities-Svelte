@@ -812,7 +812,7 @@
   </div>
 
   <!-- ゲームエリア -->
-  <div class="bg-green-800 rounded-xl p-4 select-none" style="min-height: 520px;"
+  <div class="bg-green-800 rounded-xl p-4 select-none relative" style="min-height: 520px;"
     class:pointer-events-none={isVictory(state)}>
 
     <!-- スコア・ボタン行 -->
@@ -1022,8 +1022,8 @@
       {/each}
     </div>
 
-    <!-- DRAW・SEED表示（右下） -->
-    <div class="flex justify-end mt-2">
+    <!-- DRAW・SEED表示（左下） -->
+    <div class="absolute bottom-3 left-4">
       <span class="text-xs text-green-400/60 font-mono">DRAW:{state.drawMode} / seed:{state.seed}</span>
     </div>
   </div>

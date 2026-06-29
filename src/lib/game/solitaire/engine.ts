@@ -65,7 +65,7 @@ export function dealInitial(drawMode: 1 | 3, seed?: number): GameState {
 export function drawFromStock(state: GameState): GameState {
   const snap = snapshot(state)
   if (state.stock.length === 0) {
-    const recyclePenalty = state.drawMode === 3 ? 50 : 100
+    const recyclePenalty = state.drawMode === 3 ? 5 : 15
     return {
       ...state,
       stock: [...state.waste].reverse().map(c => ({ ...c, faceUp: false })),
