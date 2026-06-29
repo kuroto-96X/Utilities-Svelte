@@ -117,7 +117,7 @@ describe('moveCards', () => {
     })
     expect(next.tableau[0]).toHaveLength(2)
     expect(next.waste).toHaveLength(0)
-    expect(next.score).toBe(5) // waste→tableau +5
+    expect(next.score).toBe(0) // waste→tableau スコア加算なし
   })
 
   test('waste → tableau: 色が同じなら移動しない', () => {
@@ -179,7 +179,7 @@ describe('moveCards', () => {
       count: 1,
     })
     expect(next.tableau[0][0].faceUp).toBe(true) // めくれる
-    expect(next.score).toBe(5) // めくりボーナス +5
+    expect(next.score).toBe(0) // めくりボーナスなし
   })
 
   test('waste → foundation: Aを空のfoundationに置ける', () => {
@@ -195,7 +195,7 @@ describe('moveCards', () => {
     })
     expect(next.foundation[0]).toHaveLength(1)
     expect(next.waste).toHaveLength(0)
-    expect(next.score).toBe(10) // waste→foundation +10
+    expect(next.score).toBe(100) // →foundation +100
   })
 
   test('tableau → foundation: 同スート昇順であれば置ける', () => {
@@ -217,7 +217,7 @@ describe('moveCards', () => {
       count: 1,
     })
     expect(next.foundation[0]).toHaveLength(2)
-    expect(next.score).toBe(10) // tableau→foundation +10
+    expect(next.score).toBe(100) // →foundation +100
   })
 
   test('foundation → tableau: -15 ペナルティが付く', () => {
@@ -240,7 +240,7 @@ describe('moveCards', () => {
       count: 1,
     })
     expect(next.foundation[1]).toHaveLength(1)
-    expect(next.score).toBe(5) // 20 - 15 = 5
+    expect(next.score).toBe(0) // 20 - 50(ペナルティ) → 0(下限)
   })
 
   test('illegal move は state を変更せず同じ参照を返す', () => {
