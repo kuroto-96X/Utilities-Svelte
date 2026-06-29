@@ -7,6 +7,9 @@
     dealInitial, drawFromStock, moveCards,
     undo, getHints, canAutoComplete, autoCompleteStep, getAutoCompleteMove, isVictory
   } from '$lib/game/solitaire/engine'
+  import defaultAnimConfigJson from '$lib/game/solitaire/anim.config.json'
+  import type { AnimConfig } from '$lib/game/solitaire/anim.config.schema'
+  const cfg = defaultAnimConfigJson as AnimConfig
 
   // ---- TOP10スコア型 ----
   interface ScoreEntry {
@@ -416,6 +419,8 @@
   }
 
   function triggerImpactBounce(cx: number, cy: number) {
+    const c = cfg.impactBounce
+
     // 組み札・捨て札: 単体でスケールバウンス（手前に浮く）
     const singleEls: Element[] = [...document.querySelectorAll('[data-pile="foundation"]')]
     const wasteEl = document.querySelector('[data-waste]')
@@ -424,26 +429,25 @@
     singleEls.forEach(el => {
       const r = el.getBoundingClientRect()
       const dist = Math.hypot(r.left + r.width / 2 - cx, r.top + r.height / 2 - cy)
-      if (dist < 40 || dist > 460) return
-      const factor = 1 - dist / 460
-      const maxScale = +(factor * 0.18).toFixed(3)
+      if (dist < c.minDistPx || dist > c.maxDistPx) return
+      const factor = 1 - dist / c.maxDistPx
+      const maxScale = +(factor * c.singleMaxScale).toFixed(3)
       if (maxScale < 0.01) return
       el.animate([
         { transform: 'scale(1)' },
         { transform: `scale(${(1 + maxScale).toFixed(3)})` },
         { transform: `scale(${(1 + maxScale * 0.1).toFixed(3)})` },
         { transform: 'scale(1)' },
-      ], { duration: 400, delay: Math.round(dist * 0.55), easing: 'ease-out', fill: 'none' })
+      ], { duration: 400, delay: Math.round(dist * c.delayFactor), easing: 'ease-out', fill: 'none' })
     })
 
     // タブロー: カードごとに深さ依存のスケールバウンス
-    // 手前(高 cardIdx)ほど大きく・長く浮く → 奥から順に着地
     document.querySelectorAll('[data-pile="tableau"]').forEach(colEl => {
       const colR = colEl.getBoundingClientRect()
       const dist = Math.hypot(colR.left + colR.width / 2 - cx, colR.top + colR.height / 2 - cy)
-      if (dist < 40 || dist > 460) return
-      const colFactor = 1 - dist / 460
-      const baseDelay = Math.round(dist * 0.55)
+      if (dist < c.minDistPx || dist > c.maxDistPx) return
+      const colFactor = 1 - dist / c.maxDistPx
+      const baseDelay = Math.round(dist * c.delayFactor)
 
       const cardEls = colEl.querySelectorAll('[data-card-idx]')
       const total = cardEls.length
@@ -451,10 +455,10 @@
 
       cardEls.forEach(cardEl => {
         const cardIdx = parseInt((cardEl as HTMLElement).dataset.cardIdx ?? '0')
-        const depthFactor = (cardIdx + 1) / total  // 奥: 小→ 手前: 1.0
-        const maxScale = +(colFactor * depthFactor * 0.22).toFixed(3)
+        const depthFactor = (cardIdx + 1) / total
+        const maxScale = +(colFactor * depthFactor * c.tableauMaxScale).toFixed(3)
         if (maxScale < 0.01) return
-        const duration = 280 + Math.round(depthFactor * 260)  // 奥: 280ms → 手前: ~540ms
+        const duration = c.tableauDurationMinMs + Math.round(depthFactor * c.tableauDurationRangeMs)
 
         cardEl.animate([
           { transform: 'scale(1)' },
@@ -468,17 +472,13 @@
 
   function triggerScreenShake() {
     if (!gameEl) return
-    gameEl.animate([
+    const c = cfg.screenShake
+    const keyframes: Keyframe[] = [
       { transform: 'translate(0,0) rotate(0deg)' },
-      { transform: 'translate(-7px,-4px) rotate(-0.4deg)' },
-      { transform: 'translate(7px,5px) rotate(0.4deg)' },
-      { transform: 'translate(-5px,-3px) rotate(-0.3deg)' },
-      { transform: 'translate(6px,4px) rotate(0.3deg)' },
-      { transform: 'translate(-3px,-2px)' },
-      { transform: 'translate(3px,2px)' },
-      { transform: 'translate(-1px,-1px)' },
-      { transform: 'translate(0,0)' },
-    ], { duration: 400, easing: 'ease-out', fill: 'none' })
+      ...c.frames.map(f => ({ transform: `translate(${f.x}px,${f.y}px) rotate(${f.rotateDeg}deg)` })),
+      { transform: 'translate(0,0) rotate(0deg)' },
+    ]
+    gameEl.animate(keyframes, { duration: c.durationMs, easing: 'ease-out', fill: 'none' })
   }
 
   async function performSlamDrop(
@@ -527,16 +527,30 @@
     await tick()
     await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())))
     slamAnim = { ...slamAnim!, playing: true }
+    await new Promise<void>(r => requestAnimationFrame(() => r()))
 
-    // アニメーション84%地点(着地) = 403ms
-    await new Promise<void>(r => setTimeout(r, 403))
+    const ghostEl = document.getElementById('slam-ghost')
+    if (ghostEl) {
+      const sc = cfg.slamDrop
+      const tx = slamAnim!.toX - slamAnim!.fromX
+      const ty = slamAnim!.toY - slamAnim!.fromY
+      ghostEl.animate([
+        { transform: 'translate(0,0) scale(1) rotate(0deg)',                                                                                                                     offset: 0 },
+        { transform: `translate(${tx*0.02}px,${ty*0.02}px) scale(${sc.peakScale}) rotate(${sc.peakRotateDeg}deg) translateY(${sc.peakLiftPx}px)`,                               offset: sc.peakAt },
+        { transform: `translate(${tx*0.99}px,${ty*0.99}px) scale(${sc.landScale}) rotate(${sc.landRotateDeg}deg)`,                                                              offset: sc.landAt },
+        { transform: `translate(${tx}px,${ty}px) scale(1) rotate(0deg)`,                                                                                                        offset: 1 },
+      ], { duration: sc.durationMs, easing: 'linear', fill: 'forwards' })
+    }
+
+    // 着地タイミング: durationMs * landAt
+    await new Promise<void>(r => setTimeout(r, Math.round(cfg.slamDrop.durationMs * cfg.slamDrop.landAt)))
     triggerScreenShake()
     triggerImpactBounce(toX + 32, toY + 49)
     triggerScoreEffects(next.score - prevScore, getDestEl(dt.pile, dt.index))
     triggerScoreDisplayEffect(next.score - prevScore)
 
-    // アニメーション完了まで待機
-    await new Promise<void>(r => setTimeout(r, 90))
+    // アニメーション完了まで待機 (残り時間 = duration * (1 - landAt))
+    await new Promise<void>(r => setTimeout(r, Math.round(cfg.slamDrop.durationMs * (1 - cfg.slamDrop.landAt)) + 10))
     slamAnim = null
     state = next
     showHints = false; selected = null
@@ -544,11 +558,11 @@
   }
 
   function triggerSparkles(cx: number, cy: number) {
-    const count = 24
+    const { count, radiusPx, durationMs } = cfg.sparkle
     const batch: Sparkle[] = []
     for (let i = 0; i < count; i++) {
       const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.4
-      const dist  = 55 + Math.random() * 90
+      const dist  = radiusPx * (0.5 + Math.random() * 0.5)
       batch.push({
         id:    _effectId++,
         x:     cx, y: cy,
@@ -562,7 +576,7 @@
     }
     sparkles = [...sparkles, ...batch]
     const ids = new Set(batch.map(s => s.id))
-    setTimeout(() => { sparkles = sparkles.filter(s => !ids.has(s.id)) }, 950)
+    setTimeout(() => { sparkles = sparkles.filter(s => !ids.has(s.id)) }, durationMs + 200)
   }
 
   function triggerScoreDisplayEffect(delta: number) {
@@ -572,7 +586,7 @@
     const rect = el.getBoundingClientRect()
     const id = _effectId++
     scoreDeltas = [...scoreDeltas, { id, delta, x: rect.left + rect.width / 2, y: rect.top }]
-    setTimeout(() => { scoreDeltas = scoreDeltas.filter(s => s.id !== id) }, 1100)
+    setTimeout(() => { scoreDeltas = scoreDeltas.filter(s => s.id !== id) }, cfg.scoreDelta.durationMs)
   }
 
   function triggerScoreEffects(delta: number, destEl: Element | null) {
@@ -580,7 +594,7 @@
     const rect = destEl.getBoundingClientRect()
     const fid = _effectId++
     floatScores = [...floatScores, { id: fid, delta, x: rect.left + rect.width / 2, y: rect.top + 10 }]
-    setTimeout(() => { floatScores = floatScores.filter(f => f.id !== fid) }, 1100)
+    setTimeout(() => { floatScores = floatScores.filter(f => f.id !== fid) }, cfg.scoreDelta.durationMs)
     const gid = _effectId++
     glowEffects = [...glowEffects, { id: gid, x: rect.left, y: rect.top, w: rect.width, h: rect.height }]
     setTimeout(() => { glowEffects = glowEffects.filter(g => g.id !== gid) }, 650)
@@ -1273,12 +1287,10 @@
 
   <!-- ドラッグゴースト -->
   {#if slamAnim}
-    {@const tx = slamAnim.toX - slamAnim.fromX}
-    {@const ty = slamAnim.toY - slamAnim.fromY}
     <div
+      id="slam-ghost"
       class="pointer-events-none fixed z-[300]"
-      class:slam-drop={slamAnim.playing}
-      style="left:{slamAnim.fromX}px; top:{slamAnim.fromY}px; --tx:{tx}px; --ty:{ty}px; filter: drop-shadow(0 16px 32px rgba(0,0,0,0.7)) drop-shadow(0 0 12px rgba(251,191,36,0.5));"
+      style="left:{slamAnim.fromX}px; top:{slamAnim.fromY}px; filter: drop-shadow(0 16px 32px rgba(0,0,0,0.7)) drop-shadow(0 0 12px rgba(251,191,36,0.5));"
     >
       {#each slamAnim.cards as card, i (i)}
         <div class="absolute w-16 rounded-lg border border-slate-200 overflow-hidden"
@@ -1373,11 +1385,11 @@
 </div>
 
 {#each floatScores as fs (fs.id)}
-  <div class="float-score" style="left:{fs.x}px; top:{fs.y}px;">+{fs.delta}</div>
+  <div class="float-score" style="left:{fs.x}px; top:{fs.y}px; animation-duration:{cfg.scoreDelta.durationMs}ms;">+{fs.delta}</div>
 {/each}
 
 {#each scoreDeltas as sd (sd.id)}
-  <div class="score-delta {sd.delta > 0 ? 'score-delta-pos' : 'score-delta-neg'}" style="left:{sd.x}px; top:{sd.y}px;">{sd.delta > 0 ? '+' : ''}{sd.delta}</div>
+  <div class="score-delta {sd.delta > 0 ? 'score-delta-pos' : 'score-delta-neg'}" style="left:{sd.x}px; top:{sd.y}px; animation-duration:{cfg.scoreDelta.durationMs}ms;">{sd.delta > 0 ? '+' : ''}{sd.delta}</div>
 {/each}
 
 {#each glowEffects as g (g.id)}
@@ -1385,7 +1397,7 @@
 {/each}
 
 {#each sparkles as s (s.id)}
-  <span class="sparkle-particle" style="left:{s.x}px; top:{s.y}px; --dx:{s.dx}px; --dy:{s.dy}px; color:{s.color}; font-size:{s.size}px; animation-delay:{s.delay}ms;">{s.char}</span>
+  <span class="sparkle-particle" style="left:{s.x}px; top:{s.y}px; --dx:{s.dx}px; --dy:{s.dy}px; color:{s.color}; font-size:{s.size}px; animation-delay:{s.delay}ms; animation-duration:{cfg.sparkle.durationMs}ms;">{s.char}</span>
 {/each}
 
 {#if showVictory}
@@ -1408,15 +1420,6 @@
   text-shadow: 0 0 8px rgba(251,191,36,0.8), 0 1px 3px rgba(0,0,0,0.4);
   animation: floatUp 1.1s ease-out forwards;
   white-space: nowrap;
-}
-@keyframes slamDrop {
-  0%   { transform: translate(0, 0) scale(1) rotate(0deg); animation-timing-function: cubic-bezier(0.2, 0, 0.4, 1); }
-  38%  { transform: translate(calc(var(--tx)*0.02), calc(var(--ty)*0.02)) scale(1.85) rotate(-10deg) translateY(-60px); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
-  84%  { transform: translate(calc(var(--tx)*0.99), calc(var(--ty)*0.99)) scale(1.06) rotate(-1deg); animation-timing-function: ease-out; }
-  100% { transform: translate(var(--tx), var(--ty)) scale(1) rotate(0deg); }
-}
-.slam-drop {
-  animation: slamDrop 480ms linear forwards;
 }
 
 @keyframes sparkleShoot {
