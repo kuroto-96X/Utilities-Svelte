@@ -326,20 +326,21 @@
     )
     if (!hint) return
     const foundIdx = hint.to.index
-    const toEl = document.querySelector(`[data-pile="foundation"][data-pile-index="${foundIdx}"]`)
-    const card = pile === 'waste'
-      ? state.waste[state.waste.length - 1]
-      : state.tableau[pileIndex][state.tableau[pileIndex].length - 1]
     const prevScore = state.score
-    state = moveCards(state, hint)
-    const delta = state.score - prevScore
+    const next = moveCards(state, hint)
     selected = null
     showHints = false
-    const fromRect = (e.currentTarget as Element).getBoundingClientRect()
-    if (toEl) await startFlyAnimation(card, fromRect.left, fromRect.top, toEl, false, { pile: 'foundation', index: foundIdx })
-    if (delta > 0 && toEl) triggerScoreEffects(delta, toEl)
-    triggerScoreDisplayEffect(delta)
-    checkAfterMove()
+    // performSlamDrop が fromX/fromY を DOM から計算するため currentX/currentY は不要
+    const di: DragInfo = {
+      pile,
+      pileIndex,
+      cardIndex: cardIndex ?? (pile === 'tableau' ? state.tableau[pileIndex].length - 1 : undefined),
+      count: 1,
+      startX: 0, startY: 0, currentX: 0, currentY: 0,
+      isDragging: false,
+      pointerId: -1,
+    }
+    await performSlamDrop(di, { pile: 'foundation', index: foundIdx }, next, prevScore)
   }
 
   function cardBg(rank: number): string {
