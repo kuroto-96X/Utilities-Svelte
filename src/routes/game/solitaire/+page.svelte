@@ -1074,7 +1074,7 @@
   </div>
 
   <!-- ゲームエリア -->
-  <div bind:this={gameEl} class="bg-green-800 rounded-xl p-4 select-none relative" style="min-height: 520px;"
+  <div bind:this={gameEl} class="bg-green-800 rounded-xl p-4 pb-10 select-none relative" style="min-height: 520px;"
     class:pointer-events-none={isVictory(state)}>
 
     <!-- スコア・ボタン行 -->
