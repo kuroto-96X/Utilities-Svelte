@@ -48,11 +48,11 @@
       for (const size of sizes) {
         for (const [fieldKey, fieldSchema] of Object.entries(section.fields)) {
           if (fieldSchema.type === 'number') {
-            const val = (config as Record<string, Record<string, Record<string, number>>>)[sectionKey]?.[size]?.[fieldKey]
+            const val = (config as unknown as Record<string, Record<string, Record<string, number>>>)[sectionKey]?.[size]?.[fieldKey]
             if (val === undefined) continue
             if (val < fieldSchema.min || val > fieldSchema.max) return true
           } else if (fieldSchema.type === 'array') {
-            const arr = (config as Record<string, Record<string, Record<string, Array<Record<string, number>>>>>)[sectionKey]?.[size]?.[fieldKey]
+            const arr = (config as unknown as Record<string, Record<string, Record<string, Array<Record<string, number>>>>>)[sectionKey]?.[size]?.[fieldKey]
             if (!Array.isArray(arr)) continue
             for (const row of arr) {
               for (const [colKey, colSchema] of Object.entries(fieldSchema.columns)) {
@@ -82,34 +82,34 @@
   function getNumberValue(sectionKey: string, fieldKey: string): number {
     if (!config) return 0
     const size = getSizeFor(sectionKey)
-    return (config as Record<string, Record<string, Record<string, number>>>)[sectionKey]?.[size]?.[fieldKey] ?? 0
+    return (config as unknown as Record<string, Record<string, Record<string, number>>>)[sectionKey]?.[size]?.[fieldKey] ?? 0
   }
 
   function setNumberValue(sectionKey: string, fieldKey: string, value: number) {
     if (!config) return
     if (Number.isNaN(value)) return
     const size = getSizeFor(sectionKey)
-    ;(config as Record<string, Record<string, Record<string, number>>>)[sectionKey][size][fieldKey] = value
+    ;(config as unknown as Record<string, Record<string, Record<string, number>>>)[sectionKey][size][fieldKey] = value
   }
 
   function getArrayValue(sectionKey: string, fieldKey: string): Array<Record<string, number>> {
     if (!config) return []
     const size = getSizeFor(sectionKey)
-    return (config as Record<string, Record<string, Record<string, Array<Record<string, number>>>>>)[sectionKey]?.[size]?.[fieldKey] ?? []
+    return (config as unknown as Record<string, Record<string, Record<string, Array<Record<string, number>>>>>)[sectionKey]?.[size]?.[fieldKey] ?? []
   }
 
   function setArrayCell(sectionKey: string, fieldKey: string, rowIndex: number, colKey: string, value: number) {
     if (!config) return
     if (Number.isNaN(value)) return
     const size = getSizeFor(sectionKey)
-    const arr = (config as Record<string, Record<string, Record<string, Array<Record<string, number>>>>>)[sectionKey][size][fieldKey]
+    const arr = (config as unknown as Record<string, Record<string, Record<string, Array<Record<string, number>>>>>)[sectionKey][size][fieldKey]
     arr[rowIndex][colKey] = value
   }
 
   function addArrayRow(sectionKey: string, fieldKey: string, schema: ArrayField) {
     if (!config) return
     const size = getSizeFor(sectionKey)
-    const arr = (config as Record<string, Record<string, Record<string, Array<Record<string, number>>>>>)[sectionKey][size][fieldKey]
+    const arr = (config as unknown as Record<string, Record<string, Record<string, Array<Record<string, number>>>>>)[sectionKey][size][fieldKey]
     const newRow: Record<string, number> = {}
     for (const colKey of Object.keys(schema.columns)) newRow[colKey] = 0
     arr.push(newRow)
@@ -118,7 +118,7 @@
   function removeArrayRow(sectionKey: string, fieldKey: string, rowIndex: number) {
     if (!config) return
     const size = getSizeFor(sectionKey)
-    const arr = (config as Record<string, Record<string, Record<string, Array<Record<string, number>>>>>)[sectionKey][size][fieldKey]
+    const arr = (config as unknown as Record<string, Record<string, Record<string, Array<Record<string, number>>>>>)[sectionKey][size][fieldKey]
     if (arr.length <= 1) return
     arr.splice(rowIndex, 1)
   }
