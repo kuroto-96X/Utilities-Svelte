@@ -81,6 +81,10 @@
   let _effectId = 0
   const CONFETTI_COLORS = ['#f43f5e','#f97316','#eab308','#22c55e','#3b82f6','#a855f7','#ec4899','#06b6d4','#fbbf24']
   let confettiCanvas: HTMLCanvasElement | null = null
+  interface Sparkle { id: number; x: number; y: number; dx: number; dy: number; color: string; size: number; delay: number; char: string }
+  let sparkles = $state<Sparkle[]>([])
+  const SPARK_COLORS = ['#fbbf24','#fde68a','#f59e0b','#ffffff','#fb7185','#67e8f9','#c4b5fd','#86efac']
+  const SPARK_CHARS  = ['✦','✧','✶','★','✺','✸']
   let timerPulseId = $state(0)
   let timerPulseType = $state<'small' | 'large'>('small')
   let prevWasteFan = $state<Card[]>([])
@@ -94,6 +98,13 @@
   }
   let clearBreakdown = $state<ClearBreakdown | null>(null)
   let scoreDeltas = $state<{id: number; delta: number; x: number; y: number}[]>([])
+  interface SlamAnim {
+    cards: Card[]; fromX: number; fromY: number; toX: number; toY: number
+    sourcePile: 'tableau' | 'waste' | 'foundation'; sourcePileIndex: number; sourceCount: number
+    playing: boolean
+  }
+  let slamAnim = $state<SlamAnim | null>(null)
+  let gameEl: HTMLElement | null = null
 
   // ---- LocalStorage自動保存 ----
   $effect(() => {
@@ -404,6 +415,156 @@
     return document.querySelector(`[data-pile="${pile}"][data-pile-index="${index}"]`)
   }
 
+  function triggerImpactBounce(cx: number, cy: number) {
+    // 組み札・捨て札: 単体でスケールバウンス（手前に浮く）
+    const singleEls: Element[] = [...document.querySelectorAll('[data-pile="foundation"]')]
+    const wasteEl = document.querySelector('[data-waste]')
+    if (wasteEl) singleEls.push(wasteEl)
+
+    singleEls.forEach(el => {
+      const r = el.getBoundingClientRect()
+      const dist = Math.hypot(r.left + r.width / 2 - cx, r.top + r.height / 2 - cy)
+      if (dist < 40 || dist > 460) return
+      const factor = 1 - dist / 460
+      const maxScale = +(factor * 0.18).toFixed(3)
+      if (maxScale < 0.01) return
+      el.animate([
+        { transform: 'scale(1)' },
+        { transform: `scale(${(1 + maxScale).toFixed(3)})` },
+        { transform: `scale(${(1 + maxScale * 0.1).toFixed(3)})` },
+        { transform: 'scale(1)' },
+      ], { duration: 400, delay: Math.round(dist * 0.55), easing: 'ease-out', fill: 'none' })
+    })
+
+    // タブロー: カードごとに深さ依存のスケールバウンス
+    // 手前(高 cardIdx)ほど大きく・長く浮く → 奥から順に着地
+    document.querySelectorAll('[data-pile="tableau"]').forEach(colEl => {
+      const colR = colEl.getBoundingClientRect()
+      const dist = Math.hypot(colR.left + colR.width / 2 - cx, colR.top + colR.height / 2 - cy)
+      if (dist < 40 || dist > 460) return
+      const colFactor = 1 - dist / 460
+      const baseDelay = Math.round(dist * 0.55)
+
+      const cardEls = colEl.querySelectorAll('[data-card-idx]')
+      const total = cardEls.length
+      if (total === 0) return
+
+      cardEls.forEach(cardEl => {
+        const cardIdx = parseInt((cardEl as HTMLElement).dataset.cardIdx ?? '0')
+        const depthFactor = (cardIdx + 1) / total  // 奥: 小→ 手前: 1.0
+        const maxScale = +(colFactor * depthFactor * 0.22).toFixed(3)
+        if (maxScale < 0.01) return
+        const duration = 280 + Math.round(depthFactor * 260)  // 奥: 280ms → 手前: ~540ms
+
+        cardEl.animate([
+          { transform: 'scale(1)' },
+          { transform: `scale(${(1 + maxScale).toFixed(3)})` },
+          { transform: `scale(${(1 + maxScale * 0.08).toFixed(3)})` },
+          { transform: 'scale(1)' },
+        ], { duration, delay: baseDelay, easing: 'ease-out', fill: 'none', composite: 'add' })
+      })
+    })
+  }
+
+  function triggerScreenShake() {
+    if (!gameEl) return
+    gameEl.animate([
+      { transform: 'translate(0,0) rotate(0deg)' },
+      { transform: 'translate(-7px,-4px) rotate(-0.4deg)' },
+      { transform: 'translate(7px,5px) rotate(0.4deg)' },
+      { transform: 'translate(-5px,-3px) rotate(-0.3deg)' },
+      { transform: 'translate(6px,4px) rotate(0.3deg)' },
+      { transform: 'translate(-3px,-2px)' },
+      { transform: 'translate(3px,2px)' },
+      { transform: 'translate(-1px,-1px)' },
+      { transform: 'translate(0,0)' },
+    ], { duration: 400, easing: 'ease-out', fill: 'none' })
+  }
+
+  async function performSlamDrop(
+    di: DragInfo,
+    dt: { pile: 'tableau' | 'foundation'; index: number },
+    next: GameState,
+    prevScore: number
+  ) {
+    const cards = di.pile === 'waste'
+      ? state.waste.slice(-1)
+      : di.pile === 'foundation'
+      ? [state.foundation[di.pileIndex].at(-1)!]
+      : state.tableau[di.pileIndex].slice(state.tableau[di.pileIndex].length - di.count)
+
+    const toEl = getDestEl(dt.pile, dt.index)
+    if (!toEl) {
+      state = next; showHints = false; selected = null
+      triggerScoreEffects(next.score - prevScore, null)
+      triggerScoreDisplayEffect(next.score - prevScore)
+      checkAfterMove()
+      return
+    }
+    const toRect = toEl.getBoundingClientRect()
+    const toX = toRect.left
+    const toY = toRect.top + (dt.pile === 'tableau' ? state.tableau[dt.index].length * 28 : 0)
+
+    let fromX = di.currentX - 32, fromY = di.currentY - 20
+    if (di.pile === 'waste') {
+      const el = document.querySelector('[data-waste]')
+      if (el) { const r = el.getBoundingClientRect(); fromX = r.left; fromY = r.top }
+    } else if (di.pile === 'foundation') {
+      const el = document.querySelector(`[data-pile="foundation"][data-pile-index="${di.pileIndex}"]`)
+      if (el) { const r = el.getBoundingClientRect(); fromX = r.left; fromY = r.top }
+    } else {
+      const el = document.querySelector(`[data-pile="tableau"][data-pile-index="${di.pileIndex}"]`)
+      if (el) { const r = el.getBoundingClientRect(); fromX = r.left; fromY = r.top + (di.cardIndex ?? 0) * 28 }
+    }
+
+    slamAnim = {
+      cards,
+      fromX, fromY,
+      toX, toY,
+      sourcePile: di.pile, sourcePileIndex: di.pileIndex, sourceCount: di.count,
+      playing: false,
+    }
+    await tick()
+    await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())))
+    slamAnim = { ...slamAnim!, playing: true }
+
+    // アニメーション84%地点(着地) = 403ms
+    await new Promise<void>(r => setTimeout(r, 403))
+    triggerScreenShake()
+    triggerImpactBounce(toX + 32, toY + 49)
+    triggerScoreEffects(next.score - prevScore, getDestEl(dt.pile, dt.index))
+    triggerScoreDisplayEffect(next.score - prevScore)
+
+    // アニメーション完了まで待機
+    await new Promise<void>(r => setTimeout(r, 90))
+    slamAnim = null
+    state = next
+    showHints = false; selected = null
+    checkAfterMove()
+  }
+
+  function triggerSparkles(cx: number, cy: number) {
+    const count = 24
+    const batch: Sparkle[] = []
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.4
+      const dist  = 55 + Math.random() * 90
+      batch.push({
+        id:    _effectId++,
+        x:     cx, y: cy,
+        dx:    Math.cos(angle) * dist,
+        dy:    Math.sin(angle) * dist,
+        color: SPARK_COLORS[Math.floor(Math.random() * SPARK_COLORS.length)],
+        size:  10 + Math.random() * 11,
+        delay: Math.floor(Math.random() * 80),
+        char:  SPARK_CHARS[Math.floor(Math.random() * SPARK_CHARS.length)],
+      })
+    }
+    sparkles = [...sparkles, ...batch]
+    const ids = new Set(batch.map(s => s.id))
+    setTimeout(() => { sparkles = sparkles.filter(s => !ids.has(s.id)) }, 950)
+  }
+
   function triggerScoreDisplayEffect(delta: number) {
     if (delta === 0) return
     const el = document.querySelector('[data-score-display]')
@@ -423,6 +584,7 @@
     const gid = _effectId++
     glowEffects = [...glowEffects, { id: gid, x: rect.left, y: rect.top, w: rect.width, h: rect.height }]
     setTimeout(() => { glowEffects = glowEffects.filter(g => g.id !== gid) }, 650)
+    triggerSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2)
   }
 
   function createCrackerBurst(ox: number, oy: number, vxMin: number, vxMax: number, vyMin: number, vyMax: number, count: number): ConfettiParticle[] {
@@ -725,12 +887,12 @@
           const prevScore = state.score
           const next = moveCards(state, move)
           if (next !== state) {
-            state = next
-            triggerScoreEffects(next.score - prevScore, getDestEl(dropTarget.pile, dropTarget.index))
-            triggerScoreDisplayEffect(next.score - prevScore)
-            selected = null
-            showHints = false
-            checkAfterMove()
+            const di = { ...dragInfo }
+            const dt = { ...dropTarget }
+            dragInfo = null
+            dropTarget = null
+            performSlamDrop(di, dt, next, prevScore)
+            return
           }
         }
       } else {
@@ -830,7 +992,7 @@
   </div>
 
   <!-- ゲームエリア -->
-  <div class="bg-green-800 rounded-xl p-4 select-none relative" style="min-height: 520px;"
+  <div bind:this={gameEl} class="bg-green-800 rounded-xl p-4 select-none relative" style="min-height: 520px;"
     class:pointer-events-none={isVictory(state)}>
 
     <!-- スコア・ボタン行 -->
@@ -903,7 +1065,7 @@
                   class:ring-2={isSelected('waste', 0)}
                   class:ring-blue-400={isSelected('waste', 0)}
                   class:border-green-600={currentHint()?.from.pile !== 'waste' && !isSelected('waste', 0)}
-                  class:opacity-40={dragInfo?.isDragging && dragInfo?.pile === 'waste'}
+                  class:opacity-40={(dragInfo?.isDragging && dragInfo?.pile === 'waste') || slamAnim?.sourcePile === 'waste'}
                 >
                   {@render cardFace(card, true)}
                 </button>
@@ -930,7 +1092,7 @@
           class:ring-blue-400={isSelected('waste', 0)}
           class:border-green-600={currentHint()?.from.pile !== 'waste' && !isSelected('waste', 0)}
           class:bg-green-900={state.waste.length === 0}
-          class:opacity-40={dragInfo?.isDragging && dragInfo?.pile === 'waste'}
+          class:opacity-40={(dragInfo?.isDragging && dragInfo?.pile === 'waste') || slamAnim?.sourcePile === 'waste'}
         >
           {#if state.waste.length > 0}
             {#if flyingToWaste()}
@@ -966,6 +1128,7 @@
           class:border-green-600={!isSelected('foundation', i) && !(currentHint()?.from.pile === 'foundation' && currentHint()?.from.index === i) && !(dropTarget?.pile === 'foundation' && dropTarget?.index === i)}
           class:bg-green-700={state.foundation[i].length === 0}
           class:bg-white={state.foundation[i].length > 0}
+          class:opacity-40={(dragInfo?.isDragging && dragInfo?.pile === 'foundation' && dragInfo?.pileIndex === i) || (slamAnim?.sourcePile === 'foundation' && slamAnim?.sourcePileIndex === i)}
         >
           {#if flyingToFoundation(i)}
             {#if state.foundation[i].length >= 2}
@@ -1014,11 +1177,12 @@
           {#each col as card, cardIdx (cardIdx)}
             {@const hint = currentHint()}
             <button
+              data-card-idx={cardIdx}
               onpointerdown={(e) => onCardPointerDown(e, 'tableau', colIdx, cardIdx)}
               onclick={() => handleCardClick('tableau', colIdx, cardIdx)}
               ondblclick={(e) => card.faceUp ? handleDoubleClick(e, 'tableau', colIdx, cardIdx) : undefined}
               class="absolute left-0 right-0 rounded-lg transition-all"
-              style="top: {cardIdx * 28}px; height: {cardIdx >= col.length - 2 ? 98 : 46}px; z-index: {cardIdx + 1}; opacity: {dragInfo?.isDragging && dragInfo.pile === 'tableau' && dragInfo.pileIndex === colIdx && cardIdx >= col.length - dragInfo.count ? 0.4 : 1};"
+              style="top: {cardIdx * 28}px; height: 98px; z-index: {cardIdx + 1}; opacity: {(dragInfo?.isDragging && dragInfo.pile === 'tableau' && dragInfo.pileIndex === colIdx && cardIdx >= col.length - dragInfo.count) || (slamAnim?.sourcePile === 'tableau' && slamAnim?.sourcePileIndex === colIdx && cardIdx >= col.length - slamAnim.sourceCount) ? 0.4 : 1};"
               class:ring-2={
                 (hint?.from.pile === 'tableau' && hint?.from.index === colIdx && cardIdx >= col.length - hint.count) ||
                 (isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0))
@@ -1029,7 +1193,7 @@
             >
               {#if card.faceUp}
                 <div class="absolute inset-0" in:flipIn={{ duration: 200 }}>
-                  {@render cardFace(card, cardIdx >= col.length - 2)}
+                  {@render cardFace(card, true)}
                 </div>
               {:else}
                 <div class="absolute inset-0 rounded-lg border border-indigo-500/50" style="{CARD_BACK_STYLE}"></div>
@@ -1108,6 +1272,23 @@
   {/if}
 
   <!-- ドラッグゴースト -->
+  {#if slamAnim}
+    {@const tx = slamAnim.toX - slamAnim.fromX}
+    {@const ty = slamAnim.toY - slamAnim.fromY}
+    <div
+      class="pointer-events-none fixed z-[300]"
+      class:slam-drop={slamAnim.playing}
+      style="left:{slamAnim.fromX}px; top:{slamAnim.fromY}px; --tx:{tx}px; --ty:{ty}px; filter: drop-shadow(0 16px 32px rgba(0,0,0,0.7)) drop-shadow(0 0 12px rgba(251,191,36,0.5));"
+    >
+      {#each slamAnim.cards as card, i (i)}
+        <div class="absolute w-16 rounded-lg border border-slate-200 overflow-hidden"
+          style="top:{i*28}px; height:98px;">
+          {@render cardFace(card, true)}
+        </div>
+      {/each}
+    </div>
+  {/if}
+
   {#if dragInfo?.isDragging}
     <div
       class="pointer-events-none fixed z-[200]"
@@ -1203,6 +1384,10 @@
   <div class="glow-ring" style="left:{g.x}px; top:{g.y}px; width:{g.w}px; height:{g.h}px;"></div>
 {/each}
 
+{#each sparkles as s (s.id)}
+  <span class="sparkle-particle" style="left:{s.x}px; top:{s.y}px; --dx:{s.dx}px; --dy:{s.dy}px; color:{s.color}; font-size:{s.size}px; animation-delay:{s.delay}ms;">{s.char}</span>
+{/each}
+
 {#if showVictory}
   <canvas bind:this={confettiCanvas} class="fixed inset-0 pointer-events-none z-[800]"></canvas>
 {/if}
@@ -1224,6 +1409,30 @@
   animation: floatUp 1.1s ease-out forwards;
   white-space: nowrap;
 }
+@keyframes slamDrop {
+  0%   { transform: translate(0, 0) scale(1) rotate(0deg); animation-timing-function: cubic-bezier(0.2, 0, 0.4, 1); }
+  38%  { transform: translate(calc(var(--tx)*0.02), calc(var(--ty)*0.02)) scale(1.85) rotate(-10deg) translateY(-60px); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
+  84%  { transform: translate(calc(var(--tx)*0.99), calc(var(--ty)*0.99)) scale(1.06) rotate(-1deg); animation-timing-function: ease-out; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(1) rotate(0deg); }
+}
+.slam-drop {
+  animation: slamDrop 480ms linear forwards;
+}
+
+@keyframes sparkleShoot {
+  0%   { transform: translate(-50%, -50%) translate(0px, 0px)             scale(1.5) rotate(0deg);   opacity: 1; }
+  65%  { opacity: 1; }
+  100% { transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(0.1) rotate(300deg); opacity: 0; }
+}
+.sparkle-particle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 700;
+  line-height: 1;
+  animation: sparkleShoot 0.78s ease-out forwards;
+  text-shadow: 0 0 8px currentColor, 0 0 16px currentColor;
+}
+
 .score-delta {
   position: fixed;
   pointer-events: none;
