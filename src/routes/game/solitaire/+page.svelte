@@ -208,10 +208,11 @@
     showHints = false
     if (state.stock.length > 0) {
       const card = { ...state.stock[state.stock.length - 1], faceUp: true }
-      const toEl = document.querySelector('[data-waste]')
       const fromRect = (e.currentTarget as Element).getBoundingClientRect()
       state = drawFromStock(state)
       selected = null
+      await tick()
+      const toEl = document.querySelector('[data-waste]')
       if (toEl) await startFlyAnimation(card, fromRect.left, fromRect.top, toEl, true, 'waste')
     } else {
       state = drawFromStock(state)
@@ -820,33 +821,71 @@
       </button>
 
       <!-- 捨て札 -->
-      <button
-        data-waste
-        onpointerdown={(e) => onCardPointerDown(e, 'waste', 0)}
-        onclick={() => handleCardClick('waste', 0)}
-        ondblclick={(e) => state.waste.length > 0 ? handleDoubleClick(e, 'waste', 0) : undefined}
-        class="w-16 h-[98px] rounded-lg border-2 transition-colors relative overflow-hidden"
-        class:border-yellow-400={currentHint()?.from.pile === 'waste'}
-        class:ring-2={isSelected('waste', 0)}
-        class:ring-blue-400={isSelected('waste', 0)}
-        class:border-green-600={currentHint()?.from.pile !== 'waste' && !isSelected('waste', 0)}
-        class:bg-green-900={state.waste.length === 0}
-        class:opacity-40={dragInfo?.isDragging && dragInfo?.pile === 'waste'}
-      >
-        {#if state.waste.length > 0}
-          {#if flyingToWaste()}
-            {#if state.waste.length >= 2}
+      {#if state.drawMode === 3}
+        {@const _base = flyingToWaste() ? state.waste.slice(0, -1) : state.waste}
+        {@const _fan = _base.slice(-3)}
+        <div class="relative h-[98px] flex-shrink-0" style="width:64px; overflow:visible;">
+          {#if _fan.length === 0}
+            <div class="absolute w-16 inset-y-0 rounded-lg border-2 border-green-600 bg-green-900"></div>
+          {:else}
+            {#each _fan as card, i}
+              {@const isTop = i === _fan.length - 1}
+              {#if isTop}
+                <button
+                  data-waste
+                  onpointerdown={(e) => onCardPointerDown(e, 'waste', 0)}
+                  onclick={() => handleCardClick('waste', 0)}
+                  ondblclick={(e) => handleDoubleClick(e, 'waste', 0)}
+                  class="absolute w-16 h-[98px] rounded-lg border-2 transition-colors overflow-hidden"
+                  style="left:{i * 16}px; z-index:{i + 2};"
+                  class:border-yellow-400={currentHint()?.from.pile === 'waste'}
+                  class:ring-2={isSelected('waste', 0)}
+                  class:ring-blue-400={isSelected('waste', 0)}
+                  class:border-green-600={currentHint()?.from.pile !== 'waste' && !isSelected('waste', 0)}
+                  class:opacity-40={dragInfo?.isDragging && dragInfo?.pile === 'waste'}
+                >
+                  {@render cardFace(card, true)}
+                </button>
+              {:else}
+                <div
+                  class="absolute w-16 h-[98px] rounded-lg border border-slate-300 overflow-hidden pointer-events-none"
+                  style="left:{i * 16}px; z-index:{i + 2};"
+                >
+                  {@render cardFace(card, true)}
+                </div>
+              {/if}
+            {/each}
+          {/if}
+        </div>
+      {:else}
+        <button
+          data-waste
+          onpointerdown={(e) => onCardPointerDown(e, 'waste', 0)}
+          onclick={() => handleCardClick('waste', 0)}
+          ondblclick={(e) => state.waste.length > 0 ? handleDoubleClick(e, 'waste', 0) : undefined}
+          class="w-16 h-[98px] rounded-lg border-2 transition-colors relative overflow-hidden"
+          class:border-yellow-400={currentHint()?.from.pile === 'waste'}
+          class:ring-2={isSelected('waste', 0)}
+          class:ring-blue-400={isSelected('waste', 0)}
+          class:border-green-600={currentHint()?.from.pile !== 'waste' && !isSelected('waste', 0)}
+          class:bg-green-900={state.waste.length === 0}
+          class:opacity-40={dragInfo?.isDragging && dragInfo?.pile === 'waste'}
+        >
+          {#if state.waste.length > 0}
+            {#if flyingToWaste()}
+              {#if state.waste.length >= 2}
+                <div class="absolute inset-0">
+                  {@render cardFace(state.waste[state.waste.length - 2], true)}
+                </div>
+              {/if}
+            {:else}
               <div class="absolute inset-0">
-                {@render cardFace(state.waste[state.waste.length - 2], true)}
+                {@render cardFace(state.waste[state.waste.length - 1], true)}
               </div>
             {/if}
-          {:else}
-            <div class="absolute inset-0">
-              {@render cardFace(state.waste[state.waste.length - 1], true)}
-            </div>
           {/if}
-        {/if}
-      </button>
+        </button>
+      {/if}
 
       <div class="flex-1"></div>
 
