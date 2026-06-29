@@ -115,11 +115,13 @@
   let clearBreakdown = $state<ClearBreakdown | null>(null)
   let scoreDeltas = $state<{id: number; delta: number; x: number; y: number}[]>([])
   interface SlamAnim {
+    id: string
     cards: Card[]; fromX: number; fromY: number; toX: number; toY: number
     sourcePile: 'tableau' | 'waste' | 'foundation'; sourcePileIndex: number; sourceCount: number
+    hideSource: boolean
     playing: boolean
   }
-  let slamAnim = $state<SlamAnim | null>(null)
+  let slamAnims = $state<SlamAnim[]>([])
   let gameEl: HTMLElement | null = null
 
   // ---- LocalStorage自動保存 ----
@@ -151,25 +153,50 @@
   // ---- オートコンプリート ----
   async function startAutoComplete() {
     autoCompleting = true
+    const STAGGER_MS = 80
+    const animPromises: Promise<void>[] = []
+
     while (autoCompleting) {
       const move = getAutoCompleteMove(state)
-      if (!move || !autoCompleting) break
+      if (!move) break
+
+      // state 更新前に位置とカードを取得
+      const card = move.from.pile === 'waste'
+        ? state.waste[state.waste.length - 1]
+        : state.tableau[move.from.index][state.tableau[move.from.index].length - 1]
+
+      let fromX = 0, fromY = 0
+      if (move.from.pile === 'waste') {
+        const el = document.querySelector('[data-waste]')
+        if (el) { const r = el.getBoundingClientRect(); fromX = r.left; fromY = r.top }
+      } else {
+        const el = document.querySelector(`[data-pile="tableau"][data-pile-index="${move.from.index}"]`)
+        if (el) {
+          const r = el.getBoundingClientRect()
+          fromX = r.left
+          fromY = r.top + (state.tableau[move.from.index].length - 1) * 28
+        }
+      }
+      const toEl = getDestEl('foundation', move.to.index)
+      const toRect = toEl?.getBoundingClientRect()
+      const toX = toRect?.left ?? 0
+      const toY = toRect?.top ?? 0
 
       const prevScore = state.score
-      const next = autoCompleteStep(state)
-      const di: DragInfo = {
-        pile: move.from.pile as 'waste' | 'tableau',
-        pileIndex: move.from.index,
-        cardIndex: move.from.pile === 'tableau' ? state.tableau[move.from.index].length - 1 : undefined,
-        count: 1,
-        startX: 0, startY: 0, currentX: 0, currentY: 0,
-        isDragging: false,
-        pointerId: -1,
-      }
-      await performSlamDrop(di, { pile: 'foundation', index: move.to.index }, next, prevScore)
-      if (!autoCompleting) break
+      state = autoCompleteStep(state) // 即時反映（元カードがDOMから消える）
+      const delta = state.score - prevScore
+
+      // fire-and-forget でアニメーション開始
+      animPromises.push(fireAutoSlamAnim(card, fromX, fromY, toX, toY, move.to.index, delta))
+
+      await new Promise<void>(r => setTimeout(r, STAGGER_MS))
     }
+
+    // 全アニメーション完了後に後処理
+    await Promise.all(animPromises)
+    showHints = false; selected = null
     autoCompleting = false
+    checkAfterMove()
   }
 
   // ---- ゲーム操作 ----
@@ -508,23 +535,22 @@
       if (el) { const r = el.getBoundingClientRect(); fromX = r.left; fromY = r.top + (di.cardIndex ?? 0) * 28 }
     }
 
-    slamAnim = {
-      cards,
-      fromX, fromY,
-      toX, toY,
+    const animId = `slam-${_effectId++}`
+    slamAnims = [...slamAnims, {
+      id: animId, cards, fromX, fromY, toX, toY,
       sourcePile: di.pile, sourcePileIndex: di.pileIndex, sourceCount: di.count,
-      playing: false,
-    }
+      hideSource: true, playing: false,
+    }]
     await tick()
     await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())))
-    slamAnim = { ...slamAnim!, playing: true }
+    slamAnims = slamAnims.map(a => a.id === animId ? { ...a, playing: true } : a)
     await new Promise<void>(r => requestAnimationFrame(() => r()))
 
-    const ghostEl = document.getElementById('slam-ghost')
+    const ghostEl = document.querySelector(`[data-ghost-id="${animId}"]`)
     if (ghostEl) {
       const sc = cfg.slamDrop
-      const tx = slamAnim!.toX - slamAnim!.fromX
-      const ty = slamAnim!.toY - slamAnim!.fromY
+      const tx = toX - fromX
+      const ty = toY - fromY
       ghostEl.animate([
         { transform: 'translate(0,0) scale(1) rotate(0deg)',                                                                                                                     offset: 0,        easing: 'cubic-bezier(0.2,0,0.4,1)' },
         { transform: `translate(${tx*0.02}px,${ty*0.02}px) scale(${sc.peakScale}) rotate(${sc.peakRotateDeg}deg) translateY(${sc.peakLiftPx}px)`,                               offset: sc.peakAt, easing: 'cubic-bezier(0.8,0,1,1)' },
@@ -542,11 +568,50 @@
 
     // アニメーション完了まで待機 (残り時間 = duration * (1 - landAt))
     await new Promise<void>(r => setTimeout(r, Math.round(cfg.slamDrop.durationMs * (1 - cfg.slamDrop.landAt)) + 10))
-    slamAnim = null
+    slamAnims = slamAnims.filter(a => a.id !== animId)
     state = next
     showHints = false; selected = null
     cfg = cfgForSize('medium')
     checkAfterMove()
+  }
+
+  // オートコンプリート用: 1枚を fire-and-forget でスラム投下
+  async function fireAutoSlamAnim(
+    card: Card, fromX: number, fromY: number,
+    toX: number, toY: number,
+    foundIdx: number, delta: number
+  ): Promise<void> {
+    const sc = animFile.slamDrop['large']
+    const animId = `as-${_effectId++}`
+    slamAnims = [...slamAnims, {
+      id: animId, cards: [card], fromX, fromY, toX, toY,
+      sourcePile: 'waste', sourcePileIndex: -1, sourceCount: 0,
+      hideSource: false, playing: false,
+    }]
+    await tick()
+    await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())))
+    slamAnims = slamAnims.map(a => a.id === animId ? { ...a, playing: true } : a)
+    await new Promise<void>(r => requestAnimationFrame(() => r()))
+
+    const ghostEl = document.querySelector(`[data-ghost-id="${animId}"]`)
+    if (ghostEl) {
+      const tx = toX - fromX
+      const ty = toY - fromY
+      ghostEl.animate([
+        { transform: 'translate(0,0) scale(1) rotate(0deg)',                                                                                                                    offset: 0,        easing: 'cubic-bezier(0.2,0,0.4,1)' },
+        { transform: `translate(${tx*0.02}px,${ty*0.02}px) scale(${sc.peakScale}) rotate(${sc.peakRotateDeg}deg) translateY(${sc.peakLiftPx}px)`,                              offset: sc.peakAt, easing: 'cubic-bezier(0.8,0,1,1)' },
+        { transform: `translate(${tx*0.99}px,${ty*0.99}px) scale(${sc.landScale}) rotate(${sc.landRotateDeg}deg)`,                                                             offset: sc.landAt, easing: 'ease-out' },
+        { transform: `translate(${tx}px,${ty}px) scale(1) rotate(0deg)`,                                                                                                       offset: 1 },
+      ], { duration: sc.durationMs, easing: 'linear', fill: 'forwards' })
+    }
+
+    await new Promise<void>(r => setTimeout(r, Math.round(sc.durationMs * sc.landAt)))
+    triggerImpactBounce(toX + 32, toY + 49)
+    if (delta > 0) triggerScoreEffects(delta, getDestEl('foundation', foundIdx))
+    triggerScoreDisplayEffect(delta)
+
+    await new Promise<void>(r => setTimeout(r, Math.round(sc.durationMs * (1 - sc.landAt)) + 10))
+    slamAnims = slamAnims.filter(a => a.id !== animId)
   }
 
   function triggerSparkles(cx: number, cy: number) {
@@ -1071,7 +1136,7 @@
                   class:ring-2={isSelected('waste', 0)}
                   class:ring-blue-400={isSelected('waste', 0)}
                   class:border-green-600={currentHint()?.from.pile !== 'waste' && !isSelected('waste', 0)}
-                  class:opacity-40={(dragInfo?.isDragging && dragInfo?.pile === 'waste') || slamAnim?.sourcePile === 'waste'}
+                  class:opacity-40={(dragInfo?.isDragging && dragInfo?.pile === 'waste') || slamAnims.some(a => a.hideSource && a.sourcePile === 'waste')}
                 >
                   {@render cardFace(card, true)}
                 </button>
@@ -1098,7 +1163,7 @@
           class:ring-blue-400={isSelected('waste', 0)}
           class:border-green-600={currentHint()?.from.pile !== 'waste' && !isSelected('waste', 0)}
           class:bg-green-900={state.waste.length === 0}
-          class:opacity-40={(dragInfo?.isDragging && dragInfo?.pile === 'waste') || slamAnim?.sourcePile === 'waste'}
+          class:opacity-40={(dragInfo?.isDragging && dragInfo?.pile === 'waste') || slamAnims.some(a => a.hideSource && a.sourcePile === 'waste')}
         >
           {#if state.waste.length > 0}
             {#if flyingToWaste()}
@@ -1134,7 +1199,7 @@
           class:border-green-600={!isSelected('foundation', i) && !(currentHint()?.from.pile === 'foundation' && currentHint()?.from.index === i) && !(dropTarget?.pile === 'foundation' && dropTarget?.index === i)}
           class:bg-green-700={state.foundation[i].length === 0}
           class:bg-white={state.foundation[i].length > 0}
-          class:opacity-40={(dragInfo?.isDragging && dragInfo?.pile === 'foundation' && dragInfo?.pileIndex === i) || (slamAnim?.sourcePile === 'foundation' && slamAnim?.sourcePileIndex === i)}
+          class:opacity-40={(dragInfo?.isDragging && dragInfo?.pile === 'foundation' && dragInfo?.pileIndex === i) || slamAnims.some(a => a.hideSource && a.sourcePile === 'foundation' && a.sourcePileIndex === i)}
         >
           {#if flyingToFoundation(i)}
             {#if state.foundation[i].length >= 2}
@@ -1189,7 +1254,7 @@
               onclick={() => handleCardClick('tableau', colIdx, cardIdx)}
               ondblclick={(e) => card.faceUp ? handleDoubleClick(e, 'tableau', colIdx, cardIdx) : undefined}
               class="absolute left-0 right-0 rounded-lg transition-all"
-              style="top: {cardIdx * 28}px; height: 98px; z-index: {cardIdx + 1}; opacity: {(dragInfo?.isDragging && dragInfo.pile === 'tableau' && dragInfo.pileIndex === colIdx && cardIdx >= col.length - dragInfo.count) || (slamAnim?.sourcePile === 'tableau' && slamAnim?.sourcePileIndex === colIdx && cardIdx >= col.length - slamAnim.sourceCount) ? 0.4 : 1};"
+              style="top: {cardIdx * 28}px; height: 98px; z-index: {cardIdx + 1}; opacity: {(dragInfo?.isDragging && dragInfo.pile === 'tableau' && dragInfo.pileIndex === colIdx && cardIdx >= col.length - dragInfo.count) || slamAnims.some(a => a.hideSource && a.sourcePile === 'tableau' && a.sourcePileIndex === colIdx && cardIdx >= col.length - a.sourceCount) ? 0.4 : 1};"
               class:ring-2={
                 (hint?.from.pile === 'tableau' && hint?.from.index === colIdx && cardIdx >= col.length - hint.count) ||
                 (isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0))
@@ -1285,20 +1350,20 @@
   {/if}
 
   <!-- ドラッグゴースト -->
-  {#if slamAnim}
+  {#each slamAnims as anim (anim.id)}
     <div
-      id="slam-ghost"
+      data-ghost-id={anim.id}
       class="pointer-events-none fixed z-[300]"
-      style="left:{slamAnim.fromX}px; top:{slamAnim.fromY}px; filter: drop-shadow(0 16px 32px rgba(0,0,0,0.7)) drop-shadow(0 0 12px rgba(251,191,36,0.5));"
+      style="left:{anim.fromX}px; top:{anim.fromY}px; filter: drop-shadow(0 16px 32px rgba(0,0,0,0.7)) drop-shadow(0 0 12px rgba(251,191,36,0.5));"
     >
-      {#each slamAnim.cards as card, i (i)}
+      {#each anim.cards as card, i (i)}
         <div class="absolute w-16 rounded-lg border border-slate-200 overflow-hidden"
           style="top:{i*28}px; height:98px;">
           {@render cardFace(card, true)}
         </div>
       {/each}
     </div>
-  {/if}
+  {/each}
 
   {#if dragInfo?.isDragging}
     <div
