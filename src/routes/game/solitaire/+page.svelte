@@ -498,7 +498,12 @@
     next: GameState,
     prevScore: number
   ) {
-    cfg = cfgForSize(dt.pile === 'foundation' ? 'large' : 'medium')
+    cfg = cfgForSize(
+      dt.pile === 'foundation' ? 'large' :
+      di.count >= 5            ? 'large' :
+      di.count >= 2            ? 'medium' :
+                                 'small'
+    )
     const cards = di.pile === 'waste'
       ? state.waste.slice(-1)
       : di.pile === 'foundation'
