@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte'
+  import { onMount, onDestroy } from 'svelte'
   import {
     animConfigSchema,
     DEFAULT_ANIM_CONFIG,
@@ -68,6 +68,7 @@
 
   function setNumberValue(sectionKey: string, fieldKey: string, value: number) {
     if (!config) return
+    if (Number.isNaN(value)) return
     ;(config as Record<string, Record<string, number>>)[sectionKey][fieldKey] = value
   }
 
@@ -78,6 +79,7 @@
 
   function setArrayCell(sectionKey: string, fieldKey: string, rowIndex: number, colKey: string, value: number) {
     if (!config) return
+    if (Number.isNaN(value)) return
     const arr = (config as Record<string, Record<string, Array<Record<string, number>>>>)[sectionKey][fieldKey]
     arr[rowIndex][colKey] = value
   }
@@ -137,10 +139,8 @@
     }
   }
 
-  // Load on mount (using $effect instead of onMount for Svelte 5)
-  $effect(() => {
-    loadConfig()
-  })
+  // Load on mount
+  onMount(() => loadConfig())
 
   onDestroy(() => {
     if (flashTimer) clearTimeout(flashTimer)
