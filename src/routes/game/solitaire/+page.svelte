@@ -93,6 +93,7 @@
     subtotal: number; draw3Mult: number; finalScore: number
   }
   let clearBreakdown = $state<ClearBreakdown | null>(null)
+  let scoreDeltas = $state<{id: number; delta: number; x: number; y: number}[]>([])
 
   // ---- LocalStorage自動保存 ----
   $effect(() => {
@@ -153,6 +154,7 @@
       await startFlyAnimation(card, fromX, fromY, toEl, false, { pile: 'foundation', index: foundIdx }, 70)
 
       if (delta > 0) triggerScoreEffects(delta, toEl)
+      triggerScoreDisplayEffect(delta)
       if (!autoCompleting) break
 
       if (isVictory(state)) {
@@ -181,6 +183,7 @@
     flyCard = null
     floatScores = []
     glowEffects = []
+    scoreDeltas = []
     undoCount = 0; hintCount = 0; clearBreakdown = null
   }
 
@@ -231,7 +234,9 @@
       const toEl = document.querySelector('[data-waste]')
       if (toEl) await startFlyAnimation(card, fromRect.left, fromRect.top, toEl, true, 'waste')
     } else {
+      const prevScore = state.score
       state = drawFromStock(state)
+      triggerScoreDisplayEffect(state.score - prevScore)
       selected = null
     }
     checkAfterMove()
@@ -275,6 +280,7 @@
     if (next !== state) {
       state = next
       triggerScoreEffects(state.score - prevScore, getDestEl(move.to.pile, move.to.index))
+      triggerScoreDisplayEffect(state.score - prevScore)
       checkAfterMove()
     }
     selected = null
@@ -308,6 +314,7 @@
     const fromRect = (e.currentTarget as Element).getBoundingClientRect()
     if (toEl) await startFlyAnimation(card, fromRect.left, fromRect.top, toEl, false, { pile: 'foundation', index: foundIdx })
     if (delta > 0 && toEl) triggerScoreEffects(delta, toEl)
+    triggerScoreDisplayEffect(delta)
     checkAfterMove()
   }
 
@@ -395,6 +402,16 @@
 
   function getDestEl(pile: 'tableau' | 'foundation', index: number): Element | null {
     return document.querySelector(`[data-pile="${pile}"][data-pile-index="${index}"]`)
+  }
+
+  function triggerScoreDisplayEffect(delta: number) {
+    if (delta === 0) return
+    const el = document.querySelector('[data-score-display]')
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const id = _effectId++
+    scoreDeltas = [...scoreDeltas, { id, delta, x: rect.left + rect.width / 2, y: rect.top }]
+    setTimeout(() => { scoreDeltas = scoreDeltas.filter(s => s.id !== id) }, 1100)
   }
 
   function triggerScoreEffects(delta: number, destEl: Element | null) {
@@ -710,6 +727,7 @@
           if (next !== state) {
             state = next
             triggerScoreEffects(next.score - prevScore, getDestEl(dropTarget.pile, dropTarget.index))
+            triggerScoreDisplayEffect(next.score - prevScore)
             selected = null
             showHints = false
             checkAfterMove()
@@ -819,7 +837,7 @@
     <div class="flex items-start justify-between mb-3">
       <!-- 左: 得点・タイマー・タイムボーナス -->
       <div class="flex items-center gap-3">
-        {#key state.score}<span class="text-sm text-emerald-300 font-mono score-bounce">🏆 {state.score}pt</span>{/key}
+        <span data-score-display class="inline-block">{#key state.score}<span class="text-sm text-emerald-300 font-mono score-bounce">🏆 {state.score}pt</span>{/key}</span>
         {#key timerPulseId}<span class="text-sm text-amber-300 font-mono"
           class:timer-small={timerPulseId > 0 && timerPulseType === 'small'}
           class:timer-large={timerPulseId > 0 && timerPulseType === 'large'}
@@ -1177,6 +1195,10 @@
   <div class="float-score" style="left:{fs.x}px; top:{fs.y}px;">+{fs.delta}</div>
 {/each}
 
+{#each scoreDeltas as sd (sd.id)}
+  <div class="score-delta {sd.delta > 0 ? 'score-delta-pos' : 'score-delta-neg'}" style="left:{sd.x}px; top:{sd.y}px;">{sd.delta > 0 ? '+' : ''}{sd.delta}</div>
+{/each}
+
 {#each glowEffects as g (g.id)}
   <div class="glow-ring" style="left:{g.x}px; top:{g.y}px; width:{g.w}px; height:{g.h}px;"></div>
 {/each}
@@ -1201,6 +1223,23 @@
   text-shadow: 0 0 8px rgba(251,191,36,0.8), 0 1px 3px rgba(0,0,0,0.4);
   animation: floatUp 1.1s ease-out forwards;
   white-space: nowrap;
+}
+.score-delta {
+  position: fixed;
+  pointer-events: none;
+  z-index: 600;
+  font-weight: 800;
+  font-size: 0.85rem;
+  animation: floatUp 1.1s ease-out forwards;
+  white-space: nowrap;
+}
+.score-delta-pos {
+  color: #34d399;
+  text-shadow: 0 0 8px rgba(52,211,153,0.8), 0 1px 3px rgba(0,0,0,0.4);
+}
+.score-delta-neg {
+  color: #f87171;
+  text-shadow: 0 0 8px rgba(248,113,113,0.8), 0 1px 3px rgba(0,0,0,0.4);
 }
 
 @keyframes scoreBounce {
