@@ -1222,7 +1222,6 @@
               }
               class:ring-yellow-400={hint?.from.pile === 'tableau' && hint?.from.index === colIdx && cardIdx >= col.length - hint.count && !isSelected('tableau', colIdx)}
               class:ring-blue-400={isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0)}
-              class:brightness-110={isHoverTarget}
               class:-translate-y-1={
                 (isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0)) ||
                 (isHoverTarget && cardIdx === col.length - 1)
@@ -1234,6 +1233,9 @@
                 </div>
               {:else}
                 <div class="absolute inset-0 rounded-lg border border-indigo-500/50" style="{CARD_BACK_STYLE}"></div>
+              {/if}
+              {#if isHoverTarget}
+                <div class="absolute inset-0 rounded-lg bg-blue-400/30 pointer-events-none"></div>
               {/if}
             </button>
           {/each}
