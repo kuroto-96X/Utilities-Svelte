@@ -2,14 +2,20 @@
   import { onMount, onDestroy } from 'svelte'
   import {
     animConfigSchema,
-    DEFAULT_ANIM_CONFIG,
-    type AnimConfig,
+    DEFAULT_ANIM_CONFIG_FILE,
+    type AnimConfigFile,
+    type AnimSize,
     type NumberField,
     type ArrayField,
   } from '$lib/game/solitaire/anim.config.schema'
 
   // ─── State ───────────────────────────────────────────────
-  let config = $state<AnimConfig | null>(null)
+  let config = $state<AnimConfigFile | null>(null)
+  let selectedSizes = $state<Record<string, AnimSize>>({})
+
+  function getSizeFor(sectionKey: string): AnimSize {
+    return selectedSizes[sectionKey] ?? 'medium'
+  }
   let error = $state<string | null>(null)
   let flash = $state<string | null>(null)
   let flashTimer: ReturnType<typeof setTimeout> | null = null
@@ -23,25 +29,37 @@
   let dstCardEl = $state<HTMLElement | null>(null)
 
   // ─── Derived ─────────────────────────────────────────────
-  let cfg = $derived(config ?? DEFAULT_ANIM_CONFIG)
+  let cfg = $derived.by(() => {
+    const base = config ?? DEFAULT_ANIM_CONFIG_FILE
+    return {
+      slamDrop:     base.slamDrop[getSizeFor('slamDrop')],
+      screenShake:  base.screenShake[getSizeFor('screenShake')],
+      impactBounce: base.impactBounce[getSizeFor('impactBounce')],
+      sparkle:      base.sparkle[getSizeFor('sparkle')],
+      scoreDelta:   base.scoreDelta[getSizeFor('scoreDelta')],
+    }
+  })
 
-  // validation: collect out-of-range fields
+  // validation: collect out-of-range fields (check all three sizes)
   let hasValidationError = $derived.by(() => {
     if (!config) return false
+    const sizes: AnimSize[] = ['large', 'medium', 'small']
     for (const [sectionKey, section] of Object.entries(animConfigSchema)) {
-      for (const [fieldKey, fieldSchema] of Object.entries(section.fields)) {
-        if (fieldSchema.type === 'number') {
-          const val = (config as Record<string, Record<string, number>>)[sectionKey]?.[fieldKey]
-          if (val === undefined) continue
-          if (val < fieldSchema.min || val > fieldSchema.max) return true
-        } else if (fieldSchema.type === 'array') {
-          const arr = (config as Record<string, Record<string, Array<Record<string, number>>>>)[sectionKey]?.[fieldKey]
-          if (!Array.isArray(arr)) continue
-          for (const row of arr) {
-            for (const [colKey, colSchema] of Object.entries(fieldSchema.columns)) {
-              const v = row[colKey]
-              if (v === undefined) continue
-              if (v < colSchema.min || v > colSchema.max) return true
+      for (const size of sizes) {
+        for (const [fieldKey, fieldSchema] of Object.entries(section.fields)) {
+          if (fieldSchema.type === 'number') {
+            const val = (config as Record<string, Record<string, Record<string, number>>>)[sectionKey]?.[size]?.[fieldKey]
+            if (val === undefined) continue
+            if (val < fieldSchema.min || val > fieldSchema.max) return true
+          } else if (fieldSchema.type === 'array') {
+            const arr = (config as Record<string, Record<string, Record<string, Array<Record<string, number>>>>>)[sectionKey]?.[size]?.[fieldKey]
+            if (!Array.isArray(arr)) continue
+            for (const row of arr) {
+              for (const [colKey, colSchema] of Object.entries(fieldSchema.columns)) {
+                const v = row[colKey]
+                if (v === undefined) continue
+                if (v < colSchema.min || v > colSchema.max) return true
+              }
             }
           }
         }
@@ -63,50 +81,54 @@
 
   function getNumberValue(sectionKey: string, fieldKey: string): number {
     if (!config) return 0
-    return (config as Record<string, Record<string, number>>)[sectionKey]?.[fieldKey] ?? 0
+    const size = getSizeFor(sectionKey)
+    return (config as Record<string, Record<string, Record<string, number>>>)[sectionKey]?.[size]?.[fieldKey] ?? 0
   }
 
   function setNumberValue(sectionKey: string, fieldKey: string, value: number) {
     if (!config) return
     if (Number.isNaN(value)) return
-    ;(config as Record<string, Record<string, number>>)[sectionKey][fieldKey] = value
+    const size = getSizeFor(sectionKey)
+    ;(config as Record<string, Record<string, Record<string, number>>>)[sectionKey][size][fieldKey] = value
   }
 
   function getArrayValue(sectionKey: string, fieldKey: string): Array<Record<string, number>> {
     if (!config) return []
-    return (config as Record<string, Record<string, Array<Record<string, number>>>>)[sectionKey]?.[fieldKey] ?? []
+    const size = getSizeFor(sectionKey)
+    return (config as Record<string, Record<string, Record<string, Array<Record<string, number>>>>>)[sectionKey]?.[size]?.[fieldKey] ?? []
   }
 
   function setArrayCell(sectionKey: string, fieldKey: string, rowIndex: number, colKey: string, value: number) {
     if (!config) return
     if (Number.isNaN(value)) return
-    const arr = (config as Record<string, Record<string, Array<Record<string, number>>>>)[sectionKey][fieldKey]
+    const size = getSizeFor(sectionKey)
+    const arr = (config as Record<string, Record<string, Record<string, Array<Record<string, number>>>>>)[sectionKey][size][fieldKey]
     arr[rowIndex][colKey] = value
   }
 
   function addArrayRow(sectionKey: string, fieldKey: string, schema: ArrayField) {
     if (!config) return
-    const arr = (config as Record<string, Record<string, Array<Record<string, number>>>>)[sectionKey][fieldKey]
+    const size = getSizeFor(sectionKey)
+    const arr = (config as Record<string, Record<string, Record<string, Array<Record<string, number>>>>>)[sectionKey][size][fieldKey]
     const newRow: Record<string, number> = {}
-    for (const colKey of Object.keys(schema.columns)) {
-      newRow[colKey] = 0
-    }
+    for (const colKey of Object.keys(schema.columns)) newRow[colKey] = 0
     arr.push(newRow)
   }
 
   function removeArrayRow(sectionKey: string, fieldKey: string, rowIndex: number) {
     if (!config) return
-    const arr = (config as Record<string, Record<string, Array<Record<string, number>>>>)[sectionKey][fieldKey]
+    const size = getSizeFor(sectionKey)
+    const arr = (config as Record<string, Record<string, Record<string, Array<Record<string, number>>>>>)[sectionKey][size][fieldKey]
     if (arr.length <= 1) return
     arr.splice(rowIndex, 1)
   }
 
   function resetSection(sectionKey: string) {
     if (!config) return
-    const defaults = DEFAULT_ANIM_CONFIG as Record<string, unknown>
-    const configSection = config as Record<string, unknown>
-    // deep clone the default section
-    configSection[sectionKey] = JSON.parse(JSON.stringify(defaults[sectionKey]))
+    const size = getSizeFor(sectionKey)
+    const defaults = DEFAULT_ANIM_CONFIG_FILE as Record<string, Record<string, unknown>>
+    const configSection = config as Record<string, Record<string, unknown>>
+    configSection[sectionKey][size] = JSON.parse(JSON.stringify(defaults[sectionKey][size]))
   }
 
   // ─── API ─────────────────────────────────────────────────
@@ -114,13 +136,13 @@
     try {
       const res = await fetch('/api/admin/anim-config')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      config = await res.json() as AnimConfig
+      config = await res.json() as AnimConfigFile
       error = null
       if (toast) showToast('リロードしました')
     } catch {
       error = 'アニメーション設定APIに接続できません。npm run dev で起動してください。'
       // Fall back to default so UI is still usable
-      if (!config) config = JSON.parse(JSON.stringify(DEFAULT_ANIM_CONFIG))
+      if (!config) config = JSON.parse(JSON.stringify(DEFAULT_ANIM_CONFIG_FILE))
     }
   }
 
@@ -288,6 +310,18 @@
             {#if !collapsed[sectionKey]}
               <div class="px-4 pb-4 space-y-3 border-t border-slate-100">
 
+                <!-- Size tabs -->
+                <div class="flex gap-1 mb-3 pt-3">
+                  {#each (['large', 'medium', 'small'] as AnimSize[]) as size}
+                    <button
+                      onclick={() => { selectedSizes[sectionKey] = size }}
+                      class="text-xs px-2.5 py-1 rounded-md border transition-colors {getSizeFor(sectionKey) === size ? 'bg-teal-600 text-white border-teal-600' : 'border-slate-200 text-slate-500 hover:border-slate-300'}"
+                    >
+                      {size === 'large' ? '大' : size === 'medium' ? '中' : '小'}
+                    </button>
+                  {/each}
+                </div>
+
                 {#each Object.entries(section.fields) as [fieldKey, fieldSchema] (fieldKey)}
 
                   {#if fieldSchema.type === 'number'}
@@ -391,7 +425,7 @@
                     onclick={() => resetSection(sectionKey)}
                     class="text-xs px-3 py-1 rounded border border-slate-200 text-slate-400 hover:border-amber-400 hover:text-amber-600 transition-colors"
                   >
-                    デフォルトに戻す
+                    {getSizeFor(sectionKey) === 'large' ? '大' : getSizeFor(sectionKey) === 'medium' ? '中' : '小'}をデフォルトに戻す
                   </button>
                 </div>
 
@@ -414,13 +448,13 @@
         bind:this={previewEl}
         id="preview-wrapper"
         class="relative rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 overflow-hidden"
-        style="min-height: 200px; height: 200px;"
+        style="min-height: 280px; height: 280px;"
       >
         <!-- Src card (top-left) -->
         <div
           bind:this={srcCardEl}
           id="preview-card-src"
-          class="absolute top-4 left-4 w-12 h-16 bg-green-600 rounded-md flex items-center justify-center text-white text-xs font-bold shadow-md select-none"
+          class="absolute top-24 left-16 w-12 h-16 bg-green-600 rounded-md flex items-center justify-center text-white text-xs font-bold shadow-md select-none"
         >
           ♠A
         </div>
