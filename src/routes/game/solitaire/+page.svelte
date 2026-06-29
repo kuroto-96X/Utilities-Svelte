@@ -7,9 +7,19 @@
     dealInitial, drawFromStock, moveCards,
     undo, getHints, canAutoComplete, autoCompleteStep, getAutoCompleteMove, isVictory
   } from '$lib/game/solitaire/engine'
-  import defaultAnimConfigJson from '$lib/game/solitaire/anim.config.json'
-  import type { AnimConfig } from '$lib/game/solitaire/anim.config.schema'
-  const cfg = defaultAnimConfigJson as AnimConfig
+  import animConfigJson from '$lib/game/solitaire/anim.config.json'
+  import type { AnimConfigFile } from '$lib/game/solitaire/anim.config.schema'
+
+  const animFile = animConfigJson as AnimConfigFile
+
+  // Each animation picks its own size independently — change these constants to tune per-use-site
+  const cfg = {
+    slamDrop:     animFile.slamDrop['medium'],
+    screenShake:  animFile.screenShake['medium'],
+    impactBounce: animFile.impactBounce['medium'],
+    sparkle:      animFile.sparkle['medium'],
+    scoreDelta:   animFile.scoreDelta['medium'],
+  }
 
   // ---- TOP10スコア型 ----
   interface ScoreEntry {
