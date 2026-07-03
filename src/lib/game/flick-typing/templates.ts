@@ -18,11 +18,11 @@ export const patterns: string[] = [
   '{subject}は{noun}が{adj}',
   '{subject}は{noun}をもっている',
   '{subject}が{noun}をさがしている',
-  '{adj}{noun}が{location}にある',
+  '{adj}{noun}が{location}ある',
   '{adj}{noun}が{verb}',
   '{location}{adj}{noun}がいる',
   '{location}{noun}がある',
-  '{noun}が{location}にある',
+  '{noun}が{location}ある',
   '{location}{subject}が{verb}',
 ]
 
