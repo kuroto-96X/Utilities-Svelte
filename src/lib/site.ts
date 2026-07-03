@@ -103,5 +103,11 @@ export const site = {
       description: "クロンダイクソリティア。ドロー1・ドロー3を選んで遊べる",
       category: 'game',
     },
+    {
+      href: "/game/flick-typing",
+      label: "フリックタイピング",
+      description: "スマホのフリック入力で遊ぶノルマクリア型タイピングゲーム",
+      category: 'game',
+    },
   ],
 } as const
