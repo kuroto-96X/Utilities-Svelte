@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { easyWords, hardSentences, pickQuestions } from './words'
+import { easyWords, hardSentences, pickQuestions, generatePool } from './words'
 
 describe('easyWords', () => {
   test('60語以上ある', () => {
@@ -57,5 +57,49 @@ describe('pickQuestions', () => {
     const original = [...pool]
     pickQuestions(pool, 3)
     expect(pool).toEqual(original)
+  })
+})
+
+describe('generatePool', () => {
+  test('指定件数以下の文を生成する', () => {
+    const { sentences } = generatePool(10, 42)
+    expect(sentences.length).toBeGreaterThan(0)
+    expect(sentences.length).toBeLessThanOrEqual(10)
+  })
+
+  test('同じシードは同じ結果を返す', () => {
+    const { sentences: a } = generatePool(20, 12345)
+    const { sentences: b } = generatePool(20, 12345)
+    expect(a).toEqual(b)
+  })
+
+  test('異なるシードは異なる結果を返す', () => {
+    const { sentences: a } = generatePool(20, 11111)
+    const { sentences: b } = generatePool(20, 99999)
+    expect(a).not.toEqual(b)
+  })
+
+  test('重複がない', () => {
+    const { sentences } = generatePool(50, 42)
+    expect(new Set(sentences).size).toBe(sentences.length)
+  })
+
+  test('指定したシードを返す', () => {
+    const { seed } = generatePool(10, 99999)
+    expect(seed).toBe(99999)
+  })
+
+  test('シードなしでも seed を返す', () => {
+    const { seed } = generatePool(10)
+    expect(typeof seed).toBe('number')
+    expect(Number.isFinite(seed)).toBe(true)
+  })
+
+  test('すべてひらがなのみ', () => {
+    const hiraganaOnly = /^[ぁ-ゖ]+$/
+    const { sentences } = generatePool(100, 42)
+    sentences.forEach(s => {
+      expect(s).toMatch(hiraganaOnly)
+    })
   })
 })
