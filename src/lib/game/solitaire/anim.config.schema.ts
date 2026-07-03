@@ -54,6 +54,15 @@ export type AnimConfig = {
   scoreDelta: {
     durationMs: number
   }
+  finale: {
+    spinDurationMs: number
+    spinPeakScale: number
+    spinRotations: number
+    holdDurationMs: number
+    shakeAmplify: number
+    shakeCount: number
+    shakeIntervalMs: number
+  }
 }
 
 export const DEFAULT_ANIM_CONFIG: AnimConfig = {
@@ -95,6 +104,15 @@ export const DEFAULT_ANIM_CONFIG: AnimConfig = {
   },
   scoreDelta: {
     durationMs: 1100,
+  },
+  finale: {
+    spinDurationMs: 600,
+    spinPeakScale: 2.0,
+    spinRotations: 1,
+    holdDurationMs: 50,
+    shakeAmplify: 1.5,
+    shakeCount: 1,
+    shakeIntervalMs: 0,
   },
 }
 
@@ -145,6 +163,11 @@ export const DEFAULT_ANIM_CONFIG_FILE: AnimConfigFile = {
     large:  { durationMs: 1400 },
     medium: { ...DEFAULT_ANIM_CONFIG.scoreDelta },
     small:  { durationMs: 750 },
+  },
+  finale: {
+    large:  { spinDurationMs: 825, spinPeakScale: 2.5, spinRotations: 2, holdDurationMs: 75, shakeAmplify: 2.5, shakeCount: 2, shakeIntervalMs: 80 },
+    medium: { ...DEFAULT_ANIM_CONFIG.finale },
+    small:  { spinDurationMs: 400, spinPeakScale: 1.6, spinRotations: 1, holdDurationMs: 30, shakeAmplify: 1.0, shakeCount: 1, shakeIntervalMs: 0 },
   },
 }
 
@@ -201,6 +224,18 @@ export const animConfigSchema: AnimConfigSchema = {
     label: 'スコア差分',
     fields: {
       durationMs: { type: 'number', label: '時間', min: 200, max: 3000, step: 50, unit: 'ms' },
+    },
+  },
+  finale: {
+    label: 'フィナーレ（最終カード）',
+    fields: {
+      spinDurationMs:  { type: 'number', label: 'スピン時間',       min: 100, max: 2000, step: 25,  unit: 'ms' },
+      spinPeakScale:   { type: 'number', label: 'スピン最大倍率',   min: 1.0, max: 4.0,  step: 0.1 },
+      spinRotations:   { type: 'number', label: '回転数',           min: 1,   max: 5,    step: 1 },
+      holdDurationMs:  { type: 'number', label: '停止時間',         min: 0,   max: 500,  step: 25,  unit: 'ms' },
+      shakeAmplify:    { type: 'number', label: 'シェイク強度倍率', min: 0.5, max: 5.0,  step: 0.1 },
+      shakeCount:      { type: 'number', label: 'シェイク回数',     min: 1,   max: 5,    step: 1 },
+      shakeIntervalMs: { type: 'number', label: 'シェイク間隔',     min: 0,   max: 500,  step: 10,  unit: 'ms' },
     },
   },
 }

@@ -56,5 +56,10 @@
     "large":  { "durationMs": 1400 },
     "medium": { "durationMs": 1100 },
     "small":  { "durationMs": 750 }
+  },
+  "finale": {
+    "large":  { "spinDurationMs": 825, "spinPeakScale": 2.5, "spinRotations": 2, "holdDurationMs": 75, "shakeAmplify": 2.5, "shakeCount": 2, "shakeIntervalMs": 80 },
+    "medium": { "spinDurationMs": 600, "spinPeakScale": 2.0, "spinRotations": 1, "holdDurationMs": 50, "shakeAmplify": 1.5, "shakeCount": 1, "shakeIntervalMs": 0 },
+    "small":  { "spinDurationMs": 400, "spinPeakScale": 1.6, "spinRotations": 1, "holdDurationMs": 30, "shakeAmplify": 1.0, "shakeCount": 1, "shakeIntervalMs": 0 }
   }
 }

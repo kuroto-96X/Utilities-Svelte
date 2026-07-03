@@ -485,12 +485,12 @@
     })
   }
 
-  function triggerScreenShake() {
+  function triggerScreenShake(amplify = 1, customCfg?: typeof animFile.screenShake['large']) {
     if (!gameEl) return
-    const c = cfg.screenShake
+    const c = customCfg ?? cfg.screenShake
     const keyframes: Keyframe[] = [
       { transform: 'translate(0,0) rotate(0deg)' },
-      ...c.frames.map(f => ({ transform: `translate(${f.x}px,${f.y}px) rotate(${f.rotateDeg}deg)` })),
+      ...c.frames.map(f => ({ transform: `translate(${f.x * amplify}px,${f.y * amplify}px) rotate(${f.rotateDeg * amplify}deg)` })),
       { transform: 'translate(0,0) rotate(0deg)' },
     ]
     gameEl.animate(keyframes, { duration: c.durationMs, easing: 'ease-out', fill: 'none' })
@@ -586,13 +586,76 @@
   }
 
   // オートコンプリート用: 1枚を fire-and-forget でスラム投下
+  async function fireFinaleAnim(
+    card: Card, fromX: number, fromY: number,
+    toX: number, toY: number,
+    foundIdx: number, delta: number
+  ): Promise<void> {
+    const fc = animFile.finale['large']
+    const sc = animFile.slamDrop['large']
+    const spinDeg = fc.spinRotations * 360
+    const totalDuration = fc.spinDurationMs + fc.holdDurationMs + sc.durationMs
+    const spinEnd   = fc.spinDurationMs / totalDuration
+    const holdEnd   = (fc.spinDurationMs + fc.holdDurationMs) / totalDuration
+    const slamRange = 1 - holdEnd
+    const peakOffset = holdEnd + slamRange * sc.peakAt
+    const landOffset = holdEnd + slamRange * sc.landAt
+
+    const animId = `fin-${_effectId++}`
+    slamAnims = [...slamAnims, {
+      id: animId, cards: [card], fromX, fromY, toX, toY,
+      sourcePile: 'waste', sourcePileIndex: -1, sourceCount: 0,
+      hideSource: false, playing: false,
+    }]
+    await tick()
+    await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())))
+    slamAnims = slamAnims.map(a => a.id === animId ? { ...a, playing: true } : a)
+    await new Promise<void>(r => requestAnimationFrame(() => r()))
+
+    const ghostEl = document.querySelector(`[data-ghost-id="${animId}"]`)
+    if (ghostEl) {
+      const tx = toX - fromX
+      const ty = toY - fromY
+      ghostEl.animate([
+        { offset: 0,           transform: 'translate(0px,0px) scale(1) rotate(0deg)',                                                                                                            easing: 'cubic-bezier(0.2,0,0.8,1)' },
+        { offset: spinEnd,     transform: `translate(0px,0px) scale(${fc.spinPeakScale}) rotate(${spinDeg}deg)`,                                                                                  easing: 'ease-out' },
+        { offset: holdEnd,     transform: `translate(0px,0px) scale(${fc.spinPeakScale}) rotate(${spinDeg}deg)`,                                                                                  easing: 'cubic-bezier(0.8,0,1,1)' },
+        { offset: peakOffset,  transform: `translate(${tx*0.02}px,${ty*0.02}px) scale(${sc.peakScale}) rotate(${spinDeg + sc.peakRotateDeg}deg) translateY(${sc.peakLiftPx}px)`,                  easing: 'cubic-bezier(0.8,0,1,1)' },
+        { offset: landOffset,  transform: `translate(${tx*0.99}px,${ty*0.99}px) scale(${sc.landScale}) rotate(${sc.landRotateDeg}deg)`,                                                           easing: 'ease-out' },
+        { offset: 1,           transform: `translate(${tx}px,${ty}px) scale(1) rotate(0deg)` },
+      ], { duration: totalDuration, easing: 'linear', fill: 'forwards' })
+    }
+
+    const landTimeMs = Math.round(totalDuration * landOffset)
+    await new Promise<void>(r => setTimeout(r, landTimeMs))
+
+    // 衝撃バウンス（large設定で）
+    const savedCfg = cfg
+    cfg = cfgForSize('large')
+    triggerImpactBounce(toX + 32, toY + 49)
+    cfg = savedCfg
+
+    // 最大シェイク（large設定 × amplify、shakeCount回）
+    const shakeCfg = animFile.screenShake['large']
+    for (let i = 0; i < fc.shakeCount; i++) {
+      setTimeout(() => triggerScreenShake(fc.shakeAmplify, shakeCfg), i * fc.shakeIntervalMs)
+    }
+
+    if (delta > 0) triggerScoreEffects(delta, getDestEl('foundation', foundIdx))
+    triggerScoreDisplayEffect(delta)
+
+    await new Promise<void>(r => setTimeout(r, Math.round(totalDuration * (1 - landOffset)) + 10))
+    slamAnims = slamAnims.filter(a => a.id !== animId)
+  }
+
   async function fireAutoSlamAnim(
     card: Card, fromX: number, fromY: number,
     toX: number, toY: number,
     foundIdx: number, delta: number,
     isLast: boolean
   ): Promise<void> {
-    const sc = animFile.slamDrop[isLast ? 'large' : 'small']
+    if (isLast) return fireFinaleAnim(card, fromX, fromY, toX, toY, foundIdx, delta)
+    const sc = animFile.slamDrop['small']
     const animId = `as-${_effectId++}`
     slamAnims = [...slamAnims, {
       id: animId, cards: [card], fromX, fromY, toX, toY,
@@ -617,7 +680,6 @@
     }
 
     await new Promise<void>(r => setTimeout(r, Math.round(sc.durationMs * sc.landAt)))
-    if (isLast) { triggerScreenShake(); triggerImpactBounce(toX + 32, toY + 49) }
     if (delta > 0) triggerScoreEffects(delta, getDestEl('foundation', foundIdx))
     triggerScoreDisplayEffect(delta)
 
