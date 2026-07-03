@@ -1341,6 +1341,28 @@
     {/if}
   </div>
 
+  <!-- 説明文 -->
+  <div class="mt-4 space-y-3 text-sm text-slate-600">
+    <div class="border border-slate-200 rounded-lg p-4">
+      <h3 class="font-bold text-slate-700 mb-2">遊び方</h3>
+      <ul class="space-y-1 text-xs text-slate-500 leading-relaxed">
+        <li>カードをドラッグ、またはタップして移動先をタップすることで移動できます。</li>
+        <li>タブローは赤黒交互・降順に重ねられます。空列にはKのみ置けます。</li>
+        <li>組み札（右上4列）にA→Kの順で同スートのカードを積んでクリアです。</li>
+        <li>山札をタップするとカードをめくれます。ヒントボタンで移動可能な手を確認できます。</li>
+        <li>全カードが表向きになると自動でクリアアニメーションが始まります。</li>
+        <li>タブローの最上段カードはダブルタップで組み札に直接移動できます。</li>
+      </ul>
+    </div>
+    <div class="border border-amber-200 bg-amber-50 rounded-lg p-4">
+      <h3 class="font-bold text-amber-700 mb-1">このページについて</h3>
+      <p class="text-xs text-amber-600 leading-relaxed">
+        このソリティアはゲーム制作や演出（アニメーション・エフェクト）の試作を目的として作成した画面です。
+        カードの投下アニメーション・衝撃波エフェクト・スコア演出などの動きを実際に動かしながら調整するために使用しています。
+      </p>
+    </div>
+  </div>
+
   <!-- フライングカード -->
   {#if flyCard}
     <div
