@@ -1,4 +1,5 @@
-// src/routes/id-photo/+page.ts
+export const prerender = false
+
 export function load() {
   return {
     title: '証明写真サイズ無料調整ツール - 履歴書・パスポート対応 | 96X\'s Tools',
