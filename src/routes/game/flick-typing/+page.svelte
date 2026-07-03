@@ -64,7 +64,7 @@
     let pool: string[]
     if (difficulty === 'hard') {
       const parsed = seedInput.trim() ? parseInt(seedInput.trim(), 10) : undefined
-      const validSeed = parsed !== undefined && !isNaN(parsed) ? parsed : undefined
+      const validSeed = parsed !== undefined && !isNaN(parsed) ? (parsed >>> 0) : undefined
       const { sentences, seed } = generatePool(500, validSeed)
       pool = sentences
       currentSeed = seed
@@ -211,7 +211,8 @@
       <div class="bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-3">
         <p class="text-xs font-bold uppercase tracking-wider text-slate-400">シード（省略でランダム）</p>
         <input
-          type="number"
+          type="text"
+          inputmode="numeric"
           bind:value={seedInput}
           placeholder="省略でランダム"
           class="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 w-full outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-200"
@@ -247,7 +248,7 @@
                 <button
                   type="button"
                   class="text-teal-600 underline truncate max-w-24"
-                  onclick={() => { seedInput = String(record.seed) }}
+                  onclick={() => { seedInput = String(record.seed); difficulty = 'hard' }}
                 >
                   seed:{record.seed}
                 </button>
