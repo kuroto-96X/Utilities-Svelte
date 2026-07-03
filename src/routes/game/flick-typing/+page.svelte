@@ -1,18 +1,27 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte'
-  import { easyWords, hardSentences, pickQuestions } from '$lib/game/flick-typing/words'
-  import { getBest, saveBest, type Difficulty } from '$lib/game/flick-typing/score'
+  import { easyWords, generatePool, pickQuestions } from '$lib/game/flick-typing/words'
+  import {
+    getBest,
+    saveBest,
+    getHistory,
+    addHistory,
+    type Difficulty,
+    type PlayRecord,
+  } from '$lib/game/flick-typing/score'
 
   type Phase = 'start' | 'game' | 'result'
 
   // ---- スタート設定 ----
   let difficulty = $state<Difficulty>('easy')
   let count = $state<5 | 10 | 20>(10)
+  let seedInput = $state('')
 
   // ---- ゲーム状態 ----
   let phase = $state<Phase>('start')
   let questions = $state<string[]>([])
   let currentIndex = $state(0)
+  let currentSeed = $state(0)
   let inputValue = $state('')
   let isComposing = $state(false)
   let startTimeMs = $state<number | null>(null)
@@ -24,6 +33,9 @@
   let finalTimeMs = $state(0)
   let isNewRecord = $state(false)
   let prevBestMs = $state<number | null>(null)
+
+  // ---- 履歴 ----
+  let history = $state<PlayRecord[]>([])
 
   // ---- 派生値 ----
   let currentQuestion = $derived(questions[currentIndex] ?? '')
@@ -43,8 +55,23 @@
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(centiseconds).padStart(2, '0')}`
   }
 
+  function formatDate(ts: number): string {
+    const d = new Date(ts)
+    return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
+  }
+
   function startGame() {
-    const pool = difficulty === 'easy' ? easyWords : hardSentences
+    let pool: string[]
+    if (difficulty === 'hard') {
+      const parsed = seedInput.trim() ? parseInt(seedInput.trim(), 10) : undefined
+      const validSeed = parsed !== undefined && !isNaN(parsed) ? parsed : undefined
+      const { sentences, seed } = generatePool(500, validSeed)
+      pool = sentences
+      currentSeed = seed
+    } else {
+      pool = easyWords
+      currentSeed = 0
+    }
     questions = pickQuestions(pool, count)
     currentIndex = 0
     inputValue = ''
@@ -67,6 +94,15 @@
       timerHandle = null
       prevBestMs = getBest(difficulty, count)
       isNewRecord = saveBest(difficulty, count, finalTimeMs)
+      addHistory({
+        difficulty,
+        count,
+        timeMs: finalTimeMs,
+        seed: difficulty === 'hard' ? currentSeed : undefined,
+        playedAt: now,
+        isPersonalBest: isNewRecord,
+      })
+      history = getHistory()
       phase = 'result'
     } else {
       currentIndex++
@@ -101,10 +137,20 @@
   function backToStart() {
     if (timerHandle) clearInterval(timerHandle)
     timerHandle = null
+    history = getHistory()
     phase = 'start'
   }
 
+  async function copySeed() {
+    try {
+      await navigator.clipboard.writeText(String(currentSeed))
+    } catch {
+      // clipboard API が利用できない場合は無視
+    }
+  }
+
   onMount(() => {
+    history = getHistory()
     return () => {
       if (timerHandle) clearInterval(timerHandle)
     }
@@ -161,6 +207,18 @@
       </div>
     </div>
 
+    {#if difficulty === 'hard'}
+      <div class="bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-3">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">シード（省略でランダム）</p>
+        <input
+          type="number"
+          bind:value={seedInput}
+          placeholder="省略でランダム"
+          class="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 w-full outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-200"
+        />
+      </div>
+    {/if}
+
     <p class="text-center text-sm text-slate-500">
       🏆 自己ベスト: {best !== null ? formatTime(best) : '—'}
     </p>
@@ -172,6 +230,34 @@
     >
       スタート
     </button>
+
+    {#if history.length > 0}
+      <div class="flex flex-col gap-2">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">プレイ履歴</p>
+        <div class="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
+          {#each history.slice(0, 10) as record}
+            <div class="flex items-center gap-2 px-3 py-2 text-xs text-slate-500">
+              <span class="w-3 text-yellow-500">{record.isPersonalBest ? '★' : ''}</span>
+              <span class="w-14 shrink-0">
+                {record.difficulty === 'easy' ? 'かんたん' : 'むずかしい'}
+              </span>
+              <span class="w-8 shrink-0">{record.count}問</span>
+              <span class="font-mono tabular-nums">{formatTime(record.timeMs)}</span>
+              {#if record.seed !== undefined}
+                <button
+                  type="button"
+                  class="text-teal-600 underline truncate max-w-24"
+                  onclick={() => { seedInput = String(record.seed) }}
+                >
+                  seed:{record.seed}
+                </button>
+              {/if}
+              <span class="ml-auto shrink-0">{formatDate(record.playedAt)}</span>
+            </div>
+          {/each}
+        </div>
+      </div>
+    {/if}
   </div>
 
 {:else if phase === 'game'}
@@ -227,6 +313,20 @@
     {:else if isNewRecord}
       <div class="bg-yellow-50 border border-yellow-200 rounded-xl px-6 py-3 text-sm font-semibold text-yellow-800">
         ✨ 初クリア！
+      </div>
+    {/if}
+
+    {#if difficulty === 'hard'}
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <span>シード: {currentSeed}</span>
+        <button
+          type="button"
+          onclick={copySeed}
+          class="text-teal-600 active:opacity-70"
+          title="シードをコピー"
+        >
+          📋
+        </button>
       </div>
     {/if}
 
