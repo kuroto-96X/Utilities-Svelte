@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { easyWords, hardSentences, pickQuestions, generatePool } from './words'
+import { easyWords, pickQuestions, generatePool } from './words'
 
 describe('easyWords', () => {
   test('60語以上ある', () => {
@@ -15,19 +15,6 @@ describe('easyWords', () => {
 
   test('重複がない', () => {
     expect(new Set(easyWords).size).toBe(easyWords.length)
-  })
-})
-
-describe('hardSentences', () => {
-  test('40文以上ある', () => {
-    expect(hardSentences.length).toBeGreaterThanOrEqual(40)
-  })
-
-  test('すべてひらがなのみ（10〜20文字）', () => {
-    const hiraganaOnly = /^[ぁ-ゖ]{10,20}$/
-    hardSentences.forEach(s => {
-      expect(s).toMatch(hiraganaOnly)
-    })
   })
 })
 
