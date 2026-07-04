@@ -91,7 +91,6 @@
   let autoCompleting = $state(false)
   let pendingMode = $state<1 | 3>(_sets.pendingMode)
   let animEnabled = $state(_sets.animEnabled)
-  let confettiEnabled = $state(_sets.confettiEnabled)
   let dragInfo = $state<DragInfo | null>(null)
   let dropTarget = $state<{ pile: 'tableau' | 'foundation'; index: number } | null>(null)
   let flyCard = $state<FlyCard | null>(null)
@@ -144,7 +143,7 @@
     try { localStorage.setItem('solitaire-game', JSON.stringify({ state: { ...state, history: [] }, undoCount, hintCount })) } catch {}
   })
   $effect(() => {
-    try { localStorage.setItem('solitaire-settings', JSON.stringify({ useSeed, seedInput, pendingMode, animEnabled, confettiEnabled })) } catch {}
+    try { localStorage.setItem('solitaire-settings', JSON.stringify({ useSeed, seedInput, pendingMode, animEnabled })) } catch {}
   })
 
 
@@ -424,7 +423,7 @@
     }
   }
 
-  function loadSavedSettings(defaultSeed: number, defaultDrawMode: 1 | 3): { useSeed: boolean; seedInput: string; pendingMode: 1 | 3; animEnabled: boolean; confettiEnabled: boolean } {
+  function loadSavedSettings(defaultSeed: number, defaultDrawMode: 1 | 3): { useSeed: boolean; seedInput: string; pendingMode: 1 | 3; animEnabled: boolean } {
     try {
       const saved = localStorage.getItem('solitaire-settings')
       if (saved) {
@@ -434,11 +433,10 @@
           seedInput: typeof p.seedInput === 'string' ? p.seedInput : String(defaultSeed),
           pendingMode: (p.pendingMode === 1 || p.pendingMode === 3) ? p.pendingMode as 1 | 3 : defaultDrawMode,
           animEnabled: typeof p.animEnabled === 'boolean' ? p.animEnabled : true,
-          confettiEnabled: typeof p.confettiEnabled === 'boolean' ? p.confettiEnabled : true,
         }
       }
     } catch {}
-    return { useSeed: false, seedInput: String(defaultSeed), pendingMode: defaultDrawMode, animEnabled: true, confettiEnabled: true }
+    return { useSeed: false, seedInput: String(defaultSeed), pendingMode: defaultDrawMode, animEnabled: true }
   }
 
   function loadTop10(): ScoreEntry[] {
@@ -678,7 +676,6 @@
     for (let i = 0; i < fc.shakeCount; i++) {
       setTimeout(() => triggerScreenShake(fc.shakeAmplify, shakeCfg), i * fc.shakeIntervalMs)
     }
-    launchConfetti()
 
     if (delta > 0) triggerScoreEffects(delta, getDestEl('foundation', foundIdx))
     triggerScoreDisplayEffect(delta)
@@ -687,12 +684,13 @@
     await new Promise<void>(r => setTimeout(r, remainingAnimMs))
     slamAnims = slamAnims.filter(a => a.id !== animId)
 
-    // 全シェイクが終わるまで待ってからモーダルが表示されるようにする
+    // 全シェイクが終わるまで待ってからクラッカー・モーダル表示
     const allShakesEndMs = (fc.shakeCount - 1) * fc.shakeIntervalMs + shakeCfg.durationMs
     const extraWait = Math.max(0, allShakesEndMs - remainingAnimMs)
     if (extraWait > 0) {
       await new Promise<void>(r => setTimeout(r, extraWait))
     }
+    launchConfetti()
   }
 
   async function fireAutoSlamAnim(
@@ -802,7 +800,6 @@
   }
 
   async function launchConfetti() {
-    if (!confettiEnabled) return
     await tick()
     if (!confettiCanvas) return
     const ctx = confettiCanvas.getContext('2d')
@@ -1450,16 +1447,10 @@
       <span class="text-xs text-green-400/60 font-mono">DRAW:{state.drawMode} / seed:{state.seed}</span>
     </div>
 
-    <!-- アニメーション・紙吹雪設定（右下） -->
-    <div class="absolute bottom-3 right-4 flex items-center gap-3">
-      <div class="flex items-center gap-1">
-        <input type="checkbox" id="conf-toggle" bind:checked={confettiEnabled} class="w-3.5 h-3.5 accent-green-400 cursor-pointer" />
-        <label for="conf-toggle" class="text-xs text-green-400/60 font-mono select-none cursor-pointer">CONF</label>
-      </div>
-      <div class="flex items-center gap-1.5">
-        <input type="checkbox" id="anim-toggle" bind:checked={animEnabled} class="w-3.5 h-3.5 accent-green-400 cursor-pointer" />
-        <label for="anim-toggle" class="text-xs text-green-400/60 font-mono select-none cursor-pointer">ANIM</label>
-      </div>
+    <!-- アニメーション設定（右下） -->
+    <div class="absolute bottom-3 right-4 flex items-center gap-1.5">
+      <input type="checkbox" id="anim-toggle" bind:checked={animEnabled} class="w-3.5 h-3.5 accent-green-400 cursor-pointer" />
+      <label for="anim-toggle" class="text-xs text-green-400/60 font-mono select-none cursor-pointer">ANIM</label>
     </div>
     </div>
   </div>
