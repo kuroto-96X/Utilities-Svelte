@@ -52,7 +52,7 @@ jobs:
   - ローカルの `npm run build` + `npm run preview` である程度検証してから、覚悟を決めて`master`にpushする
   - `.github/workflows/deploy.yml` を改修し、`feat`などの別ブランチ用に別のdeployブランチ/別Cloudflareプロジェクトへ配信する仕組みを別途用意する(未実施)
 
-## 既知の問題: フォールバックファイルの衝突(2026-07-04調査、未解決)
+## 解決済みの問題: フォールバックファイルの衝突(2026-07-04調査・解決)
 
 `svelte.config.js` は `@sveltejs/adapter-static` を使っており、`prerender = false` の非公開ツールページ(NISA計算機など)があるため `fallback` オプションの設定が必須になっている。
 
@@ -73,10 +73,12 @@ jobs:
 1. **`fallback: '200.html'` に変更** → Cloudflare Pagesは`.html`拡張子のURLを拡張子なしURLへ自動リダイレクトする仕様があり(`/200.html` → `/200`)、`_redirects`の`/* /200.html 200`ルールと組み合わさって**無限リダイレクトループ**が発生し、サイト全体がダウンした(トップページだけでなく、実ファイルが存在する他ページも巻き込まれた)。`6ed747a`で緊急ロールバック。
 2. **`fallback: 'spa-fallback'`(拡張子なし)+ `static/_headers` で `/spa-fallback` に `Content-Type: text/html` を強制指定** → リダイレクトループは回避できたが、`_redirects`の書き換え(`/* /spa-fallback 200`)によって`/`へのリクエストが実際には`spa-fallback`の中身を返す際、`_headers`のパスマッチングが**書き換え後のパスではなくブラウザがリクエストした元のパス(`/`)に対して評価される**らしく、Content-Typeの上書きが適用されずブラウザがHTMLとして解釈できず**ダウンロードが発生**するようになった。ユーザーが手動でロールバック。
 
-### 現在の状態
+### 最終的な解決方法
 
-`fallback: 'index.html'`(衝突が起きる、最も枯れた安全策)に戻してある。トップページの広告非表示バグは未解決。
+`@sveltejs/adapter-static` のソースを確認したところ、`fallback` オプションは「prerenderできないページ(`prerender: false`)が1つでも存在する場合にのみ必須」で、該当ページが無ければ `fallback` 自体を省略でき、フォールバック用シェルファイルは生成すらされない(衝突の火種そのものが無くなる)。
 
-### 次に検討する方向性
+そこで、`prerender: false` にしていた非公開ページ(NISA計算機3つ・証明写真・SNS画像リサイズ・画像変換ツール一式)を全て通常どおりprerenderするように変更し、`svelte.config.js`から`fallback`オプションを削除、`static/_redirects`も削除した。これによりCloudflare Pages固有のリダイレクト・ヘッダー挙動に一切依存しない形で解決した。
 
-`prerender: false` にしている非公開ページ(NISA計算機など)を全て `prerender: true` に変更すれば、`fallback` オプション自体が不要になり、この一連の衝突問題の発生源をなくせる可能性がある(要検証)。ただし、これらのページが意図的に「本番ビルドから除外」されている(`bed7fa4`コミット)経緯があるため、検索エンジンからの発見されやすさなど副作用の確認が必要。
+副作用として、これらの非公開ページは検索エンジンから発見されやすくなる可能性があるため、`toolVisibility: false`のページ(とその配下のサブページ)には`src/routes/+layout.svelte`で自動的に`<meta name="robots" content="noindex">`を付与するようにしている。管理画面(`/admin/menu`)で公開に切り替えれば、次回ビルド時に自動的にnoindexも外れる。
+
+(`fix: 非公開ページを全てprerenderしfallback設定自体を撤廃してトップページ広告非表示を解消` コミットで対応)
