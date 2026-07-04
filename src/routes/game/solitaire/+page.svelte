@@ -11,6 +11,7 @@
   import type { AnimConfigFile, AnimSize } from '$lib/game/solitaire/anim.config.schema'
   import AdSlotSide from '$lib/components/AdSlotSide.svelte'
   import AdSlotSideLeft from '$lib/components/AdSlotSideLeft.svelte'
+  import AdSlot from '$lib/components/AdSlot.svelte'
 
   const animFile = animConfigJson as AnimConfigFile
 
@@ -1475,6 +1476,8 @@
       </table>
     {/if}
   </div>
+
+  <AdSlot />
 
   <!-- 説明文 -->
   <div class="mt-4 space-y-3 text-sm text-slate-600">
