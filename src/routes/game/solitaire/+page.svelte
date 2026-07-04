@@ -815,10 +815,10 @@
       ...createCrackerBurst(W * 0.05, H * 0.92,  23, spdL, spreadL, bcL),
       ...createCrackerBurst(W * 0.95, H * 0.92, 337, spdL, spreadL, bcL),
       ...createCrackerBurst(W * 0.5,  H * 0.98,   0, spdL, spreadL, bcL),
-      // 上からのクラッカー— small
-      ...createCrackerBurst(W * 0.05, H * 0.08,  90, spdS, spreadS, bcS),  // 左上→右
-      ...createCrackerBurst(W * 0.95, H * 0.08, 270, spdS, spreadS, bcS),  // 右上→左
-      ...createCrackerBurst(W * 0.5,  H * 0.02,   0, spdS, spreadS, bcS),  // 真上→上
+      // 上からのクラッカー（下向き・画面中央方向）— small
+      ...createCrackerBurst(W * 0.05, H * 0.08, 157, spdS, spreadS, bcS),
+      ...createCrackerBurst(W * 0.95, H * 0.08, 203, spdS, spreadS, bcS),
+      ...createCrackerBurst(W * 0.5,  H * 0.02, 180, spdS, spreadS, bcS),
     ]
 
     // 降り注ぐ紙吹雪（モーダル表示中に連続生成）
