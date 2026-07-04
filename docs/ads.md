@@ -18,11 +18,12 @@
 - ページ下部に「スポンサーリンク」ラベル付きで表示する**正方形型**広告(横長バナーではない)
 - PC用・スマホ用で別々の広告タグをCSS(`hidden sm:block` / `sm:hidden`、`sm`ブレークポイント=640px)で出し分け。両方のタグは常にDOM上に存在し、表示のみCSSで切り替える方式(レスポンシブ広告の標準的なやり方)
 - `flex justify-center` で中央寄せ
+- PC用は`div.admax-ads` + `admaxads.push(...)` + `t.js`読み込みの非同期形式(300×250、type: `banner`)。スマホ用は`<script src="https://adm.shinobi.jp/s/...">`のシンプルな形式(旧形式のまま)
 
-| 用途 | admax_id |
-|---|---|
-| PC用 | `ffea59a79b77bc4160ffc29d36cc7305` |
-| スマホ用 | `09107acc80b232772e6dd49af94b902f` |
+| 用途 | admax_id | 形式 |
+|---|---|---|
+| PC用 | `ffea59a79b77bc4160ffc29d36cc7305` | 非同期(banner 300×250) |
+| スマホ用 | `09107acc80b232772e6dd49af94b902f` | `<script src>`形式 |
 
 **設置ページ**: トップページ(`/`)、BPM Tapper、Note Duration
 
