@@ -421,6 +421,8 @@
         </div>
       {/if}
 
+      <div class="ad-slot--before-description"></div>
+
       <!-- 説明文 -->
       <div class="mt-4 space-y-4 text-sm text-gray-400 border-t border-gray-700 pt-6">
         <div>
