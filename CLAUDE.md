@@ -51,15 +51,16 @@ npm run dev
 
 ## 広告
 
-広告の表示には `$lib/components/AdSlot.svelte` を使用する。
+広告の表示には `$lib/components/AdSlot.svelte`(下部バナー)・`$lib/components/AdSlotSide.svelte`(右サイド縦バー、PCのみ)を使用する。
 
 ```svelte
 import AdSlot from '$lib/components/AdSlot.svelte'
 <AdSlot />
 ```
 
-`ad-slot--top` / `ad-slot--in-content` などのクラスを持つ空の `<div>` は **AdSense 審査が通るまで追加しない**。
-現時点でこれらの div を新たにコードに追加することは禁止。
+詳細な仕様(広告ユニットID・設置ページ・技術的な注意点など)は [docs/ads.md](docs/ads.md) を参照。
+
+**広告に関する変更(コンポーネントの追加・修正、設置ページの追加・削除、広告ネットワークの変更など)を行った場合は、必ず `docs/ads.md` を最新の内容に更新すること。**
 
 ## コミットメッセージ
 
