@@ -1,6 +1,7 @@
 <script lang="ts">
   import { site } from '$lib/site'
   import siteConfig from '$lib/site.config.json'
+  import AdSlot from '$lib/components/AdSlot.svelte'
 
   const isVisible = (href: string): boolean =>
     (siteConfig.toolVisibility as Record<string, boolean>)[href] ?? true
@@ -49,4 +50,6 @@
       </div>
     {/each}
   </div>
+
+  <AdSlot />
 </div>
