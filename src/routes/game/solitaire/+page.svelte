@@ -161,6 +161,17 @@
     if (timerInterval) { clearInterval(timerInterval); timerInterval = null }
   }
 
+  // ---- アニメーション中フラグ ----
+  let isAnimating = $derived(slamAnims.length > 0 || flyCard !== null || autoCompleting)
+
+  $effect(() => {
+    if (isAnimating) {
+      stopTimer()
+    } else if (gameStarted && !isVictory(state) && !showVictory) {
+      startTimer()
+    }
+  })
+
   // ---- オートコンプリート ----
   async function startAutoComplete() {
     autoCompleting = true
@@ -1192,7 +1203,7 @@
       bind:offsetHeight={gameElHeight}
       class="bg-green-800 rounded-xl p-4 pb-10 select-none relative"
       style="min-height: 520px; width: 528px; transform: scale({scale}); transform-origin: top left;"
-      class:pointer-events-none={isVictory(state)}
+      class:pointer-events-none={isVictory(state) || isAnimating}
     >
 
     <!-- スコア・ボタン行 -->
