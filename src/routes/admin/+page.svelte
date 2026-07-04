@@ -3,6 +3,7 @@
   import { site } from '$lib/site'
 
   type Config = {
+    adsEnabled: boolean
     toolLabels: Record<string, string>
     toolDevStatus: Record<string, boolean>
     toolVisibility: Record<string, boolean>
@@ -27,6 +28,7 @@
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json() as Config
       // 設定値がない場合はデフォルト値で初期化する
+      if (data.adsEnabled === undefined) data.adsEnabled = true
       for (const tool of tools) {
         if (data.toolLabels[tool.href] === undefined) {
           data.toolLabels[tool.href] = tool.label
@@ -59,6 +61,7 @@
     // デフォルト値と同じラベルおよびfalseの開発中フラグは保存しない
     const defaultLabels = Object.fromEntries(tools.map(t => [t.href, t.label]))
     const toPost: Config = {
+      adsEnabled: config.adsEnabled,
       toolLabels: Object.fromEntries(
         Object.entries(config.toolLabels).filter(([k, v]) => v.trim() !== '' && v !== defaultLabels[k])
       ),
@@ -107,6 +110,16 @@
   {/if}
 
   {#if config}
+    <div class="mb-6 flex items-center gap-3 border border-slate-200 rounded-lg px-4 py-3">
+      <input
+        type="checkbox"
+        bind:checked={config.adsEnabled}
+        class="w-4 h-4 text-teal-600 rounded border-slate-300 shrink-0"
+      />
+      <span class="text-sm text-slate-700">広告を表示する</span>
+      <span class="text-xs text-slate-400 ml-auto">AdSense審査中などはOFFに（反映には再ビルド・再デプロイが必要）</span>
+    </div>
+
     {#each site.categories as cat (cat.id)}
       {@const catTools = tools.filter(t => t.category === cat.id)}
       {#if catTools.length > 0}

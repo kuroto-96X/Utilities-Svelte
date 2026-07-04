@@ -1,4 +1,5 @@
 {
+  "adsEnabled": true,
   "toolLabels": {
     "/music/scale-visualizer": "Scale Visualizer",
     "/music/note-duration": "Note Duration"
