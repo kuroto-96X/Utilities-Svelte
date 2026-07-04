@@ -6,6 +6,7 @@
   } from '$lib/programming/colorConverter'
   import AdSlotSide from '$lib/components/AdSlotSide.svelte'
   import AdSlotSideLeft from '$lib/components/AdSlotSideLeft.svelte'
+  import AdSlotBanner from '$lib/components/AdSlotBanner.svelte'
 
   let r = $state(255)
   let g = $state(0)
@@ -241,6 +242,8 @@
       {/each}
     </div>
   </div>
+
+  <AdSlotBanner />
 
   <!-- 説明 -->
   <div class="mt-10 pt-6 border-t border-slate-100 space-y-3">
