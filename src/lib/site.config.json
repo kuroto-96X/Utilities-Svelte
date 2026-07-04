@@ -13,7 +13,6 @@
     "/investment/nisa-simple-calculator": true,
     "/investment/nisa-detailed-calculator": true,
     "/investment/nisa-accumulation-simulator": true,
-    "/game/solitaire": true,
     "/game/flick-typing": true
   },
   "toolVisibility": {
@@ -31,6 +30,6 @@
     "/investment/nisa-detailed-calculator": false,
     "/investment/nisa-accumulation-simulator": false,
     "/game/solitaire": true,
-    "/game/flick-typing": true
+    "/game/flick-typing": false
   }
 }
