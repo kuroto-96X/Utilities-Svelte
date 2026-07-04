@@ -53,7 +53,7 @@
 |---|---|
 | `6ad394d0af0dc87e305be228ab209d78` | banner(160×600) |
 
-**設置ページ**: トップページ(`/`)、BPM Tapper
+**設置ページ**: トップページ(`/`)、BPM Tapper、Note Duration、ヘボン式変換、Color32/Color変換、ソリティア
 
 **経緯**: 当初は非同期の`type: "action"`広告(admax_id: `3d1c39d315c6f0ce03951ff6bc2e34f6`)を使っていたが、その広告自体がページ全体を左にずらすレイアウト崩れを起こしたため、自前でfixed配置できるインライン広告タグに差し替えた。
 
@@ -68,7 +68,7 @@
 |---|---|
 | `dd3a4be55bd43292951788645b89bdad` | banner(160×600) |
 
-**設置ページ**: トップページ(`/`)、BPM Tapper
+**設置ページ**: トップページ(`/`)、BPM Tapper、Note Duration、ヘボン式変換、Color32/Color変換、ソリティア
 
 ## `ads.txt`
 
