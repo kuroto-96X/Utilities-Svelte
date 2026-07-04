@@ -676,6 +676,7 @@
     for (let i = 0; i < fc.shakeCount; i++) {
       setTimeout(() => triggerScreenShake(fc.shakeAmplify, shakeCfg), i * fc.shakeIntervalMs)
     }
+    launchConfetti()  // スラムドロップ着地時にクラッカー発射
 
     if (delta > 0) triggerScoreEffects(delta, getDestEl('foundation', foundIdx))
     triggerScoreDisplayEffect(delta)
@@ -684,13 +685,12 @@
     await new Promise<void>(r => setTimeout(r, remainingAnimMs))
     slamAnims = slamAnims.filter(a => a.id !== animId)
 
-    // 全シェイクが終わるまで待ってからクラッカー・モーダル表示
+    // 全シェイクが終わるまで待ってからモーダル表示
     const allShakesEndMs = (fc.shakeCount - 1) * fc.shakeIntervalMs + shakeCfg.durationMs
     const extraWait = Math.max(0, allShakesEndMs - remainingAnimMs)
     if (extraWait > 0) {
       await new Promise<void>(r => setTimeout(r, extraWait))
     }
-    launchConfetti()
   }
 
   async function fireAutoSlamAnim(
@@ -1704,7 +1704,7 @@
   <span class="sparkle-particle" style="left:{s.x}px; top:{s.y}px; --dx:{s.dx}px; --dy:{s.dy}px; color:{s.color}; font-size:{s.size}px; animation-delay:{s.delay}ms; animation-duration:{cfg.sparkle.durationMs}ms;">{s.char}</span>
 {/each}
 
-<canvas bind:this={confettiCanvas} class="fixed inset-0 pointer-events-none z-[800]"></canvas>
+<canvas bind:this={confettiCanvas} class="fixed inset-0 pointer-events-none z-[1000]"></canvas>
 
 <style>
 @keyframes floatUp {
