@@ -21,6 +21,8 @@ jobs:
         run: npm run build
       - name: Remove admin pages from production build
         run: rm -rf dist/admin
+      - name: Remove menu-hidden pages from production build
+        run: node scripts/remove-hidden-pages.js
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
         with:
