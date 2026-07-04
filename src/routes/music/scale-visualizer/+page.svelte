@@ -15,7 +15,7 @@
   import DiatonicChordPanel from '$lib/components/music/DiatonicChordPanel.svelte';
   import ProgressionPlayer from '$lib/components/music/ProgressionPlayer.svelte';
   import MelodyGenerator from '$lib/components/music/MelodyGenerator.svelte';
-  import AdSlot from '$lib/components/AdSlot.svelte';
+  import AdSlotBanner from '$lib/components/AdSlotBanner.svelte';
 
   const STORAGE_KEY = 'scaleVisualizer';
 
@@ -420,7 +420,7 @@
         </div>
       {/if}
 
-      <AdSlot />
+      <AdSlotBanner />
 
       <!-- 説明文 -->
       <div class="mt-4 space-y-4 text-sm text-gray-400 border-t border-gray-700 pt-6">
