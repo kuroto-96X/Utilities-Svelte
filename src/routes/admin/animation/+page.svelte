@@ -317,22 +317,28 @@
   const CONFETTI_COLORS = ['#f43f5e','#f97316','#eab308','#22c55e','#3b82f6','#a855f7','#ec4899','#06b6d4','#fbbf24']
   interface ConfettiParticle { x: number; y: number; vx: number; vy: number; rotation: number; rotSpeed: number; color: string; w: number; h: number; life: number }
 
-  function createCrackerBurst(ox: number, oy: number, vxMin: number, vxMax: number, vyMin: number, vyMax: number, count: number): ConfettiParticle[] {
-    return Array.from({ length: count }, () => ({
-      x: ox, y: oy,
-      vx: vxMin + Math.random() * (vxMax - vxMin),
-      vy: vyMin + Math.random() * (vyMax - vyMin),
-      rotation: Math.random() * Math.PI * 2,
-      rotSpeed: (Math.random() - 0.5) * 0.2,
-      color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
-      w: 6 + Math.random() * 8, h: 3 + Math.random() * 5,
-      life: 120 + Math.floor(Math.random() * 60),
-    }))
+  // directionDeg: 0=上, 90=右, 180=下, 270=左（時計回り）
+  function createCrackerBurst(ox: number, oy: number, directionDeg: number, speed: number, spreadDeg: number, count: number): ConfettiParticle[] {
+    return Array.from({ length: count }, () => {
+      const angleDeg = directionDeg + (Math.random() - 0.5) * spreadDeg
+      const angleRad = angleDeg * Math.PI / 180
+      const s = speed * (0.4 + Math.random() * 0.6)
+      return {
+        x: ox + (Math.random() - 0.5) * 20,
+        y: oy + (Math.random() - 0.5) * 5,
+        vx: s * Math.sin(angleRad),
+        vy: -s * Math.cos(angleRad),
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.3,
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        w: 7 + Math.random() * 9, h: 3 + Math.random() * 5,
+        life: 180 + Math.random() * 80,
+      }
+    })
   }
 
   function previewConfetti() {
-    const bc = cfg.confetti.burstCount
-    const sr = cfg.confetti.snowRate
+    const { crackerCount: bc, crackerSpeed: spd, crackerSpreadDeg: spread, snowRate: sr } = cfg.confetti
     const canvas = document.createElement('canvas')
     const W = window.innerWidth, H = window.innerHeight
     canvas.width = W; canvas.height = H
@@ -341,12 +347,12 @@
     const ctx = canvas.getContext('2d')!
 
     const bursts: ConfettiParticle[] = [
-      ...createCrackerBurst(W * 0.05, H * 0.92, -2, 14, -22, -6, bc),
-      ...createCrackerBurst(W * 0.95, H * 0.92, -14, 2, -22, -6, bc),
-      ...createCrackerBurst(W * 0.5,  H * 0.98, -10, 10, -24, -8, bc),
-      ...createCrackerBurst(W * 0.05, H * 0.08, -2, 14, 6, 22, bc),
-      ...createCrackerBurst(W * 0.95, H * 0.08, -14, 2, 6, 22, bc),
-      ...createCrackerBurst(W * 0.5,  H * 0.02, -10, 10, 8, 24, bc),
+      ...createCrackerBurst(W * 0.05, H * 0.92,  23, spd, spread, bc),
+      ...createCrackerBurst(W * 0.95, H * 0.92, 337, spd, spread, bc),
+      ...createCrackerBurst(W * 0.5,  H * 0.98,   0, spd, spread, bc),
+      ...createCrackerBurst(W * 0.05, H * 0.08, 157, spd, spread, bc),
+      ...createCrackerBurst(W * 0.95, H * 0.08, 203, spd, spread, bc),
+      ...createCrackerBurst(W * 0.5,  H * 0.02, 180, spd, spread, bc),
     ]
     const snow: ConfettiParticle[] = []
     const snowEndMs = Date.now() + 3000

@@ -63,7 +63,9 @@
     "small":  { "spinDurationMs": 400, "spinPeakScale": 1.6, "spinRotations": 1, "holdDurationMs": 30, "shakeAmplify": 1.0, "shakeCount": 1, "shakeIntervalMs": 0 }
   },
   "confetti": {
-    "burstCount": 40,
+    "crackerCount": 40,
+    "crackerSpeed": 15,
+    "crackerSpreadDeg": 80,
     "snowRate": 2
   }
 }

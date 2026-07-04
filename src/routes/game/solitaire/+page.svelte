@@ -778,14 +778,18 @@
     triggerSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2)
   }
 
-  function createCrackerBurst(ox: number, oy: number, vxMin: number, vxMax: number, vyMin: number, vyMax: number, count: number): ConfettiParticle[] {
+  // directionDeg: 0=上, 90=右, 180=下, 270=左（時計回り）
+  function createCrackerBurst(ox: number, oy: number, directionDeg: number, speed: number, spreadDeg: number, count: number): ConfettiParticle[] {
     const out: ConfettiParticle[] = []
     for (let i = 0; i < count; i++) {
+      const angleDeg = directionDeg + (Math.random() - 0.5) * spreadDeg
+      const angleRad = angleDeg * Math.PI / 180
+      const s = speed * (0.4 + Math.random() * 0.6)
       out.push({
         x: ox + (Math.random() - 0.5) * 20,
         y: oy + (Math.random() - 0.5) * 5,
-        vx: vxMin + Math.random() * (vxMax - vxMin),
-        vy: vyMin + Math.random() * (vyMax - vyMin),
+        vx: s * Math.sin(angleRad),
+        vy: -s * Math.cos(angleRad),
         rotation: Math.random() * Math.PI * 2,
         rotSpeed: (Math.random() - 0.5) * 0.3,
         color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
@@ -807,16 +811,16 @@
     confettiCanvas.width = W
     confettiCanvas.height = H
 
-    const bc = animFile.confetti.burstCount
+    const { crackerCount: bc, crackerSpeed: spd, crackerSpreadDeg: spread } = animFile.confetti
     const bursts: ConfettiParticle[] = [
-      // 下からのクラッカー（上向き）
-      ...createCrackerBurst(W * 0.05, H * 0.92, -2, 14, -22, -6, bc),
-      ...createCrackerBurst(W * 0.95, H * 0.92, -14, 2, -22, -6, bc),
-      ...createCrackerBurst(W * 0.5,  H * 0.98, -10, 10, -24, -8, bc),
-      // 上からのクラッカー（下向き）
-      ...createCrackerBurst(W * 0.05, H * 0.08, -2, 14, 6, 22, bc),
-      ...createCrackerBurst(W * 0.95, H * 0.08, -14, 2, 6, 22, bc),
-      ...createCrackerBurst(W * 0.5,  H * 0.02, -10, 10, 8, 24, bc),
+      // 下からのクラッカー（上向き・画面中央方向）
+      ...createCrackerBurst(W * 0.05, H * 0.92,  23, spd, spread, bc),
+      ...createCrackerBurst(W * 0.95, H * 0.92, 337, spd, spread, bc),
+      ...createCrackerBurst(W * 0.5,  H * 0.98,   0, spd, spread, bc),
+      // 上からのクラッカー（下向き・画面中央方向）
+      ...createCrackerBurst(W * 0.05, H * 0.08, 157, spd, spread, bc),
+      ...createCrackerBurst(W * 0.95, H * 0.08, 203, spd, spread, bc),
+      ...createCrackerBurst(W * 0.5,  H * 0.02, 180, spd, spread, bc),
     ]
 
     // 降り注ぐ紙吹雪（モーダル表示中に連続生成）

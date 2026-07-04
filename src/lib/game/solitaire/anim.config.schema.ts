@@ -120,7 +120,9 @@ export const DEFAULT_ANIM_CONFIG: AnimConfig = {
 export type AnimSize = 'large' | 'medium' | 'small'
 
 export type ConfettiConfig = {
-  burstCount: number
+  crackerCount: number
+  crackerSpeed: number
+  crackerSpreadDeg: number
   snowRate: number
 }
 
@@ -182,7 +184,9 @@ export const DEFAULT_ANIM_CONFIG_FILE: AnimConfigFile = {
     small:  { spinDurationMs: 400, spinPeakScale: 1.6, spinRotations: 1, holdDurationMs: 30, shakeAmplify: 1.0, shakeCount: 1, shakeIntervalMs: 0 },
   },
   confetti: {
-    burstCount: 40,
+    crackerCount: 40,
+    crackerSpeed: 15,
+    crackerSpreadDeg: 80,
     snowRate: 2,
   },
 }
@@ -258,8 +262,10 @@ export const animConfigSchema: AnimConfigSchema = {
     label: '紙吹雪',
     flat: true,
     fields: {
-      burstCount: { type: 'number', label: 'バースト粒子数',            min: 0, max: 200, step: 5 },
-      snowRate:   { type: 'number', label: '降雪レート（粒/フレーム）', min: 0, max: 20,  step: 1 },
+      crackerCount:     { type: 'number', label: 'クラッカー粒子数',        min: 0,  max: 200, step: 5 },
+      crackerSpeed:     { type: 'number', label: 'クラッカー勢い',          min: 1,  max: 60,  step: 1 },
+      crackerSpreadDeg: { type: 'number', label: 'クラッカー広がり角度',    min: 10, max: 180, step: 5, unit: '°' },
+      snowRate:         { type: 'number', label: '降雪レート（粒/フレーム）', min: 0, max: 20,  step: 1 },
     },
   },
 }
