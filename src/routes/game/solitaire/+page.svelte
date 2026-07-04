@@ -1543,17 +1543,20 @@
 
   <!-- ドラッグゴースト -->
   {#each slamAnims as anim (anim.id)}
+    {@const ghostNaturalH = (anim.cards.length - 1) * 28 + 98}
     <div
       data-ghost-id={anim.id}
       class="pointer-events-none fixed z-[300]"
-      style="left:{anim.fromX}px; top:{anim.fromY}px; width:64px; height:{(anim.cards.length - 1) * 28 + 98}px; filter: drop-shadow(0 16px 32px rgba(0,0,0,0.7)) drop-shadow(0 0 12px rgba(251,191,36,0.5));"
+      style="left:{anim.fromX}px; top:{anim.fromY}px; width:{64 * scale}px; height:{ghostNaturalH * scale}px; filter: drop-shadow(0 16px 32px rgba(0,0,0,0.7)) drop-shadow(0 0 12px rgba(251,191,36,0.5));"
     >
-      {#each anim.cards as card, i (i)}
-        <div class="absolute w-16 rounded-lg border border-slate-200 overflow-hidden"
-          style="top:{i*28}px; height:98px;">
-          {@render cardFace(card, true)}
-        </div>
-      {/each}
+      <div style="transform: scale({scale}); transform-origin: top left; width: 64px; height: {ghostNaturalH}px;">
+        {#each anim.cards as card, i (i)}
+          <div class="absolute w-16 rounded-lg border border-slate-200 overflow-hidden"
+            style="top:{i*28}px; height:98px;">
+            {@render cardFace(card, true)}
+          </div>
+        {/each}
+      </div>
     </div>
   {/each}
 
