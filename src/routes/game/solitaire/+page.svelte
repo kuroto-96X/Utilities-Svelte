@@ -194,7 +194,7 @@
         if (el) {
           const r = el.getBoundingClientRect()
           fromX = r.left
-          fromY = r.top + (state.tableau[move.from.index].length - 1) * 28
+          fromY = r.top + (state.tableau[move.from.index].length - 1) * 28 * scale
         }
       }
       const toEl = getDestEl('foundation', move.to.index)
@@ -551,7 +551,7 @@
     }
     const toRect = toEl.getBoundingClientRect()
     const toX = toRect.left
-    const toY = toRect.top + (dt.pile === 'tableau' ? state.tableau[dt.index].length * 28 : 0)
+    const toY = toRect.top + (dt.pile === 'tableau' ? state.tableau[dt.index].length * 28 * scale : 0)
 
     let fromX = di.currentX - 32, fromY = di.currentY - 20
     if (di.pile === 'waste') {
@@ -562,7 +562,7 @@
       if (el) { const r = el.getBoundingClientRect(); fromX = r.left; fromY = r.top }
     } else {
       const el = document.querySelector(`[data-pile="tableau"][data-pile-index="${di.pileIndex}"]`)
-      if (el) { const r = el.getBoundingClientRect(); fromX = r.left; fromY = r.top + (di.cardIndex ?? 0) * 28 }
+      if (el) { const r = el.getBoundingClientRect(); fromX = r.left; fromY = r.top + (di.cardIndex ?? 0) * 28 * scale }
     }
 
     const animId = `slam-${_effectId++}`
@@ -1189,7 +1189,7 @@
       bind:this={gameEl}
       bind:offsetHeight={gameElHeight}
       class="bg-green-800 rounded-xl p-4 pb-10 select-none relative"
-      style="min-height: 520px; transform: scale({scale}); transform-origin: top center;"
+      style="min-height: 520px; transform: scale({scale}); transform-origin: top left;"
       class:pointer-events-none={isVictory(state)}
     >
 
