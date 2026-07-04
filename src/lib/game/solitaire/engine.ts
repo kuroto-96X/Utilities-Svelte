@@ -131,7 +131,7 @@ export function moveCards(state: GameState, move: Move): GameState {
     newTableau[from.index] = col
   } else {
     newFoundation[from.index] = state.foundation[from.index].slice(0, -1)
-    scoreAdd -= 50 // foundation→tableau ペナルティ
+    scoreAdd -= 200 // foundation→tableau ペナルティ
   }
 
   // 移動先を更新

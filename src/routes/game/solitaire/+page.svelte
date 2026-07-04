@@ -1446,9 +1446,45 @@
         <li>カードをドラッグ、またはタップして移動先をタップすることで移動できます。</li>
         <li>タブローは赤黒交互・降順に重ねられます。空列にはKのみ置けます。</li>
         <li>組み札（右上4列）にA→Kの順で同スートのカードを積んでクリアです。</li>
-        <li>山札をタップするとカードをめくれます。ヒントボタンで移動可能な手を確認できます。</li>
+        <li>山札をタップするとカードをめくれます。山札が空になると↺アイコンが表示され、タップでリセットできます。</li>
         <li>全カードが表向きになると自動でクリアアニメーションが始まります。</li>
         <li>タブローの最上段カードはダブルタップで組み札に直接移動できます。</li>
+      </ul>
+    </div>
+    <div class="border border-slate-200 rounded-lg p-4">
+      <h3 class="font-bold text-slate-700 mb-2">ボタン・設定</h3>
+      <dl class="space-y-2 text-xs">
+        <div class="flex gap-2">
+          <dt class="font-bold text-slate-600 shrink-0">↺ 新ゲーム</dt>
+          <dd class="text-slate-500">現在のDRAW設定・シード設定でゲームをリセットします。</dd>
+        </div>
+        <div class="flex gap-2">
+          <dt class="font-bold text-slate-600 shrink-0">DRAW 1枚 / 3枚</dt>
+          <dd class="text-slate-500">山札を1度にめくる枚数を切り替えます。次の新ゲームから反映されます。DRAW3クリア時はスコアに×1.5のボーナスが付きます。</dd>
+        </div>
+        <div class="flex gap-2">
+          <dt class="font-bold text-slate-600 shrink-0">seed</dt>
+          <dd class="text-slate-500">チェックを入れると数値入力が有効になります。同じseed値で新ゲームを開始すると毎回同じ配置になります。チェックを外すとランダムになります。</dd>
+        </div>
+        <div class="flex gap-2">
+          <dt class="font-bold text-slate-600 shrink-0">↩ アンドゥ</dt>
+          <dd class="text-slate-500">直前の操作を1手戻します。使用回数はクリア時のスコアから差し引かれます（1回 −50pt）。</dd>
+        </div>
+        <div class="flex gap-2">
+          <dt class="font-bold text-slate-600 shrink-0">💡 ヒント</dt>
+          <dd class="text-slate-500">移動可能な手をハイライト表示します。複数ある場合は押すたびに次の候補に切り替わります。使用回数はスコアから差し引かれます（1回 −20pt）。</dd>
+        </div>
+      </dl>
+    </div>
+    <div class="border border-slate-200 rounded-lg p-4">
+      <h3 class="font-bold text-slate-700 mb-2">スコア</h3>
+      <ul class="space-y-1 text-xs text-slate-500 leading-relaxed">
+        <li>カードを組み札に積む: <span class="font-mono text-emerald-600">+100pt</span></li>
+        <li>組み札からタブローに戻す: <span class="font-mono text-red-500">−200pt</span></li>
+        <li>タイムボーナス: クリア時に残り時間に応じて最大 <span class="font-mono text-emerald-600">3000pt</span> 加算（3000pt − 経過秒数×10）</li>
+        <li>アンドゥ: 使用1回につき <span class="font-mono text-red-500">−50pt</span>（クリア時に精算）</li>
+        <li>ヒント: 使用1回につき <span class="font-mono text-red-500">−20pt</span>（クリア時に精算）</li>
+        <li>DRAW3ボーナス: DRAW3モードでクリアすると最終スコアが <span class="font-mono text-purple-600">×1.5</span> 倍になります</li>
       </ul>
     </div>
     <div class="border border-amber-200 bg-amber-50 rounded-lg p-4">
