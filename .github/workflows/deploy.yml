@@ -19,6 +19,8 @@ jobs:
         run: npm install
       - name: Build
         run: npm run build
+      - name: Remove admin pages from production build
+        run: rm -rf dist/admin
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
         with:
