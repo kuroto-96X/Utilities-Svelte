@@ -125,6 +125,15 @@
   }
   let slamAnims = $state<SlamAnim[]>([])
   let gameEl: HTMLElement | null = null
+  let scale = $state(1)
+  let gameElHeight = $state(0)
+
+  const GAME_NATURAL_WIDTH = 528 // 7×64px + 6×8px gap + 内padding 32px
+
+  function updateScale() {
+    const available = Math.min(window.innerWidth, 560) - 32
+    scale = Math.min(1, available / GAME_NATURAL_WIDTH)
+  }
 
   // ---- LocalStorage自動保存 ----
   $effect(() => {
@@ -1039,6 +1048,9 @@
   }
 
   onMount(() => {
+    updateScale()
+    window.addEventListener('resize', updateScale)
+
     function onPointerMove(e: PointerEvent) {
       if (!dragInfo || e.pointerId !== dragInfo.pointerId) return
       dragInfo = { ...dragInfo, currentX: e.clientX, currentY: e.clientY }
@@ -1084,6 +1096,7 @@
       autoCompleting = false
       window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('pointerup', onPointerUp)
+      window.removeEventListener('resize', updateScale)
     }
   })
 </script>
