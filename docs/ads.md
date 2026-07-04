@@ -49,7 +49,7 @@
 
 - 160×600のインライン縦バー広告(admax type: `banner`)
 - `position: fixed`(画面右端から16px、上端から80px)で自前配置。ドキュメントフローに影響しないため、ページ全体のレイアウトシフトは起きない
-- PCのみ表示(`hidden sm:block`)。スマホでは非表示(ただしタグ自体はDOMに存在するため、広告リクエスト自体はスマホでも発生する)
+- `hidden xl:block`(1280px以上)で表示。左右の広告(各160px+余白16px=176px)がコンテンツと重ならないよう、設置ページ中最大幅の`max-w-4xl`(896px)でも安全な余白(896+176×2=1248px)を確保できる`xl`ブレークポイントを採用している。狭いウィンドウでコンテンツが広告に隠れる問題への対策(以前は`sm`=640pxで表示していた)
 
 | admax_id | 種別 |
 |---|---|
@@ -64,7 +64,7 @@
 パス: `src/lib/components/AdSlotSideLeft.svelte`
 
 - `AdSlotSide`と同一構造(160×600、`position: fixed`、上端から80px)で、左右を反転して画面左端から16pxに配置(`left-4`)
-- PCのみ表示(`hidden sm:block`)
+- `hidden xl:block`(1280px以上)で表示。理由は`AdSlotSide`と同じ
 
 | admax_id | 種別 |
 |---|---|
