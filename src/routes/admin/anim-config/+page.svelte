@@ -37,6 +37,7 @@
       impactBounce: base.impactBounce[getSizeFor('impactBounce')],
       sparkle:      base.sparkle[getSizeFor('sparkle')],
       scoreDelta:   base.scoreDelta[getSizeFor('scoreDelta')],
+      finale:       base.finale[getSizeFor('finale')],
     }
   })
 
@@ -248,6 +249,41 @@
       { opacity: 0, transform: 'translate(-50%,-50%) translateY(-40px)' },
     ], { duration: durationMs, easing: 'ease-out', fill: 'none' })
     anim.onfinish = () => span.remove()
+  }
+
+  async function previewFinale() {
+    if (!srcCardEl || !dstCardEl || !previewEl) return
+    const srcEl = srcCardEl
+    const dstEl = dstCardEl
+    const fc = cfg.finale
+    const sc = cfg.slamDrop
+    const src = srcEl.getBoundingClientRect()
+    const dst = dstEl.getBoundingClientRect()
+    const tx = dst.left - src.left
+    const ty = dst.top - src.top
+
+    const spinDeg = fc.spinRotations * 360
+    const totalDuration = fc.spinDurationMs + fc.holdDurationMs + sc.durationMs
+    const spinEnd   = fc.spinDurationMs / totalDuration
+    const holdEnd   = (fc.spinDurationMs + fc.holdDurationMs) / totalDuration
+    const slamRange = 1 - holdEnd
+    const landOffset = holdEnd + slamRange * sc.landAt
+    const slamTilt = tx >= 0 ? sc.peakRotateDeg : -sc.peakRotateDeg
+
+    const anim = srcEl.animate([
+      { transform: 'translate(0,0) translateY(0px) scale(1) rotate(0deg)',                                                                            offset: 0,          easing: 'cubic-bezier(0.2,0,0.4,1)' },
+      { transform: `translate(${tx*0.02}px,${ty*0.02}px) translateY(${sc.peakLiftPx}px) scale(${fc.spinPeakScale}) rotate(${spinDeg}deg)`,           offset: spinEnd,    easing: 'ease-in-out' },
+      { transform: `translate(${tx*0.02}px,${ty*0.02}px) translateY(${sc.peakLiftPx}px) scale(${fc.spinPeakScale}) rotate(${spinDeg}deg)`,           offset: holdEnd,    easing: 'cubic-bezier(0.8,0,1,1)' },
+      { transform: `translate(${tx*0.99}px,${ty*0.99}px) translateY(0px) scale(${sc.landScale}) rotate(${spinDeg + slamTilt}deg)`,                  offset: landOffset, easing: 'ease-out' },
+      { transform: `translate(${tx}px,${ty}px) translateY(0px) scale(1) rotate(${spinDeg}deg)`,                                                      offset: 1 },
+    ], { duration: totalDuration, easing: 'linear', fill: 'none' })
+
+    await new Promise<void>(resolve => { anim.onfinish = () => resolve() })
+    previewImpactBounce()
+    for (let i = 0; i < fc.shakeCount; i++) {
+      if (i > 0) await new Promise<void>(r => setTimeout(r, fc.shakeIntervalMs))
+      previewScreenShake()
+    }
   }
 </script>
 
@@ -499,6 +535,12 @@
           class="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
         >
           ▶ ScoreDelta
+        </button>
+        <button
+          onclick={previewFinale}
+          class="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+        >
+          ▶ Finale
         </button>
       </div>
     </div>

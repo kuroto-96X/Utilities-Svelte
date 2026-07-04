@@ -120,6 +120,7 @@
     cards: Card[]; fromX: number; fromY: number; toX: number; toY: number
     sourcePile: 'tableau' | 'waste' | 'foundation'; sourcePileIndex: number; sourceCount: number
     hideSource: boolean
+    hideDestFoundIdx: number  // -1 = 非表示なし；0-3 = その foundation の最上位カードを隠す
     playing: boolean
   }
   let slamAnims = $state<SlamAnim[]>([])
@@ -157,6 +158,15 @@
     const STAGGER_MS = 80
     const animPromises: Promise<void>[] = []
 
+    // 総移動枚数を事前カウント（isLast を確実に判定するため）
+    let totalMoves = 0
+    let countState: GameState = state as GameState
+    while (getAutoCompleteMove(countState) !== null) {
+      countState = autoCompleteStep(countState)
+      totalMoves++
+    }
+    let movesDone = 0
+
     while (autoCompleting) {
       const move = getAutoCompleteMove(state)
       if (!move) break
@@ -186,7 +196,8 @@
       const prevScore = state.score
       state = autoCompleteStep(state) // 即時反映（元カードがDOMから消える）
       const delta = state.score - prevScore
-      const isLast = getAutoCompleteMove(state) === null
+      movesDone++
+      const isLast = movesDone === totalMoves
 
       // fire-and-forget でアニメーション開始
       animPromises.push(fireAutoSlamAnim(card, fromX, fromY, toX, toY, move.to.index, delta, isLast))
@@ -549,7 +560,7 @@
     slamAnims = [...slamAnims, {
       id: animId, cards, fromX, fromY, toX, toY,
       sourcePile: di.pile, sourcePileIndex: di.pileIndex, sourceCount: di.count,
-      hideSource: true, playing: false,
+      hideSource: true, hideDestFoundIdx: -1, playing: false,
     }]
     await tick()
     await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())))
@@ -598,14 +609,13 @@
     const spinEnd   = fc.spinDurationMs / totalDuration
     const holdEnd   = (fc.spinDurationMs + fc.holdDurationMs) / totalDuration
     const slamRange = 1 - holdEnd
-    const peakOffset = holdEnd + slamRange * sc.peakAt
     const landOffset = holdEnd + slamRange * sc.landAt
 
     const animId = `fin-${_effectId++}`
     slamAnims = [...slamAnims, {
       id: animId, cards: [card], fromX, fromY, toX, toY,
       sourcePile: 'waste', sourcePileIndex: -1, sourceCount: 0,
-      hideSource: false, playing: false,
+      hideSource: false, hideDestFoundIdx: foundIdx, playing: false,
     }]
     await tick()
     await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())))
@@ -616,13 +626,14 @@
     if (ghostEl) {
       const tx = toX - fromX
       const ty = toY - fromY
+      // slam中は移動方向と逆側に傾く（右移動→左傾き、左移動→右傾き）
+      const slamTilt = tx >= 0 ? sc.peakRotateDeg : -sc.peakRotateDeg
       ghostEl.animate([
-        { offset: 0,           transform: 'translate(0px,0px) scale(1) rotate(0deg)',                                                                                                            easing: 'cubic-bezier(0.2,0,0.8,1)' },
-        { offset: spinEnd,     transform: `translate(0px,0px) scale(${fc.spinPeakScale}) rotate(${spinDeg}deg)`,                                                                                  easing: 'ease-out' },
-        { offset: holdEnd,     transform: `translate(0px,0px) scale(${fc.spinPeakScale}) rotate(${spinDeg}deg)`,                                                                                  easing: 'cubic-bezier(0.8,0,1,1)' },
-        { offset: peakOffset,  transform: `translate(${tx*0.02}px,${ty*0.02}px) scale(${sc.peakScale}) rotate(${spinDeg + sc.peakRotateDeg}deg) translateY(${sc.peakLiftPx}px)`,                  easing: 'cubic-bezier(0.8,0,1,1)' },
-        { offset: landOffset,  transform: `translate(${tx*0.99}px,${ty*0.99}px) scale(${sc.landScale}) rotate(${sc.landRotateDeg}deg)`,                                                           easing: 'ease-out' },
-        { offset: 1,           transform: `translate(${tx}px,${ty}px) scale(1) rotate(0deg)` },
+        { offset: 0,          transform: 'translate(0px,0px) translateY(0px) scale(1) rotate(0deg)',                                                                                           easing: 'cubic-bezier(0.2,0,0.4,1)' },
+        { offset: spinEnd,    transform: `translate(${tx*0.02}px,${ty*0.02}px) translateY(${sc.peakLiftPx}px) scale(${fc.spinPeakScale}) rotate(${spinDeg}deg)`,                               easing: 'ease-in-out' },
+        { offset: holdEnd,    transform: `translate(${tx*0.02}px,${ty*0.02}px) translateY(${sc.peakLiftPx}px) scale(${fc.spinPeakScale}) rotate(${spinDeg}deg)`,                               easing: 'cubic-bezier(0.8,0,1,1)' },
+        { offset: landOffset, transform: `translate(${tx*0.99}px,${ty*0.99}px) translateY(0px) scale(${sc.landScale}) rotate(${spinDeg + slamTilt}deg)`,                                   easing: 'ease-out' },
+        { offset: 1,          transform: `translate(${tx}px,${ty}px) translateY(0px) scale(1) rotate(${spinDeg}deg)` },
       ], { duration: totalDuration, easing: 'linear', fill: 'forwards' })
     }
 
@@ -660,7 +671,7 @@
     slamAnims = [...slamAnims, {
       id: animId, cards: [card], fromX, fromY, toX, toY,
       sourcePile: 'waste', sourcePileIndex: -1, sourceCount: 0,
-      hideSource: false, playing: false,
+      hideSource: false, hideDestFoundIdx: foundIdx, playing: false,
     }]
     await tick()
     await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())))
@@ -863,6 +874,26 @@
       return
     }
     if (!autoCompleting && canAutoComplete(state)) startAutoComplete()
+  }
+
+  function debugTriggerAutoComplete() {
+    stopTimer()
+    showVictory = false
+    autoCompleting = false
+    const suits = ['spades', 'hearts', 'diamonds', 'clubs'] as const
+    const foundation = suits.map(suit =>
+      Array.from({ length: 12 }, (_, i) => ({ suit, rank: (i + 1) as Card['rank'], faceUp: true }))
+    )
+    const tableau: Card[][] = [
+      [{ suit: 'spades',   rank: 13, faceUp: true }],
+      [{ suit: 'hearts',   rank: 13, faceUp: true }],
+      [{ suit: 'diamonds', rank: 13, faceUp: true }],
+      [{ suit: 'clubs',    rank: 13, faceUp: true }],
+      [], [], [],
+    ]
+    state = { ...state, foundation, tableau, stock: [], waste: [], history: [] }
+    gameStarted = true
+    checkAfterMove()
   }
 
   function debugTriggerClear() {
@@ -1129,8 +1160,12 @@
     />
     {#if import.meta.env.DEV}
       <button
+        onclick={debugTriggerAutoComplete}
+        class="ml-auto px-2 py-1 text-xs rounded border border-purple-300 bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors"
+      >ACテスト</button>
+      <button
         onclick={debugTriggerClear}
-        class="ml-auto px-2 py-1 text-xs rounded border border-orange-300 bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors"
+        class="px-2 py-1 text-xs rounded border border-orange-300 bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors"
       >クリア演出テスト</button>
     {/if}
   </div>
@@ -1274,7 +1309,7 @@
           class:bg-white={state.foundation[i].length > 0}
           class:opacity-40={(dragInfo?.isDragging && dragInfo?.pile === 'foundation' && dragInfo?.pileIndex === i) || slamAnims.some(a => a.hideSource && a.sourcePile === 'foundation' && a.sourcePileIndex === i)}
         >
-          {#if flyingToFoundation(i)}
+          {#if flyingToFoundation(i) || slamAnims.some(a => a.hideDestFoundIdx === i)}
             {#if state.foundation[i].length >= 2}
               <div class="absolute inset-0">
                 {@render cardFace(state.foundation[i][state.foundation[i].length - 2], true)}
@@ -1455,7 +1490,7 @@
     <div
       data-ghost-id={anim.id}
       class="pointer-events-none fixed z-[300]"
-      style="left:{anim.fromX}px; top:{anim.fromY}px; filter: drop-shadow(0 16px 32px rgba(0,0,0,0.7)) drop-shadow(0 0 12px rgba(251,191,36,0.5));"
+      style="left:{anim.fromX}px; top:{anim.fromY}px; width:64px; height:{(anim.cards.length - 1) * 28 + 98}px; filter: drop-shadow(0 16px 32px rgba(0,0,0,0.7)) drop-shadow(0 0 12px rgba(251,191,36,0.5));"
     >
       {#each anim.cards as card, i (i)}
         <div class="absolute w-16 rounded-lg border border-slate-200 overflow-hidden"
