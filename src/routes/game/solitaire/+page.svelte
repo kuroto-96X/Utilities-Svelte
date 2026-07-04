@@ -815,10 +815,10 @@
       ...createCrackerBurst(W * 0.05, H * 0.92,  23, spdL, spreadL, bcL),
       ...createCrackerBurst(W * 0.95, H * 0.92, 337, spdL, spreadL, bcL),
       ...createCrackerBurst(W * 0.5,  H * 0.98,   0, spdL, spreadL, bcL),
-      // 上からのクラッカー（下向き・画面中央方向）— small
-      ...createCrackerBurst(W * 0.05, H * 0.08, 157, spdS, spreadS, bcS),
-      ...createCrackerBurst(W * 0.95, H * 0.08, 203, spdS, spreadS, bcS),
-      ...createCrackerBurst(W * 0.5,  H * 0.02, 180, spdS, spreadS, bcS),
+      // 上からのクラッカー— small
+      ...createCrackerBurst(W * 0.05, H * 0.08,  90, spdS, spreadS, bcS),  // 左上→右
+      ...createCrackerBurst(W * 0.95, H * 0.08, 270, spdS, spreadS, bcS),  // 右上→左
+      ...createCrackerBurst(W * 0.5,  H * 0.02,   0, spdS, spreadS, bcS),  // 真上→上
     ]
 
     // 降り注ぐ紙吹雪（モーダル表示中に連続生成）
@@ -1705,7 +1705,7 @@
   <span class="sparkle-particle" style="left:{s.x}px; top:{s.y}px; --dx:{s.dx}px; --dy:{s.dy}px; color:{s.color}; font-size:{s.size}px; animation-delay:{s.delay}ms; animation-duration:{cfg.sparkle.durationMs}ms;">{s.char}</span>
 {/each}
 
-<canvas bind:this={confettiCanvas} class="fixed inset-0 pointer-events-none z-[1000]"></canvas>
+<canvas bind:this={confettiCanvas} class="fixed inset-0 pointer-events-none z-[850]"></canvas>
 
 <style>
 @keyframes floatUp {
