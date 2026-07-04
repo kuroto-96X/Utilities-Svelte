@@ -1184,8 +1184,14 @@
   </div>
 
   <!-- ゲームエリア -->
-  <div bind:this={gameEl} class="bg-green-800 rounded-xl p-4 pb-10 select-none relative" style="min-height: 520px;"
-    class:pointer-events-none={isVictory(state)}>
+  <div style="height: {(gameElHeight || 520) * scale}px; overflow: visible;">
+    <div
+      bind:this={gameEl}
+      bind:offsetHeight={gameElHeight}
+      class="bg-green-800 rounded-xl p-4 pb-10 select-none relative"
+      style="min-height: 520px; transform: scale({scale}); transform-origin: top center;"
+      class:pointer-events-none={isVictory(state)}
+    >
 
     <!-- スコア・ボタン行 -->
     <div class="flex items-start justify-between mb-3">
@@ -1412,6 +1418,7 @@
     <div class="absolute bottom-3 right-4 flex items-center gap-1.5">
       <input type="checkbox" id="anim-toggle" bind:checked={animEnabled} class="w-3.5 h-3.5 accent-green-400 cursor-pointer" />
       <label for="anim-toggle" class="text-xs text-green-400/60 font-mono select-none cursor-pointer">ANIM</label>
+    </div>
     </div>
   </div>
 
