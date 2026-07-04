@@ -125,7 +125,7 @@
 </script>
 
 <svelte:head>
-  <title>Tap BPM</title>
+  <title>BPM Tapper</title>
 </svelte:head>
 
 <div class="max-w-lg mx-auto px-4 py-6">
@@ -246,40 +246,40 @@
     </div>
   {/if}
 
-  <!-- Description -->
-  <div class="w-full max-w-sm px-4 py-5 mt-2 border-t border-slate-100">
-    <h2 class="text-sm font-semibold text-slate-700 mb-2">BPM Tapperとは</h2>
-    <p class="text-xs text-slate-500 leading-relaxed">
-      音楽のビートに合わせてTAPボタンを叩くと、テンポ（BPM）をリアルタイムで測定します。
-      タップするたびに直前との間隔から瞬間BPMを算出し、その平均値を大きく表示します。
-    </p>
-    <h2 class="text-sm font-semibold text-slate-700 mt-4 mb-2">スライダーについて</h2>
-    <p class="text-xs text-slate-500 leading-relaxed">
-      スライダーで平均を取るタップ数を調整できます。
-      左端では全タップの平均、右端では直近1タップのみの瞬間BPMを表示します。
-      グラフの青い折れ線が平均範囲、灰色が対象外のタップを示しています。
-    </p>
-    <div class="mt-4 pt-3 border-t border-slate-100">
-      <p class="text-xs text-slate-400 text-center mb-2">
-        BPM <span class="font-mono font-semibold text-slate-600">{mainBpm !== null ? Math.round(mainBpm) : DEFAULT_BPM}</span> を引き継いで開く
-      </p>
-      <div class="flex justify-center gap-6">
-        <a
-          href="/music/note-duration?bpm={mainBpm !== null ? Math.round(mainBpm) : DEFAULT_BPM}"
-          class="text-sm font-medium text-teal-700 hover:underline"
-        >Note Duration →</a>
-        <a
-          href="/music/scale-visualizer?bpm={mainBpm !== null ? Math.round(mainBpm) : DEFAULT_BPM}"
-          class="text-sm font-medium text-teal-700 hover:underline"
-        >Scale Visualizer →</a>
-      </div>
-    </div>
-  </div>
-
 </div>
 </div>
 
 <AdSlot />
+
+<!-- Description -->
+<div class="w-full max-w-sm mx-auto px-4 py-5 mt-2 border-t border-slate-100">
+  <h2 class="text-sm font-semibold text-slate-700 mb-2">BPM Tapperとは</h2>
+  <p class="text-xs text-slate-500 leading-relaxed">
+    音楽のビートに合わせてTAPボタンを叩くと、テンポ（BPM）をリアルタイムで測定します。
+    タップするたびに直前との間隔から瞬間BPMを算出し、その平均値を大きく表示します。
+  </p>
+  <h2 class="text-sm font-semibold text-slate-700 mt-4 mb-2">スライダーについて</h2>
+  <p class="text-xs text-slate-500 leading-relaxed">
+    スライダーで平均を取るタップ数を調整できます。
+    左端では全タップの平均、右端では直近1タップのみの瞬間BPMを表示します。
+    グラフの青い折れ線が平均範囲、灰色が対象外のタップを示しています。
+  </p>
+  <div class="mt-4 pt-3 border-t border-slate-100">
+    <p class="text-xs text-slate-400 text-center mb-2">
+      BPM <span class="font-mono font-semibold text-slate-600">{mainBpm !== null ? Math.round(mainBpm) : DEFAULT_BPM}</span> を引き継いで開く
+    </p>
+    <div class="flex justify-center gap-6">
+      <a
+        href="/music/note-duration?bpm={mainBpm !== null ? Math.round(mainBpm) : DEFAULT_BPM}"
+        class="text-sm font-medium text-teal-700 hover:underline"
+      >Note Duration →</a>
+      <a
+        href="/music/scale-visualizer?bpm={mainBpm !== null ? Math.round(mainBpm) : DEFAULT_BPM}"
+        class="text-sm font-medium text-teal-700 hover:underline"
+      >Scale Visualizer →</a>
+    </div>
+  </div>
+</div>
 
 </div>
 
