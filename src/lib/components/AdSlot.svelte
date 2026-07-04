@@ -8,7 +8,11 @@
   <div class="mt-4">
     <p class="text-[10px] text-slate-400 text-center mb-1">スポンサーリンク</p>
     <div class="hidden sm:flex sm:justify-center">
-      <script src="https://adm.shinobi.jp/s/ffea59a79b77bc4160ffc29d36cc7305"></script>
+      <div class="admax-ads" data-admax-id="ffea59a79b77bc4160ffc29d36cc7305" style="display:inline-block;width:300px;height:250px;"></div>
+      <script type="text/javascript">
+        (admaxads = window.admaxads || []).push({admax_id: "ffea59a79b77bc4160ffc29d36cc7305", type: "banner"});
+      </script>
+      <script type="text/javascript" charset="utf-8" src="https://adm.shinobi.jp/st/t.js" async></script>
     </div>
     <div class="flex justify-center sm:hidden">
       <script src="https://adm.shinobi.jp/s/09107acc80b232772e6dd49af94b902f"></script>
