@@ -1,7 +1,7 @@
 <script lang="ts">
   import { site } from '$lib/site'
   import siteConfig from '$lib/site.config.json'
-  import AdSlot from '$lib/components/AdSlot.svelte'
+  import AdSlotBanner from '$lib/components/AdSlotBanner.svelte'
   import AdSlotSide from '$lib/components/AdSlotSide.svelte'
   import AdSlotSideLeft from '$lib/components/AdSlotSideLeft.svelte'
 
@@ -53,7 +53,7 @@
     {/each}
   </div>
 
-  <AdSlot />
+  <AdSlotBanner />
   <AdSlotSide />
   <AdSlotSideLeft />
 </div>
