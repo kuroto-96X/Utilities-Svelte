@@ -509,9 +509,9 @@
     if (!gameEl) return
     const c = customCfg ?? cfg.screenShake
     const keyframes: Keyframe[] = [
-      { transform: 'translate(0,0) rotate(0deg)' },
-      ...c.frames.map(f => ({ transform: `translate(${f.x * amplify}px,${f.y * amplify}px) rotate(${f.rotateDeg * amplify}deg)` })),
-      { transform: 'translate(0,0) rotate(0deg)' },
+      { transform: `translate(0,0) rotate(0deg) scale(${scale})` },
+      ...c.frames.map(f => ({ transform: `translate(${f.x * amplify}px,${f.y * amplify}px) rotate(${f.rotateDeg * amplify}deg) scale(${scale})` })),
+      { transform: `translate(0,0) rotate(0deg) scale(${scale})` },
     ]
     gameEl.animate(keyframes, { duration: c.durationMs, easing: 'ease-out', fill: 'none' })
   }
