@@ -592,7 +592,7 @@
     // 着地タイミング: durationMs * landAt
     await new Promise<void>(r => setTimeout(r, Math.round(cfg.slamDrop.durationMs * cfg.slamDrop.landAt)))
     triggerScreenShake()
-    triggerImpactBounce(toX + 32, toY + 49)
+    triggerImpactBounce(toX + 32 * scale, toY + 49 * scale)
     triggerScoreEffects(next.score - prevScore, getDestEl(dt.pile, dt.index))
     triggerScoreDisplayEffect(next.score - prevScore)
 
@@ -652,7 +652,7 @@
     // 衝撃バウンス（large設定で）
     const savedCfg = cfg
     cfg = cfgForSize('large')
-    triggerImpactBounce(toX + 32, toY + 49)
+    triggerImpactBounce(toX + 32 * scale, toY + 49 * scale)
     cfg = savedCfg
 
     // 最大シェイク（large設定 × amplify、shakeCount回）
