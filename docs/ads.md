@@ -33,7 +33,7 @@
 
 パス: `src/lib/components/AdSlotBanner.svelte`
 
-- PC用は728×90のインライン横長バナー(`hidden sm:flex sm:justify-center`)、スマホ用は`AdSlot`のスマホ用タグと同じ広告ユニット(`09107acc80b232772e6dd49af94b902f`、`flex justify-center sm:hidden`)を再利用
+- PC用は728×90のインライン横長バナー(`hidden sm:flex sm:justify-center`、ラベルなし)、スマホ用は`AdSlot`のスマホ用タグと同じ広告ユニット(`09107acc80b232772e6dd49af94b902f`)を再利用し、`AdSlot`と同じ「スポンサーリンク」ラベルを付けて表示(`sm:hidden`)
 - ドキュメントフロー内にそのまま配置する(`AdSlotSide`と違い`fixed`ではない)ので、コンテンツの一部として置きたい場所に置く
 
 | 用途 | admax_id | サイズ |
