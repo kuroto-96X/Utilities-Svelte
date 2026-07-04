@@ -21,6 +21,7 @@
   } from '$lib/programming/hepburn/settings'
   import AdSlotSide from '$lib/components/AdSlotSide.svelte'
   import AdSlotSideLeft from '$lib/components/AdSlotSideLeft.svelte'
+  import AdSlotBanner from '$lib/components/AdSlotBanner.svelte'
 
   // --- 状態 ---
   let inputText = $state('')
@@ -695,6 +696,8 @@
 
   <!-- 詳細説明 -->
   <div class="mt-10 pt-8 border-t border-gray-200 space-y-8">
+
+    <AdSlotBanner />
 
     <!-- 変換表 -->
     <section class="space-y-4">
