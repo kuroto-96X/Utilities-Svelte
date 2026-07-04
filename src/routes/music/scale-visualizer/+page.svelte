@@ -272,7 +272,7 @@
 
 <!-- ページ全体 -->
 <div class="bg-gray-900 text-gray-100 min-h-screen sm:min-h-0 sm:h-full sm:overflow-hidden sm:flex sm:flex-col p-4 sm:p-0">
-  <div class="ad-slot--top"></div>
+  <div class="ad-slot ad-slot--top flex h-24 items-center justify-center rounded-lg border border-dashed border-gray-700 bg-gray-800 text-xs text-gray-600 mx-4 mt-4 sm:mx-4 sm:mt-4">広告</div>
 
   <!-- スマホ用: 鍵盤スクロールアウト時のみ表示する fixed sticky bar -->
   {#if !keyboardVisible}
@@ -380,7 +380,7 @@
         {/if}
       </div>
 
-      <div class="ad-slot--in-content"></div>
+      <div class="ad-slot ad-slot--in-content flex h-24 items-center justify-center rounded-lg border border-dashed border-gray-700 bg-gray-800 text-xs text-gray-600">広告</div>
 
       <!-- ダイアトニックコード -->
       {#if diatonicChords}
@@ -421,7 +421,7 @@
         </div>
       {/if}
 
-      <div class="ad-slot--before-description"></div>
+      <div class="ad-slot ad-slot--before-description flex h-24 items-center justify-center rounded-lg border border-dashed border-gray-700 bg-gray-800 text-xs text-gray-600">広告</div>
 
       <!-- 説明文 -->
       <div class="mt-4 space-y-4 text-sm text-gray-400 border-t border-gray-700 pt-6">
