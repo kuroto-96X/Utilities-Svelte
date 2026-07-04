@@ -507,7 +507,9 @@
 
   function triggerScreenShake(amplify = 1, customCfg?: typeof animFile.screenShake['large']) {
     if (!gameEl) return
-    const c = customCfg ?? cfg.screenShake
+    // スマホ表示時（scale < 1）は large → medium に制限
+    const baseCfg = customCfg ?? cfg.screenShake
+    const c = scale < 1 ? (baseCfg === animFile.screenShake['large'] ? animFile.screenShake['medium'] : baseCfg) : baseCfg
     const keyframes: Keyframe[] = [
       { transform: `translate(0,0) rotate(0deg) scale(${scale})` },
       ...c.frames.map(f => ({ transform: `translate(${f.x * amplify}px,${f.y * amplify}px) rotate(${f.rotateDeg * amplify}deg) scale(${scale})` })),
