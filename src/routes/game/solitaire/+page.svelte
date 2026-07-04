@@ -808,16 +808,17 @@
     confettiCanvas.width = W
     confettiCanvas.height = H
 
-    const { count: bc, speed: spd, spreadDeg: spread } = animFile.confettiCracker['large']
+    const { count: bcL, speed: spdL, spreadDeg: spreadL } = animFile.confettiCracker['large']
+    const { count: bcS, speed: spdS, spreadDeg: spreadS } = animFile.confettiCracker['small']
     const bursts: ConfettiParticle[] = [
-      // 下からのクラッカー（上向き・画面中央方向）
-      ...createCrackerBurst(W * 0.05, H * 0.92,  23, spd, spread, bc),
-      ...createCrackerBurst(W * 0.95, H * 0.92, 337, spd, spread, bc),
-      ...createCrackerBurst(W * 0.5,  H * 0.98,   0, spd, spread, bc),
-      // 上からのクラッカー（下向き・画面中央方向）
-      ...createCrackerBurst(W * 0.05, H * 0.08, 157, spd, spread, bc),
-      ...createCrackerBurst(W * 0.95, H * 0.08, 203, spd, spread, bc),
-      ...createCrackerBurst(W * 0.5,  H * 0.02, 180, spd, spread, bc),
+      // 下からのクラッカー（上向き・画面中央方向）— large
+      ...createCrackerBurst(W * 0.05, H * 0.92,  23, spdL, spreadL, bcL),
+      ...createCrackerBurst(W * 0.95, H * 0.92, 337, spdL, spreadL, bcL),
+      ...createCrackerBurst(W * 0.5,  H * 0.98,   0, spdL, spreadL, bcL),
+      // 上からのクラッカー（下向き・画面中央方向）— small
+      ...createCrackerBurst(W * 0.05, H * 0.08, 157, spdS, spreadS, bcS),
+      ...createCrackerBurst(W * 0.95, H * 0.08, 203, spdS, spreadS, bcS),
+      ...createCrackerBurst(W * 0.5,  H * 0.02, 180, spdS, spreadS, bcS),
     ]
 
     // 降り注ぐ紙吹雪（モーダル表示中に連続生成）
