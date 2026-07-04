@@ -1132,7 +1132,7 @@
   </div>
 {/snippet}
 
-<div class="max-w-[560px] mx-auto px-4 py-4 flex flex-col gap-4">
+<div class="max-w-[560px] mx-auto px-4 py-4 flex flex-col gap-4 overflow-x-hidden">
 
   <!-- 行1: 設定行 -->
   <div class="flex items-center gap-2 flex-wrap">
