@@ -1563,18 +1563,22 @@
   {/each}
 
   {#if dragInfo?.isDragging}
+    {@const dragCards = getDragCards()}
+    {@const dragNaturalH = (dragCards.length - 1) * 28 + 98}
     <div
       class="pointer-events-none fixed z-[200]"
-      style="left:{dragInfo.currentX - 32}px; top:{dragInfo.currentY - 20}px;"
+      style="left:{dragInfo.currentX - 32 * scale}px; top:{dragInfo.currentY - 20 * scale}px; width:{64 * scale}px; height:{dragNaturalH * scale}px;"
     >
-      {#each getDragCards() as card, i (i)}
-        <div
-          class="absolute w-16 rounded-lg border border-slate-200 shadow-2xl overflow-hidden"
-          style="top:{i * 28}px; height:{i === getDragCards().length - 1 ? 98 : 46}px; opacity:0.9;"
-        >
-          {@render cardFace(card, i === getDragCards().length - 1)}
-        </div>
-      {/each}
+      <div style="transform: scale({scale}); transform-origin: top left; width: 64px; height: {dragNaturalH}px;">
+        {#each dragCards as card, i (i)}
+          <div
+            class="absolute w-16 rounded-lg border border-slate-200 shadow-2xl overflow-hidden"
+            style="top:{i * 28}px; height:{i === dragCards.length - 1 ? 98 : 46}px; opacity:0.9;"
+          >
+            {@render cardFace(card, i === dragCards.length - 1)}
+          </div>
+        {/each}
+      </div>
     </div>
   {/if}
 
