@@ -49,6 +49,18 @@ npm run dev
 
 例: `ヘボン式変換` → `ヘボン式変換(開発中)`
 
+## 広告
+
+広告の表示には `$lib/components/AdSlot.svelte` を使用する。
+
+```svelte
+import AdSlot from '$lib/components/AdSlot.svelte'
+<AdSlot />
+```
+
+`ad-slot--top` / `ad-slot--in-content` などのクラスを持つ空の `<div>` は **AdSense 審査が通るまで追加しない**。
+現時点でこれらの div を新たにコードに追加することは禁止。
+
 ## コミットメッセージ
 
 コミットメッセージは日本語で書く。
