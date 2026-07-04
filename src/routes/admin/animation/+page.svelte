@@ -313,6 +313,78 @@
       previewScreenShake()
     }
   }
+
+  const CONFETTI_COLORS = ['#f43f5e','#f97316','#eab308','#22c55e','#3b82f6','#a855f7','#ec4899','#06b6d4','#fbbf24']
+  interface ConfettiParticle { x: number; y: number; vx: number; vy: number; rotation: number; rotSpeed: number; color: string; w: number; h: number; life: number }
+
+  function createCrackerBurst(ox: number, oy: number, vxMin: number, vxMax: number, vyMin: number, vyMax: number, count: number): ConfettiParticle[] {
+    return Array.from({ length: count }, () => ({
+      x: ox, y: oy,
+      vx: vxMin + Math.random() * (vxMax - vxMin),
+      vy: vyMin + Math.random() * (vyMax - vyMin),
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.2,
+      color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+      w: 6 + Math.random() * 8, h: 3 + Math.random() * 5,
+      life: 120 + Math.floor(Math.random() * 60),
+    }))
+  }
+
+  function previewConfetti() {
+    const bc = cfg.confetti.burstCount
+    const sr = cfg.confetti.snowRate
+    const canvas = document.createElement('canvas')
+    const W = window.innerWidth, H = window.innerHeight
+    canvas.width = W; canvas.height = H
+    canvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999;'
+    document.body.appendChild(canvas)
+    const ctx = canvas.getContext('2d')!
+
+    const bursts: ConfettiParticle[] = [
+      ...createCrackerBurst(W * 0.05, H * 0.92, -2, 14, -22, -6, bc),
+      ...createCrackerBurst(W * 0.95, H * 0.92, -14, 2, -22, -6, bc),
+      ...createCrackerBurst(W * 0.5,  H * 0.98, -10, 10, -24, -8, bc),
+      ...createCrackerBurst(W * 0.05, H * 0.08, -2, 14, 6, 22, bc),
+      ...createCrackerBurst(W * 0.95, H * 0.08, -14, 2, 6, 22, bc),
+      ...createCrackerBurst(W * 0.5,  H * 0.02, -10, 10, 8, 24, bc),
+    ]
+    const snow: ConfettiParticle[] = []
+    const snowEndMs = Date.now() + 3000
+
+    function renderFrame() {
+      ctx.clearRect(0, 0, W, H)
+      const snowActive = Date.now() < snowEndMs
+      if (snowActive) {
+        for (let i = 0; i < sr; i++) {
+          snow.push({ x: Math.random() * W, y: -15, vx: (Math.random() - 0.5) * 2.5, vy: 2 + Math.random() * 2.5,
+            rotation: Math.random() * Math.PI * 2, rotSpeed: (Math.random() - 0.5) * 0.15,
+            color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+            w: 7 + Math.random() * 8, h: 3 + Math.random() * 5, life: 999 })
+        }
+      }
+      let alive = 0
+      for (const p of bursts) {
+        if (p.life <= 0) continue
+        alive++
+        p.vy += 0.38; p.vx *= 0.992; p.x += p.vx; p.y += p.vy; p.rotation += p.rotSpeed; p.life--
+        ctx.save(); ctx.globalAlpha = Math.min(1, p.life / 45)
+        ctx.translate(p.x, p.y); ctx.rotate(p.rotation)
+        ctx.fillStyle = p.color; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore()
+      }
+      for (let i = snow.length - 1; i >= 0; i--) {
+        const p = snow[i]
+        if (p.y > H + 20) { snow.splice(i, 1); continue }
+        alive++
+        p.vy += 0.06; p.vx += (Math.random() - 0.5) * 0.1; p.x += p.vx; p.y += p.vy; p.rotation += p.rotSpeed
+        ctx.save(); ctx.globalAlpha = 0.9
+        ctx.translate(p.x, p.y); ctx.rotate(p.rotation)
+        ctx.fillStyle = p.color; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore()
+      }
+      if (alive > 0 || snowActive) requestAnimationFrame(renderFrame)
+      else canvas.remove()
+    }
+    requestAnimationFrame(renderFrame)
+  }
 </script>
 
 <!-- ========================================================
@@ -577,6 +649,12 @@
           class="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
         >
           ▶ Finale
+        </button>
+        <button
+          onclick={previewConfetti}
+          class="text-xs px-3 py-1.5 rounded-lg bg-pink-500 text-white hover:bg-pink-600 transition-colors"
+        >
+          🎊 Confetti
         </button>
       </div>
     </div>
