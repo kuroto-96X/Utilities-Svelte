@@ -680,8 +680,16 @@
     if (delta > 0) triggerScoreEffects(delta, getDestEl('foundation', foundIdx))
     triggerScoreDisplayEffect(delta)
 
-    await new Promise<void>(r => setTimeout(r, Math.round(totalDuration * (1 - landOffset)) + 10))
+    const remainingAnimMs = Math.round(totalDuration * (1 - landOffset)) + 10
+    await new Promise<void>(r => setTimeout(r, remainingAnimMs))
     slamAnims = slamAnims.filter(a => a.id !== animId)
+
+    // 全シェイクが終わるまで待ってからモーダルが表示されるようにする
+    const allShakesEndMs = (fc.shakeCount - 1) * fc.shakeIntervalMs + shakeCfg.durationMs
+    const extraWait = Math.max(0, allShakesEndMs - remainingAnimMs)
+    if (extraWait > 0) {
+      await new Promise<void>(r => setTimeout(r, extraWait))
+    }
   }
 
   async function fireAutoSlamAnim(
