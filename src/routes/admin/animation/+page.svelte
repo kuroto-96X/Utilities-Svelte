@@ -32,13 +32,14 @@
   let cfg = $derived.by(() => {
     const base = config ?? DEFAULT_ANIM_CONFIG_FILE
     return {
-      slamDrop:     base.slamDrop[getSizeFor('slamDrop')],
-      screenShake:  base.screenShake[getSizeFor('screenShake')],
-      impactBounce: base.impactBounce[getSizeFor('impactBounce')],
-      sparkle:      base.sparkle[getSizeFor('sparkle')],
-      scoreDelta:   base.scoreDelta[getSizeFor('scoreDelta')],
-      finale:       base.finale[getSizeFor('finale')],
-      confetti:     base.confetti,
+      slamDrop:        base.slamDrop[getSizeFor('slamDrop')],
+      screenShake:     base.screenShake[getSizeFor('screenShake')],
+      impactBounce:    base.impactBounce[getSizeFor('impactBounce')],
+      sparkle:         base.sparkle[getSizeFor('sparkle')],
+      scoreDelta:      base.scoreDelta[getSizeFor('scoreDelta')],
+      finale:          base.finale[getSizeFor('finale')],
+      confettiCracker: base.confettiCracker[getSizeFor('confettiCracker')],
+      confettiSnow:    base.confettiSnow[getSizeFor('confettiSnow')],
     }
   })
 
@@ -338,7 +339,8 @@
   }
 
   function previewConfetti() {
-    const { crackerCount: bc, crackerSpeed: spd, crackerSpreadDeg: spread, snowRate: sr } = cfg.confetti
+    const { count: bc, speed: spd, spreadDeg: spread } = cfg.confettiCracker
+    const sr = cfg.confettiSnow.rate
     const canvas = document.createElement('canvas')
     const W = window.innerWidth, H = window.innerHeight
     canvas.width = W; canvas.height = H

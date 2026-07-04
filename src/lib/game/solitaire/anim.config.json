@@ -62,10 +62,14 @@
     "medium": { "spinDurationMs": 600, "spinPeakScale": 2.0, "spinRotations": 1, "holdDurationMs": 50, "shakeAmplify": 1.5, "shakeCount": 1, "shakeIntervalMs": 0 },
     "small":  { "spinDurationMs": 400, "spinPeakScale": 1.6, "spinRotations": 1, "holdDurationMs": 30, "shakeAmplify": 1.0, "shakeCount": 1, "shakeIntervalMs": 0 }
   },
-  "confetti": {
-    "crackerCount": 40,
-    "crackerSpeed": 15,
-    "crackerSpreadDeg": 80,
-    "snowRate": 2
+  "confettiCracker": {
+    "large":  { "count": 55, "speed": 20, "spreadDeg": 80 },
+    "medium": { "count": 40, "speed": 15, "spreadDeg": 80 },
+    "small":  { "count": 20, "speed": 10, "spreadDeg": 60 }
+  },
+  "confettiSnow": {
+    "large":  { "rate": 4 },
+    "medium": { "rate": 2 },
+    "small":  { "rate": 1 }
   }
 }

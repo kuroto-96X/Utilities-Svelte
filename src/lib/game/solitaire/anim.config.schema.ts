@@ -64,6 +64,14 @@ export type AnimConfig = {
     shakeCount: number
     shakeIntervalMs: number
   }
+  confettiCracker: {
+    count: number
+    speed: number
+    spreadDeg: number
+  }
+  confettiSnow: {
+    rate: number
+  }
 }
 
 export const DEFAULT_ANIM_CONFIG: AnimConfig = {
@@ -115,25 +123,27 @@ export const DEFAULT_ANIM_CONFIG: AnimConfig = {
     shakeCount: 1,
     shakeIntervalMs: 0,
   },
+  confettiCracker: {
+    count: 40,
+    speed: 15,
+    spreadDeg: 80,
+  },
+  confettiSnow: {
+    rate: 2,
+  },
 }
 
 export type AnimSize = 'large' | 'medium' | 'small'
 
-export type ConfettiConfig = {
-  crackerCount: number
-  crackerSpeed: number
-  crackerSpreadDeg: number
-  snowRate: number
-}
-
 export type AnimConfigFile = {
-  slamDrop:     Record<AnimSize, AnimConfig['slamDrop']>
-  screenShake:  Record<AnimSize, AnimConfig['screenShake']>
-  impactBounce: Record<AnimSize, AnimConfig['impactBounce']>
-  sparkle:      Record<AnimSize, AnimConfig['sparkle']>
-  scoreDelta:   Record<AnimSize, AnimConfig['scoreDelta']>
-  finale:       Record<AnimSize, AnimConfig['finale']>
-  confetti:     ConfettiConfig
+  slamDrop:        Record<AnimSize, AnimConfig['slamDrop']>
+  screenShake:     Record<AnimSize, AnimConfig['screenShake']>
+  impactBounce:    Record<AnimSize, AnimConfig['impactBounce']>
+  sparkle:         Record<AnimSize, AnimConfig['sparkle']>
+  scoreDelta:      Record<AnimSize, AnimConfig['scoreDelta']>
+  finale:          Record<AnimSize, AnimConfig['finale']>
+  confettiCracker: Record<AnimSize, AnimConfig['confettiCracker']>
+  confettiSnow:    Record<AnimSize, AnimConfig['confettiSnow']>
 }
 
 export const DEFAULT_ANIM_CONFIG_FILE: AnimConfigFile = {
@@ -183,11 +193,15 @@ export const DEFAULT_ANIM_CONFIG_FILE: AnimConfigFile = {
     medium: { ...DEFAULT_ANIM_CONFIG.finale },
     small:  { spinDurationMs: 400, spinPeakScale: 1.6, spinRotations: 1, holdDurationMs: 30, shakeAmplify: 1.0, shakeCount: 1, shakeIntervalMs: 0 },
   },
-  confetti: {
-    crackerCount: 40,
-    crackerSpeed: 15,
-    crackerSpreadDeg: 80,
-    snowRate: 2,
+  confettiCracker: {
+    large:  { count: 55, speed: 20, spreadDeg: 80 },
+    medium: { ...DEFAULT_ANIM_CONFIG.confettiCracker },
+    small:  { count: 20, speed: 10, spreadDeg: 60 },
+  },
+  confettiSnow: {
+    large:  { rate: 4 },
+    medium: { ...DEFAULT_ANIM_CONFIG.confettiSnow },
+    small:  { rate: 1 },
   },
 }
 
@@ -258,14 +272,18 @@ export const animConfigSchema: AnimConfigSchema = {
       shakeIntervalMs: { type: 'number', label: 'シェイク間隔',     min: 0,   max: 500,  step: 10,  unit: 'ms' },
     },
   },
-  confetti: {
-    label: '紙吹雪',
-    flat: true,
+  confettiCracker: {
+    label: '紙吹雪 — クラッカー',
     fields: {
-      crackerCount:     { type: 'number', label: 'クラッカー粒子数',        min: 0,  max: 200, step: 5 },
-      crackerSpeed:     { type: 'number', label: 'クラッカー勢い',          min: 1,  max: 60,  step: 1 },
-      crackerSpreadDeg: { type: 'number', label: 'クラッカー広がり角度',    min: 10, max: 180, step: 5, unit: '°' },
-      snowRate:         { type: 'number', label: '降雪レート（粒/フレーム）', min: 0, max: 20,  step: 1 },
+      count:     { type: 'number', label: '粒子数',      min: 0,  max: 200, step: 5 },
+      speed:     { type: 'number', label: '勢い',        min: 1,  max: 60,  step: 1 },
+      spreadDeg: { type: 'number', label: '広がり角度', min: 10, max: 180, step: 5, unit: '°' },
+    },
+  },
+  confettiSnow: {
+    label: '紙吹雪 — 降雪',
+    fields: {
+      rate: { type: 'number', label: 'レート（粒/フレーム）', min: 0, max: 20, step: 1 },
     },
   },
 }

@@ -811,7 +811,7 @@
     confettiCanvas.width = W
     confettiCanvas.height = H
 
-    const { crackerCount: bc, crackerSpeed: spd, crackerSpreadDeg: spread } = animFile.confetti
+    const { count: bc, speed: spd, spreadDeg: spread } = animFile.confettiCracker['large']
     const bursts: ConfettiParticle[] = [
       // 下からのクラッカー（上向き・画面中央方向）
       ...createCrackerBurst(W * 0.05, H * 0.92,  23, spd, spread, bc),
@@ -831,7 +831,7 @@
       ctx.clearRect(0, 0, W, H)
 
       if (showVictory) {
-        for (let i = 0; i < animFile.confetti.snowRate; i++) {
+        for (let i = 0; i < animFile.confettiSnow['large'].rate; i++) {
           snow.push({
             x: Math.random() * W,
             y: -15,
