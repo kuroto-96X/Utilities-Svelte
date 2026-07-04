@@ -1507,6 +1507,10 @@
           <dt class="font-bold text-slate-600 shrink-0">💡 ヒント</dt>
           <dd class="text-slate-500">移動可能な手をハイライト表示します。複数ある場合は押すたびに次の候補に切り替わります。使用回数はスコアから差し引かれます（1回 −20pt）。</dd>
         </div>
+        <div class="flex gap-2">
+          <dt class="font-bold text-slate-600 shrink-0">ANIM</dt>
+          <dd class="text-slate-500">カード移動アニメーションの有効・無効を切り替えます。チェックを外すとカードが即座に移動します。アニメーション再生中はカード操作が無効になり、タイマーも一時停止します。</dd>
+        </div>
       </dl>
     </div>
     <div class="border border-slate-200 rounded-lg p-4">
