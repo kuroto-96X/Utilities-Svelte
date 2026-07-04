@@ -4,7 +4,7 @@
 
 ## ホスティング
 
-- **ホスティング先**: Cloudflare Pages(Netlifyではない。`static/_redirects` / `static/_headers` はNetlify由来の記法だが、Cloudflare Pagesも同じフォーマットをサポートしているため利用している)
+- **ホスティング先**: Cloudflare Pages(Netlifyではない)
 - **ドメイン**: `https://96xtools.dev/`(DNSはCloudflareでプロキシされている)
 - **Cloudflareプロジェクト名**: `utilities-svelte`(プレビューURLは `https://<hash>.utilities-svelte.pages.dev` の形)
 - **GitHubリポジトリ**: `kuroto-96X/Utilities-Svelte`
@@ -29,6 +29,12 @@ jobs:
 ```
 
 `/admin`・`/admin/menu`・`/admin/animation` は認証なしで誰でも開ける管理画面のため、意図的に本番デプロイの成果物から除外している。ローカル(`npm run dev`)では引き続き通常通り使える。他のページから`/admin`へのリンクは一切無いため、除外しても他ページに影響はない。
+
+### 補足: `static/404.html` が必要な理由
+
+このサイトには`404.html`が存在しないと、Cloudflare Pagesは「未知のパスにはトップページ(`index.html`)の中身をURLはそのままで返す」というSPA用の自動フォールバック動作をする。全ページをprerenderするようになった(前述の「解決済みの問題」参照)上で`dist/admin`だけを後から削除すると、`/admin`へのアクセス時にこの自動フォールバックが発動し、トップページの中身が`/admin`というURLのまま返され、SvelteKitのJS側が期待するページ構造(管理ページ)と実際のDOM(トップページ)がズレて表示が崩れる不具合が起きた。
+
+`static/404.html` を用意することでこの自動フォールバックが無効になり、`/admin`を含む未知のパスには正しく404が返るようになる。全ページが実ファイルとして存在する構成なら、本来の正規ページには一切影響しない。
 
 流れ:
 
