@@ -293,7 +293,7 @@
       selected = null
       await tick()
       const toEl = document.querySelector('[data-waste]')
-      if (toEl) await startFlyAnimation(card, fromRect.left, fromRect.top, toEl, true, 'waste')
+      if (toEl && animEnabled) await startFlyAnimation(card, fromRect.left, fromRect.top, toEl, true, 'waste')
     } else {
       const prevScore = state.score
       state = drawFromStock(state)
