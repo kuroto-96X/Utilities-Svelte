@@ -18,12 +18,12 @@
 - ページ下部に「スポンサーリンク」ラベル付きで表示する**正方形型**広告(横長バナーではない)
 - PC用・スマホ用で別々の広告タグをCSS(`hidden sm:block` / `sm:hidden`、`sm`ブレークポイント=640px)で出し分け。両方のタグは常にDOM上に存在し、表示のみCSSで切り替える方式(レスポンシブ広告の標準的なやり方)
 - `flex justify-center` で中央寄せ
-- PC用は`div.admax-ads` + `admaxads.push(...)` + `t.js`読み込みの非同期形式(300×250、type: `banner`)。スマホ用は`<script src="https://adm.shinobi.jp/s/...">`のシンプルな形式(旧形式のまま)
+- PC用・スマホ用とも`div.admax-ads` + `admaxads.push(...)` + `t.js`読み込みの非同期形式(type: `banner`)。スマホ用は`width`/`height`が指定されておらず、広告配信されるまでは0×0のプレースホルダーになる(仕様通り)
 
-| 用途 | admax_id | 形式 |
+| 用途 | admax_id | サイズ |
 |---|---|---|
-| PC用 | `ffea59a79b77bc4160ffc29d36cc7305` | 非同期(banner 300×250) |
-| スマホ用 | `09107acc80b232772e6dd49af94b902f` | `<script src>`形式 |
+| PC用 | `ffea59a79b77bc4160ffc29d36cc7305` | 300×250 |
+| スマホ用 | `09107acc80b232772e6dd49af94b902f` | 指定なし(可変) |
 
 **設置ページ**: トップページ(`/`)、BPM Tapper、Note Duration
 
@@ -33,12 +33,13 @@
 
 パス: `src/lib/components/AdSlotBanner.svelte`
 
-- 728×90のインライン横長バナー広告(admax type: `banner`)。スマホ用のタグは発行されていないため`hidden sm:flex sm:justify-center`でPCのみ表示
+- PC用は728×90のインライン横長バナー(`hidden sm:flex sm:justify-center`)、スマホ用は`AdSlot`のスマホ用タグと同じ広告ユニット(`09107acc80b232772e6dd49af94b902f`、`flex justify-center sm:hidden`)を再利用
 - ドキュメントフロー内にそのまま配置する(`AdSlotSide`と違い`fixed`ではない)ので、コンテンツの一部として置きたい場所に置く
 
-| admax_id | 種別 |
-|---|---|
-| `cf791649e9fcf5651a3fd3f50faa8366` | banner(728×90) |
+| 用途 | admax_id | サイズ |
+|---|---|---|
+| PC用 | `cf791649e9fcf5651a3fd3f50faa8366` | banner(728×90) |
+| スマホ用 | `09107acc80b232772e6dd49af94b902f` | `AdSlot`と共通、指定なし(可変) |
 
 **設置ページ**: Scale Visualizer(旧`AdSlot`から差し替え)
 
