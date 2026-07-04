@@ -3,6 +3,7 @@
   import siteConfig from '$lib/site.config.json'
   import AdSlot from '$lib/components/AdSlot.svelte'
   import AdSlotSide from '$lib/components/AdSlotSide.svelte'
+  import AdSlotSideLeft from '$lib/components/AdSlotSideLeft.svelte'
 
   const isVisible = (href: string): boolean =>
     (siteConfig.toolVisibility as Record<string, boolean>)[href] ?? true
@@ -54,4 +55,5 @@
 
   <AdSlot />
   <AdSlotSide />
+  <AdSlotSideLeft />
 </div>
