@@ -1,75 +1,270 @@
 {
   "slamDrop": {
-    "large":  { "durationMs": 600, "peakAt": 0.38, "landAt": 0.84, "peakScale": 2.2,  "peakRotateDeg": -15, "peakLiftPx": -80, "landScale": 1.10, "landRotateDeg": -2.0 },
-    "medium": { "durationMs": 480, "peakAt": 0.38, "landAt": 0.84, "peakScale": 1.85, "peakRotateDeg": -10, "peakLiftPx": -60, "landScale": 1.06, "landRotateDeg": -1.0 },
-    "small":  { "durationMs": 300, "peakAt": 0.38, "landAt": 0.84, "peakScale": 1.40, "peakRotateDeg":  -5, "peakLiftPx": -30, "landScale": 1.02, "landRotateDeg": -0.5 }
+    "large": {
+      "durationMs": 600,
+      "peakAt": 0.38,
+      "landAt": 0.84,
+      "peakScale": 2.2,
+      "peakRotateDeg": -15,
+      "peakLiftPx": -80,
+      "landScale": 1.1,
+      "landRotateDeg": -2
+    },
+    "medium": {
+      "durationMs": 480,
+      "peakAt": 0.38,
+      "landAt": 0.84,
+      "peakScale": 1.85,
+      "peakRotateDeg": -10,
+      "peakLiftPx": -60,
+      "landScale": 1.06,
+      "landRotateDeg": -1
+    },
+    "small": {
+      "durationMs": 300,
+      "peakAt": 0.38,
+      "landAt": 0.84,
+      "peakScale": 1.4,
+      "peakRotateDeg": -5,
+      "peakLiftPx": -30,
+      "landScale": 1.02,
+      "landRotateDeg": -0.5
+    }
   },
   "screenShake": {
-    "large":  {
+    "large": {
       "durationMs": 500,
       "frames": [
-        { "x": -10, "y": -6,  "rotateDeg": -0.6 },
-        { "x":  10, "y":  8,  "rotateDeg":  0.6 },
-        { "x":  -8, "y": -5,  "rotateDeg": -0.5 },
-        { "x":   9, "y":  6,  "rotateDeg":  0.5 },
-        { "x":  -5, "y": -3,  "rotateDeg":  0 },
-        { "x":   5, "y":  3,  "rotateDeg":  0 },
-        { "x":  -2, "y": -2,  "rotateDeg":  0 }
+        {
+          "x": -10,
+          "y": -6,
+          "rotateDeg": -0.6
+        },
+        {
+          "x": 10,
+          "y": 8,
+          "rotateDeg": 0.6
+        },
+        {
+          "x": -8,
+          "y": -5,
+          "rotateDeg": -0.5
+        },
+        {
+          "x": 9,
+          "y": 6,
+          "rotateDeg": 0.5
+        },
+        {
+          "x": -5,
+          "y": -3,
+          "rotateDeg": 0
+        },
+        {
+          "x": 5,
+          "y": 3,
+          "rotateDeg": 0
+        },
+        {
+          "x": -2,
+          "y": -2,
+          "rotateDeg": 0
+        }
       ]
     },
     "medium": {
       "durationMs": 400,
       "frames": [
-        { "x": -7, "y": -4, "rotateDeg": -0.4 },
-        { "x":  7, "y":  5, "rotateDeg":  0.4 },
-        { "x": -5, "y": -3, "rotateDeg": -0.3 },
-        { "x":  6, "y":  4, "rotateDeg":  0.3 },
-        { "x": -3, "y": -2, "rotateDeg":  0 },
-        { "x":  3, "y":  2, "rotateDeg":  0 },
-        { "x": -1, "y": -1, "rotateDeg":  0 }
+        {
+          "x": -7,
+          "y": -4,
+          "rotateDeg": -0.4
+        },
+        {
+          "x": 7,
+          "y": 5,
+          "rotateDeg": 0.4
+        },
+        {
+          "x": -5,
+          "y": -3,
+          "rotateDeg": -0.3
+        },
+        {
+          "x": 6,
+          "y": 4,
+          "rotateDeg": 0.3
+        },
+        {
+          "x": -3,
+          "y": -2,
+          "rotateDeg": 0
+        },
+        {
+          "x": 3,
+          "y": 2,
+          "rotateDeg": 0
+        },
+        {
+          "x": -1,
+          "y": -1,
+          "rotateDeg": 0
+        }
       ]
     },
     "small": {
       "durationMs": 250,
       "frames": [
-        { "x": -4, "y": -2, "rotateDeg": -0.2 },
-        { "x":  4, "y":  3, "rotateDeg":  0.2 },
-        { "x": -3, "y": -2, "rotateDeg": -0.15 },
-        { "x":  3, "y":  2, "rotateDeg":  0.15 },
-        { "x": -1, "y": -1, "rotateDeg":  0 },
-        { "x":  1, "y":  1, "rotateDeg":  0 },
-        { "x":  0, "y":  0, "rotateDeg":  0 }
+        {
+          "x": -4,
+          "y": -2,
+          "rotateDeg": -0.2
+        },
+        {
+          "x": 4,
+          "y": 3,
+          "rotateDeg": 0.2
+        },
+        {
+          "x": -3,
+          "y": -2,
+          "rotateDeg": -0.15
+        },
+        {
+          "x": 3,
+          "y": 2,
+          "rotateDeg": 0.15
+        },
+        {
+          "x": -1,
+          "y": -1,
+          "rotateDeg": 0
+        },
+        {
+          "x": 1,
+          "y": 1,
+          "rotateDeg": 0
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "rotateDeg": 0
+        }
       ]
     }
   },
   "impactBounce": {
-    "large":  { "minDistPx": 30,  "maxDistPx": 500, "delayFactor": 0.55, "singleMaxScale": 0.28, "tableauMaxScale": 0.35, "tableauDurationMinMs": 320, "tableauDurationRangeMs": 320 },
-    "medium": { "minDistPx": 40,  "maxDistPx": 460, "delayFactor": 0.55, "singleMaxScale": 0.18, "tableauMaxScale": 0.22, "tableauDurationMinMs": 280, "tableauDurationRangeMs": 260 },
-    "small":  { "minDistPx": 50,  "maxDistPx": 400, "delayFactor": 0.55, "singleMaxScale": 0.10, "tableauMaxScale": 0.14, "tableauDurationMinMs": 220, "tableauDurationRangeMs": 180 }
+    "large": {
+      "minDistPx": 30,
+      "maxDistPx": 500,
+      "delayFactor": 0.55,
+      "singleMaxScale": 0.28,
+      "tableauMaxScale": 0.35,
+      "tableauDurationMinMs": 320,
+      "tableauDurationRangeMs": 320
+    },
+    "medium": {
+      "minDistPx": 40,
+      "maxDistPx": 460,
+      "delayFactor": 0.55,
+      "singleMaxScale": 0.18,
+      "tableauMaxScale": 0.22,
+      "tableauDurationMinMs": 280,
+      "tableauDurationRangeMs": 260
+    },
+    "small": {
+      "minDistPx": 50,
+      "maxDistPx": 400,
+      "delayFactor": 0.55,
+      "singleMaxScale": 0.1,
+      "tableauMaxScale": 0.14,
+      "tableauDurationMinMs": 220,
+      "tableauDurationRangeMs": 180
+    }
   },
   "sparkle": {
-    "large":  { "count": 24, "radiusPx": 130, "durationMs": 950 },
-    "medium": { "count": 14, "radiusPx": 90,  "durationMs": 780 },
-    "small":  { "count": 7,  "radiusPx": 55,  "durationMs": 550 }
+    "large": {
+      "count": 24,
+      "radiusPx": 130,
+      "durationMs": 950
+    },
+    "medium": {
+      "count": 14,
+      "radiusPx": 90,
+      "durationMs": 780
+    },
+    "small": {
+      "count": 7,
+      "radiusPx": 55,
+      "durationMs": 550
+    }
   },
   "scoreDelta": {
-    "large":  { "durationMs": 1400 },
-    "medium": { "durationMs": 1100 },
-    "small":  { "durationMs": 750 }
+    "large": {
+      "durationMs": 1400
+    },
+    "medium": {
+      "durationMs": 1100
+    },
+    "small": {
+      "durationMs": 750
+    }
   },
   "finale": {
-    "large":  { "spinDurationMs": 825, "spinPeakScale": 2.5, "spinRotations": 2, "holdDurationMs": 75, "shakeAmplify": 2.5, "shakeCount": 2, "shakeIntervalMs": 80 },
-    "medium": { "spinDurationMs": 600, "spinPeakScale": 2.0, "spinRotations": 1, "holdDurationMs": 50, "shakeAmplify": 1.5, "shakeCount": 1, "shakeIntervalMs": 0 },
-    "small":  { "spinDurationMs": 400, "spinPeakScale": 1.6, "spinRotations": 1, "holdDurationMs": 30, "shakeAmplify": 1.0, "shakeCount": 1, "shakeIntervalMs": 0 }
+    "large": {
+      "spinDurationMs": 825,
+      "spinPeakScale": 2.5,
+      "spinRotations": 2,
+      "holdDurationMs": 75,
+      "shakeAmplify": 2.5,
+      "shakeCount": 2,
+      "shakeIntervalMs": 80
+    },
+    "medium": {
+      "spinDurationMs": 600,
+      "spinPeakScale": 2,
+      "spinRotations": 1,
+      "holdDurationMs": 50,
+      "shakeAmplify": 1.5,
+      "shakeCount": 1,
+      "shakeIntervalMs": 0
+    },
+    "small": {
+      "spinDurationMs": 400,
+      "spinPeakScale": 1.6,
+      "spinRotations": 1,
+      "holdDurationMs": 30,
+      "shakeAmplify": 1,
+      "shakeCount": 1,
+      "shakeIntervalMs": 0
+    }
   },
   "confettiCracker": {
-    "large":  { "count": 55, "speed": 20, "spreadDeg": 80 },
-    "medium": { "count": 40, "speed": 15, "spreadDeg": 80 },
-    "small":  { "count": 20, "speed": 10, "spreadDeg": 60 }
+    "large": {
+      "count": 60,
+      "speed": 30,
+      "spreadDeg": 80
+    },
+    "medium": {
+      "count": 40,
+      "speed": 15,
+      "spreadDeg": 80
+    },
+    "small": {
+      "count": 30,
+      "speed": 15,
+      "spreadDeg": 180
+    }
   },
   "confettiSnow": {
-    "large":  { "rate": 4 },
-    "medium": { "rate": 2 },
-    "small":  { "rate": 1 }
+    "large": {
+      "rate": 4
+    },
+    "medium": {
+      "rate": 2
+    },
+    "small": {
+      "rate": 1
+    }
   }
 }
