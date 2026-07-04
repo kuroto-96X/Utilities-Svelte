@@ -5,7 +5,7 @@
 </script>
 
 {#if adsEnabled}
-  <div class="hidden sm:block fixed top-20 right-4">
+  <div class="hidden xl:block fixed top-20 right-4">
     <div class="admax-ads" data-admax-id="6ad394d0af0dc87e305be228ab209d78" style="display:inline-block;width:160px;height:600px;"></div>
     <script type="text/javascript">
       (admaxads = window.admaxads || []).push({admax_id: "6ad394d0af0dc87e305be228ab209d78", type: "banner"});
