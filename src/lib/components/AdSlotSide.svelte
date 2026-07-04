@@ -5,9 +5,10 @@
 </script>
 
 {#if adsEnabled}
-  <div class="hidden sm:block">
+  <div class="hidden sm:block fixed top-1/2 right-4 -translate-y-1/2">
+    <div class="admax-ads" data-admax-id="6ad394d0af0dc87e305be228ab209d78" style="display:inline-block;width:160px;height:600px;"></div>
     <script type="text/javascript">
-      (admaxads = window.admaxads || []).push({admax_id: "3d1c39d315c6f0ce03951ff6bc2e34f6", type: "action"});
+      (admaxads = window.admaxads || []).push({admax_id: "6ad394d0af0dc87e305be228ab209d78", type: "banner"});
     </script>
     <script type="text/javascript" charset="utf-8" src="https://adm.shinobi.jp/st/t.js" async></script>
   </div>
