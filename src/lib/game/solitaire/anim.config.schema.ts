@@ -18,6 +18,7 @@ export type FieldSchema = NumberField | ArrayField
 export type SectionSchema = {
   label: string
   fields: Record<string, FieldSchema>
+  flat?: true  // サイズタブなし、configのトップレベルに直接読み書き
 }
 
 export type AnimConfigSchema = Record<string, SectionSchema>
@@ -118,8 +119,19 @@ export const DEFAULT_ANIM_CONFIG: AnimConfig = {
 
 export type AnimSize = 'large' | 'medium' | 'small'
 
+export type ConfettiConfig = {
+  burstCount: number
+  snowRate: number
+}
+
 export type AnimConfigFile = {
-  [K in keyof AnimConfig]: Record<AnimSize, AnimConfig[K]>
+  slamDrop:     Record<AnimSize, AnimConfig['slamDrop']>
+  screenShake:  Record<AnimSize, AnimConfig['screenShake']>
+  impactBounce: Record<AnimSize, AnimConfig['impactBounce']>
+  sparkle:      Record<AnimSize, AnimConfig['sparkle']>
+  scoreDelta:   Record<AnimSize, AnimConfig['scoreDelta']>
+  finale:       Record<AnimSize, AnimConfig['finale']>
+  confetti:     ConfettiConfig
 }
 
 export const DEFAULT_ANIM_CONFIG_FILE: AnimConfigFile = {
@@ -168,6 +180,10 @@ export const DEFAULT_ANIM_CONFIG_FILE: AnimConfigFile = {
     large:  { spinDurationMs: 825, spinPeakScale: 2.5, spinRotations: 2, holdDurationMs: 75, shakeAmplify: 2.5, shakeCount: 2, shakeIntervalMs: 80 },
     medium: { ...DEFAULT_ANIM_CONFIG.finale },
     small:  { spinDurationMs: 400, spinPeakScale: 1.6, spinRotations: 1, holdDurationMs: 30, shakeAmplify: 1.0, shakeCount: 1, shakeIntervalMs: 0 },
+  },
+  confetti: {
+    burstCount: 40,
+    snowRate: 2,
   },
 }
 
@@ -236,6 +252,14 @@ export const animConfigSchema: AnimConfigSchema = {
       shakeAmplify:    { type: 'number', label: 'シェイク強度倍率', min: 0.5, max: 5.0,  step: 0.1 },
       shakeCount:      { type: 'number', label: 'シェイク回数',     min: 1,   max: 5,    step: 1 },
       shakeIntervalMs: { type: 'number', label: 'シェイク間隔',     min: 0,   max: 500,  step: 10,  unit: 'ms' },
+    },
+  },
+  confetti: {
+    label: '紙吹雪',
+    flat: true,
+    fields: {
+      burstCount: { type: 'number', label: 'バースト粒子数',            min: 0, max: 200, step: 5 },
+      snowRate:   { type: 'number', label: '降雪レート（粒/フレーム）', min: 0, max: 20,  step: 1 },
     },
   },
 }

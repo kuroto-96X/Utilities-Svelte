@@ -92,8 +92,6 @@
   let pendingMode = $state<1 | 3>(_sets.pendingMode)
   let animEnabled = $state(_sets.animEnabled)
   let confettiEnabled = $state(_sets.confettiEnabled)
-  let confettiBurstCount = $state(_sets.confettiBurstCount)
-  let confettiSnowRate = $state(_sets.confettiSnowRate)
   let dragInfo = $state<DragInfo | null>(null)
   let dropTarget = $state<{ pile: 'tableau' | 'foundation'; index: number } | null>(null)
   let flyCard = $state<FlyCard | null>(null)
@@ -146,7 +144,7 @@
     try { localStorage.setItem('solitaire-game', JSON.stringify({ state: { ...state, history: [] }, undoCount, hintCount })) } catch {}
   })
   $effect(() => {
-    try { localStorage.setItem('solitaire-settings', JSON.stringify({ useSeed, seedInput, pendingMode, animEnabled, confettiEnabled, confettiBurstCount, confettiSnowRate })) } catch {}
+    try { localStorage.setItem('solitaire-settings', JSON.stringify({ useSeed, seedInput, pendingMode, animEnabled, confettiEnabled })) } catch {}
   })
 
 
@@ -426,7 +424,7 @@
     }
   }
 
-  function loadSavedSettings(defaultSeed: number, defaultDrawMode: 1 | 3): { useSeed: boolean; seedInput: string; pendingMode: 1 | 3; animEnabled: boolean; confettiEnabled: boolean; confettiBurstCount: number; confettiSnowRate: number } {
+  function loadSavedSettings(defaultSeed: number, defaultDrawMode: 1 | 3): { useSeed: boolean; seedInput: string; pendingMode: 1 | 3; animEnabled: boolean; confettiEnabled: boolean } {
     try {
       const saved = localStorage.getItem('solitaire-settings')
       if (saved) {
@@ -437,12 +435,10 @@
           pendingMode: (p.pendingMode === 1 || p.pendingMode === 3) ? p.pendingMode as 1 | 3 : defaultDrawMode,
           animEnabled: typeof p.animEnabled === 'boolean' ? p.animEnabled : true,
           confettiEnabled: typeof p.confettiEnabled === 'boolean' ? p.confettiEnabled : true,
-          confettiBurstCount: typeof p.confettiBurstCount === 'number' ? p.confettiBurstCount : 40,
-          confettiSnowRate: typeof p.confettiSnowRate === 'number' ? p.confettiSnowRate : 2,
         }
       }
     } catch {}
-    return { useSeed: false, seedInput: String(defaultSeed), pendingMode: defaultDrawMode, animEnabled: true, confettiEnabled: true, confettiBurstCount: 40, confettiSnowRate: 2 }
+    return { useSeed: false, seedInput: String(defaultSeed), pendingMode: defaultDrawMode, animEnabled: true, confettiEnabled: true }
   }
 
   function loadTop10(): ScoreEntry[] {
@@ -811,7 +807,7 @@
     confettiCanvas.width = W
     confettiCanvas.height = H
 
-    const bc = confettiBurstCount
+    const bc = animFile.confetti.burstCount
     const bursts: ConfettiParticle[] = [
       // 下からのクラッカー（上向き）
       ...createCrackerBurst(W * 0.05, H * 0.92, -2, 14, -22, -6, bc),
@@ -831,7 +827,7 @@
       ctx.clearRect(0, 0, W, H)
 
       if (showVictory) {
-        for (let i = 0; i < confettiSnowRate; i++) {
+        for (let i = 0; i < animFile.confetti.snowRate; i++) {
           snow.push({
             x: Math.random() * W,
             y: -15,
@@ -1451,26 +1447,14 @@
     </div>
 
     <!-- アニメーション・紙吹雪設定（右下） -->
-    <div class="absolute bottom-3 right-4 flex flex-col items-end gap-1">
+    <div class="absolute bottom-3 right-4 flex items-center gap-3">
+      <div class="flex items-center gap-1">
+        <input type="checkbox" id="conf-toggle" bind:checked={confettiEnabled} class="w-3.5 h-3.5 accent-green-400 cursor-pointer" />
+        <label for="conf-toggle" class="text-xs text-green-400/60 font-mono select-none cursor-pointer">CONF</label>
+      </div>
       <div class="flex items-center gap-1.5">
         <input type="checkbox" id="anim-toggle" bind:checked={animEnabled} class="w-3.5 h-3.5 accent-green-400 cursor-pointer" />
         <label for="anim-toggle" class="text-xs text-green-400/60 font-mono select-none cursor-pointer">ANIM</label>
-      </div>
-      <div class="flex items-center gap-2 flex-wrap justify-end">
-        <div class="flex items-center gap-1">
-          <input type="checkbox" id="conf-toggle" bind:checked={confettiEnabled} class="w-3.5 h-3.5 accent-green-400 cursor-pointer" />
-          <label for="conf-toggle" class="text-xs text-green-400/60 font-mono select-none cursor-pointer">CONF</label>
-        </div>
-        <div class="flex items-center gap-1">
-          <label for="conf-burst" class="text-xs text-green-400/60 font-mono select-none">BURST</label>
-          <input type="number" id="conf-burst" bind:value={confettiBurstCount} min="0" max="100" step="5"
-            class="w-12 text-xs font-mono text-green-400/60 bg-transparent border border-green-400/30 rounded px-1 text-right" />
-        </div>
-        <div class="flex items-center gap-1">
-          <label for="conf-snow" class="text-xs text-green-400/60 font-mono select-none">SNOW</label>
-          <input type="number" id="conf-snow" bind:value={confettiSnowRate} min="0" max="20" step="1"
-            class="w-10 text-xs font-mono text-green-400/60 bg-transparent border border-green-400/30 rounded px-1 text-right" />
-        </div>
       </div>
     </div>
     </div>

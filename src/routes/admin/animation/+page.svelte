@@ -38,6 +38,7 @@
       sparkle:      base.sparkle[getSizeFor('sparkle')],
       scoreDelta:   base.scoreDelta[getSizeFor('scoreDelta')],
       finale:       base.finale[getSizeFor('finale')],
+      confetti:     base.confetti,
     }
   })
 
@@ -46,20 +47,31 @@
     if (!config) return false
     const sizes: AnimSize[] = ['large', 'medium', 'small']
     for (const [sectionKey, section] of Object.entries(animConfigSchema)) {
-      for (const size of sizes) {
+      if (section.flat) {
+        // フラットセクション: サイズなしで直接検証
         for (const [fieldKey, fieldSchema] of Object.entries(section.fields)) {
           if (fieldSchema.type === 'number') {
-            const val = (config as unknown as Record<string, Record<string, Record<string, number>>>)[sectionKey]?.[size]?.[fieldKey]
+            const val = (config as unknown as Record<string, Record<string, number>>)[sectionKey]?.[fieldKey]
             if (val === undefined) continue
             if (val < fieldSchema.min || val > fieldSchema.max) return true
-          } else if (fieldSchema.type === 'array') {
-            const arr = (config as unknown as Record<string, Record<string, Record<string, Array<Record<string, number>>>>>)[sectionKey]?.[size]?.[fieldKey]
-            if (!Array.isArray(arr)) continue
-            for (const row of arr) {
-              for (const [colKey, colSchema] of Object.entries(fieldSchema.columns)) {
-                const v = row[colKey]
-                if (v === undefined) continue
-                if (v < colSchema.min || v > colSchema.max) return true
+          }
+        }
+      } else {
+        for (const size of sizes) {
+          for (const [fieldKey, fieldSchema] of Object.entries(section.fields)) {
+            if (fieldSchema.type === 'number') {
+              const val = (config as unknown as Record<string, Record<string, Record<string, number>>>)[sectionKey]?.[size]?.[fieldKey]
+              if (val === undefined) continue
+              if (val < fieldSchema.min || val > fieldSchema.max) return true
+            } else if (fieldSchema.type === 'array') {
+              const arr = (config as unknown as Record<string, Record<string, Record<string, Array<Record<string, number>>>>>)[sectionKey]?.[size]?.[fieldKey]
+              if (!Array.isArray(arr)) continue
+              for (const row of arr) {
+                for (const [colKey, colSchema] of Object.entries(fieldSchema.columns)) {
+                  const v = row[colKey]
+                  if (v === undefined) continue
+                  if (v < colSchema.min || v > colSchema.max) return true
+                }
               }
             }
           }
@@ -124,12 +136,28 @@
     arr.splice(rowIndex, 1)
   }
 
+  function getFlatNumberValue(sectionKey: string, fieldKey: string): number {
+    if (!config) return 0
+    return (config as unknown as Record<string, Record<string, number>>)[sectionKey]?.[fieldKey] ?? 0
+  }
+
+  function setFlatNumberValue(sectionKey: string, fieldKey: string, value: number) {
+    if (!config) return
+    if (Number.isNaN(value)) return
+    ;(config as unknown as Record<string, Record<string, number>>)[sectionKey][fieldKey] = value
+  }
+
   function resetSection(sectionKey: string) {
     if (!config) return
-    const size = getSizeFor(sectionKey)
     const defaults = DEFAULT_ANIM_CONFIG_FILE as Record<string, Record<string, unknown>>
     const configSection = config as Record<string, Record<string, unknown>>
-    configSection[sectionKey][size] = JSON.parse(JSON.stringify(defaults[sectionKey][size]))
+    const section = animConfigSchema[sectionKey]
+    if (section?.flat) {
+      configSection[sectionKey] = JSON.parse(JSON.stringify(defaults[sectionKey]))
+    } else {
+      const size = getSizeFor(sectionKey)
+      configSection[sectionKey][size] = JSON.parse(JSON.stringify((defaults[sectionKey] as Record<string, unknown>)[size]))
+    }
   }
 
   // ─── API ─────────────────────────────────────────────────
@@ -348,6 +376,7 @@
             {#if !collapsed[sectionKey]}
               <div class="px-4 pb-4 space-y-3 border-t border-slate-100">
 
+                {#if !section.flat}
                 <!-- Size tabs -->
                 <div class="flex gap-1 mb-3 pt-3">
                   {#each (['large', 'medium', 'small'] as AnimSize[]) as size}
@@ -359,12 +388,13 @@
                     </button>
                   {/each}
                 </div>
+                {/if}
 
                 {#each Object.entries(section.fields) as [fieldKey, fieldSchema] (fieldKey)}
 
                   {#if fieldSchema.type === 'number'}
                     <!-- Number field -->
-                    {@const val = getNumberValue(sectionKey, fieldKey)}
+                    {@const val = section.flat ? getFlatNumberValue(sectionKey, fieldKey) : getNumberValue(sectionKey, fieldKey)}
                     {@const outOfRange = isOutOfRange(val, fieldSchema)}
                     <div class="flex items-center gap-2 pt-2">
                       <span class="text-xs text-slate-500 w-28 shrink-0">{fieldSchema.label}</span>
@@ -374,7 +404,9 @@
                         max={fieldSchema.max}
                         step={fieldSchema.step}
                         value={val}
-                        oninput={(e) => setNumberValue(sectionKey, fieldKey, parseFloat((e.target as HTMLInputElement).value))}
+                        oninput={(e) => section.flat
+                          ? setFlatNumberValue(sectionKey, fieldKey, parseFloat((e.target as HTMLInputElement).value))
+                          : setNumberValue(sectionKey, fieldKey, parseFloat((e.target as HTMLInputElement).value))}
                         class="flex-1 h-1.5 accent-teal-600 cursor-pointer"
                       />
                       <input
@@ -383,7 +415,9 @@
                         max={fieldSchema.max}
                         step={fieldSchema.step}
                         value={val}
-                        oninput={(e) => setNumberValue(sectionKey, fieldKey, parseFloat((e.target as HTMLInputElement).value))}
+                        oninput={(e) => section.flat
+                          ? setFlatNumberValue(sectionKey, fieldKey, parseFloat((e.target as HTMLInputElement).value))
+                          : setNumberValue(sectionKey, fieldKey, parseFloat((e.target as HTMLInputElement).value))}
                         class="w-20 text-xs text-right border rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 {outOfRange ? 'border-red-400 bg-red-50 ring-red-400' : 'border-slate-200 focus:ring-teal-400'}"
                       />
                       {#if fieldSchema.unit}
@@ -463,7 +497,7 @@
                     onclick={() => resetSection(sectionKey)}
                     class="text-xs px-3 py-1 rounded border border-slate-200 text-slate-400 hover:border-amber-400 hover:text-amber-600 transition-colors"
                   >
-                    {getSizeFor(sectionKey) === 'large' ? '大' : getSizeFor(sectionKey) === 'medium' ? '中' : '小'}をデフォルトに戻す
+                    {section.flat ? '' : (getSizeFor(sectionKey) === 'large' ? '大' : getSizeFor(sectionKey) === 'medium' ? '中' : '小') + 'を'}デフォルトに戻す
                   </button>
                 </div>
 
