@@ -29,7 +29,7 @@
     "/investment/nisa-simple-calculator": false,
     "/investment/nisa-detailed-calculator": false,
     "/investment/nisa-accumulation-simulator": false,
-    "/game/solitaire": true,
+    "/game/solitaire": false,
     "/game/flick-typing": false
   }
 }
