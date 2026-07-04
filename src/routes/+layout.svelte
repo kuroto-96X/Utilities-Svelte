@@ -50,6 +50,15 @@
     ((siteConfig.toolDevStatus as Record<string, boolean>)[routeId] ?? false)
   )
 
+  // 現在ページがメニュー非表示（toolVisibility: false）なツールの配下かどうか
+  // （image-tools配下のサブページなど、site.tools未登録の子ルートにも継承させる）
+  let isNoIndex = $derived(
+    routeId !== null &&
+    (site.tools as unknown as Array<{ href: string }>).some(
+      t => (routeId === t.href || routeId!.startsWith(`${t.href}/`)) && !isVisible(t.href)
+    )
+  )
+
   // 開いているドロップダウンのカテゴリー id
   let openCategory = $state<string | null>(null)
 
@@ -62,6 +71,9 @@
 
 <svelte:head>
   <link rel="icon" href={siteIcon} />
+  {#if isNoIndex}
+    <meta name="robots" content="noindex" />
+  {/if}
 </svelte:head>
 
 <div class="gradient-bg flex flex-col sm:h-screen sm:overflow-hidden">

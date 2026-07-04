@@ -1,5 +1,3 @@
-export const prerender = false
-
 export function load() {
   return {
     title: 'SNS画像サイズ変換 - Instagram・X・YouTube対応の無料ツール',
