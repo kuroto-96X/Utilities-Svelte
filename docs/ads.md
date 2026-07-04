@@ -57,6 +57,19 @@
 
 **経緯**: 当初は非同期の`type: "action"`広告(admax_id: `3d1c39d315c6f0ce03951ff6bc2e34f6`)を使っていたが、その広告自体がページ全体を左にずらすレイアウト崩れを起こしたため、自前でfixed配置できるインライン広告タグに差し替えた。
 
+### 4. `AdSlotSideLeft.svelte` — 左サイド縦バー広告(PCのみ)
+
+パス: `src/lib/components/AdSlotSideLeft.svelte`
+
+- `AdSlotSide`と同一構造(160×600、`position: fixed`、上端から80px)で、左右を反転して画面左端から16pxに配置(`left-4`)
+- PCのみ表示(`hidden sm:block`)
+
+| admax_id | 種別 |
+|---|---|
+| `dd3a4be55bd43292951788645b89bdad` | banner(160×600) |
+
+**設置ページ**: トップページ(`/`)、BPM Tapper
+
 ## `ads.txt`
 
 パス: `src/routes/ads.txt/+server.ts`
@@ -67,10 +80,10 @@
 
 ## 広告表示の技術的な注意点
 
-- 各ページの`+page.svelte`に直接`<AdSlot />`/`<AdSlotBanner />`/`<AdSlotSide />`を置く設計にしている(共通レイアウトの`+layout.svelte`には置いていない)。これは、SvelteKitのクライアントサイド遷移(SPAナビゲーション)ではページコンポーネントごと破棄・再生成されるため、ページに広告タグを直接置くだけで遷移のたびに正しく再読み込みされることをPlaywrightで実測確認済みのため。仮に`+layout.svelte`側に広告を移動する場合は、レイアウトはページ遷移時に再生成されないため、`onMount`でのスクリプト動的挿入や`afterNavigate`での再読み込み処理が別途必要になる。
+- 各ページの`+page.svelte`に直接`<AdSlot />`/`<AdSlotBanner />`/`<AdSlotSide />`/`<AdSlotSideLeft />`を置く設計にしている(共通レイアウトの`+layout.svelte`には置いていない)。これは、SvelteKitのクライアントサイド遷移(SPAナビゲーション)ではページコンポーネントごと破棄・再生成されるため、ページに広告タグを直接置くだけで遷移のたびに正しく再読み込みされることをPlaywrightで実測確認済みのため。仮に`+layout.svelte`側に広告を移動する場合は、レイアウトはページ遷移時に再生成されないため、`onMount`でのスクリプト動的挿入や`afterNavigate`での再読み込み処理が別途必要になる。
 - 全ページをprerenderする構成([deployment.md](./deployment.md)参照)になっているため、トップページも含めて広告タグはビルド時に静的HTMLへ直接埋め込まれる(以前は`fallback`ファイルとの衝突でトップページの広告だけ消えるバグがあったが解消済み)。
 
 ## 新しいページに広告を追加する手順
 
-1. 対象の`+page.svelte`で、使いたい広告コンポーネント(`AdSlot` / `AdSlotBanner` / `AdSlotSide`)をimportする
+1. 対象の`+page.svelte`で、使いたい広告コンポーネント(`AdSlot` / `AdSlotBanner` / `AdSlotSide` / `AdSlotSideLeft`)をimportする
 2. 表示したい位置に配置するだけ。`adsEnabled`の判定は各コンポーネント内で完結しているので呼び出し側で気にする必要はない
