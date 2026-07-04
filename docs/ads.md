@@ -11,11 +11,11 @@
 
 ## 広告コンポーネント
 
-### 1. `AdSlot.svelte` — 下部バナー広告
+### 1. `AdSlot.svelte` — 下部広告(正方形型)
 
 パス: `src/lib/components/AdSlot.svelte`
 
-- ページ下部に「スポンサーリンク」ラベル付きで表示する横長バナー
+- ページ下部に「スポンサーリンク」ラベル付きで表示する**正方形型**広告(横長バナーではない)
 - PC用・スマホ用で別々の広告タグをCSS(`hidden sm:block` / `sm:hidden`、`sm`ブレークポイント=640px)で出し分け。両方のタグは常にDOM上に存在し、表示のみCSSで切り替える方式(レスポンシブ広告の標準的なやり方)
 - `flex justify-center` で中央寄せ
 
@@ -24,11 +24,24 @@
 | PC用 | `ffea59a79b77bc4160ffc29d36cc7305` |
 | スマホ用 | `09107acc80b232772e6dd49af94b902f` |
 
-**設置ページ**: トップページ(`/`)、BPM Tapper、Note Duration、Scale Visualizer
+**設置ページ**: トップページ(`/`)、BPM Tapper、Note Duration
 
 **設置方法**: 該当ページの`<script>`部で `import AdSlot from '$lib/components/AdSlot.svelte'` し、ページ下部に `<AdSlot />` を置くだけ。
 
-### 2. `AdSlotSide.svelte` — 右サイド縦バー広告(PCのみ)
+### 2. `AdSlotBanner.svelte` — 横長バナー広告(728×90、PCのみ)
+
+パス: `src/lib/components/AdSlotBanner.svelte`
+
+- 728×90のインライン横長バナー広告(admax type: `banner`)。スマホ用のタグは発行されていないため`hidden sm:flex sm:justify-center`でPCのみ表示
+- ドキュメントフロー内にそのまま配置する(`AdSlotSide`と違い`fixed`ではない)ので、コンテンツの一部として置きたい場所に置く
+
+| admax_id | 種別 |
+|---|---|
+| `cf791649e9fcf5651a3fd3f50faa8366` | banner(728×90) |
+
+**設置ページ**: Scale Visualizer(旧`AdSlot`から差し替え)
+
+### 3. `AdSlotSide.svelte` — 右サイド縦バー広告(PCのみ)
 
 パス: `src/lib/components/AdSlotSide.svelte`
 
@@ -54,10 +67,10 @@
 
 ## 広告表示の技術的な注意点
 
-- 各ページの`+page.svelte`に直接`<AdSlot />`/`<AdSlotSide />`を置く設計にしている(共通レイアウトの`+layout.svelte`には置いていない)。これは、SvelteKitのクライアントサイド遷移(SPAナビゲーション)ではページコンポーネントごと破棄・再生成されるため、ページに広告タグを直接置くだけで遷移のたびに正しく再読み込みされることをPlaywrightで実測確認済みのため。仮に`+layout.svelte`側に広告を移動する場合は、レイアウトはページ遷移時に再生成されないため、`onMount`でのスクリプト動的挿入や`afterNavigate`での再読み込み処理が別途必要になる。
+- 各ページの`+page.svelte`に直接`<AdSlot />`/`<AdSlotBanner />`/`<AdSlotSide />`を置く設計にしている(共通レイアウトの`+layout.svelte`には置いていない)。これは、SvelteKitのクライアントサイド遷移(SPAナビゲーション)ではページコンポーネントごと破棄・再生成されるため、ページに広告タグを直接置くだけで遷移のたびに正しく再読み込みされることをPlaywrightで実測確認済みのため。仮に`+layout.svelte`側に広告を移動する場合は、レイアウトはページ遷移時に再生成されないため、`onMount`でのスクリプト動的挿入や`afterNavigate`での再読み込み処理が別途必要になる。
 - 全ページをprerenderする構成([deployment.md](./deployment.md)参照)になっているため、トップページも含めて広告タグはビルド時に静的HTMLへ直接埋め込まれる(以前は`fallback`ファイルとの衝突でトップページの広告だけ消えるバグがあったが解消済み)。
 
 ## 新しいページに広告を追加する手順
 
-1. 対象の`+page.svelte`で `import AdSlot from '$lib/components/AdSlot.svelte'`(必要なら`AdSlotSide`も)
-2. 表示したい位置に `<AdSlot />` / `<AdSlotSide />` を配置するだけ。`adsEnabled`の判定は各コンポーネント内で完結しているので呼び出し側で気にする必要はない
+1. 対象の`+page.svelte`で、使いたい広告コンポーネント(`AdSlot` / `AdSlotBanner` / `AdSlotSide`)をimportする
+2. 表示したい位置に配置するだけ。`adsEnabled`の判定は各コンポーネント内で完結しているので呼び出し側で気にする必要はない
