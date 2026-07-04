@@ -1519,25 +1519,27 @@
   <!-- フライングカード -->
   {#if flyCard}
     <div
-      class="pointer-events-none fixed z-[500] w-16 h-[98px] overflow-hidden rounded-lg"
-      style="left:{flyCard.moving ? flyCard.toX : flyCard.fromX}px; top:{flyCard.moving ? flyCard.toY : flyCard.fromY}px; transition: left {flyCard.duration}ms cubic-bezier(0.4,0,0.2,1), top {flyCard.duration}ms cubic-bezier(0.4,0,0.2,1);"
+      class="pointer-events-none fixed z-[500] overflow-hidden rounded-lg"
+      style="left:{flyCard.moving ? flyCard.toX : flyCard.fromX}px; top:{flyCard.moving ? flyCard.toY : flyCard.fromY}px; width:{64 * scale}px; height:{98 * scale}px; transition: left {flyCard.duration}ms cubic-bezier(0.4,0,0.2,1), top {flyCard.duration}ms cubic-bezier(0.4,0,0.2,1);"
     >
-      {#if flyCard.flip}
-        <div
-          class="absolute inset-0 rounded-lg border border-indigo-500/50"
-          style="{CARD_BACK_STYLE} transition: transform {Math.round(flyCard.duration/2)}ms linear; transform: perspective(600px) rotateY({flyCard.moving ? 90 : 0}deg);"
-        ></div>
-        <div
-          class="absolute inset-0"
-          style="transition: transform {Math.round(flyCard.duration/2)}ms linear {Math.round(flyCard.duration/2)}ms; transform: perspective(600px) rotateY({flyCard.moving ? 0 : -90}deg);"
-        >
-          {@render cardFace(flyCard.card, true)}
-        </div>
-      {:else}
-        <div class="absolute inset-0">
-          {@render cardFace(flyCard.card, true)}
-        </div>
-      {/if}
+      <div style="transform: scale({scale}); transform-origin: top left; width: 64px; height: 98px;">
+        {#if flyCard.flip}
+          <div
+            class="absolute inset-0 rounded-lg border border-indigo-500/50"
+            style="{CARD_BACK_STYLE} transition: transform {Math.round(flyCard.duration/2)}ms linear; transform: perspective(600px) rotateY({flyCard.moving ? 90 : 0}deg);"
+          ></div>
+          <div
+            class="absolute inset-0"
+            style="transition: transform {Math.round(flyCard.duration/2)}ms linear {Math.round(flyCard.duration/2)}ms; transform: perspective(600px) rotateY({flyCard.moving ? 0 : -90}deg);"
+          >
+            {@render cardFace(flyCard.card, true)}
+          </div>
+        {:else}
+          <div class="absolute inset-0">
+            {@render cardFace(flyCard.card, true)}
+          </div>
+        {/if}
+      </div>
     </div>
   {/if}
 
