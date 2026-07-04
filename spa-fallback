@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="text-scale" content="scale" />
+		<link href="/_app/immutable/entry/start.BhIcgQM-.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/kEhwRII4.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/xnGQyWE4.js" rel="modulepreload">
+		<link href="/_app/immutable/entry/app.B9envQfA.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/kNaey6uv.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/xihTtKlq.js" rel="modulepreload">
+		<link href="/_app/immutable/nodes/0.XtEIN_bZ.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BBr6Xyn7.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/CUz7uLPn.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/Bc8IM6OO.js" rel="modulepreload">
+		
+		<link href="/_app/immutable/assets/0.5Sn7N9bN.css" rel="stylesheet">
+	<!-- Google tag (gtag.js) -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-WK5035WP30"></script>
+	<script>
+	  window.dataLayer = window.dataLayer || [];
+	  function gtag(){dataLayer.push(arguments);}
+	  gtag('js', new Date());
+
+	  gtag('config', 'G-WK5035WP30');
+	</script>
+		<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1800164519215799"
+     crossorigin="anonymous"></script>
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">
+			<script>
+				{
+					
+					__sveltekit_8sjc2g = {
+						base: ""
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("/_app/immutable/entry/start.BhIcgQM-.js"),
+						import("/_app/immutable/entry/app.B9envQfA.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element);
+					});
+				}
+			</script>
+		</div>
+	</body>
+</html>
