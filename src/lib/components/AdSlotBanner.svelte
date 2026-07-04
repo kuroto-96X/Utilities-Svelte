@@ -12,4 +12,11 @@
     </script>
     <script type="text/javascript" charset="utf-8" src="https://adm.shinobi.jp/st/t.js" async></script>
   </div>
+  <div class="flex justify-center sm:hidden">
+    <div class="admax-ads" data-admax-id="09107acc80b232772e6dd49af94b902f" style="display:inline-block;"></div>
+    <script type="text/javascript">
+      (admaxads = window.admaxads || []).push({admax_id: "09107acc80b232772e6dd49af94b902f", type: "banner"});
+    </script>
+    <script type="text/javascript" charset="utf-8" src="https://adm.shinobi.jp/st/t.js" async></script>
+  </div>
 {/if}
