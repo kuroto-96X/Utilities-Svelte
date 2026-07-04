@@ -4,6 +4,7 @@
   import BpmInput from '$lib/components/music/BpmInput.svelte'
   import NoteDurationTable from '$lib/components/music/NoteDurationTable.svelte'
   import NoteReverseSearch from '$lib/components/music/NoteReverseSearch.svelte'
+  import AdSlot from '$lib/components/AdSlot.svelte'
 
   let bpm = $state(DEFAULT_BPM)
   let activeTab = $state<'bpm' | 'reverse'>('bpm')
@@ -59,6 +60,8 @@
 
     <NoteDurationTable {durations} />
 
+    <AdSlot />
+
     <!-- 画面説明 -->
     <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3 text-sm text-slate-600">
       <h2 class="font-semibold text-slate-700">使い方</h2>
@@ -84,6 +87,8 @@
     </div>
   {:else}
     <NoteReverseSearch bind:currentMs={reverseMs} />
+
+    <AdSlot />
 
     <!-- 画面説明 -->
     <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3 text-sm text-slate-600">
