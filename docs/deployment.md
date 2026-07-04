@@ -25,10 +25,13 @@ jobs:
       - npm install
       - npm run build          # dist/ に静的ファイルを生成
       - rm -rf dist/admin      # /admin配下(管理画面)は本番デプロイから除外
+      - node scripts/remove-hidden-pages.js   # メニュー非表示ページ(toolVisibility: false)を本番デプロイから除外
       - peaceiris/actions-gh-pages で dist/ を deploy ブランチへpush
 ```
 
 `/admin`・`/admin/menu`・`/admin/animation` は認証なしで誰でも開ける管理画面のため、意図的に本番デプロイの成果物から除外している。ローカル(`npm run dev`)では引き続き通常通り使える。他のページから`/admin`へのリンクは一切無いため、除外しても他ページに影響はない。
+
+`scripts/remove-hidden-pages.js` は `src/lib/site.config.json` の `toolVisibility` を読み、`false` になっているツールのビルド成果物を `dist/` から削除する。`/admin/menu` の管理画面でツールの表示・非表示を切り替えると、次のデプロイで自動的にこのスクリプトの除外対象も追従する(ワークフロー側に個別のパスをハードコードしていないため、メンテナンス不要)。
 
 ### 補足: `static/404.html` が必要な理由
 
