@@ -232,7 +232,7 @@
     await Promise.all(animPromises)
     showHints = false; selected = null
     autoCompleting = false
-    checkAfterMove()
+    checkAfterMove(true)  // confetti はフィナーレアニメーション開始時に起動済み
   }
 
   // ---- ゲーム操作 ----
@@ -676,6 +676,7 @@
     for (let i = 0; i < fc.shakeCount; i++) {
       setTimeout(() => triggerScreenShake(fc.shakeAmplify, shakeCfg), i * fc.shakeIntervalMs)
     }
+    launchConfetti()
 
     if (delta > 0) triggerScoreEffects(delta, getDestEl('foundation', foundIdx))
     triggerScoreDisplayEffect(delta)
@@ -896,14 +897,14 @@
     }
   }
 
-  function checkAfterMove() {
+  function checkAfterMove(skipConfetti = false) {
     if (isVictory(state)) {
       stopTimer()
       const bd = computeClearBreakdown()
       clearBreakdown = bd
       clearRank = saveToTop10(bd.finalScore, state.elapsed, state.drawMode, state.seed)
       showVictory = true
-      launchConfetti()
+      if (!skipConfetti) launchConfetti()
       return
     }
     if (!autoCompleting && canAutoComplete(state)) startAutoComplete()
