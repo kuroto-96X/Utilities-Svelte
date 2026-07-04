@@ -25,7 +25,7 @@
 | PC用 | `ffea59a79b77bc4160ffc29d36cc7305` | 300×250 |
 | スマホ用 | `09107acc80b232772e6dd49af94b902f` | 指定なし(可変) |
 
-**設置ページ**: トップページ(`/`)、BPM Tapper、Note Duration、Color32/Color変換(説明文の直前)、ソリティア(説明文の直前)
+**設置ページ**: BPM Tapper、Note Duration、Color32/Color変換(説明文の直前)、ソリティア(説明文の直前)
 
 **設置方法**: 該当ページの`<script>`部で `import AdSlot from '$lib/components/AdSlot.svelte'` し、ページ下部に `<AdSlot />` を置くだけ。
 
@@ -41,7 +41,7 @@
 | PC用 | `cf791649e9fcf5651a3fd3f50faa8366` | banner(728×90) |
 | スマホ用 | `09107acc80b232772e6dd49af94b902f` | `AdSlot`と共通、指定なし(可変) |
 
-**設置ページ**: Scale Visualizer(旧`AdSlot`から差し替え)、ヘボン式変換(変換表の直前)
+**設置ページ**: トップページ(`/`、旧`AdSlot`から差し替え)、Scale Visualizer(旧`AdSlot`から差し替え)、ヘボン式変換(変換表の直前)
 
 ### 3. `AdSlotSide.svelte` — 右サイド縦バー広告(PCのみ)
 
