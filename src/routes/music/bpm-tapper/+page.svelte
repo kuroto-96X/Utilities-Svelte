@@ -1,6 +1,7 @@
 <script lang="ts">
   import { DEFAULT_BPM } from '$lib/music/noteDuration'
   import AdSlot from '$lib/components/AdSlot.svelte'
+  import AdSlotSide from '$lib/components/AdSlotSide.svelte'
 
   type TapRecord = {
     index: number;
@@ -267,6 +268,7 @@
 </div>
 
 <AdSlot />
+<AdSlotSide />
 
 <!-- Description -->
 <div class="w-full max-w-sm mx-auto px-4 py-5 mt-2 border-t border-slate-100">
