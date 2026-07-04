@@ -19,6 +19,8 @@
     type CaseMode,
     type VuStyle
   } from '$lib/programming/hepburn/settings'
+  import AdSlotSide from '$lib/components/AdSlotSide.svelte'
+  import AdSlotSideLeft from '$lib/components/AdSlotSideLeft.svelte'
 
   // --- 状態 ---
   let inputText = $state('')
@@ -324,6 +326,9 @@
 <svelte:head>
   <title>ヘボン式変換 — Utilities</title>
 </svelte:head>
+
+<AdSlotSide />
+<AdSlotSideLeft />
 
 <div class="max-w-4xl mx-auto sm:px-4 py-6">
 <div class="bg-white sm:rounded-xl sm:border sm:border-slate-200 sm:shadow-sm p-3 sm:p-6">

@@ -9,6 +9,8 @@
   } from '$lib/game/solitaire/engine'
   import animConfigJson from '$lib/game/solitaire/anim.config.json'
   import type { AnimConfigFile, AnimSize } from '$lib/game/solitaire/anim.config.schema'
+  import AdSlotSide from '$lib/components/AdSlotSide.svelte'
+  import AdSlotSideLeft from '$lib/components/AdSlotSideLeft.svelte'
 
   const animFile = animConfigJson as AnimConfigFile
 
@@ -1142,6 +1144,9 @@
     {/if}
   </div>
 {/snippet}
+
+<AdSlotSide />
+<AdSlotSideLeft />
 
 <div class="max-w-[560px] mx-auto px-4 py-4 flex flex-col gap-4 overflow-x-hidden">
 

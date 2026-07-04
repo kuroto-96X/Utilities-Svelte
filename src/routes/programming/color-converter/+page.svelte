@@ -4,6 +4,8 @@
     clamp, toHex2, parseHex,
     formatColor32, formatColorFloat, formatHex8, formatHex6, formatRgba
   } from '$lib/programming/colorConverter'
+  import AdSlotSide from '$lib/components/AdSlotSide.svelte'
+  import AdSlotSideLeft from '$lib/components/AdSlotSideLeft.svelte'
 
   let r = $state(255)
   let g = $state(0)
@@ -99,6 +101,9 @@
   <title>Color32 / Color 変換 | Unity カラーコンバーター | 96xtools</title>
   <meta name="description" content="Unity の Color32・Color・HEX を相互変換。new Color32()・new Color()・#RRGGBBAA をリアルタイムで変換してコピーできる無料ツール。" />
 </svelte:head>
+
+<AdSlotSide />
+<AdSlotSideLeft />
 
 <div class="max-w-2xl mx-auto px-4 py-6">
   <h1 class="text-xl font-bold text-slate-900">Color32 / Color 変換</h1>

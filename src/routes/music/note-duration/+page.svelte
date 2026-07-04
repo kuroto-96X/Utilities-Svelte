@@ -5,6 +5,8 @@
   import NoteDurationTable from '$lib/components/music/NoteDurationTable.svelte'
   import NoteReverseSearch from '$lib/components/music/NoteReverseSearch.svelte'
   import AdSlot from '$lib/components/AdSlot.svelte'
+  import AdSlotSide from '$lib/components/AdSlotSide.svelte'
+  import AdSlotSideLeft from '$lib/components/AdSlotSideLeft.svelte'
 
   let bpm = $state(DEFAULT_BPM)
   let activeTab = $state<'bpm' | 'reverse'>('bpm')
@@ -32,6 +34,9 @@
   <title>{pageTitle}</title>
   <meta name="description" content="BPMを入力するだけで、全音符から32分音符までの長さを秒・msで自動計算。付点・3連符にも対応した楽曲制作向けツール。" />
 </svelte:head>
+
+<AdSlotSide />
+<AdSlotSideLeft />
 
 <div class="max-w-lg mx-auto px-4 py-6 space-y-4">
   <!-- タブ切り替え -->
