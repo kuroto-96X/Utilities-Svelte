@@ -246,6 +246,23 @@
     </div>
   {/if}
 
+  <!-- Links -->
+  <div class="w-full max-w-sm px-4 pt-3 pb-4 mt-2 border-t border-slate-100">
+    <p class="text-xs text-slate-400 text-center mb-2">
+      BPM <span class="font-mono font-semibold text-slate-600">{mainBpm !== null ? Math.round(mainBpm) : DEFAULT_BPM}</span> を引き継いで開く
+    </p>
+    <div class="flex justify-center gap-6">
+      <a
+        href="/music/note-duration?bpm={mainBpm !== null ? Math.round(mainBpm) : DEFAULT_BPM}"
+        class="text-sm font-medium text-teal-700 hover:underline"
+      >Note Duration →</a>
+      <a
+        href="/music/scale-visualizer?bpm={mainBpm !== null ? Math.round(mainBpm) : DEFAULT_BPM}"
+        class="text-sm font-medium text-teal-700 hover:underline"
+      >Scale Visualizer →</a>
+    </div>
+  </div>
+
 </div>
 </div>
 
@@ -264,21 +281,6 @@
     左端では全タップの平均、右端では直近1タップのみの瞬間BPMを表示します。
     グラフの青い折れ線が平均範囲、灰色が対象外のタップを示しています。
   </p>
-  <div class="mt-4 pt-3 border-t border-slate-100">
-    <p class="text-xs text-slate-400 text-center mb-2">
-      BPM <span class="font-mono font-semibold text-slate-600">{mainBpm !== null ? Math.round(mainBpm) : DEFAULT_BPM}</span> を引き継いで開く
-    </p>
-    <div class="flex justify-center gap-6">
-      <a
-        href="/music/note-duration?bpm={mainBpm !== null ? Math.round(mainBpm) : DEFAULT_BPM}"
-        class="text-sm font-medium text-teal-700 hover:underline"
-      >Note Duration →</a>
-      <a
-        href="/music/scale-visualizer?bpm={mainBpm !== null ? Math.round(mainBpm) : DEFAULT_BPM}"
-        class="text-sm font-medium text-teal-700 hover:underline"
-      >Scale Visualizer →</a>
-    </div>
-  </div>
 </div>
 
 </div>
