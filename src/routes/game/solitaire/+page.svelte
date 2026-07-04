@@ -1202,7 +1202,7 @@
       bind:this={gameEl}
       bind:offsetHeight={gameElHeight}
       class="bg-green-800 rounded-xl p-4 pb-10 select-none relative"
-      style="min-height: 520px; width: 528px; transform: scale({scale}); transform-origin: top left;"
+      style="min-height: 520px; width: 528px; transform: scale({scale}); transform-origin: top left; touch-action: none;"
       class:pointer-events-none={isVictory(state) || isAnimating}
     >
 
