@@ -338,7 +338,7 @@
     })
   }
 
-  function previewConfetti() {
+  function runConfettiPreview(withCrackers: boolean, withSnow: boolean) {
     const { count: bc, speed: spd, spreadDeg: spread } = cfg.confettiCracker
     const sr = cfg.confettiSnow.rate
     const canvas = document.createElement('canvas')
@@ -348,20 +348,20 @@
     document.body.appendChild(canvas)
     const ctx = canvas.getContext('2d')!
 
-    const bursts: ConfettiParticle[] = [
+    const bursts: ConfettiParticle[] = withCrackers ? [
       ...createCrackerBurst(W * 0.05, H * 0.92,  23, spd, spread, bc),
       ...createCrackerBurst(W * 0.95, H * 0.92, 337, spd, spread, bc),
       ...createCrackerBurst(W * 0.5,  H * 0.98,   0, spd, spread, bc),
       ...createCrackerBurst(W * 0.05, H * 0.08, 157, spd, spread, bc),
       ...createCrackerBurst(W * 0.95, H * 0.08, 203, spd, spread, bc),
       ...createCrackerBurst(W * 0.5,  H * 0.02, 180, spd, spread, bc),
-    ]
+    ] : []
     const snow: ConfettiParticle[] = []
-    const snowEndMs = Date.now() + 3000
+    const snowEndMs = withSnow ? Date.now() + 3000 : 0
 
     function renderFrame() {
       ctx.clearRect(0, 0, W, H)
-      const snowActive = Date.now() < snowEndMs
+      const snowActive = withSnow && Date.now() < snowEndMs
       if (snowActive) {
         for (let i = 0; i < sr; i++) {
           snow.push({ x: Math.random() * W, y: -15, vx: (Math.random() - 0.5) * 2.5, vy: 2 + Math.random() * 2.5,
@@ -393,6 +393,10 @@
     }
     requestAnimationFrame(renderFrame)
   }
+
+  const previewCracker  = () => runConfettiPreview(true,  false)
+  const previewSnow     = () => runConfettiPreview(false, true)
+  const previewConfetti = () => runConfettiPreview(true,  true)
 </script>
 
 <!-- ========================================================
@@ -659,10 +663,22 @@
           ▶ Finale
         </button>
         <button
+          onclick={previewCracker}
+          class="text-xs px-3 py-1.5 rounded-lg bg-pink-500 text-white hover:bg-pink-600 transition-colors"
+        >
+          🎉 Cracker
+        </button>
+        <button
+          onclick={previewSnow}
+          class="text-xs px-3 py-1.5 rounded-lg bg-pink-500 text-white hover:bg-pink-600 transition-colors"
+        >
+          ❄️ Snow
+        </button>
+        <button
           onclick={previewConfetti}
           class="text-xs px-3 py-1.5 rounded-lg bg-pink-500 text-white hover:bg-pink-600 transition-colors"
         >
-          🎊 Confetti
+          🎊 Both
         </button>
       </div>
     </div>
