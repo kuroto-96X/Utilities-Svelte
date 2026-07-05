@@ -1,4 +1,6 @@
-import { patterns, adjectives, nouns, subjects, locations, verbPhrases } from './templates'
+import { type PatternPart, type WordPart, patterns, adjectives, nouns, subjects, locations, verbPhrases } from './templates'
+
+export type { WordPart }
 
 export const easyWords: string[] = [
   'ねこ', 'いぬ', 'くま', 'さる', 'しか', 'ぞう', 'とら', 'へび',
@@ -13,13 +15,18 @@ export const easyWords: string[] = [
   'ひまわり', 'こうもり', 'かたつむり',
 ]
 
-export function pickQuestions(pool: string[], count: number): string[] {
-  const arr = [...pool]
-  for (let i = arr.length - 1; i > 0; i--) {
+export type GeneratedQuestion = {
+  parts: WordPart[]
+  reading: string
+}
+
+export function pickQuestions<T>(pool: T[], count: number): T[] {
+  const copy = [...pool]
+  for (let i = copy.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
-    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+    ;[copy[i], copy[j]] = [copy[j], copy[i]]
   }
-  return arr.slice(0, Math.min(count, arr.length))
+  return copy.slice(0, count)
 }
 
 function mulberry32(seed: number): () => number {
@@ -35,25 +42,39 @@ function mulberry32(seed: number): () => number {
 export function generatePool(
   count: number,
   seed?: number,
-): { sentences: string[]; seed: number } {
+): { questions: GeneratedQuestion[]; seed: number } {
   const actualSeed = seed ?? ((Math.random() * 0xffffffff) >>> 0)
   const rand = mulberry32(actualSeed)
+  const pickWord = <T>(arr: T[]): T => arr[Math.floor(rand() * arr.length)]
 
-  const pick = <T>(arr: T[]): T => arr[Math.floor(rand() * arr.length)]
+  const slotMap: Record<string, WordPart[][]> = {
+    adj: adjectives,
+    noun: nouns,
+    subject: subjects,
+    location: locations,
+    verb: verbPhrases,
+  }
 
-  const generated = new Set<string>()
+  const generated = new Map<string, GeneratedQuestion>()
   const maxAttempts = count * 10
 
   for (let i = 0; i < maxAttempts && generated.size < count; i++) {
-    const pattern = pick(patterns)
-    const sentence = pattern
-      .replace(/\{adj\}/g, pick(adjectives))
-      .replace(/\{noun\}/g, pick(nouns))
-      .replace(/\{subject\}/g, pick(subjects))
-      .replace(/\{location\}/g, pick(locations))
-      .replace(/\{verb\}/g, pick(verbPhrases))
-    generated.add(sentence)
+    const pattern = pickWord(patterns)
+    const parts: WordPart[] = []
+
+    for (const part of pattern) {
+      if (part.type === 'slot') {
+        parts.push(...pickWord(slotMap[part.key]))
+      } else {
+        parts.push(part)
+      }
+    }
+
+    const reading = parts.map((p) => (p.type === 'ruby' ? p.reading : p.text)).join('')
+    if (!generated.has(reading)) {
+      generated.set(reading, { parts, reading })
+    }
   }
 
-  return { sentences: [...generated], seed: actualSeed }
+  return { questions: [...generated.values()], seed: actualSeed }
 }

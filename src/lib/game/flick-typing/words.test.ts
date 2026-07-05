@@ -48,45 +48,55 @@ describe('pickQuestions', () => {
 })
 
 describe('generatePool', () => {
-  test('指定件数以下の文を生成する', () => {
-    const { sentences } = generatePool(10, 42)
-    expect(sentences.length).toBeGreaterThan(0)
-    expect(sentences.length).toBeLessThanOrEqual(10)
+  test('GeneratedQuestion の reading は parts の reading/text を結合したものと一致する', () => {
+    const { questions } = generatePool(10, 42)
+    for (const q of questions) {
+      const reconstructed = q.parts
+        .map((p) => (p.type === 'ruby' ? p.reading : p.text))
+        .join('')
+      expect(reconstructed).toBe(q.reading)
+    }
   })
 
-  test('同じシードは同じ結果を返す', () => {
-    const { sentences: a } = generatePool(20, 12345)
-    const { sentences: b } = generatePool(20, 12345)
-    expect(a).toEqual(b)
+  test('reading はひらがなのみ', () => {
+    const { questions } = generatePool(30, 123)
+    for (const q of questions) {
+      expect(/^[ぁ-ん]+$/.test(q.reading)).toBe(true)
+    }
   })
 
-  test('異なるシードは異なる結果を返す', () => {
-    const { sentences: a } = generatePool(20, 11111)
-    const { sentences: b } = generatePool(20, 99999)
-    expect(a).not.toEqual(b)
+  test('同じシードで同じ reading が生成される', () => {
+    const { questions: a } = generatePool(10, 999)
+    const { questions: b } = generatePool(10, 999)
+    expect(a.map((q) => q.reading)).toEqual(b.map((q) => q.reading))
   })
 
-  test('重複がない', () => {
-    const { sentences } = generatePool(50, 42)
-    expect(new Set(sentences).size).toBe(sentences.length)
+  test('異なるシードで異なる reading が生成される', () => {
+    const { questions: a } = generatePool(10, 1)
+    const { questions: b } = generatePool(10, 2)
+    expect(a.map((q) => q.reading)).not.toEqual(b.map((q) => q.reading))
   })
 
-  test('指定したシードを返す', () => {
-    const { seed } = generatePool(10, 99999)
-    expect(seed).toBe(99999)
+  test('seed を省略するとランダムに生成され戻り値に seed が含まれる', () => {
+    const { questions, seed } = generatePool(5)
+    expect(seed).toBeGreaterThanOrEqual(0)
+    expect(seed).toBeLessThanOrEqual(0xffffffff)
+    expect(questions.length).toBeGreaterThan(0)
   })
 
-  test('シードなしでも seed を返す', () => {
-    const { seed } = generatePool(10)
-    expect(typeof seed).toBe('number')
-    expect(Number.isFinite(seed)).toBe(true)
+  test('重複する reading が含まれない', () => {
+    const { questions } = generatePool(50, 777)
+    const readings = questions.map((q) => q.reading)
+    expect(new Set(readings).size).toBe(readings.length)
   })
 
-  test('すべてひらがなのみ', () => {
-    const hiraganaOnly = /^[ぁ-ゖ]+$/
-    const { sentences } = generatePool(100, 42)
-    sentences.forEach(s => {
-      expect(s).toMatch(hiraganaOnly)
-    })
+  test('pickQuestions は GeneratedQuestion[] に対しても動作する', () => {
+    const { questions } = generatePool(100, 42)
+    const picked = pickQuestions(questions, 5)
+    expect(picked).toHaveLength(5)
+    for (const q of picked) {
+      expect(q.reading).toBeTruthy()
+      expect(q.parts.length).toBeGreaterThan(0)
+    }
   })
 })
