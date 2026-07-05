@@ -40,6 +40,16 @@
   // ---- 派生値 ----
   let currentQuestion = $derived(questions[currentIndex] ?? '')
   let best = $derived(getBest(difficulty, count))
+  let matchedLength = $derived((() => {
+    let i = 0
+    while (
+      i < inputValue.length &&
+      i < currentQuestion.length &&
+      inputValue[i] === currentQuestion[i]
+    ) { i++ }
+    return i
+  })())
+  let hasError = $derived(inputValue.length > matchedLength)
 
   const difficultyOptions: { value: Difficulty; label: string; sub: string }[] = [
     { value: 'easy', label: 'かんたん', sub: '単語' },
@@ -277,7 +287,11 @@
 
     <div class="bg-white border-2 border-teal-700 rounded-2xl py-8 px-4 text-center mt-2">
       <p class="text-xs text-slate-400 mb-2">お題</p>
-      <p class="text-4xl font-bold tracking-widest text-slate-800">{currentQuestion}</p>
+      <p class="text-4xl font-bold tracking-widest text-slate-800">
+        <span class="text-teal-700">{currentQuestion.slice(0, matchedLength)}</span><!--
+        --><span class={hasError ? 'text-red-500 underline underline-offset-4' : ''}>{currentQuestion[matchedLength] ?? ''}</span><!--
+        --><span class="text-slate-300">{currentQuestion.slice(matchedLength + 1)}</span>
+      </p>
     </div>
 
     <input
@@ -290,7 +304,9 @@
       autocomplete="off"
       autocorrect="off"
       autocapitalize="off"
-      class="border border-slate-300 rounded-xl px-4 py-3 text-lg outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-200 w-full"
+      class={hasError
+        ? 'border border-red-400 bg-red-50 rounded-xl px-4 py-3 text-lg outline-none focus:ring-0 w-full'
+        : 'border border-slate-300 rounded-xl px-4 py-3 text-lg outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-200 w-full'}
       placeholder="ここに入力..."
     />
 
