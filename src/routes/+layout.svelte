@@ -287,7 +287,7 @@
   </main>
 
   {#if activeCategory !== null && activeCategoryTools.length >= 1}
-    <div class="border-t border-slate-200 bg-white sm:flex-shrink-0">
+    <div class="rt-desktop-only border-t border-slate-200 bg-white sm:flex-shrink-0">
       <div class="max-w-4xl mx-auto px-4 py-2 flex items-center gap-2 flex-wrap">
         <span class="text-xs font-semibold text-slate-400 shrink-0">
           {activeCategoryLabel}
