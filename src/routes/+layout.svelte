@@ -5,6 +5,7 @@
   import { page } from '$app/state'
   import { site } from '$lib/site'
   import siteConfig from '$lib/site.config.json'
+  import { calculateRequiredNavWidthPx } from '$lib/navWidth'
 
   const isVisible = (href: string): boolean =>
     (siteConfig.toolVisibility as Record<string, boolean>)[href] ?? true
@@ -28,6 +29,11 @@
   const visibleCategories = site.categories.filter(cat =>
     (site.tools as unknown as Array<{ href: string; category: string }>)
       .some(t => t.category === cat.id && isVisible(t.href))
+  )
+
+  // スマホ表示に切り替える基準幅（表示中カテゴリーの組み合わせから自動計算）
+  let breakpointPx = $derived(
+    calculateRequiredNavWidthPx(visibleCategories.map(c => c.label))
   )
 
   // 現在カテゴリーの visible ツール一覧（カテゴリーバー用）
@@ -74,6 +80,14 @@
   {#if isNoIndex}
     <meta name="robots" content="noindex" />
   {/if}
+  {@html `<style>
+    @media not all and (min-width: ${breakpointPx}px) {
+      .rt-desktop-only { display: none !important; }
+    }
+    @media (min-width: ${breakpointPx}px) {
+      .rt-mobile-only { display: none !important; }
+    }
+  </style>`}
 </svelte:head>
 
 <div class="gradient-bg flex flex-col sm:h-screen sm:overflow-hidden">
