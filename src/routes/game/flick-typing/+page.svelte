@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte'
-  import { easyWords, generatePool, pickQuestions } from '$lib/game/flick-typing/words'
+  import { easyWords, generatePool, pickQuestions, type WordPart } from '$lib/game/flick-typing/words'
   import {
     getBest,
     saveBest,
@@ -20,6 +20,7 @@
   // ---- ゲーム状態 ----
   let phase = $state<Phase>('start')
   let questions = $state<string[]>([])
+  let questionParts = $state<WordPart[][]>([])
   let currentIndex = $state(0)
   let currentSeed = $state(0)
   let inputValue = $state('')
@@ -51,6 +52,43 @@
   })
   let hasError = $derived(inputValue.length > matchedLength)
 
+  let currentParts = $derived(questionParts[currentIndex] ?? null)
+
+  type DisplayChar = { char: string; matched: boolean; isError: boolean }
+  type DisplayPart =
+    | { type: 'ruby'; kanji: string; furigana: DisplayChar[]; complete: boolean }
+    | { type: 'plain'; chars: DisplayChar[] }
+
+  let displayParts = $derived.by((): DisplayPart[] | null => {
+    if (currentParts === null) return null
+    const result: DisplayPart[] = []
+    let pos = 0
+    for (const part of currentParts) {
+      const partReading = part.type === 'ruby' ? part.reading : part.text
+      const partLen = partReading.length
+      const chars: DisplayChar[] = partReading.split('').map((char, i) => {
+        const charPos = pos + i
+        return {
+          char,
+          matched: charPos < matchedLength,
+          isError: hasError && charPos === matchedLength,
+        }
+      })
+      if (part.type === 'ruby') {
+        result.push({
+          type: 'ruby',
+          kanji: part.kanji,
+          furigana: chars,
+          complete: matchedLength >= pos + partLen,
+        })
+      } else {
+        result.push({ type: 'plain', chars })
+      }
+      pos += partLen
+    }
+    return result
+  })
+
   const difficultyOptions: { value: Difficulty; label: string; sub: string }[] = [
     { value: 'easy', label: 'かんたん', sub: '単語' },
     { value: 'hard', label: 'むずかしい', sub: '文章' },
@@ -71,18 +109,19 @@
   }
 
   function startGame() {
-    let pool: string[]
     if (difficulty === 'hard') {
       const parsed = seedInput.trim() ? parseInt(seedInput.trim(), 10) : undefined
       const validSeed = parsed !== undefined && !isNaN(parsed) ? (parsed >>> 0) : undefined
-      const { sentences, seed } = generatePool(500, validSeed)
-      pool = sentences
+      const { questions: generated, seed } = generatePool(500, validSeed)
+      const picked = pickQuestions(generated, count)
+      questions = picked.map((q) => q.reading)
+      questionParts = picked.map((q) => q.parts)
       currentSeed = seed
     } else {
-      pool = easyWords
+      questions = pickQuestions(easyWords, count)
+      questionParts = []
       currentSeed = 0
     }
-    questions = pickQuestions(pool, count)
     currentIndex = 0
     inputValue = ''
     isComposing = false
@@ -287,11 +326,25 @@
 
     <div class="bg-white border-2 border-teal-700 rounded-2xl py-8 px-4 text-center mt-2">
       <p class="text-xs text-slate-400 mb-2">お題</p>
-      <p class="text-4xl font-bold tracking-widest text-slate-800">
-        <span class="text-teal-700">{currentQuestion.slice(0, matchedLength)}</span><!--
-        --><span class={hasError ? 'text-red-500 underline underline-offset-4' : ''}>{currentQuestion[matchedLength] ?? ''}</span><!--
-        --><span class="text-slate-300">{currentQuestion.slice(matchedLength + 1)}</span>
-      </p>
+      {#if displayParts !== null}
+        <p class="text-4xl font-bold tracking-widest text-slate-800 leading-loose">
+          {#each displayParts as dp}
+            {#if dp.type === 'ruby'}
+              <ruby class={dp.complete ? 'text-teal-700' : ''}>
+                {dp.kanji}<rt style="font-size:0.55em;">{#each dp.furigana as fc}<span class={fc.isError ? 'text-red-500 underline underline-offset-2' : fc.matched ? 'text-teal-700' : 'text-slate-300'}>{fc.char}</span>{/each}</rt>
+              </ruby>
+            {:else}
+              {#each dp.chars as pc}<span class={pc.isError ? 'text-red-500 underline underline-offset-4' : pc.matched ? 'text-teal-700' : 'text-slate-300'}>{pc.char}</span>{/each}
+            {/if}
+          {/each}
+        </p>
+      {:else}
+        <p class="text-4xl font-bold tracking-widest text-slate-800">
+          <span class="text-teal-700">{currentQuestion.slice(0, matchedLength)}</span><!--
+          --><span class={hasError ? 'text-red-500 underline underline-offset-4' : ''}>{currentQuestion[matchedLength] ?? ''}</span><!--
+          --><span class="text-slate-300">{currentQuestion.slice(matchedLength + 1)}</span>
+        </p>
+      {/if}
     </div>
 
     <input
