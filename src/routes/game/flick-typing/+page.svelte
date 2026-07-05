@@ -313,6 +313,11 @@
 {:else if phase === 'game'}
   <div class="max-w-sm mx-auto px-4 py-6 flex flex-col gap-4">
     <div class="flex justify-between items-center">
+      <button
+        type="button"
+        class="text-sm text-slate-400 active:opacity-60"
+        onclick={backToStart}
+      >← 戻る</button>
       <span class="text-sm font-semibold text-slate-500">{currentIndex + 1} / {count}</span>
       <span class="text-2xl font-bold tabular-nums text-teal-700">{formatTime(elapsedMs)}</span>
     </div>
