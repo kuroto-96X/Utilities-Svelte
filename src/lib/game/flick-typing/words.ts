@@ -1,4 +1,4 @@
-import { type PatternPart, type WordPart, patterns, adjectives, nouns, subjects, locations, verbPhrases } from './templates'
+import { type SlotKey, type WordPart, patterns, adjectives, nouns, subjects, locations, verbPhrases } from './templates'
 
 export type { WordPart }
 
@@ -47,7 +47,7 @@ export function generatePool(
   const rand = mulberry32(actualSeed)
   const pickWord = <T>(arr: T[]): T => arr[Math.floor(rand() * arr.length)]
 
-  const slotMap: Record<string, WordPart[][]> = {
+  const slotMap: Record<SlotKey, WordPart[][]> = {
     adj: adjectives,
     noun: nouns,
     subject: subjects,

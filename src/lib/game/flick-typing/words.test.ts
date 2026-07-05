@@ -99,4 +99,10 @@ describe('generatePool', () => {
       expect(q.parts.length).toBeGreaterThan(0)
     }
   })
+
+  test('questions の数が要求した count を超えない', () => {
+    const count = 10
+    const { questions } = generatePool(count, 42)
+    expect(questions.length).toBeLessThanOrEqual(count)
+  })
 })
