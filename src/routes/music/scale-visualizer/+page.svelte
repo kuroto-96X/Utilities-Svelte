@@ -275,8 +275,9 @@
 <div class="bg-gray-900 text-gray-100 min-h-screen sm:min-h-0 sm:h-full sm:overflow-hidden sm:flex sm:flex-col p-4 sm:p-0">
 
   <!-- スマホ用: 鍵盤スクロールアウト時のみ表示する fixed sticky bar -->
+  <!-- z-indexは、ヘッダー(z-10)より下・RangeSliderのつまみ(z-index:3〜5、インラインstyle)より上にする -->
   {#if !keyboardVisible}
-    <div class="sm:hidden fixed top-12 left-0 right-0 z-0 bg-gray-900 border-b border-gray-700 px-4 pt-1 pb-0.5">
+    <div class="sm:hidden fixed top-12 left-0 right-0 z-[9] bg-gray-900 border-b border-gray-700 px-4 pt-1 pb-0.5">
       <div class="overflow-x-auto flex justify-center">
         <PianoKeyboard
           whiteKeys={keyboard.whiteKeys}
