@@ -212,7 +212,7 @@
 
 {#if phase === 'start'}
   <div class="max-w-sm mx-auto px-4 py-8 flex flex-col gap-6">
-    <h1 class="text-2xl font-bold text-teal-700 text-center">⌨️ フリックタイピング</h1>
+    <h1 class="text-2xl font-bold text-teal-700 text-center">📱 フリックタイピング</h1>
 
     <div class="bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-3">
       <p class="text-xs font-bold uppercase tracking-wider text-slate-400">難易度</p>
