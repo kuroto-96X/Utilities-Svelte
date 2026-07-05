@@ -80,11 +80,14 @@
   let mobileMenuOpen = $state(false)
   // モバイル版メニュー内で開いているカテゴリーid一覧（複数同時展開可）
   let openMobileCategories = $state<Set<string>>(new Set())
+  // 最後に自動展開したカテゴリー（ユーザーの手動トグルを妨げないためのガード）
+  let lastAutoExpandedCategory = $state<string | null>(null)
 
   // 現在ページのカテゴリーは初期状態で展開しておく
   $effect(() => {
-    if (activeCategory !== null && !openMobileCategories.has(activeCategory)) {
+    if (activeCategory !== null && activeCategory !== lastAutoExpandedCategory) {
       openMobileCategories = new Set([...openMobileCategories, activeCategory])
+      lastAutoExpandedCategory = activeCategory
     }
   })
 
