@@ -28,6 +28,10 @@ git branch --show-current
 - `master` へのマージ・プッシュは行わない（ユーザーが手動で行う）
 - `master` へのマージはユーザーが手動で実施する。Claude が勝手に `git merge` や `git push` で `master` を更新してはならない
 
+### ブランチ完了時の選択
+
+`superpowers:finishing-a-development-branch` の選択肢では、常に **「3. ブランチをそのままにする」** を選ぶ。Claude が自動的に選択してよい。マージ・PR・破棄はユーザーが手動で行う。
+
 ## 作業完了前の確認
 
 コードを書き終えたら、以下を必ず実行してから完了とする。
