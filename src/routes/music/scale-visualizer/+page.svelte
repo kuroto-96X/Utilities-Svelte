@@ -276,7 +276,7 @@
 
   <!-- スマホ用: 鍵盤スクロールアウト時のみ表示する fixed sticky bar -->
   {#if !keyboardVisible}
-    <div class="sm:hidden fixed top-12 left-0 right-0 z-0 bg-gray-900/95 backdrop-blur-sm border-b border-gray-700 px-4 pt-1 pb-0.5">
+    <div class="sm:hidden fixed top-12 left-0 right-0 z-0 bg-gray-900 border-b border-gray-700 px-4 pt-1 pb-0.5">
       <div class="overflow-x-auto flex justify-center">
         <PianoKeyboard
           whiteKeys={keyboard.whiteKeys}
