@@ -50,7 +50,7 @@
     ) { i++ }
     return i
   })
-  let hasError = $derived(inputValue.length > matchedLength && !/^[a-zA-Z]$/.test(inputValue[matchedLength] ?? ''))
+  let hasError = $derived(inputValue.length > matchedLength && !/^[a-zA-ZＡ-Ｚａ-ｚ]$/.test(inputValue[matchedLength] ?? ''))
 
   let currentParts = $derived(questionParts[currentIndex] ?? null)
 
