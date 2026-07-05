@@ -161,6 +161,18 @@
     }
   }
 
+  let shaking = $state(false)
+  let shakeTimer: ReturnType<typeof setTimeout> | null = null
+
+  function triggerShake() {
+    if (shakeTimer) clearTimeout(shakeTimer)
+    shaking = false
+    requestAnimationFrame(() => {
+      shaking = true
+      shakeTimer = setTimeout(() => { shaking = false }, 300)
+    })
+  }
+
   function handleInput() {
     if (startTimeMs === null && inputValue.length > 0) {
       startTimeMs = Date.now()
@@ -169,6 +181,7 @@
       }, 10)
     }
     if (!isComposing) checkAnswer()
+    if (hasError) triggerShake()
   }
 
   function handleCompositionStart() {
@@ -361,6 +374,7 @@
       autocomplete="off"
       autocorrect="off"
       autocapitalize="off"
+      class:animate-shake-sm={shaking}
       class={hasError
         ? 'border border-red-400 bg-red-50 rounded-xl px-4 py-3 text-lg outline-none focus:ring-0 w-full'
         : 'border border-slate-300 rounded-xl px-4 py-3 text-lg outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-200 w-full'}
@@ -422,3 +436,16 @@
     </div>
   </div>
 {/if}
+
+<style>
+  @keyframes shake-sm {
+    0%, 100% { transform: translateX(0); }
+    20%       { transform: translateX(-5px); }
+    40%       { transform: translateX(5px); }
+    60%       { transform: translateX(-3px); }
+    80%       { transform: translateX(3px); }
+  }
+  .animate-shake-sm {
+    animation: shake-sm 0.3s ease-in-out;
+  }
+</style>
