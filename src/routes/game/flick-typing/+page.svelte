@@ -330,9 +330,7 @@
         <p class="text-4xl font-bold tracking-widest text-slate-800 leading-loose">
           {#each displayParts as dp}
             {#if dp.type === 'ruby'}
-              <ruby class={dp.complete ? 'text-teal-700' : ''}>
-                {dp.kanji}<rt style="font-size:0.55em;">{#each dp.furigana as fc}<span class={fc.isError ? 'text-red-500 underline underline-offset-2' : fc.matched ? 'text-teal-700' : 'text-slate-300'}>{fc.char}</span>{/each}</rt>
-              </ruby>
+              <ruby class={dp.complete ? 'text-teal-700' : ''}>{dp.kanji}<rt style="font-size:0.55em;">{#each dp.furigana as fc}<span class={fc.isError ? 'text-red-500 underline underline-offset-2' : fc.matched ? 'text-teal-700' : 'text-slate-300'}>{fc.char}</span>{/each}</rt></ruby>
             {:else}
               {#each dp.chars as pc}<span class={pc.isError ? 'text-red-500 underline underline-offset-4' : pc.matched ? 'text-teal-700' : 'text-slate-300'}>{pc.char}</span>{/each}
             {/if}
