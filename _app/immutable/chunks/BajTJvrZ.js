@@ -1,1 +1,0 @@
-import{pt as e}from"./xnGQyWE4.js";e();
