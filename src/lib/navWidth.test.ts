@@ -2,27 +2,40 @@ import { describe, it, expect } from 'vitest'
 import { calculateRequiredNavWidthPx } from './navWidth'
 
 describe('calculateRequiredNavWidthPx', () => {
-  it('カテゴリーが0件でもロゴ分の基準幅を返す', () => {
-    expect(calculateRequiredNavWidthPx([])).toBe(32 + 130 + 24)
+  describe('640px(Tailwindのsmブレークポイント)の下限', () => {
+    it('カテゴリーが0件でも640pxを下回らない', () => {
+      expect(calculateRequiredNavWidthPx([])).toBe(640)
+    })
+
+    it('現実的なカテゴリー数(5件)の計算結果でも640pxを下回らない', () => {
+      const labels = ['楽曲制作', 'プログラミング', '画像', '投資', 'ゲーム']
+      // 素の計算結果は 32+130+24+80+125+50+50+65=556 で640未満のため、640に切り上げられる
+      expect(calculateRequiredNavWidthPx(labels)).toBe(640)
+    })
   })
 
-  it('カテゴリーが増えるほど必要幅が増える', () => {
-    const oneCategory = calculateRequiredNavWidthPx(['楽曲制作'])
-    const twoCategories = calculateRequiredNavWidthPx(['楽曲制作', 'プログラミング'])
-    expect(twoCategories).toBeGreaterThan(oneCategory)
-  })
+  describe('計算結果が640pxを超えるケース', () => {
+    // 下限(640px)の影響を受けないよう、十分に大きいカテゴリー数・文字数で検証する
 
-  it('ラベルの文字数が多いほど必要幅が増える', () => {
-    const short = calculateRequiredNavWidthPx(['画像'])
-    const long = calculateRequiredNavWidthPx(['プログラミング'])
-    expect(long).toBeGreaterThan(short)
-  })
+    it('カテゴリーが増えるほど必要幅が増える', () => {
+      const label = 'サンプルカテゴリ' // 8文字
+      const fewCategories = calculateRequiredNavWidthPx(Array(6).fill(label))
+      const moreCategories = calculateRequiredNavWidthPx(Array(8).fill(label))
+      expect(fewCategories).toBeGreaterThan(640)
+      expect(moreCategories).toBeGreaterThan(fewCategories)
+    })
 
-  it('実際の5カテゴリー全表示時の必要幅を計算できる', () => {
-    const labels = ['楽曲制作', 'プログラミング', '画像', '投資', 'ゲーム']
-    // 32(nav padding) + 130(logo) + 24(safety) + 各ボタン(文字数*15 + 16 + 4)の合計
-    // 楽曲制作(4): 60+16+4=80 / プログラミング(7): 105+16+4=125
-    // 画像(2): 30+16+4=50 / 投資(2): 50 / ゲーム(3): 45+16+4=65
-    expect(calculateRequiredNavWidthPx(labels)).toBe(32 + 130 + 24 + 80 + 125 + 50 + 50 + 65)
+    it('ラベルの文字数が多いほど必要幅が増える', () => {
+      const short = calculateRequiredNavWidthPx(Array(10).fill('画像')) // 2文字 x10
+      const long = calculateRequiredNavWidthPx(Array(10).fill('プログラミング')) // 7文字 x10
+      expect(short).toBeGreaterThan(640)
+      expect(long).toBeGreaterThan(short)
+    })
+
+    it('下限に切り上げられず正しい式で算出できる', () => {
+      const labels = Array(8).fill('サンプルカテゴリ') // 8文字 x8
+      // 32(nav padding) + 130(logo) + 24(safety) + 8 * (8*15 + 16 + 4)
+      expect(calculateRequiredNavWidthPx(labels)).toBe(32 + 130 + 24 + 8 * (8 * 15 + 16 + 4))
+    })
   })
 })

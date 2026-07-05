@@ -10,16 +10,22 @@ const LOGO_WIDTH_PX = 130
 const NAV_PADDING_PX = 32
 // 実測誤差を吸収するための余裕
 const SAFETY_MARGIN_PX = 24
+// Tailwindのsmブレークポイント(640px)と揃えるための下限値。
+// これを下回ると、ヘッダーはPC版に切り替わっているのにページ本体は
+// 既存のsm:基準でまだスマホ版レイアウトのまま、という中間状態が生まれるため。
+const MIN_BREAKPOINT_PX = 640
 
 /**
  * 表示中カテゴリーのラベル一覧から、上部ナビ（ロゴ＋カテゴリーボタン横並び）が
  * 折り返しなしで収まるために必要な最小幅(px)を計算する。
  * サイト名・カテゴリー構成が変わらない限り、この値はビルド時に一意に決まる。
+ * 既存のTailwind sm:ブレークポイント(640px)との整合を保つため、640px未満にはならない。
  */
 export function calculateRequiredNavWidthPx(categoryLabels: string[]): number {
   const buttonsWidth = categoryLabels.reduce(
     (sum, label) => sum + label.length * CHAR_WIDTH_PX + BUTTON_PADDING_PX + BUTTON_GAP_PX,
     0
   )
-  return NAV_PADDING_PX + LOGO_WIDTH_PX + buttonsWidth + SAFETY_MARGIN_PX
+  const requiredWidth = NAV_PADDING_PX + LOGO_WIDTH_PX + buttonsWidth + SAFETY_MARGIN_PX
+  return Math.max(requiredWidth, MIN_BREAKPOINT_PX)
 }
