@@ -20,7 +20,7 @@
   // ---- ゲーム状態 ----
   let phase = $state<Phase>('start')
   let questions = $state<string[]>([])
-  let questionParts = $state<WordPart[][]>([])
+  let questionParts = $state<WordPart[][][]>([])
   let currentIndex = $state(0)
   let currentSeed = $state(0)
   let inputValue = $state('')
@@ -59,33 +59,37 @@
     | { type: 'ruby'; kanji: string; furigana: DisplayChar[]; complete: boolean }
     | { type: 'plain'; chars: DisplayChar[] }
 
-  let displayParts = $derived.by((): DisplayPart[] | null => {
+  let displayParts = $derived.by((): DisplayPart[][] | null => {
     if (currentParts === null) return null
-    const result: DisplayPart[] = []
+    const result: DisplayPart[][] = []
     let pos = 0
-    for (const part of currentParts) {
-      const partReading = part.type === 'ruby' ? part.reading : part.text
-      const partLen = partReading.length
-      const chars: DisplayChar[] = partReading.split('').map((char, i) => {
-        const charPos = pos + i
-        return {
-          char,
-          matched: charPos < matchedLength,
-          isNext: charPos === matchedLength,
-          isError: hasError && charPos === matchedLength,
-        }
-      })
-      if (part.type === 'ruby') {
-        result.push({
-          type: 'ruby',
-          kanji: part.kanji,
-          furigana: chars,
-          complete: matchedLength >= pos + partLen,
+    for (const group of currentParts) {
+      const groupResult: DisplayPart[] = []
+      for (const part of group) {
+        const partReading = part.type === 'ruby' ? part.reading : part.text
+        const partLen = partReading.length
+        const chars: DisplayChar[] = partReading.split('').map((char, i) => {
+          const charPos = pos + i
+          return {
+            char,
+            matched: charPos < matchedLength,
+            isNext: charPos === matchedLength,
+            isError: hasError && charPos === matchedLength,
+          }
         })
-      } else {
-        result.push({ type: 'plain', chars })
+        if (part.type === 'ruby') {
+          groupResult.push({
+            type: 'ruby',
+            kanji: part.kanji,
+            furigana: chars,
+            complete: matchedLength >= pos + partLen,
+          })
+        } else {
+          groupResult.push({ type: 'plain', chars })
+        }
+        pos += partLen
       }
-      pos += partLen
+      result.push(groupResult)
     }
     return result
   })
@@ -116,7 +120,7 @@
       const { questions: generated, seed } = generatePool(500, validSeed)
       const picked = pickQuestions(generated, count)
       questions = picked.map((q) => q.reading)
-      questionParts = picked.map((q) => q.parts)
+      questionParts = picked.map((q) => q.wordGroups)
       currentSeed = seed
     } else {
       questions = pickQuestions(easyWords, count)
@@ -347,13 +351,7 @@
       <p class="text-xs text-slate-400 mb-2">お題</p>
       {#if displayParts !== null}
         <p class="text-4xl font-bold tracking-widest text-slate-800 leading-loose">
-          {#each displayParts as dp}
-            {#if dp.type === 'ruby'}
-              <ruby class={dp.complete ? 'text-teal-700' : 'text-slate-300'}>{dp.kanji}<rt style="font-size:0.55em;">{#each dp.furigana as fc}<span class={fc.isError ? 'text-red-500 underline underline-offset-2' : fc.matched ? 'text-teal-700' : fc.isNext ? 'text-slate-800' : 'text-slate-300'}>{fc.char}</span>{/each}</rt></ruby>
-            {:else}
-              {#each dp.chars as pc}<span class={pc.isError ? 'text-red-500 underline underline-offset-4' : pc.matched ? 'text-teal-700' : pc.isNext ? 'text-slate-800' : 'text-slate-300'}>{pc.char}</span>{/each}
-            {/if}
-          {/each}
+          {#each displayParts as group}<span class="inline-block whitespace-nowrap">{#each group as dp}{#if dp.type === 'ruby'}<ruby class={dp.complete ? 'text-teal-700' : 'text-slate-300'}>{dp.kanji}<rt style="font-size:0.55em;">{#each dp.furigana as fc}<span class={fc.isError ? 'text-red-500 underline underline-offset-2' : fc.matched ? 'text-teal-700' : fc.isNext ? 'text-slate-800' : 'text-slate-300'}>{fc.char}</span>{/each}</rt></ruby>{:else}{#each dp.chars as pc}<span class={pc.isError ? 'text-red-500 underline underline-offset-4' : pc.matched ? 'text-teal-700' : pc.isNext ? 'text-slate-800' : 'text-slate-300'}>{pc.char}</span>{/each}{/if}{/each}</span>{/each}
         </p>
       {:else}
         <p class="text-4xl font-bold tracking-widest text-slate-800">

@@ -16,7 +16,7 @@ export const easyWords: string[] = [
 ]
 
 export type GeneratedQuestion = {
-  parts: WordPart[]
+  wordGroups: WordPart[][]
   reading: string
 }
 
@@ -60,19 +60,29 @@ export function generatePool(
 
   for (let i = 0; i < maxAttempts && generated.size < count; i++) {
     const pattern = pickWord(patterns)
-    const parts: WordPart[] = []
+    const wordGroups: WordPart[][] = []
+    let templateGroup: WordPart[] = []
 
-    for (const part of pattern) {
-      if (part.type === 'slot') {
-        parts.push(...pickWord(slotMap[part.key]))
-      } else {
-        parts.push(part)
+    const flushTemplate = () => {
+      if (templateGroup.length > 0) {
+        wordGroups.push([...templateGroup])
+        templateGroup = []
       }
     }
 
-    const reading = parts.map((p) => (p.type === 'ruby' ? p.reading : p.text)).join('')
+    for (const part of pattern) {
+      if (part.type === 'slot') {
+        flushTemplate()
+        wordGroups.push(pickWord(slotMap[part.key]))
+      } else {
+        templateGroup.push(part)
+      }
+    }
+    flushTemplate()
+
+    const reading = wordGroups.flat().map((p) => (p.type === 'ruby' ? p.reading : p.text)).join('')
     if (!generated.has(reading)) {
-      generated.set(reading, { parts, reading })
+      generated.set(reading, { wordGroups, reading })
     }
   }
 

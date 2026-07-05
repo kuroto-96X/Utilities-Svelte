@@ -48,10 +48,10 @@ describe('pickQuestions', () => {
 })
 
 describe('generatePool', () => {
-  test('GeneratedQuestion の reading は parts の reading/text を結合したものと一致する', () => {
+  test('GeneratedQuestion の reading は wordGroups の reading/text を結合したものと一致する', () => {
     const { questions } = generatePool(10, 42)
     for (const q of questions) {
-      const reconstructed = q.parts
+      const reconstructed = q.wordGroups.flat()
         .map((p) => (p.type === 'ruby' ? p.reading : p.text))
         .join('')
       expect(reconstructed).toBe(q.reading)
@@ -96,7 +96,7 @@ describe('generatePool', () => {
     expect(picked).toHaveLength(5)
     for (const q of picked) {
       expect(q.reading).toBeTruthy()
-      expect(q.parts.length).toBeGreaterThan(0)
+      expect(q.wordGroups.length).toBeGreaterThan(0)
     }
   })
 
