@@ -40,7 +40,7 @@
   // ---- 派生値 ----
   let currentQuestion = $derived(questions[currentIndex] ?? '')
   let best = $derived(getBest(difficulty, count))
-  let matchedLength = $derived((() => {
+  let matchedLength = $derived.by(() => {
     let i = 0
     while (
       i < inputValue.length &&
@@ -48,7 +48,7 @@
       inputValue[i] === currentQuestion[i]
     ) { i++ }
     return i
-  })())
+  })
   let hasError = $derived(inputValue.length > matchedLength)
 
   const difficultyOptions: { value: Difficulty; label: string; sub: string }[] = [
