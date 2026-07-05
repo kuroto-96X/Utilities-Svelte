@@ -315,7 +315,7 @@
   {/if}
 
   <footer class="border-t border-slate-200 bg-white">
-    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
+    <div class="rt-desktop-only max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
       <img
         src={authorIcon}
         alt={site.author.name}
@@ -331,6 +331,26 @@
         <a href={site.author.links.youtube} target="_blank" rel="noopener noreferrer"
           class="text-xs text-slate-500 hover:text-slate-700 hover:underline">YouTube</a>
       </div>
+    </div>
+
+    <div class="rt-mobile-only flex flex-col gap-1.5 max-w-4xl mx-auto px-4 py-3">
+      <div class="flex items-center gap-3">
+        <img
+          src={authorIcon}
+          alt={site.author.name}
+          class="w-8 h-8 rounded-full object-cover shrink-0"
+        />
+        <span class="text-sm font-bold text-slate-800 shrink-0">{site.author.name}</span>
+        <div class="flex items-center gap-3 shrink-0 ml-auto">
+          <a href={site.author.links.x} target="_blank" rel="noopener noreferrer"
+            class="text-xs text-sky-600 hover:underline">{site.author.handle}</a>
+          <a href={site.author.links.booth} target="_blank" rel="noopener noreferrer"
+            class="text-xs text-slate-500 hover:text-slate-700 hover:underline">BOOTH</a>
+          <a href={site.author.links.youtube} target="_blank" rel="noopener noreferrer"
+            class="text-xs text-slate-500 hover:text-slate-700 hover:underline">YouTube</a>
+        </div>
+      </div>
+      <p class="text-xs text-slate-500">{site.author.bio}</p>
     </div>
   </footer>
 </div>
