@@ -54,7 +54,7 @@
 
   let currentParts = $derived(questionParts[currentIndex] ?? null)
 
-  type DisplayChar = { char: string; matched: boolean; isError: boolean }
+  type DisplayChar = { char: string; matched: boolean; isNext: boolean; isError: boolean }
   type DisplayPart =
     | { type: 'ruby'; kanji: string; furigana: DisplayChar[]; complete: boolean }
     | { type: 'plain'; chars: DisplayChar[] }
@@ -71,6 +71,7 @@
         return {
           char,
           matched: charPos < matchedLength,
+          isNext: charPos === matchedLength,
           isError: hasError && charPos === matchedLength,
         }
       })
@@ -335,9 +336,9 @@
         <p class="text-4xl font-bold tracking-widest text-slate-800 leading-loose">
           {#each displayParts as dp}
             {#if dp.type === 'ruby'}
-              <ruby class={dp.complete ? 'text-teal-700' : 'text-slate-300'}>{dp.kanji}<rt style="font-size:0.55em;">{#each dp.furigana as fc}<span class={fc.isError ? 'text-red-500 underline underline-offset-2' : fc.matched ? 'text-teal-700' : 'text-slate-300'}>{fc.char}</span>{/each}</rt></ruby>
+              <ruby class={dp.complete ? 'text-teal-700' : 'text-slate-300'}>{dp.kanji}<rt style="font-size:0.55em;">{#each dp.furigana as fc}<span class={fc.isError ? 'text-red-500 underline underline-offset-2' : fc.matched ? 'text-teal-700' : fc.isNext ? 'text-slate-800' : 'text-slate-300'}>{fc.char}</span>{/each}</rt></ruby>
             {:else}
-              {#each dp.chars as pc}<span class={pc.isError ? 'text-red-500 underline underline-offset-4' : pc.matched ? 'text-teal-700' : 'text-slate-300'}>{pc.char}</span>{/each}
+              {#each dp.chars as pc}<span class={pc.isError ? 'text-red-500 underline underline-offset-4' : pc.matched ? 'text-teal-700' : pc.isNext ? 'text-slate-800' : 'text-slate-300'}>{pc.char}</span>{/each}
             {/if}
           {/each}
         </p>
