@@ -65,15 +65,42 @@
     )
   )
 
-  // 開いているドロップダウンのカテゴリー id
+  // 現在ページに対応するツール情報（サブページは prefix マッチで親ツールを採用）
+  let currentPageTool = $derived(
+    routeId !== null
+      ? (site.tools as unknown as Array<{ href: string; label: string }>)
+          .find(t => routeId === t.href || routeId!.startsWith(`${t.href}/`)) ?? null
+      : null
+  )
+
+  // 開いているドロップダウンのカテゴリー id（PC版）
   let openCategory = $state<string | null>(null)
+
+  // モバイル版メニューの開閉状態
+  let mobileMenuOpen = $state(false)
+  // モバイル版メニュー内で開いているカテゴリーid一覧（複数同時展開可）
+  let openMobileCategories = $state<Set<string>>(new Set())
+
+  // 現在ページのカテゴリーは初期状態で展開しておく
+  $effect(() => {
+    if (activeCategory !== null && !openMobileCategories.has(activeCategory)) {
+      openMobileCategories = new Set([...openMobileCategories, activeCategory])
+    }
+  })
+
+  function toggleMobileCategory(id: string) {
+    const next = new Set(openMobileCategories)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    openMobileCategories = next
+  }
 
   function focusFirst(node: HTMLElement) {
     node.querySelector<HTMLElement>('a')?.focus()
   }
 </script>
 
-<svelte:window onclick={() => { openCategory = null }} />
+<svelte:window onclick={() => { openCategory = null; mobileMenuOpen = false }} />
 
 <svelte:head>
   <link rel="icon" href={siteIcon} />
@@ -92,7 +119,7 @@
 
 <div class="gradient-bg flex flex-col sm:h-screen sm:overflow-hidden">
   <header class="sticky top-0 z-10 border-b border-slate-200 bg-white shadow-sm sm:flex-shrink-0">
-    <nav class="max-w-4xl mx-auto px-4 py-2.5 flex items-center gap-1">
+    <nav class="rt-desktop-only max-w-4xl mx-auto px-4 py-2.5 flex items-center gap-1">
       <a
         href="/"
         class="font-extrabold text-lg tracking-tight mr-4 bg-gradient-to-r from-teal-700 to-sky-600 bg-clip-text text-transparent"
@@ -157,6 +184,88 @@
         </div>
       {/each}
     </nav>
+
+    <div class="rt-mobile-only flex items-center gap-2 max-w-4xl mx-auto px-4 py-2.5 relative">
+      <a
+        href="/"
+        class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-teal-700 to-sky-600 bg-clip-text text-transparent shrink-0"
+      >
+        {site.name}
+      </a>
+      <button
+        type="button"
+        onclick={(e) => { e.stopPropagation(); mobileMenuOpen = !mobileMenuOpen }}
+        aria-haspopup="true"
+        aria-expanded={mobileMenuOpen}
+        aria-label="メニューを開く"
+        class="flex-1 flex items-center justify-between gap-2 min-w-0 text-left"
+      >
+        {#if currentPageTool}
+          <span class="text-sm font-semibold text-slate-700 truncate">
+            {getLabel(currentPageTool.href, currentPageTool.label)}
+          </span>
+        {:else}
+          <span></span>
+        {/if}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          class="w-5 h-5 text-slate-500 shrink-0"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      {#if mobileMenuOpen}
+        <div
+          class="absolute top-full left-0 right-0 mt-1.5 mx-4 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 z-20 max-h-[70vh] overflow-y-auto"
+          role="menu"
+          tabindex="-1"
+          use:focusFirst
+          onclick={(e) => e.stopPropagation()}
+          onkeydown={(e) => { if (e.key === 'Escape') { mobileMenuOpen = false; e.stopPropagation() } }}
+        >
+          {#each visibleCategories as cat (cat.id)}
+            {@const isCatOpen = openMobileCategories.has(cat.id)}
+            {@const catTools = (site.tools as unknown as Array<{ href: string; label: string; category: string }>).filter(t => t.category === cat.id && isVisible(t.href))}
+            <div class="border-b border-slate-100 last:border-b-0">
+              <button
+                type="button"
+                onclick={() => toggleMobileCategory(cat.id)}
+                aria-expanded={isCatOpen}
+                class="w-full flex items-center justify-between px-3 py-2 text-sm font-semibold text-slate-600"
+              >
+                {cat.label}
+                <span class="text-slate-400 text-xs">{isCatOpen ? '▾' : '▸'}</span>
+              </button>
+              {#if isCatOpen}
+                <div class="pb-1.5">
+                  {#each catTools as tool (tool.href)}
+                    {@const isCurrent = routeId === tool.href}
+                    <a
+                      role="menuitem"
+                      href={tool.href}
+                      onclick={() => { mobileMenuOpen = false }}
+                      class="flex items-center gap-2 px-5 py-1.5 text-sm transition-colors"
+                      class:text-teal-700={isCurrent}
+                      class:font-semibold={isCurrent}
+                      class:bg-teal-50={isCurrent}
+                      class:text-slate-600={!isCurrent}
+                    >
+                      <span class="w-1.5 h-1.5 rounded-full shrink-0" class:bg-teal-700={isCurrent}></span>
+                      {getLabel(tool.href, tool.label)}
+                    </a>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
   </header>
 
   {#if isDevPage}
