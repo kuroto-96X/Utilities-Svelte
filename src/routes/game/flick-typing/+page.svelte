@@ -50,7 +50,7 @@
     ) { i++ }
     return i
   })
-  let hasError = $derived(inputValue.length > matchedLength)
+  let hasError = $derived(!isComposing && inputValue.length > matchedLength)
 
   let currentParts = $derived(questionParts[currentIndex] ?? null)
 
