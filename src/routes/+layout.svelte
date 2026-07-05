@@ -188,7 +188,7 @@
       {/each}
     </nav>
 
-    <div class="rt-mobile-only flex items-center gap-2 max-w-4xl mx-auto px-4 py-2.5 relative">
+    <nav class="rt-mobile-only flex items-center gap-2 max-w-4xl mx-auto px-4 py-2.5 relative" aria-label="メニュー">
       <a
         href="/"
         class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-teal-700 to-sky-600 bg-clip-text text-transparent shrink-0"
@@ -268,7 +268,7 @@
           {/each}
         </div>
       {/if}
-    </div>
+    </nav>
   </header>
 
   {#if isDevPage}
