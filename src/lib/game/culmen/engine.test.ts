@@ -1,6 +1,15 @@
 // src/lib/game/culmen/engine.test.ts
 import { describe, test, expect } from 'vitest'
-import { isRed, isFace, rankLabel, evaluatePattern, isPlayable, getPlayableColumns, remainingCount } from './engine'
+import {
+  isRed,
+  isFace,
+  rankLabel,
+  evaluatePattern,
+  isPlayable,
+  getPlayableColumns,
+  remainingCount,
+  startWave,
+} from './engine'
 import type { Card, WaveState } from './types'
 import { DEFAULT_PARAMS } from './params'
 
@@ -186,5 +195,58 @@ describe('getPlayableColumns / remainingCount', () => {
       tableau: [[card(1, '♠', 1)], [card(2, '♠', 2), card(3, '♠', 3)]],
     })
     expect(remainingCount(wave)).toBe(3)
+  })
+})
+
+describe('startWave', () => {
+  test('場札はcols×rowsの列数・枚数になる', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], 1)
+    expect(wave.tableau).toHaveLength(DEFAULT_PARAMS.layout.cols)
+    wave.tableau.forEach(col => expect(col).toHaveLength(DEFAULT_PARAMS.layout.rows))
+  })
+
+  test('山札+場札+foundationで52枚になる(アイテムなし)', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], 1)
+    const tableauCount = wave.tableau.reduce((n, c) => n + c.length, 0)
+    expect(tableauCount + wave.stock.length + 1).toBe(52)
+  })
+
+  test('初期状態: スコア0、コンボ0、チェーン空、階段未成立', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], 1)
+    expect(wave.score).toBe(0)
+    expect(wave.combo).toBe(0)
+    expect(wave.chain).toEqual([])
+    expect(wave.linked).toBe(false)
+    expect(wave.stairDir).toBe(0)
+    expect(wave.stairLen).toBe(1)
+    expect(wave.status).toBe('playing')
+  })
+
+  test('「助走」所持時はコンボがstartComboから始まる', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, ['start1'], 1)
+    expect(wave.combo).toBe(DEFAULT_PARAMS.items.startCombo)
+  })
+
+  test('「コンボシールド」所持数×shieldChargesPerPick がshieldLeftになる', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, ['shield', 'shield'], 1)
+    expect(wave.shieldLeft).toBe(2 * DEFAULT_PARAMS.items.shieldChargesPerPick)
+  })
+
+  test('「厚めの山札」所持数に応じて山札が増える', () => {
+    const base = startWave(DEFAULT_PARAMS, 0, 0, [], 1)
+    const withItem = startWave(DEFAULT_PARAMS, 0, 0, ['stock5'], 1)
+    expect(withItem.stock.length).toBe(base.stock.length + DEFAULT_PARAMS.items.extraStockCount)
+  })
+
+  test('「ワイルド★」所持数に応じて山札にワイルドが混入する', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, ['wild1', 'wild1'], 1)
+    const wildCount = wave.stock.filter(c => c.wild).length
+    expect(wildCount).toBe(2 * DEFAULT_PARAMS.items.wildPerPick)
+  })
+
+  test('同じシードなら同じ結果になる(決定的)', () => {
+    const a = startWave(DEFAULT_PARAMS, 0, 0, ['stock5', 'wild1'], 123)
+    const b = startWave(DEFAULT_PARAMS, 0, 0, ['stock5', 'wild1'], 123)
+    expect(a).toEqual(b)
   })
 })

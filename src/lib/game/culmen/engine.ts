@@ -1,6 +1,7 @@
 // src/lib/game/culmen/engine.ts
-import type { Card, StageModifier, WaveState } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason } from './types'
 import type { CulmenParams } from './params'
+import { createDeck, createRng, shuffle } from './deck'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
 
@@ -106,4 +107,61 @@ export function getPlayableColumns(modifier: StageModifier, wave: WaveState): Se
 
 export function remainingCount(wave: WaveState): number {
   return wave.tableau.reduce((n, c) => n + c.length, 0)
+}
+
+function countItem(items: ItemId[], id: ItemId): number {
+  return items.filter(x => x === id).length
+}
+
+export function startWave(
+  params: CulmenParams,
+  _stageIndex: number,
+  _waveIndex: number,
+  items: ItemId[],
+  seed?: number
+): WaveState {
+  const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
+  let idSeq = 0
+  const nextId = () => ++idSeq
+
+  const shieldCount = countItem(items, 'shield')
+  const stock5Count = countItem(items, 'stock5')
+  const wild1Count = countItem(items, 'wild1')
+  const hasStart1 = items.includes('start1')
+
+  let deck = shuffle(createDeck(nextId), rand)
+  const { cols, rows } = params.layout
+  const tableau: Card[][] = []
+  for (let c = 0; c < cols; c++) {
+    tableau.push(deck.splice(0, rows))
+  }
+  const foundation = deck.pop() as Card
+
+  const extra = stock5Count * params.items.extraStockCount
+  if (extra > 0) {
+    const dupSource = shuffle(createDeck(nextId), rand).slice(0, extra)
+    deck = shuffle([...deck, ...dupSource], rand)
+  }
+
+  const wildCount = wild1Count * params.items.wildPerPick
+  for (let i = 0; i < wildCount; i++) {
+    const pos = Math.floor(rand() * Math.max(1, deck.length))
+    deck.splice(pos, 0, { id: nextId(), suit: '★', rank: 0, wild: true })
+  }
+
+  return {
+    tableau,
+    stock: deck,
+    foundation,
+    score: 0,
+    combo: hasStart1 ? params.items.startCombo : 0,
+    shieldLeft: shieldCount * params.items.shieldChargesPerPick,
+    chain: [],
+    linked: false,
+    stairDir: 0,
+    stairLen: 1,
+    status: 'playing',
+    endReason: null as WaveEndReason,
+    lastGain: null,
+  }
 }
