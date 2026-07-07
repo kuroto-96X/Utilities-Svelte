@@ -86,6 +86,7 @@ export function evaluatePattern(
 }
 
 export function isPlayable(modifier: StageModifier, wave: WaveState, card: Card): boolean {
+  // faceLockはワイルド(場札含む)より優先して評価する: ワイルド場札でも絵札はコンボ不足なら拒否する
   if (modifier === 'faceLock' && isFace(card) && wave.combo < 2) return false
   if (card.wild || wave.foundation.wild) return true
   const d = Math.abs(card.rank - wave.foundation.rank)
