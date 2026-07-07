@@ -9,6 +9,7 @@ import {
   getPlayableColumns,
   remainingCount,
   startWave,
+  playCard,
 } from './engine'
 import type { Card, WaveState } from './types'
 import { DEFAULT_PARAMS } from './params'
@@ -248,5 +249,75 @@ describe('startWave', () => {
     const a = startWave(DEFAULT_PARAMS, 0, 0, ['stock5', 'wild1'], 123)
     const b = startWave(DEFAULT_PARAMS, 0, 0, ['stock5', 'wild1'], 123)
     expect(a).toEqual(b)
+  })
+})
+
+describe('playCard', () => {
+  function baseWave(overrides: Partial<WaveState> = {}): WaveState {
+    return makeWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      ...overrides,
+    })
+  }
+
+  test('取れない列を指定した場合は何も変わらない', () => {
+    const wave = baseWave()
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000, 1) // 列1(2)は取れない
+    expect(next).toBe(wave)
+  })
+
+  test('基本点×コンボで加点され、場札とチェーンが更新される', () => {
+    const wave = baseWave()
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000, 0)
+    expect(next.combo).toBe(1)
+    expect(next.score).toBe(DEFAULT_PARAMS.scoring.basePoint * 1)
+    expect(next.foundation).toEqual(card(1, '♣', 6))
+    expect(next.chain).toEqual([card(1, '♣', 6)])
+    expect(next.tableau[0]).toEqual([])
+  })
+
+  test('「紅の目利き」所持時、赤札の基礎点が加算される(内訳表示には出ない)', () => {
+    const wave = baseWave({ tableau: [[card(1, '♥', 6)], [card(2, '♦', 2)]] })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['red5'], 1000, 0)
+    expect(next.score).toBe(DEFAULT_PARAMS.scoring.basePoint + DEFAULT_PARAMS.items.redBonusValue)
+    expect(next.lastGain?.parts).toEqual([])
+  })
+
+  test('「宮廷の紋章」所持時、絵札の基礎点が加算される', () => {
+    const wave = baseWave({ tableau: [[card(1, '♣', 4)], [card(2, '♣', 11)]], foundation: card(0, '♣', 12) })
+    // rank差 12→11 = 1 なので取れる
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['face10'], 1000, 1)
+    expect(next.score).toBe(DEFAULT_PARAMS.scoring.basePoint + DEFAULT_PARAMS.items.faceBonusValue)
+  })
+
+  test('場札が0枚になったら全消しボーナスが加算されendReason=fullClear', () => {
+    const wave = baseWave({ tableau: [[card(1, '♣', 6)]] })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000, 0)
+    expect(next.tableau.reduce((n, c) => n + c.length, 0)).toBe(0)
+    expect(next.status).toBe('ended')
+    expect(next.endReason).toBe('fullClear')
+    expect(next.score).toBe(DEFAULT_PARAMS.scoring.basePoint + DEFAULT_PARAMS.scoring.clearBonus)
+  })
+
+  test('「完全消去」所持時は全消しボーナスにさらに加算される', () => {
+    const wave = baseWave({ tableau: [[card(1, '♣', 6)]] })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['clear300'], 100000, 0)
+    expect(next.score).toBe(
+      DEFAULT_PARAMS.scoring.basePoint + DEFAULT_PARAMS.scoring.clearBonus + DEFAULT_PARAMS.items.fullClearItemBonus
+    )
+  })
+
+  test('スコアが目標に達したらendReason=targetでstatus=ended', () => {
+    const wave = baseWave()
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 5, 0) // basePoint(10) >= target(5)
+    expect(next.status).toBe('ended')
+    expect(next.endReason).toBe('target')
+  })
+
+  test('status が playing でない場合は何もしない', () => {
+    const wave = baseWave({ status: 'ended', endReason: 'target' })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000, 0)
+    expect(next).toBe(wave)
   })
 })

@@ -165,3 +165,59 @@ export function startWave(
     lastGain: null,
   }
 }
+
+export function playCard(
+  params: CulmenParams,
+  wave: WaveState,
+  modifier: StageModifier,
+  items: ItemId[],
+  target: number,
+  colIndex: number
+): WaveState {
+  if (wave.status !== 'playing') return wave
+  const col = wave.tableau[colIndex]
+  const card = col?.[col.length - 1]
+  if (!card) return wave
+  if (!isPlayable(modifier, wave, card)) return wave
+
+  const newCombo = wave.combo + 1
+  let base = params.scoring.basePoint
+  if (isRed(card) && items.includes('red5')) base += params.items.redBonusValue
+  if (isFace(card) && items.includes('face10')) base += params.items.faceBonusValue
+
+  const prevCard = wave.linked && wave.chain.length > 0 ? wave.chain[wave.chain.length - 1] : null
+  const prevIsWild = !!prevCard?.wild
+  const pattern = evaluatePattern(params.scoring, prevCard, prevIsWild, card, wave.stairDir, wave.stairLen)
+  base += pattern.bonus
+
+  const gained = base * newCombo
+  const newTableau = wave.tableau.map((c, i) => (i === colIndex ? c.slice(0, -1) : c))
+  const remaining = newTableau.reduce((n, c) => n + c.length, 0)
+  const newScore = wave.score + gained
+
+  const next: WaveState = {
+    ...wave,
+    tableau: newTableau,
+    foundation: card,
+    combo: newCombo,
+    chain: [...wave.chain, card],
+    linked: true,
+    stairDir: pattern.newStairDir,
+    stairLen: pattern.newStairLen,
+    score: newScore,
+    lastGain: { points: gained, parts: pattern.parts },
+    status: 'playing',
+    endReason: null,
+  }
+
+  if (remaining === 0) {
+    const bonus = params.scoring.clearBonus + (items.includes('clear300') ? params.items.fullClearItemBonus : 0)
+    return { ...next, score: newScore + bonus, status: 'ended', endReason: 'fullClear' }
+  }
+
+  if (newScore >= target) {
+    return { ...next, status: 'ended', endReason: 'target' }
+  }
+
+  return next
+}
