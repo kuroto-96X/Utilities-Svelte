@@ -79,9 +79,26 @@
     jsonError = null
   }
 
+  function isValidCulmenParams(value: unknown): value is CulmenParams {
+    if (typeof value !== 'object' || value === null) return false
+    const v = value as Record<string, unknown>
+    return (
+      typeof v.layout === 'object' && v.layout !== null &&
+      typeof v.scoring === 'object' && v.scoring !== null &&
+      Array.isArray(v.stages) && v.stages.length >= 1 &&
+      typeof v.items === 'object' && v.items !== null &&
+      typeof v.flow === 'object' && v.flow !== null &&
+      typeof v.ui === 'object' && v.ui !== null
+    )
+  }
+
   function applyJson() {
     try {
-      const parsed = JSON.parse(jsonText) as CulmenParams
+      const parsed = JSON.parse(jsonText)
+      if (!isValidCulmenParams(parsed)) {
+        jsonError = '必須項目(layout/scoring/stages/items/flow/ui)が不足しています'
+        return
+      }
       config = parsed
       jsonError = null
       showToast('JSONを適用しました')
