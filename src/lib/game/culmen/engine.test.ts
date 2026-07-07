@@ -1,7 +1,7 @@
 // src/lib/game/culmen/engine.test.ts
 import { describe, test, expect } from 'vitest'
-import { isRed, isFace, rankLabel, evaluatePattern } from './engine'
-import type { Card } from './types'
+import { isRed, isFace, rankLabel, evaluatePattern, isPlayable, getPlayableColumns, remainingCount } from './engine'
+import type { Card, WaveState } from './types'
 import { DEFAULT_PARAMS } from './params'
 
 function card(id: number, suit: Card['suit'], rank: Card['rank'], wild = false): Card {
@@ -109,5 +109,82 @@ describe('evaluatePattern', () => {
     expect(result.newStairLen).toBe(3)
     expect(result.bonus).toBe(10 + 15) // wildSuitBonus + stairBonus
     expect(result.parts).toEqual(['★同スート+10', '階段3 +15'])
+  })
+})
+
+function makeWave(overrides: Partial<WaveState> = {}): WaveState {
+  return {
+    tableau: [],
+    stock: [],
+    foundation: card(0, '♠', 5),
+    score: 0,
+    combo: 0,
+    shieldLeft: 0,
+    chain: [],
+    linked: false,
+    stairDir: 0,
+    stairLen: 1,
+    status: 'playing',
+    endReason: null,
+    lastGain: null,
+    ...overrides,
+  }
+}
+
+describe('isPlayable', () => {
+  test('ランク差1は取れる', () => {
+    const wave = makeWave({ foundation: card(1, '♠', 5) })
+    expect(isPlayable('none', wave, card(2, '♣', 6))).toBe(true)
+    expect(isPlayable('none', wave, card(3, '♣', 4))).toBe(true)
+  })
+
+  test('ランク差2は取れない', () => {
+    const wave = makeWave({ foundation: card(1, '♠', 5) })
+    expect(isPlayable('none', wave, card(2, '♣', 7))).toBe(false)
+  })
+
+  test('A-Kループは通常時のみ取れる、noLoop中は取れない', () => {
+    const wave = makeWave({ foundation: card(1, '♠', 13) })
+    expect(isPlayable('none', wave, card(2, '♣', 1))).toBe(true)
+    expect(isPlayable('noLoop', wave, card(2, '♣', 1))).toBe(false)
+  })
+
+  test('faceLock中はコンボ2未満だと絵札を取れない', () => {
+    const wave = makeWave({ foundation: card(1, '♠', 10), combo: 1 })
+    expect(isPlayable('faceLock', wave, card(2, '♣', 11))).toBe(false)
+    const wave2 = makeWave({ foundation: card(1, '♠', 10), combo: 2 })
+    expect(isPlayable('faceLock', wave2, card(2, '♣', 11))).toBe(true)
+  })
+
+  test('faceLock中は場札(foundation)がワイルドでもコンボ不足なら絵札を拒否する', () => {
+    const wave = makeWave({ foundation: card(1, '★', 0, true), combo: 0 })
+    expect(isPlayable('faceLock', wave, card(2, '♣', 12))).toBe(false)
+  })
+
+  test('ワイルドの札、またはfoundationがワイルドなら基本は取れる', () => {
+    const wave = makeWave({ foundation: card(1, '♠', 5) })
+    expect(isPlayable('none', wave, card(2, '★', 0, true))).toBe(true)
+    const wildFoundationWave = makeWave({ foundation: card(1, '★', 0, true) })
+    expect(isPlayable('none', wildFoundationWave, card(2, '♣', 9))).toBe(true)
+  })
+})
+
+describe('getPlayableColumns / remainingCount', () => {
+  test('各列の一番手前のカードのみ判定対象になる', () => {
+    const wave = makeWave({
+      foundation: card(1, '♠', 5),
+      tableau: [
+        [card(2, '♣', 9), card(3, '♣', 6)], // 一番手前=6 → 取れる
+        [card(4, '♦', 2)],                   // 取れない
+      ],
+    })
+    expect(getPlayableColumns('none', wave)).toEqual(new Set([0]))
+  })
+
+  test('remainingCountは全列の合計枚数', () => {
+    const wave = makeWave({
+      tableau: [[card(1, '♠', 1)], [card(2, '♠', 2), card(3, '♠', 3)]],
+    })
+    expect(remainingCount(wave)).toBe(3)
   })
 })

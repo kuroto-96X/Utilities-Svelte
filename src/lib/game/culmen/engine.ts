@@ -1,5 +1,5 @@
 // src/lib/game/culmen/engine.ts
-import type { Card } from './types'
+import type { Card, StageModifier, WaveState } from './types'
 import type { CulmenParams } from './params'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
@@ -83,4 +83,26 @@ export function evaluatePattern(
   }
 
   return { bonus, parts, newStairDir, newStairLen }
+}
+
+export function isPlayable(modifier: StageModifier, wave: WaveState, card: Card): boolean {
+  if (modifier === 'faceLock' && isFace(card) && wave.combo < 2) return false
+  if (card.wild || wave.foundation.wild) return true
+  const d = Math.abs(card.rank - wave.foundation.rank)
+  if (d === 1) return true
+  if (d === 12 && modifier !== 'noLoop') return true
+  return false
+}
+
+export function getPlayableColumns(modifier: StageModifier, wave: WaveState): Set<number> {
+  const result = new Set<number>()
+  wave.tableau.forEach((col, i) => {
+    const top = col[col.length - 1]
+    if (top && isPlayable(modifier, wave, top)) result.add(i)
+  })
+  return result
+}
+
+export function remainingCount(wave: WaveState): number {
+  return wave.tableau.reduce((n, c) => n + c.length, 0)
 }
