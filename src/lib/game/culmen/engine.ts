@@ -221,3 +221,63 @@ export function playCard(
 
   return next
 }
+
+export function drawStock(params: CulmenParams, wave: WaveState, items: ItemId[]): WaveState {
+  if (wave.status !== 'playing') return wave
+  if (wave.stock.length === 0) return wave
+
+  const newStock = [...wave.stock]
+  const card = newStock.pop() as Card
+  const baseCombo = items.includes('start1') ? params.items.startCombo : 0
+
+  if (card.wild) {
+    return {
+      ...wave,
+      stock: newStock,
+      foundation: card,
+      chain: [...wave.chain, card],
+      linked: true,
+    }
+  }
+
+  if (wave.combo > baseCombo && wave.shieldLeft > 0) {
+    const prev = wave.linked ? [...wave.chain].reverse().find(c => !c.wild) ?? null : null
+    let newStairDir: -1 | 0 | 1 = 0
+    let newStairLen = 1
+    if (prev) {
+      let d = card.rank - prev.rank
+      if (d === 12) d = -1
+      if (d === -12) d = 1
+      if (Math.abs(d) === 1) {
+        if (d === wave.stairDir) {
+          newStairDir = d as -1 | 1
+          newStairLen = wave.stairLen + 1
+        } else {
+          newStairDir = d as -1 | 1
+          newStairLen = 2
+        }
+      }
+    }
+    return {
+      ...wave,
+      stock: newStock,
+      foundation: card,
+      shieldLeft: wave.shieldLeft - 1,
+      chain: [...wave.chain, card],
+      linked: true,
+      stairDir: newStairDir,
+      stairLen: newStairLen,
+    }
+  }
+
+  return {
+    ...wave,
+    stock: newStock,
+    foundation: card,
+    combo: baseCombo,
+    chain: [],
+    linked: false,
+    stairDir: 0,
+    stairLen: 1,
+  }
+}

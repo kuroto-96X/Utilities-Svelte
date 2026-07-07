@@ -10,6 +10,7 @@ import {
   remainingCount,
   startWave,
   playCard,
+  drawStock,
 } from './engine'
 import type { Card, WaveState } from './types'
 import { DEFAULT_PARAMS } from './params'
@@ -319,5 +320,77 @@ describe('playCard', () => {
     const wave = baseWave({ status: 'ended', endReason: 'target' })
     const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000, 0)
     expect(next).toBe(wave)
+  })
+})
+
+describe('drawStock', () => {
+  test('山札が空なら何もしない', () => {
+    const wave = makeWave({ stock: [] })
+    expect(drawStock(DEFAULT_PARAMS, wave, [])).toBe(wave)
+  })
+
+  test('通常時(コンボがbaseCombo以下、またはシールドなし): コンボ・チェーンがリセットされる', () => {
+    const wave = makeWave({
+      stock: [card(1, '♠', 9)],
+      combo: 3,
+      shieldLeft: 0,
+      chain: [card(2, '♣', 1)],
+      linked: true,
+      stairDir: 1,
+      stairLen: 2,
+    })
+    const next = drawStock(DEFAULT_PARAMS, wave, [])
+    expect(next.foundation).toEqual(card(1, '♠', 9))
+    expect(next.combo).toBe(0)
+    expect(next.chain).toEqual([])
+    expect(next.linked).toBe(false)
+    expect(next.stairDir).toBe(0)
+    expect(next.stairLen).toBe(1)
+    expect(next.stock).toEqual([])
+  })
+
+  test('「助走」所持時のリセット後コンボはstartComboになる', () => {
+    const wave = makeWave({ stock: [card(1, '♠', 9)], combo: 3, shieldLeft: 0 })
+    const next = drawStock(DEFAULT_PARAMS, wave, ['start1'])
+    expect(next.combo).toBe(DEFAULT_PARAMS.items.startCombo)
+  })
+
+  test('ワイルドがめくれた場合: コンボは変わらずチェーンに追加される', () => {
+    const wave = makeWave({
+      stock: [card(1, '★', 0, true)],
+      combo: 3,
+      chain: [card(2, '♣', 5)],
+      linked: true,
+    })
+    const next = drawStock(DEFAULT_PARAMS, wave, [])
+    expect(next.combo).toBe(3)
+    expect(next.chain).toEqual([card(2, '♣', 5), card(1, '★', 0, true)])
+    expect(next.linked).toBe(true)
+  })
+
+  test('シールド発動時: コンボ維持・shieldLeft減少・得点は付かずチェーンに加わる', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 6)],
+      combo: 2,
+      shieldLeft: 1,
+      chain: [card(2, '♣', 5)],
+      linked: true,
+      stairDir: 0,
+      stairLen: 1,
+    })
+    const next = drawStock(DEFAULT_PARAMS, wave, [])
+    expect(next.combo).toBe(2)
+    expect(next.shieldLeft).toBe(0)
+    expect(next.chain).toEqual([card(2, '♣', 5), card(1, '♣', 6)])
+    expect(next.stairDir).toBe(1) // 5→6 で階段開始
+    expect(next.stairLen).toBe(2)
+  })
+
+  test('コンボがbaseCombo以下ならシールドがあっても消費せずリセットする', () => {
+    const wave = makeWave({ stock: [card(1, '♣', 6)], combo: 0, shieldLeft: 2 })
+    const next = drawStock(DEFAULT_PARAMS, wave, [])
+    expect(next.shieldLeft).toBe(2)
+    expect(next.combo).toBe(0)
+    expect(next.chain).toEqual([])
   })
 })
