@@ -11,9 +11,17 @@ import {
   startWave,
   playCard,
   drawStock,
+  isStuck,
+  markStuck,
+  rollItemOffer,
+  ITEM_POOL,
+  UNIQUE_ITEMS,
+  ITEM_NAMES,
+  itemDesc,
 } from './engine'
 import type { Card, WaveState } from './types'
 import { DEFAULT_PARAMS } from './params'
+import { createRng } from './deck'
 
 function card(id: number, suit: Card['suit'], rank: Card['rank'], wild = false): Card {
   return { id, suit, rank, wild }
@@ -392,5 +400,85 @@ describe('drawStock', () => {
     expect(next.shieldLeft).toBe(2)
     expect(next.combo).toBe(0)
     expect(next.chain).toEqual([])
+  })
+})
+
+describe('isStuck', () => {
+  test('場札が残っていて山札が空、かつ取れる札が無いなら手詰まり', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      stock: [],
+      tableau: [[card(1, '♣', 9)]], // 差4、取れない
+    })
+    expect(isStuck('none', wave)).toBe(true)
+  })
+
+  test('取れる札があれば手詰まりではない', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      stock: [],
+      tableau: [[card(1, '♣', 6)]],
+    })
+    expect(isStuck('none', wave)).toBe(false)
+  })
+
+  test('山札が残っていれば手詰まりではない', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      stock: [card(2, '♦', 1)],
+      tableau: [[card(1, '♣', 9)]],
+    })
+    expect(isStuck('none', wave)).toBe(false)
+  })
+
+  test('場札が0枚なら手詰まりではない(全消し扱い)', () => {
+    const wave = makeWave({ stock: [], tableau: [] })
+    expect(isStuck('none', wave)).toBe(false)
+  })
+})
+
+describe('markStuck', () => {
+  test('playing中のウェーブをended/stuckにする', () => {
+    const wave = makeWave({ status: 'playing' })
+    const next = markStuck(wave)
+    expect(next.status).toBe('ended')
+    expect(next.endReason).toBe('stuck')
+  })
+
+  test('既にendedなら変化しない', () => {
+    const wave = makeWave({ status: 'ended', endReason: 'target' })
+    expect(markStuck(wave)).toBe(wave)
+  })
+})
+
+describe('rollItemOffer', () => {
+  test('3種類を返す', () => {
+    const offer = rollItemOffer([], createRng(1))
+    expect(offer).toHaveLength(3)
+    expect(new Set(offer).size).toBe(3)
+  })
+
+  test('取得済みのユニークアイテムは候補から除外される', () => {
+    const owned = UNIQUE_ITEMS.slice(0, 3) // 4種のうち3種を所持済みにする
+    const offer = rollItemOffer(owned, createRng(1))
+    offer.forEach(id => expect(owned.includes(id)).toBe(false))
+  })
+
+  test('重複取得可能なアイテムは所持済みでも候補に残る', () => {
+    const rand = createRng(2)
+    const offer = rollItemOffer(['shield', 'shield', 'stock5'], rand)
+    expect(offer.length).toBe(3)
+  })
+})
+
+describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
+  test('7種類のアイテムが定義されている', () => {
+    expect(ITEM_POOL).toHaveLength(7)
+    ITEM_POOL.forEach(id => expect(ITEM_NAMES[id]).toBeTruthy())
+  })
+
+  test('itemDescはパラメータの数値を埋め込んだ説明文を返す', () => {
+    expect(itemDesc('red5', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.items.redBonusValue))
+    expect(itemDesc('clear300', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.items.fullClearItemBonus))
   })
 })

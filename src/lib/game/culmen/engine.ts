@@ -281,3 +281,54 @@ export function drawStock(params: CulmenParams, wave: WaveState, items: ItemId[]
     stairLen: 1,
   }
 }
+
+export function isStuck(modifier: StageModifier, wave: WaveState): boolean {
+  const remaining = remainingCount(wave.tableau)
+  if (remaining === 0) return false
+  if (wave.stock.length > 0) return false
+  return getPlayableColumns(modifier, wave).size === 0
+}
+
+export function markStuck(wave: WaveState): WaveState {
+  if (wave.status !== 'playing') return wave
+  return { ...wave, status: 'ended', endReason: 'stuck' }
+}
+
+export const ITEM_POOL: ItemId[] = ['red5', 'face10', 'shield', 'stock5', 'wild1', 'start1', 'clear300']
+export const UNIQUE_ITEMS: ItemId[] = ['red5', 'face10', 'start1', 'clear300']
+
+export const ITEM_NAMES: Record<ItemId, string> = {
+  red5: '紅の目利き',
+  face10: '宮廷の紋章',
+  shield: 'コンボシールド',
+  stock5: '厚めの山札',
+  wild1: 'ワイルド★',
+  start1: '助走',
+  clear300: '完全消去',
+}
+
+export function itemDesc(id: ItemId, params: CulmenParams): string {
+  switch (id) {
+    case 'red5': return `♥♦の基礎点 +${params.items.redBonusValue}`
+    case 'face10': return `J/Q/Kの基礎点 +${params.items.faceBonusValue}`
+    case 'shield': return `山札めくりのコンボリセットを毎ウェーブ${params.items.shieldChargesPerPick}回無効`
+    case 'stock5': return `山札 +${params.items.extraStockCount}枚`
+    case 'wild1': return `毎ウェーブ山札に★を${params.items.wildPerPick}枚混入`
+    case 'start1': return `コンボが${params.items.startCombo}からスタート`
+    case 'clear300': return `全消しボーナス +${params.items.fullClearItemBonus}`
+  }
+}
+
+function shuffleItems(list: ItemId[], rand: () => number): ItemId[] {
+  const arr = [...list]
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
+
+export function rollItemOffer(items: ItemId[], rand: () => number = Math.random): ItemId[] {
+  const available = ITEM_POOL.filter(id => !(UNIQUE_ITEMS.includes(id) && items.includes(id)))
+  return shuffleItems(available, rand).slice(0, 3)
+}
