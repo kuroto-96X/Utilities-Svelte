@@ -195,7 +195,7 @@ describe('getPlayableColumns / remainingCount', () => {
     const wave = makeWave({
       tableau: [[card(1, '♠', 1)], [card(2, '♠', 2), card(3, '♠', 3)]],
     })
-    expect(remainingCount(wave)).toBe(3)
+    expect(remainingCount(wave.tableau)).toBe(3)
   })
 })
 

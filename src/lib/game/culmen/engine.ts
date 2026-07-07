@@ -105,8 +105,8 @@ export function getPlayableColumns(modifier: StageModifier, wave: WaveState): Se
   return result
 }
 
-export function remainingCount(wave: WaveState): number {
-  return wave.tableau.reduce((n, c) => n + c.length, 0)
+export function remainingCount(tableau: Card[][]): number {
+  return tableau.reduce((n, c) => n + c.length, 0)
 }
 
 function countItem(items: ItemId[], id: ItemId): number {
@@ -192,7 +192,7 @@ export function playCard(
 
   const gained = base * newCombo
   const newTableau = wave.tableau.map((c, i) => (i === colIndex ? c.slice(0, -1) : c))
-  const remaining = newTableau.reduce((n, c) => n + c.length, 0)
+  const remaining = remainingCount(newTableau)
   const newScore = wave.score + gained
 
   const next: WaveState = {
