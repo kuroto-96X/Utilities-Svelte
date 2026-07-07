@@ -1,5 +1,5 @@
 // src/lib/game/culmen/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState } from './types'
 import type { CulmenParams } from './params'
 import { createDeck, createRng, shuffle } from './deck'
 
@@ -331,4 +331,87 @@ function shuffleItems(list: ItemId[], rand: () => number): ItemId[] {
 export function rollItemOffer(items: ItemId[], rand: () => number = Math.random): ItemId[] {
   const available = ITEM_POOL.filter(id => !(UNIQUE_ITEMS.includes(id) && items.includes(id)))
   return shuffleItems(available, rand).slice(0, 3)
+}
+
+export function createInitialRun(): RunState {
+  return { phase: 'title', stageIndex: 0, waveIndex: 0, items: [], offer: [], wave: null }
+}
+
+export function beginRun(params: CulmenParams, seed?: number): RunState {
+  return {
+    phase: 'playing',
+    stageIndex: 0,
+    waveIndex: 0,
+    items: [],
+    offer: [],
+    wave: startWave(params, 0, 0, [], seed),
+  }
+}
+
+export function resolveWaveEnd(params: CulmenParams, run: RunState, rand: () => number = Math.random): RunState {
+  const wave = run.wave
+  if (!wave || wave.status !== 'ended') return run
+
+  const target = params.stages[run.stageIndex].targets[run.waveIndex]
+  if (wave.score < target) {
+    return { ...run, phase: 'gameOver' }
+  }
+
+  const isLastWave = run.waveIndex === params.flow.wavesPerStage - 1
+  const isLastStage = run.stageIndex === params.stages.length - 1
+
+  if (isLastWave) {
+    return { ...run, phase: isLastStage ? 'allClear' : 'stageClear' }
+  }
+  return { ...run, phase: 'itemSelect', offer: rollItemOffer(run.items, rand) }
+}
+
+export function pickItem(params: CulmenParams, run: RunState, itemId: ItemId, seed?: number): RunState {
+  if (run.phase !== 'itemSelect') return run
+  const newItems = [...run.items, itemId]
+  const newWaveIndex = run.waveIndex + 1
+  return {
+    ...run,
+    phase: 'playing',
+    items: newItems,
+    waveIndex: newWaveIndex,
+    offer: [],
+    wave: startWave(params, run.stageIndex, newWaveIndex, newItems, seed),
+  }
+}
+
+export function advanceStage(params: CulmenParams, run: RunState, seed?: number): RunState {
+  if (run.phase !== 'stageClear') return run
+  const newStageIndex = run.stageIndex + 1
+  return {
+    ...run,
+    phase: 'playing',
+    stageIndex: newStageIndex,
+    waveIndex: 0,
+    wave: startWave(params, newStageIndex, 0, run.items, seed),
+  }
+}
+
+export function restartRun(params: CulmenParams, seed?: number): RunState {
+  return beginRun(params, seed)
+}
+
+export function applyPlayCard(params: CulmenParams, run: RunState, colIndex: number): RunState {
+  if (run.phase !== 'playing' || !run.wave) return run
+  const stage = params.stages[run.stageIndex]
+  const target = stage.targets[run.waveIndex]
+  const nextWave = playCard(params, run.wave, stage.modifier, run.items, target, colIndex)
+  return { ...run, wave: nextWave }
+}
+
+export function applyDrawStock(params: CulmenParams, run: RunState): RunState {
+  if (run.phase !== 'playing' || !run.wave) return run
+  return { ...run, wave: drawStock(params, run.wave, run.items) }
+}
+
+export function applyStuckCheck(params: CulmenParams, run: RunState): RunState {
+  if (run.phase !== 'playing' || !run.wave) return run
+  const modifier = params.stages[run.stageIndex].modifier
+  if (!isStuck(modifier, run.wave)) return run
+  return { ...run, wave: markStuck(run.wave) }
 }

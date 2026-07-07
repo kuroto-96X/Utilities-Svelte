@@ -18,8 +18,17 @@ import {
   UNIQUE_ITEMS,
   ITEM_NAMES,
   itemDesc,
+  createInitialRun,
+  beginRun,
+  resolveWaveEnd,
+  pickItem,
+  advanceStage,
+  restartRun,
+  applyPlayCard,
+  applyDrawStock,
+  applyStuckCheck,
 } from './engine'
-import type { Card, WaveState } from './types'
+import type { Card, WaveState, RunState } from './types'
 import { DEFAULT_PARAMS } from './params'
 import { createRng } from './deck'
 
@@ -480,5 +489,116 @@ describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
   test('itemDescはパラメータの数値を埋め込んだ説明文を返す', () => {
     expect(itemDesc('red5', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.items.redBonusValue))
     expect(itemDesc('clear300', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.items.fullClearItemBonus))
+  })
+})
+
+describe('createInitialRun / beginRun', () => {
+  test('createInitialRunはtitleフェーズでwave=null', () => {
+    const run = createInitialRun()
+    expect(run.phase).toBe('title')
+    expect(run.wave).toBeNull()
+    expect(run.items).toEqual([])
+  })
+
+  test('beginRunはplayingフェーズでステージ0・ウェーブ0から始まる', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    expect(run.phase).toBe('playing')
+    expect(run.stageIndex).toBe(0)
+    expect(run.waveIndex).toBe(0)
+    expect(run.wave).not.toBeNull()
+  })
+})
+
+describe('resolveWaveEnd', () => {
+  function endedRun(overrides: Partial<RunState>, waveScore: number): RunState {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    return {
+      ...run,
+      ...overrides,
+      wave: { ...run.wave!, score: waveScore, status: 'ended', endReason: 'target' },
+    }
+  }
+
+  test('目標未達ならgameOverになる', () => {
+    const run = endedRun({}, 0)
+    const next = resolveWaveEnd(DEFAULT_PARAMS, run)
+    expect(next.phase).toBe('gameOver')
+  })
+
+  test('ウェーブ1・2クリアならitemSelectになりofferが3件入る', () => {
+    const run = endedRun({ waveIndex: 0 }, DEFAULT_PARAMS.stages[0].targets[0])
+    const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
+    expect(next.phase).toBe('itemSelect')
+    expect(next.offer).toHaveLength(3)
+  })
+
+  test('最終ウェーブクリア・次ステージありならstageClearになる', () => {
+    const run = endedRun({ waveIndex: 2 }, DEFAULT_PARAMS.stages[0].targets[2])
+    const next = resolveWaveEnd(DEFAULT_PARAMS, run)
+    expect(next.phase).toBe('stageClear')
+  })
+
+  test('最終ステージの最終ウェーブクリアならallClearになる', () => {
+    const lastStage = DEFAULT_PARAMS.stages.length - 1
+    const run = endedRun({ waveIndex: 2, stageIndex: lastStage }, DEFAULT_PARAMS.stages[lastStage].targets[2])
+    const next = resolveWaveEnd(DEFAULT_PARAMS, run)
+    expect(next.phase).toBe('allClear')
+  })
+})
+
+describe('pickItem / advanceStage / restartRun', () => {
+  test('pickItemでアイテムが追加され次ウェーブが始まる', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', waveIndex: 0, offer: ['shield', 'stock5', 'wild1'] }
+    const next = pickItem(DEFAULT_PARAMS, run, 'shield', 2)
+    expect(next.phase).toBe('playing')
+    expect(next.items).toEqual(['shield'])
+    expect(next.waveIndex).toBe(1)
+    expect(next.wave?.shieldLeft).toBe(DEFAULT_PARAMS.items.shieldChargesPerPick)
+  })
+
+  test('advanceStageで次ステージのウェーブ0から始まる', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'stageClear', stageIndex: 0 }
+    const next = advanceStage(DEFAULT_PARAMS, run, 2)
+    expect(next.phase).toBe('playing')
+    expect(next.stageIndex).toBe(1)
+    expect(next.waveIndex).toBe(0)
+  })
+
+  test('restartRunでステージ0・ウェーブ0・アイテムなしに戻る', () => {
+    const next = restartRun(DEFAULT_PARAMS, 1)
+    expect(next.phase).toBe('playing')
+    expect(next.stageIndex).toBe(0)
+    expect(next.waveIndex).toBe(0)
+    expect(next.items).toEqual([])
+  })
+})
+
+describe('applyPlayCard / applyDrawStock / applyStuckCheck', () => {
+  test('applyPlayCardはrun.waveを更新する', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const col0 = run.wave!.tableau[0]
+    const before = col0.length
+    const next = applyPlayCard(DEFAULT_PARAMS, run, 0)
+    expect(next.wave!.tableau[0].length).toBeLessThanOrEqual(before)
+  })
+
+  test('applyDrawStockはrun.wave.stockを減らす', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const before = run.wave!.stock.length
+    const next = applyDrawStock(DEFAULT_PARAMS, run)
+    expect(next.wave!.stock.length).toBe(before - 1)
+  })
+
+  test('applyStuckCheckは手詰まりでなければ何もしない', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const next = applyStuckCheck(DEFAULT_PARAMS, run)
+    expect(next.wave!.status).toBe('playing')
+  })
+
+  test('phaseがplaying以外なら何もしない', () => {
+    const run: RunState = { ...createInitialRun() }
+    expect(applyPlayCard(DEFAULT_PARAMS, run, 0)).toBe(run)
+    expect(applyDrawStock(DEFAULT_PARAMS, run)).toBe(run)
+    expect(applyStuckCheck(DEFAULT_PARAMS, run)).toBe(run)
   })
 })
