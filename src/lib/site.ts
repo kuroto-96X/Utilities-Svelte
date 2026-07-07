@@ -109,5 +109,11 @@ export const site = {
       description: "スマホのフリック入力で遊ぶノルマクリア型タイピングゲーム",
       category: 'game',
     },
+    {
+      href: "/game/culmen",
+      label: "登頂ソリティア -Culmen-",
+      description: "ゴルフソリティア×ローグライク。コンボと階段ボーナスでスコアを稼ぎ、アイテムで強化しながらステージを駆け上がる",
+      category: 'game',
+    },
   ],
 } as const

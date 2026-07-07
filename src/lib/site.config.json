@@ -13,7 +13,8 @@
     "/investment/nisa-simple-calculator": true,
     "/investment/nisa-detailed-calculator": true,
     "/investment/nisa-accumulation-simulator": true,
-    "/game/flick-typing": true
+    "/game/flick-typing": true,
+    "/game/culmen": true
   },
   "toolVisibility": {
     "/music/bpm-tapper": true,
@@ -30,6 +31,7 @@
     "/investment/nisa-detailed-calculator": false,
     "/investment/nisa-accumulation-simulator": false,
     "/game/solitaire": true,
-    "/game/flick-typing": false
+    "/game/flick-typing": true,
+    "/game/culmen": true
   }
 }
