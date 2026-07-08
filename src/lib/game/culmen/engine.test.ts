@@ -654,6 +654,11 @@ describe('analyzeStair', () => {
     expect(analyzeStair(chain)).toEqual({ held: true, dir: 1, len: 3 })
   })
 
+  test('7→6→5で方向-1・長さ3が保持される', () => {
+    const chain = [card(1, '♠', 7), card(2, '♣', 6), card(3, '♦', 5)]
+    expect(analyzeStair(chain)).toEqual({ held: true, dir: -1, len: 3 })
+  })
+
   test('5→6→5は方向反転でheld:falseになり、その後は復活しない', () => {
     const chain = [card(1, '♠', 5), card(2, '♣', 6), card(3, '♦', 5), card(4, '♣', 6)]
     expect(analyzeStair(chain).held).toBe(false)
