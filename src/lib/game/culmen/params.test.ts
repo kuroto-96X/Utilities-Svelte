@@ -1,4 +1,3 @@
-// src/lib/game/culmen/params.test.ts
 import { describe, test, expect } from 'vitest'
 import { DEFAULT_PARAMS, loadParams } from './params'
 import culmenConfigJson from './culmen.config.json'
@@ -15,6 +14,33 @@ describe('DEFAULT_PARAMS', () => {
 
   test('ui.comboTierThresholds は [3, 5, 8]', () => {
     expect(DEFAULT_PARAMS.ui.comboTierThresholds).toEqual([3, 5, 8])
+  })
+
+  test('点数系パラメータは10の倍数になっている', () => {
+    const s = DEFAULT_PARAMS.scoring
+    expect(s.basePoint % 10).toBe(0)
+    expect(s.suitBonus % 10).toBe(0)
+    expect(s.colorBonus % 10).toBe(0)
+    expect(s.stairBonus % 10).toBe(0)
+    expect(s.wildSuitBonus % 10).toBe(0)
+    expect(s.clearBonus % 10).toBe(0)
+    expect(s.clearBonusPerStock % 10).toBe(0)
+    expect(s.flushBonus % 10).toBe(0)
+    expect(s.royalSetBonus % 10).toBe(0)
+    expect(s.sameRankBonusUnit % 10).toBe(0)
+    expect(s.completeRunBonus % 10).toBe(0)
+    expect(s.completeRunSuitBonus % 10).toBe(0)
+    expect(s.columnSweepBonus % 10).toBe(0)
+    expect(DEFAULT_PARAMS.items.redBonusValue % 10).toBe(0)
+    expect(DEFAULT_PARAMS.items.faceBonusValue % 10).toBe(0)
+    expect(DEFAULT_PARAMS.items.fullClearItemBonus % 10).toBe(0)
+    DEFAULT_PARAMS.stages.forEach(stage => {
+      stage.targets.forEach(t => expect(t % 10).toBe(0))
+    })
+  })
+
+  test('comboMultiplierStepは0.1', () => {
+    expect(DEFAULT_PARAMS.scoring.comboMultiplierStep).toBe(0.1)
   })
 })
 

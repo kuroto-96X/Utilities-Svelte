@@ -1,27 +1,35 @@
 {
   "layout": { "cols": 7, "rows": 5 },
   "scoring": {
-    "basePoint": 10,
-    "suitBonus": 10,
-    "colorBonus": 5,
-    "stairBonus": 15,
+    "basePoint": 100,
+    "suitBonus": 100,
+    "colorBonus": 50,
+    "stairBonus": 150,
     "stairMinLen": 3,
-    "wildSuitBonus": 10,
-    "clearBonus": 200
+    "wildSuitBonus": 100,
+    "clearBonus": 2000,
+    "clearBonusPerStock": 50,
+    "comboMultiplierStep": 0.1,
+    "flushBonus": 300,
+    "royalSetBonus": 400,
+    "sameRankBonusUnit": 100,
+    "completeRunBonus": 1000,
+    "completeRunSuitBonus": 1000,
+    "columnSweepBonus": 150
   },
   "stages": [
-    { "name": "STAGE 1", "modifier": "none", "targets": [400, 750, 1300] },
-    { "name": "STAGE 2", "modifier": "noLoop", "targets": [600, 1100, 1900] },
-    { "name": "STAGE 3", "modifier": "faceLock", "targets": [800, 1500, 2600] }
+    { "name": "STAGE 1", "modifier": "none", "targets": [4000, 7500, 13000] },
+    { "name": "STAGE 2", "modifier": "noLoop", "targets": [6000, 11000, 19000] },
+    { "name": "STAGE 3", "modifier": "faceLock", "targets": [8000, 15000, 26000] }
   ],
   "items": {
-    "redBonusValue": 5,
-    "faceBonusValue": 10,
+    "redBonusValue": 50,
+    "faceBonusValue": 100,
     "shieldChargesPerPick": 1,
     "extraStockCount": 5,
     "wildPerPick": 1,
     "startCombo": 1,
-    "fullClearItemBonus": 300
+    "fullClearItemBonus": 3000
   },
   "flow": { "wavesPerStage": 3, "clearDelayMs": 450 },
   "ui": { "comboTierThresholds": [3, 5, 8] }
