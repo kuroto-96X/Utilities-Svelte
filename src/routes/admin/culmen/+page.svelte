@@ -110,11 +110,40 @@
     }
   }
 
+  function setScoring<K extends keyof CulmenParams['scoring']>(key: K, value: number) {
+    if (!config) return
+    config.scoring[key] = value as CulmenParams['scoring'][K]
+  }
+
+  function setItems<K extends keyof CulmenParams['items']>(key: K, value: number) {
+    if (!config) return
+    config.items[key] = value as CulmenParams['items'][K]
+  }
+
+  function setTarget(stageIndex: number, targetIndex: 0 | 1 | 2, value: number) {
+    if (!config) return
+    config.stages[stageIndex].targets[targetIndex] = value
+  }
+
   onMount(() => loadConfig())
   onDestroy(() => {
     if (flashTimer) clearTimeout(flashTimer)
   })
 </script>
+
+{#snippet scaledNumberInput(value: number, onChange: (v: number) => void)}
+  <div class="mt-1 flex items-center gap-1">
+    <input
+      type="number"
+      min="0"
+      step="1"
+      value={value / 10}
+      oninput={(e) => onChange(Number((e.target as HTMLInputElement).value) * 10)}
+      class="w-full border border-slate-200 rounded px-2 py-1 text-sm"
+    />
+    <span class="text-slate-400 font-mono text-sm select-none" title="点数系パラメータは常に10の倍数">0</span>
+  </div>
+{/snippet}
 
 <div class="max-w-3xl mx-auto px-4 py-8">
   <a href="/admin" class="text-xs text-slate-400 hover:text-teal-600 mb-4 inline-block">← 管理ページ一覧</a>
@@ -165,19 +194,19 @@
         <div class="grid grid-cols-2 gap-3">
           <label class="text-xs text-slate-500">
             基礎点(basePoint)
-            <input type="number" min="0" step="1" bind:value={config.scoring.basePoint} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+            {@render scaledNumberInput(config.scoring.basePoint, v => setScoring('basePoint', v))}
           </label>
           <label class="text-xs text-slate-500">
             同スートボーナス(suitBonus)
-            <input type="number" min="0" step="1" bind:value={config.scoring.suitBonus} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+            {@render scaledNumberInput(config.scoring.suitBonus, v => setScoring('suitBonus', v))}
           </label>
           <label class="text-xs text-slate-500">
             同色ボーナス(colorBonus)
-            <input type="number" min="0" step="1" bind:value={config.scoring.colorBonus} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+            {@render scaledNumberInput(config.scoring.colorBonus, v => setScoring('colorBonus', v))}
           </label>
           <label class="text-xs text-slate-500">
             階段ボーナス(stairBonus)
-            <input type="number" min="0" step="1" bind:value={config.scoring.stairBonus} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+            {@render scaledNumberInput(config.scoring.stairBonus, v => setScoring('stairBonus', v))}
           </label>
           <label class="text-xs text-slate-500">
             階段成立枚数(stairMinLen)
@@ -185,11 +214,49 @@
           </label>
           <label class="text-xs text-slate-500">
             ワイルド直後ボーナス(wildSuitBonus)
-            <input type="number" min="0" step="1" bind:value={config.scoring.wildSuitBonus} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+            {@render scaledNumberInput(config.scoring.wildSuitBonus, v => setScoring('wildSuitBonus', v))}
           </label>
           <label class="text-xs text-slate-500">
             全消しボーナス(clearBonus)
-            <input type="number" min="0" step="1" bind:value={config.scoring.clearBonus} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+            {@render scaledNumberInput(config.scoring.clearBonus, v => setScoring('clearBonus', v))}
+          </label>
+          <label class="text-xs text-slate-500">
+            全消し・残り山札1枚あたり(clearBonusPerStock)
+            {@render scaledNumberInput(config.scoring.clearBonusPerStock, v => setScoring('clearBonusPerStock', v))}
+          </label>
+          <label class="text-xs text-slate-500">
+            コンボ倍率のstep幅(comboMultiplierStep)
+            <input type="number" min="0" step="0.1" bind:value={config.scoring.comboMultiplierStep} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+        </div>
+      </section>
+
+      <section class="bg-white border border-slate-200 rounded-xl p-4">
+        <h2 class="font-semibold text-slate-700 text-sm mb-3">役ボーナス</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="text-xs text-slate-500">
+            スートコンプリート(flushBonus)
+            {@render scaledNumberInput(config.scoring.flushBonus, v => setScoring('flushBonus', v))}
+          </label>
+          <label class="text-xs text-slate-500">
+            ロイヤルセット(royalSetBonus)
+            {@render scaledNumberInput(config.scoring.royalSetBonus, v => setScoring('royalSetBonus', v))}
+          </label>
+          <label class="text-xs text-slate-500">
+            同ランク単位(sameRankBonusUnit)
+            {@render scaledNumberInput(config.scoring.sameRankBonusUnit, v => setScoring('sameRankBonusUnit', v))}
+          </label>
+          <label class="text-xs text-slate-500">
+            コンプリートラン(completeRunBonus)
+            {@render scaledNumberInput(config.scoring.completeRunBonus, v => setScoring('completeRunBonus', v))}
+          </label>
+          <label class="text-xs text-slate-500">
+            コンプリートラン・同スート加点(completeRunSuitBonus)
+            {@render scaledNumberInput(config.scoring.completeRunSuitBonus, v => setScoring('completeRunSuitBonus', v))}
+          </label>
+          <label class="text-xs text-slate-500">
+            列一掃(columnSweepBonus)
+            {@render scaledNumberInput(config.scoring.columnSweepBonus, v => setScoring('columnSweepBonus', v))}
           </label>
         </div>
       </section>
@@ -226,7 +293,7 @@
                   </td>
                   {#each [0, 1, 2] as ti (ti)}
                     <td class="px-1 py-1">
-                      <input type="number" min="0" step="1" bind:value={stage.targets[ti]} class="w-full text-center border border-slate-200 rounded px-1 py-0.5" />
+                      {@render scaledNumberInput(stage.targets[ti], v => setTarget(si, ti as 0 | 1 | 2, v))}
                     </td>
                   {/each}
                   <td class="px-1 py-1 text-center">
@@ -244,11 +311,11 @@
         <div class="grid grid-cols-2 gap-3">
           <label class="text-xs text-slate-500">
             紅の目利き(redBonusValue)
-            <input type="number" min="0" step="1" bind:value={config.items.redBonusValue} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+            {@render scaledNumberInput(config.items.redBonusValue, v => setItems('redBonusValue', v))}
           </label>
           <label class="text-xs text-slate-500">
             宮廷の紋章(faceBonusValue)
-            <input type="number" min="0" step="1" bind:value={config.items.faceBonusValue} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+            {@render scaledNumberInput(config.items.faceBonusValue, v => setItems('faceBonusValue', v))}
           </label>
           <label class="text-xs text-slate-500">
             コンボシールド回数(shieldChargesPerPick)
@@ -268,7 +335,7 @@
           </label>
           <label class="text-xs text-slate-500">
             完全消去加算(fullClearItemBonus)
-            <input type="number" min="0" step="1" bind:value={config.items.fullClearItemBonus} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+            {@render scaledNumberInput(config.items.fullClearItemBonus, v => setItems('fullClearItemBonus', v))}
           </label>
         </div>
       </section>
