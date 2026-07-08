@@ -246,19 +246,19 @@
     >取れる札がない → 山札をめくろう</div>
   </div>
 
-  <div class="px-4 flex items-center gap-1 overflow-x-auto" style="min-height: 2.6rem;">
-    {#each displayWave.chain as c, i (c.id)}
-      <div
-        class="flex-none rounded border text-center font-black leading-none flex flex-col items-center justify-center"
-        style="width:24px; height:34px; font-size:11px; background:{c.wild ? '#EDE4FF' : '#FBF7EC'}; color:{c.wild ? '#6D28D9' : isRed(c) ? '#C7402D' : '#15181D'}; border-color:{c.wild ? '#A78BFA' : '#B8AE98'}; opacity:{!displayWave.linked && i === displayWave.chain.length - 1 ? 0.55 : 1};"
-      >
-        <div>{rankLabel(c)}</div>
-        <div style="font-size:9px;">{c.suit}</div>
-      </div>
-    {/each}
-    {#if displayWave.chain.length === 0}
-      <div class="text-emerald-300/50 text-xs">取った札がここに並ぶ → 同スート/同色/階段でボーナス</div>
-    {/if}
+  <div class="px-4 overflow-x-auto" style="min-height: 2.6rem;">
+    <div class="relative" style="height:40px; width:{24 + (displayWave.chain.length - 1) * 10}px;">
+      {#each displayWave.chain as c, i (c.id)}
+        {@const isLastUnlinked = !displayWave.linked && i === displayWave.chain.length - 1}
+        <div
+          class="absolute rounded border text-center font-black leading-none flex flex-col items-center justify-center"
+          style="left:{i * 10}px; top:{displayWave.chainOrigin[i] === 'draw' ? 6 : 0}px; z-index:{i + 1}; width:24px; height:34px; font-size:11px; background:{c.wild ? '#EDE4FF' : '#FBF7EC'}; color:{c.wild ? '#6D28D9' : isRed(c) ? '#C7402D' : '#15181D'}; border-color:{c.wild ? '#A78BFA' : '#B8AE98'}; opacity:{isLastUnlinked ? 0.55 : 1}; box-shadow:1px 0 3px rgba(0,0,0,.35);"
+        >
+          <div>{rankLabel(c)}</div>
+          <div style="font-size:9px;">{c.suit}</div>
+        </div>
+      {/each}
+    </div>
   </div>
 
   <div class="px-4 text-center text-yellow-300 text-xs font-black animate-pulse mb-1 {displayWave.lastDrawEffect === 'pattern' ? '' : 'invisible'}">✦ パターン継続! ✦</div>
