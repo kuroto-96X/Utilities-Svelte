@@ -44,6 +44,8 @@ export interface CulmenParams {
   }
   ui: {
     comboTierThresholds: [number, number, number]
+    chainCardOffsetX: number
+    chainCardsPerRow: number
   }
 }
 
@@ -81,7 +83,7 @@ export const DEFAULT_PARAMS: CulmenParams = {
     fullClearItemBonus: 3000,
   },
   flow: { wavesPerStage: 3, clearDelayMs: 450 },
-  ui: { comboTierThresholds: [3, 5, 8] },
+  ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 32, chainCardsPerRow: 13 },
 }
 
 export function loadParams(): CulmenParams {

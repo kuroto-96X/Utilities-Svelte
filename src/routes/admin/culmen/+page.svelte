@@ -24,6 +24,8 @@
     // 場札(cols×rows)配布後にfoundation用の1枚が残らないと山札が尽きてゲームが起動できない
     if (config.layout.cols < 1 || config.layout.rows < 1) return true
     if (config.layout.cols * config.layout.rows > 51) return true
+    if (!Number.isFinite(config.ui.chainCardsPerRow) || config.ui.chainCardsPerRow < 1) return true
+    if (!Number.isFinite(config.ui.chainCardOffsetX) || config.ui.chainCardOffsetX < 0) return true
     return false
   })
 
@@ -357,6 +359,14 @@
               <input type="number" min="0" step="1" bind:value={config.ui.comboTierThresholds[ti]} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
             </label>
           {/each}
+          <label class="text-xs text-slate-500">
+            チェーン表示: 横にずらす幅(chainCardOffsetX)
+            <input type="number" min="0" step="1" bind:value={config.ui.chainCardOffsetX} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            チェーン表示: 1行に表示する枚数(chainCardsPerRow)
+            <input type="number" min="1" step="1" bind:value={config.ui.chainCardsPerRow} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
         </div>
       </section>
 

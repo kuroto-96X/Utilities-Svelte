@@ -187,7 +187,7 @@
     return displayWave.combo >= t3 ? 3 : displayWave.combo >= t2 ? 2 : displayWave.combo >= t1 ? 1 : 0
   })()}
   {@const chainEntries = displayWave.chain.map((c, i) => ({ card: c, origin: displayWave.chainOrigin[i] }))}
-  {@const chainRows = chunk(chainEntries, 13)}
+  {@const chainRows = chunk(chainEntries, params.ui.chainCardsPerRow)}
   <div class="px-4 pt-3">
     <div class="flex items-center justify-between text-xs">
       <div class="flex items-center gap-2">
@@ -270,11 +270,11 @@
     </button>
     <div class="overflow-x-auto min-w-0">
       {#each chainRows as row, ri (ri)}
-        <div class="relative" style="height:116px; width:{64 + (row.length - 1) * 32}px;">
+        <div class="relative" style="height:116px; width:{64 + (row.length - 1) * params.ui.chainCardOffsetX}px;">
           {#each row as entry, j (entry.card.id)}
             <div
               class="absolute"
-              style="left:{j * 32}px; top:{entry.origin === 'draw' ? 20 : 0}px; z-index:{j + 1}; width:64px;"
+              style="left:{j * params.ui.chainCardOffsetX}px; top:{entry.origin === 'draw' ? 20 : 0}px; z-index:{j + 1}; width:64px;"
             >
               {@render cardFace(entry.card, false)}
             </div>
