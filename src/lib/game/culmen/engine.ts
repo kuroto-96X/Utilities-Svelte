@@ -1,5 +1,5 @@
 // src/lib/game/culmen/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank } from './types'
 import type { CulmenParams } from './params'
 import { createDeck, createRng, shuffle, shuffleInPlace } from './deck'
 
@@ -544,4 +544,14 @@ export function chainContinuesPattern(
   }
 
   return false
+}
+
+let debugCardIdSeq = 900000
+
+// デバッグパネル専用: 山札の一番上(次にめくられる札)を指定カードに差し替える。
+// idは既存デッキ(最大でも数百枚程度)と衝突しないよう90万番台から発番する。
+export function forceStockTop(wave: WaveState, suit: Suit, rank: Rank, wild: boolean): WaveState {
+  const card: Card = { id: ++debugCardIdSeq, suit, rank, wild }
+  const newStock = wave.stock.length === 0 ? [card] : [...wave.stock.slice(0, -1), card]
+  return { ...wave, stock: newStock }
 }

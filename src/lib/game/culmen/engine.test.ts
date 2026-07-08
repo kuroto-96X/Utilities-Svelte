@@ -34,6 +34,7 @@ import {
   countSameRankBefore,
   checkCompleteRun,
   evaluateChainBonus,
+  forceStockTop,
 } from './engine'
 import type { Card, WaveState, RunState } from './types'
 import { DEFAULT_PARAMS } from './params'
@@ -884,5 +885,40 @@ describe('evaluateChainBonus', () => {
     const result = evaluateChainBonus(scoring, chainBefore, card(13, '♠', 13))
     expect(result.parts).toContain(`コンプリートラン+${scoring.completeRunBonus}`)
     expect(result.parts).toContain(`コンプリートラン(同スート)+${scoring.completeRunSuitBonus}`)
+  })
+})
+
+describe('forceStockTop', () => {
+  test('山札の一番上(末尾)が指定カードに置き換わる', () => {
+    const wave = makeWave({ stock: [card(1, '♠', 2), card(2, '♣', 3)] })
+    const next = forceStockTop(wave, '♥', 9, false)
+    expect(next.stock).toHaveLength(2)
+    expect(next.stock[0]).toEqual(card(1, '♠', 2))
+    expect(next.stock[1].suit).toBe('♥')
+    expect(next.stock[1].rank).toBe(9)
+    expect(next.stock[1].wild).toBe(false)
+  })
+
+  test('山札が空の場合は指定カード1枚だけの山札になる', () => {
+    const wave = makeWave({ stock: [] })
+    const next = forceStockTop(wave, '★', 0, true)
+    expect(next.stock).toHaveLength(1)
+    expect(next.stock[0].suit).toBe('★')
+    expect(next.stock[0].wild).toBe(true)
+  })
+
+  test('stock以外のWaveStateフィールドは変化しない', () => {
+    const wave = makeWave({ stock: [card(1, '♠', 2)], score: 500, combo: 3 })
+    const next = forceStockTop(wave, '♦', 5, false)
+    expect(next.score).toBe(500)
+    expect(next.combo).toBe(3)
+    expect(next.chain).toEqual(wave.chain)
+  })
+
+  test('呼び出すたびに異なるidが振られる', () => {
+    const wave = makeWave({ stock: [card(1, '♠', 2)] })
+    const next1 = forceStockTop(wave, '♦', 5, false)
+    const next2 = forceStockTop(wave, '♦', 5, false)
+    expect(next1.stock[0].id).not.toBe(next2.stock[0].id)
   })
 })
