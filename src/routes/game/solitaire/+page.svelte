@@ -208,7 +208,7 @@
         if (el) {
           const r = el.getBoundingClientRect()
           fromX = r.left
-          fromY = r.top + (state.tableau[move.from.index].length - 1) * 28 * scale
+          fromY = r.top + (state.tableau[move.from.index].length - 1) * 18 * scale
         }
       }
       const toEl = getDestEl('foundation', move.to.index)
@@ -578,7 +578,7 @@
       if (el) { const r = el.getBoundingClientRect(); fromX = r.left; fromY = r.top }
     } else {
       const el = document.querySelector(`[data-pile="tableau"][data-pile-index="${di.pileIndex}"]`)
-      if (el) { const r = el.getBoundingClientRect(); fromX = r.left; fromY = r.top + (di.cardIndex ?? 0) * 28 * scale }
+      if (el) { const r = el.getBoundingClientRect(); fromX = r.left; fromY = r.top + (di.cardIndex ?? 0) * 18 * scale }
     }
 
     const animId = `slam-${_effectId++}`
@@ -1415,7 +1415,7 @@
               onclick={() => handleCardClick('tableau', colIdx, cardIdx)}
               ondblclick={(e) => card.faceUp ? handleDoubleClick(e, 'tableau', colIdx, cardIdx) : undefined}
               class="absolute left-0 right-0 rounded-lg transition-all"
-              style="top: {cardIdx * 28}px; height: 98px; z-index: {cardIdx + 1}; opacity: {(dragInfo?.isDragging && dragInfo.pile === 'tableau' && dragInfo.pileIndex === colIdx && cardIdx >= col.length - dragInfo.count) || slamAnims.some(a => a.hideSource && a.sourcePile === 'tableau' && a.sourcePileIndex === colIdx && cardIdx >= col.length - a.sourceCount) ? 0.4 : 1};"
+              style="top: {cardIdx * 18}px; height: 98px; z-index: {cardIdx + 1}; opacity: {(dragInfo?.isDragging && dragInfo.pile === 'tableau' && dragInfo.pileIndex === colIdx && cardIdx >= col.length - dragInfo.count) || slamAnims.some(a => a.hideSource && a.sourcePile === 'tableau' && a.sourcePileIndex === colIdx && cardIdx >= col.length - a.sourceCount) ? 0.4 : 1};"
               class:ring-2={
                 (hint?.from.pile === 'tableau' && hint?.from.index === colIdx && cardIdx >= col.length - hint.count) ||
                 (isSelected('tableau', colIdx) && cardIdx >= col.length - (selected?.count ?? 0))
@@ -1585,7 +1585,7 @@
 
   <!-- ドラッグゴースト -->
   {#each slamAnims as anim (anim.id)}
-    {@const ghostNaturalH = (anim.cards.length - 1) * 28 + 98}
+    {@const ghostNaturalH = (anim.cards.length - 1) * 18 + 98}
     <div
       data-ghost-id={anim.id}
       class="pointer-events-none fixed z-[300]"
@@ -1594,7 +1594,7 @@
       <div style="transform: scale({scale}); transform-origin: top left; width: 64px; height: {ghostNaturalH}px;">
         {#each anim.cards as card, i (i)}
           <div class="absolute w-16 rounded-lg border border-slate-200 overflow-hidden"
-            style="top:{i*28}px; height:98px;">
+            style="top:{i*18}px; height:98px;">
             {@render cardFace(card, true)}
           </div>
         {/each}
@@ -1604,7 +1604,7 @@
 
   {#if dragInfo?.isDragging}
     {@const dragCards = getDragCards()}
-    {@const dragNaturalH = (dragCards.length - 1) * 28 + 98}
+    {@const dragNaturalH = (dragCards.length - 1) * 18 + 98}
     <div
       class="pointer-events-none fixed z-[200]"
       style="left:{dragInfo.currentX - 32 * scale}px; top:{dragInfo.currentY - 20 * scale}px; width:{64 * scale}px; height:{dragNaturalH * scale}px;"
@@ -1613,7 +1613,7 @@
         {#each dragCards as card, i (i)}
           <div
             class="absolute w-16 rounded-lg border border-slate-200 shadow-2xl overflow-hidden"
-            style="top:{i * 28}px; height:{i === dragCards.length - 1 ? 98 : 46}px; opacity:0.9;"
+            style="top:{i * 18}px; height:{i === dragCards.length - 1 ? 98 : 18}px; opacity:0.9;"
           >
             {@render cardFace(card, i === dragCards.length - 1)}
           </div>
