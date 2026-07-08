@@ -355,6 +355,11 @@ describe('chainContinuesPattern', () => {
     expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '♥', 9))).toBe(false)
   })
 
+  test('実カード1枚のみのチェーンでは、色が一致してもスートが違えば継続しない(スート優先)', () => {
+    const chain = [card(1, '♠', 5)]
+    expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(2, '♣', 9))).toBe(false)
+  })
+
   test('階段が成立中で、捲った札が同方向を継続すれば継続', () => {
     const chain = [card(1, '♠', 5), card(2, '♣', 6)] // dir=+1
     expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '♦', 7))).toBe(true)
