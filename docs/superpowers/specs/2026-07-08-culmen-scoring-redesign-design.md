@@ -40,6 +40,16 @@ comboMultiplierStep (新パラメータ、既定 0.1)
 | stages[1].targets | [600, 1100, 1900] | [6000, 11000, 19000] |
 | stages[2].targets | [800, 1500, 2600] | [8000, 15000, 26000] |
 
+### 2.1 `/admin/culmen` での一の位固定
+
+上記の「点数」パラメータ(このテーブルの各項目、およびステージ`targets`、6章で追加する役ボーナス各種・`clearBonusPerStock`)は、`/admin/culmen` での編集時に**一の位を常に「0」に固定**した入力欄にする。
+
+- 実際の値を10で割った数値のみを編集可能な `<input type="number">` として表示し、その右側に固定の「0」ラベル(編集不可のテキスト)を添えて全体の値を示す
+  - 例: 実際の値が150(`stairBonus`)の場合、入力欄には「15」、その右横に固定表示「0」→ 見た目は「15」+「0」で150
+- 保存時は「入力値 × 10」を実際のパラメータ値として `config` に反映する
+- `comboMultiplierStep`(既定0.1、点数ではなく倍率のstep)はこの対象に含めない。従来どおり小数点入力(`step="0.1"`)のままとする
+- これにより、adminが誤って10の倍数でない値を設定し、コンボ倍率適用時に端数が発生する事態を構造的に防ぐ
+
 変更しないもの(点数ではないため): `scoring.stairMinLen`、`items.shieldChargesPerPick`、`items.extraStockCount`、`items.wildPerPick`、`items.startCombo`、`ui.comboTierThresholds`、`flow.wavesPerStage`、`flow.clearDelayMs`
 
 ## 3. パターンボーナスの判定方法の変更(同スート・同色・階段)
@@ -117,7 +127,7 @@ clearBonusPerStock (新パラメータ、既定 50)
 - `playCard` はパターンボーナスに加えて6節の役ボーナスもあわせて計算し、`base` に合算したうえで4節の新コンボ倍率を適用する
 - `WaveState` に列一掃のカウント(現在のコンボ中に空にした列数)を保持するフィールドの追加が必要になる見込み
 - 既存のテスト(`engine.test.ts`)のうち、スコア計算・パターン判定・山札めくりに関するものは、本スペックの新仕様に合わせて期待値を更新する必要がある
-- `src/routes/admin/culmen/+page.svelte` に、新パラメータ(`comboMultiplierStep`、`clearBonusPerStock`、`flushBonus`、`royalSetBonus`、`sameRankBonusUnit`、`completeRunBonus`、`completeRunSuitBonus`、`columnSweepBonus`)の入力欄を追加する
+- `src/routes/admin/culmen/+page.svelte` に、新パラメータ(`comboMultiplierStep`、`clearBonusPerStock`、`flushBonus`、`royalSetBonus`、`sameRankBonusUnit`、`completeRunBonus`、`completeRunSuitBonus`、`columnSweepBonus`)の入力欄を追加する。このうち`comboMultiplierStep`以外は2.1節の「一の位固定」入力欄とする。また、既存の点数系パラメータ・ステージ`targets`の入力欄も2.1節の形式に合わせて変更する
 
 ## 8. 今回のスコープに含まないもの
 
@@ -140,4 +150,5 @@ clearBonusPerStock (新パラメータ、既定 50)
 10. 同ランクを2・3・4・5枚と取った場合、各時点での加点が100/200/300/400(累計100/300/600/1000)になる
 11. コンボ中に1〜13の全ランクを揃えると`completeRunBonus`が加算され、さらに全て同じスートなら`completeRunSuitBonus`も加算される
 12. 1コンボ中に場札の列を2つ空にした場合、1列目で`columnSweepBonus`×1、2列目で`columnSweepBonus`×2が加算される
-13. `npm run test` が全件PASSし、`npm run build` が成功する
+13. `/admin/culmen`で点数系パラメータ(例: `stairBonus`)の入力欄が「編集可能な数値」+「固定表示の0」の組み合わせで表示され、編集欄に15と入力すると実際の値が150として保存される
+14. `npm run test` が全件PASSし、`npm run build` が成功する
