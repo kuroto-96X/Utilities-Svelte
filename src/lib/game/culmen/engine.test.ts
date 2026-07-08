@@ -158,14 +158,14 @@ describe('startWave', () => {
     expect(tableauCount + wave.stock.length + 1).toBe(52)
   })
 
-  test('初期状態: スコア0、コンボ0、チェーン空、階段未成立', () => {
+  test('初期状態: スコア0、コンボ0、チェーン空、列一掃0、演出フラグnull', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], 1)
     expect(wave.score).toBe(0)
     expect(wave.combo).toBe(0)
     expect(wave.chain).toEqual([])
     expect(wave.linked).toBe(false)
-    expect(wave.stairDir).toBe(0)
-    expect(wave.stairLen).toBe(1)
+    expect(wave.columnsEmptiedThisCombo).toBe(0)
+    expect(wave.lastDrawEffect).toBeNull()
     expect(wave.status).toBe('playing')
   })
 
