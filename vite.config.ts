@@ -32,13 +32,15 @@ function kuromojiDictRawPlugin(): Plugin {
   }
 }
 
-function adminApiPlugin(): Plugin {
+// admin配下の各設定ページが使う「JSONファイルをGET/POSTで読み書きするだけ」のdevサーバーAPIを生成する共通ファクトリ。
+// site.config.json / anim.config.json / culmen.config.json はいずれもこの形で提供する。
+function jsonFileApiPlugin(name: string, routePath: string, relativeConfigPath: string): Plugin {
   return {
-    name: 'admin-api',
+    name,
     enforce: 'pre',
     configureServer(server) {
-      const configPath = path.resolve('src/lib/site.config.json')
-      server.middlewares.use('/api/admin/config', (req, res) => {
+      const configPath = path.resolve(relativeConfigPath)
+      server.middlewares.use(routePath, (req, res) => {
         if (req.method === 'GET') {
           try {
             res.setHeader('Content-Type', 'application/json')
@@ -68,82 +70,18 @@ function adminApiPlugin(): Plugin {
       })
     }
   }
+}
+
+function adminApiPlugin(): Plugin {
+  return jsonFileApiPlugin('admin-api', '/api/admin/config', 'src/lib/site.config.json')
 }
 
 function animConfigApiPlugin(): Plugin {
-  return {
-    name: 'anim-config-api',
-    enforce: 'pre',
-    configureServer(server) {
-      const configPath = path.resolve('src/lib/game/solitaire/anim.config.json')
-      server.middlewares.use('/api/admin/anim-config', (req, res) => {
-        if (req.method === 'GET') {
-          try {
-            res.setHeader('Content-Type', 'application/json')
-            res.end(readFileSync(configPath, 'utf-8'))
-          } catch {
-            res.statusCode = 500
-            res.end('error reading config')
-          }
-        } else if (req.method === 'POST') {
-          let body = ''
-          req.on('data', (chunk: Buffer) => { body += chunk.toString() })
-          req.on('end', () => {
-            try {
-              const parsed = JSON.parse(body)
-              writeFileSync(configPath, JSON.stringify(parsed, null, 2) + '\n')
-              res.statusCode = 200
-              res.end('ok')
-            } catch {
-              res.statusCode = 400
-              res.end('invalid JSON')
-            }
-          })
-        } else {
-          res.statusCode = 405
-          res.end('method not allowed')
-        }
-      })
-    }
-  }
+  return jsonFileApiPlugin('anim-config-api', '/api/admin/anim-config', 'src/lib/game/solitaire/anim.config.json')
 }
 
 function culmenConfigApiPlugin(): Plugin {
-  return {
-    name: 'culmen-config-api',
-    enforce: 'pre',
-    configureServer(server) {
-      const configPath = path.resolve('src/lib/game/culmen/culmen.config.json')
-      server.middlewares.use('/api/admin/culmen-config', (req, res) => {
-        if (req.method === 'GET') {
-          try {
-            res.setHeader('Content-Type', 'application/json')
-            res.end(readFileSync(configPath, 'utf-8'))
-          } catch {
-            res.statusCode = 500
-            res.end('error reading config')
-          }
-        } else if (req.method === 'POST') {
-          let body = ''
-          req.on('data', (chunk: Buffer) => { body += chunk.toString() })
-          req.on('end', () => {
-            try {
-              const parsed = JSON.parse(body)
-              writeFileSync(configPath, JSON.stringify(parsed, null, 2) + '\n')
-              res.statusCode = 200
-              res.end('ok')
-            } catch {
-              res.statusCode = 400
-              res.end('invalid JSON')
-            }
-          })
-        } else {
-          res.statusCode = 405
-          res.end('method not allowed')
-        }
-      })
-    }
-  }
+  return jsonFileApiPlugin('culmen-config-api', '/api/admin/culmen-config', 'src/lib/game/culmen/culmen.config.json')
 }
 
 export default defineConfig({

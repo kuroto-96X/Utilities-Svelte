@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte'
   import { loadParams } from '$lib/game/culmen/params'
   import {
     createInitialRun, beginRun, applyPlayCard, applyDrawStock, applyStuckCheck,
@@ -10,7 +11,17 @@
   const params = loadParams()
 
   let run = $state<RunState>(createInitialRun())
-  let stuckTimer: ReturnType<typeof setTimeout> | null = null
+  // ウェーブ終了系のタイマーは常にこの1本にまとめ、次の予約前に必ず前の分をキャンセルする
+  // (手詰まりチェックと目標達成遅延を別々のタイマーで管理すると、片方が発火しないまま
+  //  もう片方も発火してresolveWaveEndが二重に走り、アイテム選択肢が無言ですり替わるため)
+  let pendingTimer: ReturnType<typeof setTimeout> | null = null
+
+  function clearPendingTimer() {
+    if (pendingTimer) clearTimeout(pendingTimer)
+    pendingTimer = null
+  }
+
+  onDestroy(clearPendingTimer)
 
   let stage = $derived(params.stages[run.stageIndex])
   let target = $derived(stage.targets[run.waveIndex])
@@ -33,8 +44,9 @@
   }
 
   function scheduleStuckCheck() {
-    if (stuckTimer) clearTimeout(stuckTimer)
-    stuckTimer = setTimeout(() => {
+    clearPendingTimer()
+    pendingTimer = setTimeout(() => {
+      pendingTimer = null
       const checked = applyStuckCheck(params, run)
       if (checked.wave?.status === 'ended') {
         run = resolveWaveEnd(params, checked)
@@ -43,9 +55,13 @@
   }
 
   function afterAction() {
+    clearPendingTimer()
     if (run.wave?.status === 'ended') {
       const delay = run.wave.endReason === 'target' ? params.flow.clearDelayMs : 0
-      setTimeout(() => { run = resolveWaveEnd(params, run) }, delay)
+      pendingTimer = setTimeout(() => {
+        pendingTimer = null
+        run = resolveWaveEnd(params, run)
+      }, delay)
       return
     }
     scheduleStuckCheck()
@@ -246,7 +262,7 @@
 {#if run.phase === 'itemSelect'}
   <div class="fixed inset-0 z-50 bg-emerald-950/90 backdrop-blur-sm flex items-center justify-center p-6">
     <div class="w-full max-w-sm flex flex-col items-center text-center">
-      <div class="text-yellow-300 text-xs tracking-widest mb-1">WAVE {run.waveIndex} CLEAR</div>
+      <div class="text-yellow-300 text-xs tracking-widest mb-1">WAVE {run.waveIndex + 1} CLEAR</div>
       <div class="text-2xl font-black text-amber-50 mb-4">{run.wave?.score ?? 0} 点</div>
       <div class="text-emerald-100/70 text-sm mb-4">アイテムを1つ選ぶ</div>
       <div class="flex flex-col gap-3 w-full">

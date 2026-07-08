@@ -22,12 +22,16 @@ export function createRng(seed: number): () => number {
   }
 }
 
-export function shuffle(deck: Card[], rand: () => number = Math.random): Card[] {
-  const arr = deck.map(c => ({ ...c }))
+export function shuffleInPlace<T>(arr: T[], rand: () => number = Math.random): void {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1))
     ;[arr[i], arr[j]] = [arr[j], arr[i]]
   }
+}
+
+export function shuffle(deck: Card[], rand: () => number = Math.random): Card[] {
+  const arr = deck.map(c => ({ ...c }))
+  shuffleInPlace(arr, rand)
   return arr
 }
 

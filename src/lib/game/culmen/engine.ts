@@ -1,7 +1,7 @@
 // src/lib/game/culmen/engine.ts
 import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState } from './types'
 import type { CulmenParams } from './params'
-import { createDeck, createRng, shuffle } from './deck'
+import { createDeck, createRng, shuffle, shuffleInPlace } from './deck'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
 
@@ -23,6 +23,31 @@ export interface PatternResult {
   parts: string[]
   newStairDir: -1 | 0 | 1
   newStairLen: number
+}
+
+interface StairTransition {
+  newStairDir: -1 | 0 | 1
+  newStairLen: number
+}
+
+// ランク差から階段の方向・長さを更新する(A-Kのループ跨ぎも±1に正規化する)
+function computeStairTransition(
+  prevRank: number,
+  cardRank: number,
+  stairDir: -1 | 0 | 1,
+  stairLen: number
+): StairTransition {
+  let d = cardRank - prevRank
+  if (d === 12) d = -1
+  if (d === -12) d = 1
+
+  if (Math.abs(d) !== 1) {
+    return { newStairDir: 0, newStairLen: 1 }
+  }
+  if (d === stairDir) {
+    return { newStairDir: d as -1 | 1, newStairLen: stairLen + 1 }
+  }
+  return { newStairDir: d as -1 | 1, newStairLen: 2 }
 }
 
 export function evaluatePattern(
@@ -63,24 +88,10 @@ export function evaluatePattern(
     parts.push(`同色+${scoring.colorBonus}`)
   }
 
-  let d = card.rank - prev.rank
-  if (d === 12) d = -1
-  if (d === -12) d = 1
-
-  let newStairDir: -1 | 0 | 1 = 0
-  let newStairLen = 1
-  if (Math.abs(d) === 1) {
-    if (d === stairDir) {
-      newStairDir = d as -1 | 1
-      newStairLen = stairLen + 1
-    } else {
-      newStairDir = d as -1 | 1
-      newStairLen = 2
-    }
-    if (newStairLen >= scoring.stairMinLen) {
-      bonus += scoring.stairBonus
-      parts.push(`階段${newStairLen} +${scoring.stairBonus}`)
-    }
+  const { newStairDir, newStairLen } = computeStairTransition(prev.rank, card.rank, stairDir, stairLen)
+  if (newStairDir !== 0 && newStairLen >= scoring.stairMinLen) {
+    bonus += scoring.stairBonus
+    parts.push(`階段${newStairLen} +${scoring.stairBonus}`)
   }
 
   return { bonus, parts, newStairDir, newStairLen }
@@ -139,7 +150,12 @@ export function startWave(
 
   const extra = stock5Count * params.items.extraStockCount
   if (extra > 0) {
-    const dupSource = shuffle(createDeck(nextId), rand).slice(0, extra)
+    // createDeckは52枚単位でしか生成できないため、extraが52を超える場合は複数回生成して積み増す
+    const dupSource: Card[] = []
+    while (dupSource.length < extra) {
+      const need = extra - dupSource.length
+      dupSource.push(...shuffle(createDeck(nextId), rand).slice(0, need))
+    }
     deck = shuffle([...deck, ...dupSource], rand)
   }
 
@@ -242,22 +258,9 @@ export function drawStock(params: CulmenParams, wave: WaveState, items: ItemId[]
 
   if (wave.combo > baseCombo && wave.shieldLeft > 0) {
     const prev = wave.linked ? [...wave.chain].reverse().find(c => !c.wild) ?? null : null
-    let newStairDir: -1 | 0 | 1 = 0
-    let newStairLen = 1
-    if (prev) {
-      let d = card.rank - prev.rank
-      if (d === 12) d = -1
-      if (d === -12) d = 1
-      if (Math.abs(d) === 1) {
-        if (d === wave.stairDir) {
-          newStairDir = d as -1 | 1
-          newStairLen = wave.stairLen + 1
-        } else {
-          newStairDir = d as -1 | 1
-          newStairLen = 2
-        }
-      }
-    }
+    const { newStairDir, newStairLen } = prev
+      ? computeStairTransition(prev.rank, card.rank, wave.stairDir, wave.stairLen)
+      : { newStairDir: 0 as const, newStairLen: 1 }
     return {
       ...wave,
       stock: newStock,
@@ -321,10 +324,7 @@ export function itemDesc(id: ItemId, params: CulmenParams): string {
 
 function shuffleItems(list: ItemId[], rand: () => number): ItemId[] {
   const arr = [...list]
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1))
-    ;[arr[i], arr[j]] = [arr[j], arr[i]]
-  }
+  shuffleInPlace(arr, rand)
   return arr
 }
 
@@ -396,22 +396,27 @@ export function restartRun(params: CulmenParams, seed?: number): RunState {
   return beginRun(params, seed)
 }
 
-export function applyPlayCard(params: CulmenParams, run: RunState, colIndex: number): RunState {
+// runがプレイ中でwaveを持つ場合のみfnを適用し、そうでなければrunをそのまま返す
+function withActiveWave(run: RunState, fn: (wave: WaveState) => WaveState): RunState {
   if (run.phase !== 'playing' || !run.wave) return run
-  const stage = params.stages[run.stageIndex]
-  const target = stage.targets[run.waveIndex]
-  const nextWave = playCard(params, run.wave, stage.modifier, run.items, target, colIndex)
-  return { ...run, wave: nextWave }
+  return { ...run, wave: fn(run.wave) }
+}
+
+export function applyPlayCard(params: CulmenParams, run: RunState, colIndex: number): RunState {
+  return withActiveWave(run, wave => {
+    const stage = params.stages[run.stageIndex]
+    const target = stage.targets[run.waveIndex]
+    return playCard(params, wave, stage.modifier, run.items, target, colIndex)
+  })
 }
 
 export function applyDrawStock(params: CulmenParams, run: RunState): RunState {
-  if (run.phase !== 'playing' || !run.wave) return run
-  return { ...run, wave: drawStock(params, run.wave, run.items) }
+  return withActiveWave(run, wave => drawStock(params, wave, run.items))
 }
 
 export function applyStuckCheck(params: CulmenParams, run: RunState): RunState {
-  if (run.phase !== 'playing' || !run.wave) return run
-  const modifier = params.stages[run.stageIndex].modifier
-  if (!isStuck(modifier, run.wave)) return run
-  return { ...run, wave: markStuck(run.wave) }
+  return withActiveWave(run, wave => {
+    const modifier = params.stages[run.stageIndex].modifier
+    return isStuck(modifier, wave) ? markStuck(wave) : wave
+  })
 }
