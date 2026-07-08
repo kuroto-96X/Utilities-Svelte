@@ -122,7 +122,7 @@
   {/if}
 {/snippet}
 
-{#snippet playArea(displayWave: WaveState, forMeasurement: boolean)}
+{#snippet playArea(displayWave: WaveState)}
   {@const playableCols = getPlayableColumns(stage.modifier, displayWave)}
   {@const remainingCards = remainingCount(displayWave.tableau)}
   {@const displayComboTier = (() => {
@@ -192,9 +192,9 @@
         </div>
       {/each}
     </div>
-    {#if !forMeasurement && playableCols.size === 0 && displayWave.stock.length > 0 && remainingCards > 0}
-      <div class="text-center text-emerald-300/80 text-xs mt-16 animate-pulse">取れる札がない → 山札をめくろう</div>
-    {/if}
+    <div
+      class="text-center text-emerald-300/80 text-xs mt-16 animate-pulse {playableCols.size === 0 && displayWave.stock.length > 0 && remainingCards > 0 ? '' : 'invisible'}"
+    >取れる札がない → 山札をめくろう</div>
   </div>
 
   <div class="px-4 flex items-center gap-1 overflow-x-auto" style="min-height: 2.6rem;">
@@ -251,7 +251,7 @@
     aria-hidden="true"
     bind:offsetHeight={measuredPlayHeight}
   >
-    {@render playArea(measurementWave, true)}
+    {@render playArea(measurementWave)}
   </div>
   <div class="flex flex-col items-center justify-center gap-6 text-center px-6" style="min-height:{measuredPlayHeight}px;">
     <div>
@@ -274,7 +274,7 @@
   </div>
 
 {:else if wave}
-  {@render playArea(wave, false)}
+  {@render playArea(wave)}
 {/if}
 
 {#if run.phase === 'itemSelect'}
