@@ -775,8 +775,8 @@ describe('evaluateChainBonus', () => {
   })
 
   test('コンボ中に一度スートが崩れたら、以降同スートが来てもsuitBonusは付かない', () => {
-    const chainBefore = [card(1, '♠', 5), card(2, '♥', 6)] // 既にスート崩れ済み
-    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♠', 7))
+    const chainBefore = [card(1, '♠', 5), card(2, '♥', 6), card(3, '♠', 7)] // 1枚目→2枚目でスート崩壊済み、3枚目は直前(2枚目...)
+    const result = evaluateChainBonus(scoring, chainBefore, card(4, '♠', 8))
     expect(result.parts.some(p => p.startsWith('同スート'))).toBe(false)
   })
 
