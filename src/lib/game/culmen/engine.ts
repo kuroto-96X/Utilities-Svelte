@@ -18,13 +18,6 @@ export function rankLabel(card: Card): string {
   return RANK_LABEL[card.rank] ?? String(card.rank)
 }
 
-export interface PatternResult {
-  bonus: number
-  parts: string[]
-  newStairDir: -1 | 0 | 1
-  newStairLen: number
-}
-
 interface StairTransition {
   newStairDir: -1 | 0 | 1
   newStairLen: number
@@ -48,53 +41,6 @@ function computeStairTransition(
     return { newStairDir: d as -1 | 1, newStairLen: stairLen + 1 }
   }
   return { newStairDir: d as -1 | 1, newStairLen: 2 }
-}
-
-export function evaluatePattern(
-  scoring: CulmenParams['scoring'],
-  prev: Card | null,
-  prevIsWild: boolean,
-  card: Card,
-  stairDir: -1 | 0 | 1,
-  stairLen: number
-): PatternResult {
-  if (!prev) {
-    return { bonus: 0, parts: [], newStairDir: 0, newStairLen: 1 }
-  }
-
-  if (prevIsWild) {
-    let bonus = scoring.wildSuitBonus
-    const parts = [`★同スート+${scoring.wildSuitBonus}`]
-    let newStairDir: -1 | 0 | 1 = 0
-    let newStairLen = 1
-    if (stairDir !== 0) {
-      newStairDir = stairDir
-      newStairLen = stairLen + 1
-      if (newStairLen >= scoring.stairMinLen) {
-        bonus += scoring.stairBonus
-        parts.push(`階段${newStairLen} +${scoring.stairBonus}`)
-      }
-    }
-    return { bonus, parts, newStairDir, newStairLen }
-  }
-
-  let bonus = 0
-  const parts: string[] = []
-  if (card.suit === prev.suit) {
-    bonus += scoring.suitBonus
-    parts.push(`同スート+${scoring.suitBonus}`)
-  } else if (isRed(card) === isRed(prev)) {
-    bonus += scoring.colorBonus
-    parts.push(`同色+${scoring.colorBonus}`)
-  }
-
-  const { newStairDir, newStairLen } = computeStairTransition(prev.rank, card.rank, stairDir, stairLen)
-  if (newStairDir !== 0 && newStairLen >= scoring.stairMinLen) {
-    bonus += scoring.stairBonus
-    parts.push(`階段${newStairLen} +${scoring.stairBonus}`)
-  }
-
-  return { bonus, parts, newStairDir, newStairLen }
 }
 
 export function isPlayable(modifier: StageModifier, wave: WaveState, card: Card): boolean {
@@ -201,13 +147,23 @@ export function playCard(
   if (isRed(card) && items.includes('red5')) base += params.items.redBonusValue
   if (isFace(card) && items.includes('face10')) base += params.items.faceBonusValue
 
-  const prevCard = wave.linked && wave.chain.length > 0 ? wave.chain[wave.chain.length - 1] : null
-  const prevIsWild = !!prevCard?.wild
-  const pattern = evaluatePattern(params.scoring, prevCard, prevIsWild, card, wave.stairDir, wave.stairLen)
-  base += pattern.bonus
+  const chainResult = evaluateChainBonus(params.scoring, wave.chain, card)
+  base += chainResult.bonus
+  const parts = [...chainResult.parts]
 
-  const gained = base * newCombo
   const newTableau = wave.tableau.map((c, i) => (i === colIndex ? c.slice(0, -1) : c))
+  const columnJustEmptied = newTableau[colIndex].length === 0
+  const newColumnsEmptied = columnJustEmptied ? wave.columnsEmptiedThisCombo + 1 : wave.columnsEmptiedThisCombo
+  if (columnJustEmptied) {
+    const sweepGain = params.scoring.columnSweepBonus * newColumnsEmptied
+    base += sweepGain
+    parts.push(`列一掃+${sweepGain}`)
+  }
+
+  const comboMultiplierStep = params.scoring.comboMultiplierStep
+  const multiplier = 1 + (newCombo - 1) * comboMultiplierStep
+  const gained = Math.floor(base * multiplier)
+
   const remaining = remainingCount(newTableau)
   const newScore = wave.score + gained
 
@@ -218,17 +174,18 @@ export function playCard(
     combo: newCombo,
     chain: [...wave.chain, card],
     linked: true,
-    stairDir: pattern.newStairDir,
-    stairLen: pattern.newStairLen,
+    columnsEmptiedThisCombo: newColumnsEmptied,
+    lastDrawEffect: null,
     score: newScore,
-    lastGain: { points: gained, parts: pattern.parts },
+    lastGain: { points: gained, parts },
     status: 'playing',
     endReason: null,
   }
 
   if (remaining === 0) {
-    const bonus = params.scoring.clearBonus + (items.includes('clear300') ? params.items.fullClearItemBonus : 0)
-    return { ...next, score: newScore + bonus, status: 'ended', endReason: 'fullClear' }
+    const clearBonus = params.scoring.clearBonus + wave.stock.length * params.scoring.clearBonusPerStock
+    const itemBonus = items.includes('clear300') ? params.items.fullClearItemBonus : 0
+    return { ...next, score: newScore + clearBonus + itemBonus, status: 'ended', endReason: 'fullClear' }
   }
 
   if (newScore >= target) {

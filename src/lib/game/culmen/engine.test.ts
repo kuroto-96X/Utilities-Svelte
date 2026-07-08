@@ -4,7 +4,6 @@ import {
   isRed,
   isFace,
   rankLabel,
-  evaluatePattern,
   isPlayable,
   getPlayableColumns,
   remainingCount,
@@ -68,85 +67,6 @@ describe('isRed / isFace / rankLabel', () => {
   })
 })
 
-describe('evaluatePattern', () => {
-  const scoring = DEFAULT_PARAMS.scoring
-
-  test('直前の札がない場合はボーナス0', () => {
-    const result = evaluatePattern(scoring, null, false, card(1, '♠', 5), 0, 1)
-    expect(result).toEqual({ bonus: 0, parts: [], newStairDir: 0, newStairLen: 1 })
-  })
-
-  test('同スートはsuitBonusが付く', () => {
-    const prev = card(1, '♠', 5)
-    const result = evaluatePattern(scoring, prev, false, card(2, '♠', 6), 0, 1)
-    expect(result.bonus).toBe(10)
-    expect(result.parts).toEqual(['同スート+10'])
-  })
-
-  test('スート違いだが同色はcolorBonusが付く', () => {
-    const prev = card(1, '♥', 5)
-    const result = evaluatePattern(scoring, prev, false, card(2, '♦', 6), 0, 1)
-    expect(result.bonus).toBe(5)
-    expect(result.parts).toEqual(['同色+5'])
-  })
-
-  test('スートも色も違う場合はボーナス0(階段も不成立なら)', () => {
-    const prev = card(1, '♠', 5)
-    const result = evaluatePattern(scoring, prev, false, card(2, '♥', 3), 0, 1)
-    expect(result.bonus).toBe(0)
-    expect(result.parts).toEqual([])
-  })
-
-  test('5→6→7で3枚目に階段ボーナスが付く', () => {
-    // 1枚目→2枚目: 5→6 (方向+1、長さ2、閾値3未満なのでボーナスなし)
-    const step1 = evaluatePattern(scoring, card(1, '♠', 5), false, card(2, '♣', 6), 0, 1)
-    expect(step1.newStairDir).toBe(1)
-    expect(step1.newStairLen).toBe(2)
-    expect(step1.parts.some(p => p.startsWith('階段'))).toBe(false)
-    // 2枚目→3枚目: 6→7 (方向維持、長さ3、閾値到達でボーナス)
-    const step2 = evaluatePattern(scoring, card(2, '♣', 6), false, card(3, '♦', 7), step1.newStairDir, step1.newStairLen)
-    expect(step2.newStairLen).toBe(3)
-    expect(step2.bonus).toBe(15)
-    expect(step2.parts).toContain('階段3 +15')
-  })
-
-  test('5→6→5では階段は成立しない(方向反転で長さ2に戻る)', () => {
-    const step1 = evaluatePattern(scoring, card(1, '♠', 5), false, card(2, '♣', 6), 0, 1)
-    const step2 = evaluatePattern(scoring, card(2, '♣', 6), false, card(3, '♦', 5), step1.newStairDir, step1.newStairLen)
-    expect(step2.newStairDir).toBe(-1)
-    expect(step2.newStairLen).toBe(2)
-    expect(step2.parts.some(p => p.startsWith('階段'))).toBe(false)
-  })
-
-  test('K→A→2はループ跨ぎで階段継続と判定される', () => {
-    // K(13)→A(1): 差-12は+1に正規化
-    const step1 = evaluatePattern(scoring, card(1, '♠', 13), false, card(2, '♣', 1), 0, 1)
-    expect(step1.newStairDir).toBe(1)
-    expect(step1.newStairLen).toBe(2)
-    // A(1)→2: 差+1、方向維持で長さ3、ボーナス発生
-    const step2 = evaluatePattern(scoring, card(2, '♣', 1), false, card(3, '♦', 2), step1.newStairDir, step1.newStairLen)
-    expect(step2.newStairLen).toBe(3)
-    expect(step2.bonus).toBe(15)
-  })
-
-  test('ワイルド直後はwildSuitBonusが無条件で付く', () => {
-    const result = evaluatePattern(scoring, card(1, '★', 0, true), true, card(2, '♠', 9), 0, 1)
-    expect(result.bonus).toBe(10)
-    expect(result.parts).toEqual(['★同スート+10'])
-    expect(result.newStairDir).toBe(0)
-    expect(result.newStairLen).toBe(1)
-  })
-
-  test('ワイルド直後でも進行中の階段があれば延長・ボーナスも加算される', () => {
-    // 進行中の階段: 方向+1、長さ2の状態でワイルドをまたいで次の札が来た場合
-    const result = evaluatePattern(scoring, card(1, '★', 0, true), true, card(2, '♠', 9), 1, 2)
-    expect(result.newStairDir).toBe(1)
-    expect(result.newStairLen).toBe(3)
-    expect(result.bonus).toBe(10 + 15) // wildSuitBonus + stairBonus
-    expect(result.parts).toEqual(['★同スート+10', '階段3 +15'])
-  })
-})
-
 function makeWave(overrides: Partial<WaveState> = {}): WaveState {
   return {
     tableau: [],
@@ -157,8 +77,8 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     shieldLeft: 0,
     chain: [],
     linked: false,
-    stairDir: 0,
-    stairLen: 1,
+    columnsEmptiedThisCombo: 0,
+    lastDrawEffect: null,
     status: 'playing',
     endReason: null,
     lastGain: null,
@@ -278,6 +198,8 @@ describe('startWave', () => {
 })
 
 describe('playCard', () => {
+  const scoring = DEFAULT_PARAMS.scoring
+
   function baseWave(overrides: Partial<WaveState> = {}): WaveState {
     return makeWave({
       foundation: card(0, '♠', 5),
@@ -288,62 +210,126 @@ describe('playCard', () => {
 
   test('取れない列を指定した場合は何も変わらない', () => {
     const wave = baseWave()
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000, 1) // 列1(2)は取れない
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 1) // 列1(2)は取れない
     expect(next).toBe(wave)
   })
 
-  test('基本点×コンボで加点され、場札とチェーンが更新される', () => {
-    const wave = baseWave()
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000, 0)
+  test('コンボ1(倍率1.0)で基礎点そのまま加点される', () => {
+    // 列一掃ボーナスが混ざらないよう、played対象の下にダミー札を積んで列が空にならないようにする
+    const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
     expect(next.combo).toBe(1)
-    expect(next.score).toBe(DEFAULT_PARAMS.scoring.basePoint * 1)
+    expect(next.score).toBe(scoring.basePoint)
     expect(next.foundation).toEqual(card(1, '♣', 6))
     expect(next.chain).toEqual([card(1, '♣', 6)])
-    expect(next.tableau[0]).toEqual([])
+    expect(next.tableau[0]).toEqual([card(9, '♠', 1)])
+  })
+
+  test('コンボ2(倍率1+0.1=1.1)で加点される(パターン不一致の場合)', () => {
+    // 1枚目を取ってコンボ1にし、2枚目(パターン不一致)を取ってコンボ2にする
+    // (列一掃・全消しボーナスが混ざらないよう、played対象の下にダミー札を積んでおく)
+    const wave = baseWave({
+      tableau: [
+        [card(9, '♠', 1), card(1, '♣', 6)],
+        [card(10, '♠', 2), card(2, '♦', 9)],
+      ],
+    })
+    const afterFirst = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    // 2列目のfoundation差分を6→9にするため、一旦foundationを差し替えたウェーブで2枚目を取る
+    const wave2 = {
+      ...afterFirst,
+      foundation: card(1, '♣', 6),
+      tableau: [[card(9, '♠', 1)], [card(10, '♠', 2), card(2, '♦', 7)]],
+    }
+    const next = playCard(DEFAULT_PARAMS, wave2, 'none', [], 1000000, 1)
+    expect(next.combo).toBe(2)
+    // 6→7は階段方向+1・長さ2(閾値3未満でボーナスなし)、スート♣→♦で色も違う→パターンボーナス0
+    expect(next.score).toBe(afterFirst.score + Math.floor(scoring.basePoint * 1.1))
   })
 
   test('「紅の目利き」所持時、赤札の基礎点が加算される(内訳表示には出ない)', () => {
-    const wave = baseWave({ tableau: [[card(1, '♥', 6)], [card(2, '♦', 2)]] })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['red5'], 1000, 0)
-    expect(next.score).toBe(DEFAULT_PARAMS.scoring.basePoint + DEFAULT_PARAMS.items.redBonusValue)
+    const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♥', 6)], [card(2, '♦', 2)]] })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['red5'], 1000000, 0)
+    expect(next.score).toBe(scoring.basePoint + DEFAULT_PARAMS.items.redBonusValue)
     expect(next.lastGain?.parts).toEqual([])
   })
 
   test('「宮廷の紋章」所持時、絵札の基礎点が加算される', () => {
-    const wave = baseWave({ tableau: [[card(1, '♣', 4)], [card(2, '♣', 11)]], foundation: card(0, '♣', 12) })
-    // rank差 12→11 = 1 なので取れる
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['face10'], 1000, 1)
-    expect(next.score).toBe(DEFAULT_PARAMS.scoring.basePoint + DEFAULT_PARAMS.items.faceBonusValue)
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 4)], [card(10, '♠', 2), card(2, '♣', 11)]],
+      foundation: card(0, '♣', 12),
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['face10'], 1000000, 1)
+    expect(next.score).toBe(scoring.basePoint + DEFAULT_PARAMS.items.faceBonusValue)
   })
 
-  test('場札が0枚になったら全消しボーナスが加算されendReason=fullClear', () => {
-    const wave = baseWave({ tableau: [[card(1, '♣', 6)]] })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000, 0)
+  test('列を空にすると列一掃ボーナスが加算される(1列目)', () => {
+    const wave = baseWave({ tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]] })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    expect(next.columnsEmptiedThisCombo).toBe(1)
+    expect(next.score).toBe(scoring.basePoint + scoring.columnSweepBonus * 1)
+    expect(next.lastGain?.parts).toContain(`列一掃+${scoring.columnSweepBonus}`)
+  })
+
+  test('同じコンボ内で2列目を空にすると列一掃ボーナスが列数倍になる', () => {
+    const wave = baseWave({
+      foundation: card(0, '♠', 6), // 列1(rank7)との差を1にして取れるようにする
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 7)]],
+      columnsEmptiedThisCombo: 1,
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 1)
+    expect(next.columnsEmptiedThisCombo).toBe(2)
+    expect(next.lastGain?.parts).toContain(`列一掃+${scoring.columnSweepBonus * 2}`)
+  })
+
+  test('場札が0枚になったら全消しボーナス(clearBonus+残り山札×clearBonusPerStock)が加算されendReason=fullClear', () => {
+    const wave = baseWave({ tableau: [[card(1, '♣', 6)]], stock: [card(9, '♠', 1), card(10, '♠', 2)] })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0)
     expect(next.tableau.reduce((n, c) => n + c.length, 0)).toBe(0)
     expect(next.status).toBe('ended')
     expect(next.endReason).toBe('fullClear')
-    expect(next.score).toBe(DEFAULT_PARAMS.scoring.basePoint + DEFAULT_PARAMS.scoring.clearBonus)
+    const expectedClearBonus = scoring.clearBonus + 2 * scoring.clearBonusPerStock
+    expect(next.score).toBe(scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus)
   })
 
   test('「完全消去」所持時は全消しボーナスにさらに加算される', () => {
-    const wave = baseWave({ tableau: [[card(1, '♣', 6)]] })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['clear300'], 100000, 0)
-    expect(next.score).toBe(
-      DEFAULT_PARAMS.scoring.basePoint + DEFAULT_PARAMS.scoring.clearBonus + DEFAULT_PARAMS.items.fullClearItemBonus
-    )
+    const wave = baseWave({ tableau: [[card(1, '♣', 6)]], stock: [] })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['clear300'], 100000000, 0)
+    const expectedClearBonus = scoring.clearBonus + 0 * scoring.clearBonusPerStock + DEFAULT_PARAMS.items.fullClearItemBonus
+    expect(next.score).toBe(scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus)
   })
 
   test('スコアが目標に達したらendReason=targetでstatus=ended', () => {
     const wave = baseWave()
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 5, 0) // basePoint(10) >= target(5)
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 5, 0) // basePoint(100) >= target(5)
     expect(next.status).toBe('ended')
     expect(next.endReason).toBe('target')
   })
 
   test('status が playing でない場合は何もしない', () => {
     const wave = baseWave({ status: 'ended', endReason: 'target' })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000, 0)
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
     expect(next).toBe(wave)
+  })
+
+  test('端数が出る設定でもfloorで切り捨てられる(保険の確認)', () => {
+    const oddParams: typeof DEFAULT_PARAMS = {
+      ...DEFAULT_PARAMS,
+      scoring: { ...DEFAULT_PARAMS.scoring, basePoint: 15, comboMultiplierStep: 0.25 },
+    }
+    // 列一掃・全消しボーナスが混ざらないよう、played対象の下にダミー札を積んでおく
+    const wave = baseWave({
+      tableau: [
+        [card(9, '♠', 1), card(1, '♣', 6)],
+        [card(10, '♠', 2), card(2, '♦', 2)],
+      ],
+    })
+    // コンボ1: 倍率1+(1-1)*0.25=1.0 → 15*1.0=15 (割り切れる、floorの効果を見るには2枚目が必要)
+    const afterFirst = playCard(oddParams, wave, 'none', [], 1000000, 0)
+    const wave2 = { ...afterFirst, tableau: [[card(9, '♠', 1)], [card(10, '♠', 2), card(2, '♦', 7)]] }
+    const next = playCard(oddParams, wave2, 'none', [], 1000000, 1)
+    // コンボ2: 倍率1+(2-1)*0.25=1.25 → 15*1.25=18.75 → floor=18
+    expect(next.score).toBe(afterFirst.score + 18)
   })
 })
 
