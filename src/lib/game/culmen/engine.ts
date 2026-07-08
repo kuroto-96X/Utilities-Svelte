@@ -185,6 +185,7 @@ export function drawStock(params: CulmenParams, wave: WaveState, items: ItemId[]
       chain: [...wave.chain, card],
       linked: true,
       lastDrawEffect: 'wild',
+      lastGain: null,
     }
   }
 
@@ -201,6 +202,7 @@ export function drawStock(params: CulmenParams, wave: WaveState, items: ItemId[]
       chain: [...wave.chain, card],
       linked: true,
       lastDrawEffect: canShieldProtect ? 'shield' : 'pattern',
+      lastGain: null,
     }
   }
 
@@ -213,6 +215,7 @@ export function drawStock(params: CulmenParams, wave: WaveState, items: ItemId[]
     linked: false,
     columnsEmptiedThisCombo: 0,
     lastDrawEffect: null,
+    lastGain: null,
   }
 }
 

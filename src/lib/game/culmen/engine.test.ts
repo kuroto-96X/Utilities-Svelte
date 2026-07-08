@@ -469,6 +469,15 @@ describe('drawStock', () => {
     expect(next.combo).toBe(0)
     expect(next.chain).toEqual([])
   })
+
+  test('山札を引くとlastGainがクリアされる(得点は山札からは発生しないため)', () => {
+    const wave = makeWave({
+      stock: [card(1, '★', 0, true)],
+      lastGain: { points: 100, parts: ['同スート+100'] },
+    })
+    const next = drawStock(DEFAULT_PARAMS, wave, [])
+    expect(next.lastGain).toBeNull()
+  })
 })
 
 describe('isStuck', () => {
