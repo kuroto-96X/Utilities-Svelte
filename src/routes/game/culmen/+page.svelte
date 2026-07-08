@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte'
+  import { onMount, onDestroy } from 'svelte'
   import { loadParams } from '$lib/game/culmen/params'
   import {
     createInitialRun, beginRun, applyPlayCard, applyDrawStock, applyStuckCheck,
@@ -22,6 +22,26 @@
   }
 
   onDestroy(clearPendingTimer)
+
+  // サイト共通のヘッダー・開発中バナーがこのページより上に表示されるため、
+  // 固定の100vh(min-h-screen)を使うとその分だけ画面下にはみ出し、
+  // 山札などの操作バーが画面外に押し出されてしまう。
+  // 実際の描画位置から「スクロールなしで見えている残りの高さ」を測って
+  // min-heightに使うことで、はみ出しを防ぎつつ画面いっぱいの見た目を保つ。
+  let rootEl = $state<HTMLElement | null>(null)
+  let availableHeightPx = $state<number | null>(null)
+
+  function updateAvailableHeight() {
+    if (!rootEl) return
+    const top = rootEl.getBoundingClientRect().top + window.scrollY
+    availableHeightPx = Math.max(0, window.innerHeight - top)
+  }
+
+  onMount(() => {
+    updateAvailableHeight()
+    window.addEventListener('resize', updateAvailableHeight)
+    return () => window.removeEventListener('resize', updateAvailableHeight)
+  })
 
   let stage = $derived(params.stages[run.stageIndex])
   let target = $derived(stage.targets[run.waveIndex])
@@ -125,7 +145,11 @@
   {/if}
 {/snippet}
 
-<div class="w-full min-h-screen flex flex-col bg-emerald-950 text-amber-50 mx-auto" style="user-select:none; max-width:480px;">
+<div
+  bind:this={rootEl}
+  class="w-full flex flex-col bg-emerald-950 text-amber-50 mx-auto"
+  style="user-select:none; max-width:480px; min-height:{availableHeightPx !== null ? availableHeightPx + 'px' : '100vh'};"
+>
 
 {#if run.phase === 'title'}
   <div class="flex flex-col items-center justify-center flex-1 gap-6 text-center px-6">
