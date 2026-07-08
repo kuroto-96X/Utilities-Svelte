@@ -331,6 +331,12 @@ describe('playCard', () => {
     // コンボ2: 倍率1+(2-1)*0.25=1.25 → 15*1.25=18.75 → floor=18
     expect(next.score).toBe(afterFirst.score + 18)
   })
+
+  test('カードを取るとlastDrawEffectがクリアされる', () => {
+    const wave = baseWave({ lastDrawEffect: 'pattern' })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    expect(next.lastDrawEffect).toBeNull()
+  })
 })
 
 describe('drawStock', () => {
