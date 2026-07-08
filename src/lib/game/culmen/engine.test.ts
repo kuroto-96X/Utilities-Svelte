@@ -10,6 +10,7 @@ import {
   startWave,
   playCard,
   drawStock,
+  chainContinuesPattern,
   isStuck,
   markStuck,
   rollItemOffer,
@@ -339,29 +340,54 @@ describe('playCard', () => {
   })
 })
 
+describe('chainContinuesPattern', () => {
+  test('チェーンが空なら継続不可', () => {
+    expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, [], card(1, '♠', 5))).toBe(false)
+  })
+
+  test('同スートが成立中で、捲った札が同じスートなら継続', () => {
+    const chain = [card(1, '♠', 5), card(2, '♠', 6)]
+    expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '♠', 9))).toBe(true)
+  })
+
+  test('同スートが成立中でも、捲った札が違うスート・違う色なら継続不可', () => {
+    const chain = [card(1, '♠', 5), card(2, '♠', 6)]
+    expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '♥', 9))).toBe(false)
+  })
+
+  test('階段が成立中で、捲った札が同方向を継続すれば継続', () => {
+    const chain = [card(1, '♠', 5), card(2, '♣', 6)] // dir=+1
+    expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '♦', 7))).toBe(true)
+  })
+
+  test('全ての条件が既に崩れていれば継続不可', () => {
+    const chain = [card(1, '♠', 5), card(2, '♥', 8)] // スートも色も階段も不成立
+    expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '♣', 2))).toBe(false)
+  })
+})
+
 describe('drawStock', () => {
   test('山札が空なら何もしない', () => {
     const wave = makeWave({ stock: [] })
     expect(drawStock(DEFAULT_PARAMS, wave, [])).toBe(wave)
   })
 
-  test('通常時(コンボがbaseCombo以下、またはシールドなし): コンボ・チェーンがリセットされる', () => {
+  test('通常時(継続条件なし): コンボ・チェーン・列一掃カウントがリセットされる', () => {
     const wave = makeWave({
       stock: [card(1, '♠', 9)],
       combo: 3,
       shieldLeft: 0,
       chain: [card(2, '♣', 1)],
       linked: true,
-      stairDir: 1,
-      stairLen: 2,
+      columnsEmptiedThisCombo: 2,
     })
     const next = drawStock(DEFAULT_PARAMS, wave, [])
     expect(next.foundation).toEqual(card(1, '♠', 9))
     expect(next.combo).toBe(0)
     expect(next.chain).toEqual([])
     expect(next.linked).toBe(false)
-    expect(next.stairDir).toBe(0)
-    expect(next.stairLen).toBe(1)
+    expect(next.columnsEmptiedThisCombo).toBe(0)
+    expect(next.lastDrawEffect).toBeNull()
     expect(next.stock).toEqual([])
   })
 
@@ -371,7 +397,7 @@ describe('drawStock', () => {
     expect(next.combo).toBe(DEFAULT_PARAMS.items.startCombo)
   })
 
-  test('ワイルドがめくれた場合: コンボは変わらずチェーンに追加される', () => {
+  test('ワイルドがめくれた場合: コンボは変わらずチェーンに追加され、lastDrawEffectはwild', () => {
     const wave = makeWave({
       stock: [card(1, '★', 0, true)],
       combo: 3,
@@ -382,28 +408,57 @@ describe('drawStock', () => {
     expect(next.combo).toBe(3)
     expect(next.chain).toEqual([card(2, '♣', 5), card(1, '★', 0, true)])
     expect(next.linked).toBe(true)
+    expect(next.lastDrawEffect).toBe('wild')
   })
 
-  test('シールド発動時: コンボ維持・shieldLeft減少・得点は付かずチェーンに加わる', () => {
+  test('シールド発動時: コンボ維持・shieldLeft減少・得点は付かずチェーンに加わり、lastDrawEffectはshield', () => {
     const wave = makeWave({
-      stock: [card(1, '♣', 6)],
+      stock: [card(1, '♣', 9)], // チェーン継続条件を満たさない札にしてシールド発動だけを検証
       combo: 2,
       shieldLeft: 1,
-      chain: [card(2, '♣', 5)],
+      chain: [card(2, '♥', 5)],
       linked: true,
-      stairDir: 0,
-      stairLen: 1,
     })
     const next = drawStock(DEFAULT_PARAMS, wave, [])
     expect(next.combo).toBe(2)
     expect(next.shieldLeft).toBe(0)
-    expect(next.chain).toEqual([card(2, '♣', 5), card(1, '♣', 6)])
-    expect(next.stairDir).toBe(1) // 5→6 で階段開始
-    expect(next.stairLen).toBe(2)
+    expect(next.chain).toEqual([card(2, '♥', 5), card(1, '♣', 9)])
+    expect(next.lastDrawEffect).toBe('shield')
   })
 
-  test('コンボがbaseCombo以下ならシールドがあっても消費せずリセットする', () => {
-    const wave = makeWave({ stock: [card(1, '♣', 6)], combo: 0, shieldLeft: 2 })
+  test('シールドが無くても、パターンに合う札ならアイテム無しで特殊継続しlastDrawEffectはpattern', () => {
+    const wave = makeWave({
+      stock: [card(1, '♠', 9)], // 同スート継続
+      combo: 2,
+      shieldLeft: 0,
+      chain: [card(2, '♠', 5)],
+      linked: true,
+    })
+    const next = drawStock(DEFAULT_PARAMS, wave, [])
+    expect(next.combo).toBe(2)
+    expect(next.chain).toEqual([card(2, '♠', 5), card(1, '♠', 9)])
+    expect(next.linked).toBe(true)
+    expect(next.lastDrawEffect).toBe('pattern')
+    expect(next.score).toBe(wave.score) // 得点は付かない
+  })
+
+  test('パターンに合わずシールドも無ければ通常通りリセットする', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)], // 同スートでも階段でもない
+      combo: 2,
+      shieldLeft: 0,
+      chain: [card(2, '♥', 5)],
+      linked: true,
+    })
+    const next = drawStock(DEFAULT_PARAMS, wave, [])
+    expect(next.combo).toBe(0)
+    expect(next.chain).toEqual([])
+    expect(next.linked).toBe(false)
+    expect(next.lastDrawEffect).toBeNull()
+  })
+
+  test('コンボがbaseCombo以下ならシールドがあっても消費せずリセットする(パターン不一致の場合)', () => {
+    const wave = makeWave({ stock: [card(1, '♣', 9)], combo: 0, shieldLeft: 2, chain: [], linked: false })
     const next = drawStock(DEFAULT_PARAMS, wave, [])
     expect(next.shieldLeft).toBe(2)
     expect(next.combo).toBe(0)

@@ -18,31 +18,6 @@ export function rankLabel(card: Card): string {
   return RANK_LABEL[card.rank] ?? String(card.rank)
 }
 
-interface StairTransition {
-  newStairDir: -1 | 0 | 1
-  newStairLen: number
-}
-
-// ランク差から階段の方向・長さを更新する(A-Kのループ跨ぎも±1に正規化する)
-function computeStairTransition(
-  prevRank: number,
-  cardRank: number,
-  stairDir: -1 | 0 | 1,
-  stairLen: number
-): StairTransition {
-  let d = cardRank - prevRank
-  if (d === 12) d = -1
-  if (d === -12) d = 1
-
-  if (Math.abs(d) !== 1) {
-    return { newStairDir: 0, newStairLen: 1 }
-  }
-  if (d === stairDir) {
-    return { newStairDir: d as -1 | 1, newStairLen: stairLen + 1 }
-  }
-  return { newStairDir: d as -1 | 1, newStairLen: 2 }
-}
-
 export function isPlayable(modifier: StageModifier, wave: WaveState, card: Card): boolean {
   // faceLockはワイルド(場札含む)より優先して評価する: ワイルド場札でも絵札はコンボ不足なら拒否する
   if (modifier === 'faceLock' && isFace(card) && wave.combo < 2) return false
@@ -201,7 +176,6 @@ export function drawStock(params: CulmenParams, wave: WaveState, items: ItemId[]
 
   const newStock = [...wave.stock]
   const card = newStock.pop() as Card
-  const baseCombo = items.includes('start1') ? params.items.startCombo : 0
 
   if (card.wild) {
     return {
@@ -210,23 +184,23 @@ export function drawStock(params: CulmenParams, wave: WaveState, items: ItemId[]
       foundation: card,
       chain: [...wave.chain, card],
       linked: true,
+      lastDrawEffect: 'wild',
     }
   }
 
-  if (wave.combo > baseCombo && wave.shieldLeft > 0) {
-    const prev = wave.linked ? [...wave.chain].reverse().find(c => !c.wild) ?? null : null
-    const { newStairDir, newStairLen } = prev
-      ? computeStairTransition(prev.rank, card.rank, wave.stairDir, wave.stairLen)
-      : { newStairDir: 0 as const, newStairLen: 1 }
+  const baseCombo = items.includes('start1') ? params.items.startCombo : 0
+  const canShieldProtect = wave.combo > baseCombo && wave.shieldLeft > 0
+  const patternContinues = wave.linked && chainContinuesPattern(params.scoring, wave.chain, card)
+
+  if (canShieldProtect || patternContinues) {
     return {
       ...wave,
       stock: newStock,
       foundation: card,
-      shieldLeft: wave.shieldLeft - 1,
+      shieldLeft: canShieldProtect ? wave.shieldLeft - 1 : wave.shieldLeft,
       chain: [...wave.chain, card],
       linked: true,
-      stairDir: newStairDir,
-      stairLen: newStairLen,
+      lastDrawEffect: canShieldProtect ? 'shield' : 'pattern',
     }
   }
 
@@ -237,8 +211,8 @@ export function drawStock(params: CulmenParams, wave: WaveState, items: ItemId[]
     combo: baseCombo,
     chain: [],
     linked: false,
-    stairDir: 0,
-    stairLen: 1,
+    columnsEmptiedThisCombo: 0,
+    lastDrawEffect: null,
   }
 }
 
@@ -534,4 +508,37 @@ export function evaluateChainBonus(
   }
 
   return { bonus, parts }
+}
+
+export function chainContinuesPattern(
+  scoring: CulmenParams['scoring'],
+  chain: Card[],
+  card: Card
+): boolean {
+  if (chain.length === 0) return false
+
+  const realChain = chain.filter(c => !c.wild)
+  const { suitHeld, colorHeld } = analyzeSuitColor(chain)
+  if (realChain.length > 0) {
+    const anchor = realChain[0]
+    // suitHeldは実カード1枚のみの場合も便宜上trueになる(analyzeSuitColorの仕様)ため、
+    // 「同スート」条件を優先評価し、それが不成立の場合のみ「同色」条件にフォールバックする
+    // (evaluateChainBonusのsuitBonus/colorBonus判定と同じ優先順位)
+    if (suitHeld) {
+      if (card.suit === anchor.suit) return true
+    } else if (colorHeld) {
+      if (isRed(card) === isRed(anchor)) return true
+    }
+  }
+
+  const stairInfo = analyzeStair(chain)
+  if (stairInfo.held && stairInfo.dir !== 0 && realChain.length > 0) {
+    const lastReal = realChain[realChain.length - 1]
+    let d = card.rank - lastReal.rank
+    if (d === 12) d = -1
+    if (d === -12) d = 1
+    if (d === stairInfo.dir) return true
+  }
+
+  return false
 }
