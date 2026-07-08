@@ -3,12 +3,22 @@
   import { loadParams } from '$lib/game/culmen/params'
   import {
     createInitialRun, beginRun, applyPlayCard, applyDrawStock, applyStuckCheck,
-    resolveWaveEnd, pickItem, advanceStage, restartRun,
+    resolveWaveEnd, pickItem, advanceStage, restartRun, startWave,
     getPlayableColumns, remainingCount, rankLabel, isRed, itemDesc, ITEM_NAMES,
   } from '$lib/game/culmen/engine'
-  import type { RunState, Card, ItemId, StageModifier } from '$lib/game/culmen/types'
+  import type { RunState, Card, ItemId, StageModifier, WaveState } from '$lib/game/culmen/types'
 
   const params = loadParams()
+
+  // タイトル画面の高さをプレイ画面に揃えるための計測専用ダミーウェーブ(実際のゲームには使わない)
+  const measurementWave = startWave(params, 0, 0, [], 1)
+  let measuredPlayHeight = $state(0)
+  // タイトル文言(見出し・説明・ボタン)本来の高さ。プレイ画面と比べて過不足があれば
+  // transform: scale で伸縮させ、ぴったり同じ高さになるようにする
+  let titleNaturalHeight = $state(0)
+  let titleScale = $derived(
+    titleNaturalHeight > 0 && measuredPlayHeight > 0 ? measuredPlayHeight / titleNaturalHeight : 1
+  )
 
   let run = $state<RunState>(createInitialRun())
   // ウェーブ終了系のタイマーは常にこの1本にまとめ、次の予約前に必ず前の分をキャンセルする
@@ -26,14 +36,7 @@
   let stage = $derived(params.stages[run.stageIndex])
   let target = $derived(stage.targets[run.waveIndex])
   let wave = $derived(run.wave)
-  let playableColumns = $derived(wave ? getPlayableColumns(stage.modifier, wave) : new Set<number>())
-  let remaining = $derived(wave ? remainingCount(wave.tableau) : 0)
 
-  let comboTier = $derived.by(() => {
-    const combo = wave?.combo ?? 0
-    const [t1, t2, t3] = params.ui.comboTierThresholds
-    return combo >= t3 ? 3 : combo >= t2 ? 2 : combo >= t1 ? 1 : 0
-  })
   const comboColor = ['text-emerald-100', 'text-yellow-300', 'text-orange-400', 'text-rose-400']
   const comboScale = ['scale-100', 'scale-105', 'scale-110', 'scale-125']
 
@@ -125,33 +128,13 @@
   {/if}
 {/snippet}
 
-<div
-  class="w-full flex flex-col bg-emerald-950 text-amber-50 mx-auto"
-  style="user-select:none; max-width:480px;"
->
-
-{#if run.phase === 'title'}
-  <div class="flex flex-col items-center justify-center flex-1 gap-6 text-center px-6">
-    <div>
-      <div class="text-xs tracking-widest text-emerald-300/70 mb-2">SOLITAIRE ROGUE</div>
-      <h1 class="text-4xl font-black text-amber-50">登頂ソリティア -Culmen-</h1>
-      <p class="text-emerald-100/70 text-sm mt-3 leading-relaxed">
-        ランクの±1を連鎖で取ってスコアを稼ぐ<br />
-        同スート・同色・階段(同方向3枚以上)で<br />
-        ボーナスが乗る。場札を全消しすると<br />
-        大きく加点され、3ウェーブ突破で<br />
-        ステージクリア。
-      </p>
-    </div>
-    <button
-      onclick={startGame}
-      class="px-10 py-3 rounded-full bg-yellow-400 text-emerald-950 font-black text-lg active:scale-95 transition-transform"
-    >
-      はじめる
-    </button>
-  </div>
-
-{:else if wave}
+{#snippet playArea(displayWave: WaveState, forMeasurement: boolean)}
+  {@const playableCols = getPlayableColumns(stage.modifier, displayWave)}
+  {@const remainingCards = remainingCount(displayWave.tableau)}
+  {@const displayComboTier = (() => {
+    const [t1, t2, t3] = params.ui.comboTierThresholds
+    return displayWave.combo >= t3 ? 3 : displayWave.combo >= t2 ? 2 : displayWave.combo >= t1 ? 1 : 0
+  })()}
   <div class="px-4 pt-3">
     <div class="flex items-center justify-between text-xs">
       <div class="flex items-center gap-2">
@@ -169,22 +152,22 @@
       <div>
         <div class="text-xs text-emerald-300/70 tracking-widest">SCORE / TARGET</div>
         <div class="text-xl font-black text-amber-50 tabular-nums">
-          {wave.score} <span class="text-sm text-emerald-300/70">/ {target}</span>
+          {displayWave.score} <span class="text-sm text-emerald-300/70">/ {target}</span>
         </div>
       </div>
-      <div class="text-right transition-transform origin-bottom-right {comboScale[comboTier]}">
+      <div class="text-right transition-transform origin-bottom-right {comboScale[displayComboTier]}">
         <div class="text-xs text-emerald-300/70 tracking-widest">COMBO</div>
-        <div class="text-3xl font-black italic tabular-nums leading-none {comboColor[comboTier]}">×{wave.combo}</div>
+        <div class="text-3xl font-black italic tabular-nums leading-none {comboColor[displayComboTier]}">×{displayWave.combo}</div>
       </div>
     </div>
     <div class="mt-1 h-1.5 rounded-full bg-emerald-900 overflow-hidden">
-      <div class="h-full bg-gradient-to-r from-yellow-500 to-yellow-300 transition-all duration-300" style="width:{Math.min(100, (wave.score / target) * 100)}%"></div>
+      <div class="h-full bg-gradient-to-r from-yellow-500 to-yellow-300 transition-all duration-300" style="width:{Math.min(100, (displayWave.score / target) * 100)}%"></div>
     </div>
-    {#if wave.lastGain}
+    {#if displayWave.lastGain}
       <div class="text-right text-sm h-5">
-        <span class="text-yellow-300 font-black">+{wave.lastGain.points}</span>
-        {#if wave.lastGain.parts.length > 0}
-          <span class="text-emerald-200 text-xs ml-2">{wave.lastGain.parts.join(' ')}</span>
+        <span class="text-yellow-300 font-black">+{displayWave.lastGain.points}</span>
+        {#if displayWave.lastGain.parts.length > 0}
+          <span class="text-emerald-200 text-xs ml-2">{displayWave.lastGain.parts.join(' ')}</span>
         {/if}
       </div>
     {:else}
@@ -194,7 +177,7 @@
 
   <div class="px-3 pt-1">
     <div class="grid gap-1" style="grid-template-columns: repeat({params.layout.cols}, minmax(0, 1fr));">
-      {#each wave.tableau as col, ci (ci)}
+      {#each displayWave.tableau as col, ci (ci)}
         <div class="relative" style="min-height: 10.5rem;">
           {#each col as card, ri (card.id)}
             {@const isTop = ri === col.length - 1}
@@ -203,7 +186,7 @@
                 <button
                   type="button"
                   onclick={() => handlePlayCard(ci)}
-                  class="w-full text-left {playableColumns.has(ci) ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : ''} transition-transform"
+                  class="w-full text-left {playableCols.has(ci) ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : ''} transition-transform"
                 >
                   {@render cardFace(card, false)}
                 </button>
@@ -215,22 +198,22 @@
         </div>
       {/each}
     </div>
-    {#if playableColumns.size === 0 && wave.stock.length > 0 && remaining > 0}
+    {#if !forMeasurement && playableCols.size === 0 && displayWave.stock.length > 0 && remainingCards > 0}
       <div class="text-center text-emerald-300/80 text-xs mt-16 animate-pulse">取れる札がない → 山札をめくろう</div>
     {/if}
   </div>
 
   <div class="px-4 flex items-center gap-1 overflow-x-auto" style="min-height: 2.6rem;">
-    {#each wave.chain as c, i (c.id)}
+    {#each displayWave.chain as c, i (c.id)}
       <div
         class="flex-none rounded border text-center font-black leading-none flex flex-col items-center justify-center"
-        style="width:24px; height:34px; font-size:11px; background:{c.wild ? '#EDE4FF' : '#FBF7EC'}; color:{c.wild ? '#6D28D9' : isRed(c) ? '#C7402D' : '#15181D'}; border-color:{c.wild ? '#A78BFA' : '#B8AE98'}; opacity:{!wave.linked && i === wave.chain.length - 1 ? 0.55 : 1};"
+        style="width:24px; height:34px; font-size:11px; background:{c.wild ? '#EDE4FF' : '#FBF7EC'}; color:{c.wild ? '#6D28D9' : isRed(c) ? '#C7402D' : '#15181D'}; border-color:{c.wild ? '#A78BFA' : '#B8AE98'}; opacity:{!displayWave.linked && i === displayWave.chain.length - 1 ? 0.55 : 1};"
       >
         <div>{rankLabel(c)}</div>
         <div style="font-size:9px;">{c.suit}</div>
       </div>
     {/each}
-    {#if wave.chain.length === 0}
+    {#if displayWave.chain.length === 0}
       <div class="text-emerald-300/50 text-xs">取った札がここに並ぶ → 同スート/同色/階段でボーナス</div>
     {/if}
   </div>
@@ -238,19 +221,19 @@
   <div class="px-4 pb-5 pt-2 flex items-center gap-4">
     <button
       onclick={handleDraw}
-      disabled={wave.stock.length === 0}
+      disabled={displayWave.stock.length === 0}
       style="aspect-ratio: 2 / 3;"
-      class="w-16 rounded-lg border-2 flex flex-col items-center justify-center font-black active:scale-95 transition-transform {wave.stock.length > 0 ? 'bg-emerald-700 border-emerald-500 text-amber-50' : 'bg-emerald-900 border-emerald-800 text-emerald-700'}"
+      class="w-16 rounded-lg border-2 flex flex-col items-center justify-center font-black active:scale-95 transition-transform {displayWave.stock.length > 0 ? 'bg-emerald-700 border-emerald-500 text-amber-50' : 'bg-emerald-900 border-emerald-800 text-emerald-700'}"
     >
       <div class="text-xs">山札</div>
-      <div class="text-lg tabular-nums">{wave.stock.length}</div>
+      <div class="text-lg tabular-nums">{displayWave.stock.length}</div>
     </button>
     <div class="w-16">
-      {@render cardFace(wave.foundation, false)}
+      {@render cardFace(displayWave.foundation, false)}
     </div>
     <div class="flex-1 flex flex-wrap gap-1 justify-end">
-      {#if wave.shieldLeft > 0}
-        <span class="text-xs bg-sky-900 text-sky-200 border border-sky-600 rounded px-1.5 py-0.5">盾×{wave.shieldLeft}</span>
+      {#if displayWave.shieldLeft > 0}
+        <span class="text-xs bg-sky-900 text-sky-200 border border-sky-600 rounded px-1.5 py-0.5">盾×{displayWave.shieldLeft}</span>
       {/if}
       {#each [...new Set(run.items)] as id (id)}
         {@const n = run.items.filter(x => x === id).length}
@@ -260,6 +243,51 @@
       {/each}
     </div>
   </div>
+{/snippet}
+
+<div
+  class="w-full flex flex-col bg-emerald-950 text-amber-50 mx-auto"
+  style="user-select:none; max-width:480px; position:relative;"
+>
+
+{#if run.phase === 'title'}
+  <!-- プレイ画面と同じ高さになるよう、画面外に隠して1度描画し実測する -->
+  <div
+    style="position:absolute; top:0; left:0; width:100%; visibility:hidden; pointer-events:none; z-index:-1;"
+    aria-hidden="true"
+    bind:offsetHeight={measuredPlayHeight}
+  >
+    {@render playArea(measurementWave, true)}
+  </div>
+  <!-- 高さ補正ラッパー: transformはレイアウトフローに影響しないため手動で高さを補正する -->
+  <div style="height:{titleNaturalHeight * titleScale}px; overflow:hidden;">
+    <div
+      bind:offsetHeight={titleNaturalHeight}
+      style="transform: scale({titleScale}); transform-origin: top center; width:100%;"
+      class="flex flex-col items-center justify-center gap-6 text-center px-6 box-border"
+    >
+      <div>
+        <div class="text-xs tracking-widest text-emerald-300/70 mb-2">SOLITAIRE ROGUE</div>
+        <h1 class="text-4xl font-black text-amber-50">登頂ソリティア -Culmen-</h1>
+        <p class="text-emerald-100/70 text-sm mt-3 leading-relaxed">
+          ランクの±1を連鎖で取ってスコアを稼ぐ<br />
+          同スート・同色・階段(同方向3枚以上)で<br />
+          ボーナスが乗る。場札を全消しすると<br />
+          大きく加点され、3ウェーブ突破で<br />
+          ステージクリア。
+        </p>
+      </div>
+      <button
+        onclick={startGame}
+        class="px-10 py-3 rounded-full bg-yellow-400 text-emerald-950 font-black text-lg active:scale-95 transition-transform"
+      >
+        はじめる
+      </button>
+    </div>
+  </div>
+
+{:else if wave}
+  {@render playArea(wave, false)}
 {/if}
 
 {#if run.phase === 'itemSelect'}
