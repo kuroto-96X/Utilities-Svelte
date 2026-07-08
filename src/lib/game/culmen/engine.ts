@@ -1,5 +1,5 @@
 // src/lib/game/culmen/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit } from './types'
 import type { CulmenParams } from './params'
 import { createDeck, createRng, shuffle, shuffleInPlace } from './deck'
 
@@ -480,4 +480,30 @@ export function analyzeStair(chain: Card[]): StairAnalysis {
     prevReal = c
   }
   return { held: true, dir, len }
+}
+
+const ALL_SUITS_REAL: Suit[] = ['♠', '♥', '♦', '♣']
+
+export function checkFlush(realCardsIncludingThis: Card[]): boolean {
+  if (realCardsIncludingThis.length < 4) return false
+  const last4 = realCardsIncludingThis.slice(-4)
+  const suitsPresent = new Set(last4.map(c => c.suit))
+  return ALL_SUITS_REAL.every(s => suitsPresent.has(s))
+}
+
+export function checkRoyalSet(realCardsIncludingThis: Card[]): boolean {
+  if (realCardsIncludingThis.length < 3) return false
+  const last3 = realCardsIncludingThis.slice(-3)
+  const ranksPresent = new Set(last3.map(c => c.rank))
+  return ranksPresent.has(11) && ranksPresent.has(12) && ranksPresent.has(13)
+}
+
+export function countSameRankBefore(realCardsBefore: Card[], rank: Card['rank']): number {
+  return realCardsBefore.filter(c => c.rank === rank).length
+}
+
+export function checkCompleteRun(realCardsBefore: Card[], realCardsIncludingThis: Card[]): boolean {
+  const distinctBefore = new Set(realCardsBefore.map(c => c.rank)).size
+  const distinctNow = new Set(realCardsIncludingThis.map(c => c.rank)).size
+  return distinctBefore < 13 && distinctNow >= 13
 }

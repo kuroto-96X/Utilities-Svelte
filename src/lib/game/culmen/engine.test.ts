@@ -29,6 +29,10 @@ import {
   applyStuckCheck,
   analyzeSuitColor,
   analyzeStair,
+  checkFlush,
+  checkRoyalSet,
+  countSameRankBefore,
+  checkCompleteRun,
 } from './engine'
 import type { Card, WaveState, RunState } from './types'
 import { DEFAULT_PARAMS } from './params'
@@ -683,5 +687,75 @@ describe('analyzeStair', () => {
     const chain = [card(1, '♠', 5), card(2, '♣', 6), card(3, '★', 0, true), card(4, '♦', 9)]
     // 5→6で dir=1,len=2。ワイルドを挟んで9が来ても無条件でlen+1=3
     expect(analyzeStair(chain)).toEqual({ held: true, dir: 1, len: 3 })
+  })
+})
+
+describe('checkFlush', () => {
+  test('直近4枚が4スート全部なら成立(順不同)', () => {
+    const cards = [card(1, '♦', 3), card(2, '♠', 5), card(3, '♣', 9), card(4, '♥', 2)]
+    expect(checkFlush(cards)).toBe(true)
+  })
+
+  test('4枚未満なら不成立', () => {
+    expect(checkFlush([card(1, '♠', 5), card(2, '♥', 6), card(3, '♦', 7)])).toBe(false)
+  })
+
+  test('直近4枚にスートの重複があれば不成立', () => {
+    const cards = [card(1, '♠', 3), card(2, '♠', 5), card(3, '♣', 9), card(4, '♥', 2)]
+    expect(checkFlush(cards)).toBe(false)
+  })
+
+  test('5枚以上でも直近4枚だけで判定する', () => {
+    const cards = [card(1, '♠', 1), card(2, '♠', 2), card(3, '♦', 3), card(4, '♠', 5), card(5, '♥', 9), card(6, '♣', 2)]
+    // 直近4枚(3,4,5,6番目)が♦♠♥♣で揃っている
+    expect(checkFlush(cards)).toBe(true)
+  })
+})
+
+describe('checkRoyalSet', () => {
+  test('直近3枚がJ・Q・K全部なら成立(順不同)', () => {
+    const cards = [card(1, '♠', 13), card(2, '♥', 11), card(3, '♦', 12)]
+    expect(checkRoyalSet(cards)).toBe(true)
+  })
+
+  test('3枚未満なら不成立', () => {
+    expect(checkRoyalSet([card(1, '♠', 11), card(2, '♥', 12)])).toBe(false)
+  })
+
+  test('J/Q/K以外が混ざれば不成立', () => {
+    const cards = [card(1, '♠', 13), card(2, '♥', 11), card(3, '♦', 5)]
+    expect(checkRoyalSet(cards)).toBe(false)
+  })
+})
+
+describe('countSameRankBefore', () => {
+  test('同ランクが無ければ0', () => {
+    expect(countSameRankBefore([card(1, '♠', 5), card(2, '♥', 6)], 7)).toBe(0)
+  })
+
+  test('同ランクが2枚あれば2を返す', () => {
+    const cards = [card(1, '♠', 5), card(2, '♥', 5), card(3, '♦', 5)]
+    expect(countSameRankBefore(cards, 5)).toBe(3)
+  })
+})
+
+describe('checkCompleteRun', () => {
+  test('13ランク揃う直前(12種)ではfalse', () => {
+    const before = Array.from({ length: 12 }, (_, i) => card(i + 1, '♠', (i + 1) as Card['rank']))
+    const now = [...before, card(13, '♥', 13)]
+    // beforeは1〜12(12種)、nowで13が追加され13種になる想定を後続テストで検証
+    expect(checkCompleteRun(before.slice(0, 11), before)).toBe(false)
+  })
+
+  test('13種類目が揃った瞬間にtrue', () => {
+    const before = Array.from({ length: 12 }, (_, i) => card(i + 1, '♠', (i + 1) as Card['rank']))
+    const now = [...before, card(13, '♥', 13)]
+    expect(checkCompleteRun(before, now)).toBe(true)
+  })
+
+  test('既に13種揃った後に重複が増えても再度trueにはならない(呼び出し側でbefore/nowの差分を見る想定)', () => {
+    const all13 = Array.from({ length: 13 }, (_, i) => card(i + 1, '♠', (i + 1) as Card['rank']))
+    const withDup = [...all13, card(14, '♥', 5)]
+    expect(checkCompleteRun(all13, withDup)).toBe(false)
   })
 })
