@@ -27,6 +27,8 @@ import {
   applyPlayCard,
   applyDrawStock,
   applyStuckCheck,
+  analyzeSuitColor,
+  analyzeStair,
 } from './engine'
 import type { Card, WaveState, RunState } from './types'
 import { DEFAULT_PARAMS } from './params'
@@ -600,5 +602,81 @@ describe('applyPlayCard / applyDrawStock / applyStuckCheck', () => {
     expect(applyPlayCard(DEFAULT_PARAMS, run, 0)).toBe(run)
     expect(applyDrawStock(DEFAULT_PARAMS, run)).toBe(run)
     expect(applyStuckCheck(DEFAULT_PARAMS, run)).toBe(run)
+  })
+})
+
+describe('analyzeSuitColor', () => {
+  test('空のチェーンは両方true', () => {
+    expect(analyzeSuitColor([])).toEqual({ suitHeld: true, colorHeld: true })
+  })
+
+  test('実カード1枚だけなら両方true', () => {
+    expect(analyzeSuitColor([card(1, '♠', 5)])).toEqual({ suitHeld: true, colorHeld: true })
+  })
+
+  test('全て同じスートならsuitHeld/colorHeldともtrue', () => {
+    const chain = [card(1, '♠', 5), card(2, '♠', 6), card(3, '♠', 7)]
+    expect(analyzeSuitColor(chain)).toEqual({ suitHeld: true, colorHeld: true })
+  })
+
+  test('スートは違うが同色ならcolorHeldのみtrue', () => {
+    const chain = [card(1, '♥', 5), card(2, '♦', 6), card(3, '♥', 7)]
+    expect(analyzeSuitColor(chain)).toEqual({ suitHeld: false, colorHeld: true })
+  })
+
+  test('色も違う札が混ざるとcolorHeldもfalse', () => {
+    const chain = [card(1, '♥', 5), card(2, '♠', 6)]
+    expect(analyzeSuitColor(chain)).toEqual({ suitHeld: false, colorHeld: false })
+  })
+
+  test('一度崩れたら後で同じスートに戻ってもtrueには戻らない', () => {
+    const chain = [card(1, '♠', 5), card(2, '♥', 6), card(3, '♠', 7)]
+    expect(analyzeSuitColor(chain).suitHeld).toBe(false)
+  })
+
+  test('ワイルドは無視して実カードのみで判定する', () => {
+    const chain = [card(1, '♠', 5), card(2, '★', 0, true), card(3, '♠', 9)]
+    expect(analyzeSuitColor(chain)).toEqual({ suitHeld: true, colorHeld: true })
+  })
+})
+
+describe('analyzeStair', () => {
+  test('空のチェーンはheld:true, dir:0, len:1', () => {
+    expect(analyzeStair([])).toEqual({ held: true, dir: 0, len: 1 })
+  })
+
+  test('実カード1枚だけならheld:true, dir:0, len:1', () => {
+    expect(analyzeStair([card(1, '♠', 5)])).toEqual({ held: true, dir: 0, len: 1 })
+  })
+
+  test('5→6→7で方向+1・長さ3が保持される', () => {
+    const chain = [card(1, '♠', 5), card(2, '♣', 6), card(3, '♦', 7)]
+    expect(analyzeStair(chain)).toEqual({ held: true, dir: 1, len: 3 })
+  })
+
+  test('5→6→5は方向反転でheld:falseになり、その後は復活しない', () => {
+    const chain = [card(1, '♠', 5), card(2, '♣', 6), card(3, '♦', 5), card(4, '♣', 6)]
+    expect(analyzeStair(chain).held).toBe(false)
+  })
+
+  test('差が±1でない場合はheld:false', () => {
+    const chain = [card(1, '♠', 5), card(2, '♣', 8)]
+    expect(analyzeStair(chain)).toEqual({ held: false, dir: 0, len: 1 })
+  })
+
+  test('K→A→2はループ跨ぎで継続する', () => {
+    const chain = [card(1, '♠', 13), card(2, '♣', 1), card(3, '♦', 2)]
+    expect(analyzeStair(chain)).toEqual({ held: true, dir: 1, len: 3 })
+  })
+
+  test('方向確立前にワイルドが来ても継続扱いにはならない(まだheld/未確立のまま)', () => {
+    const chain = [card(1, '♠', 5), card(2, '★', 0, true), card(3, '♣', 9)]
+    expect(analyzeStair(chain)).toEqual({ held: true, dir: 0, len: 1 })
+  })
+
+  test('方向確立後のワイルドは実際の差を問わず長さ+1で延長する', () => {
+    const chain = [card(1, '♠', 5), card(2, '♣', 6), card(3, '★', 0, true), card(4, '♦', 9)]
+    // 5→6で dir=1,len=2。ワイルドを挟んで9が来ても無条件でlen+1=3
+    expect(analyzeStair(chain)).toEqual({ held: true, dir: 1, len: 3 })
   })
 })

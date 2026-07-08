@@ -420,3 +420,64 @@ export function applyStuckCheck(params: CulmenParams, run: RunState): RunState {
     return isStuck(modifier, wave) ? markStuck(wave) : wave
   })
 }
+
+export interface SuitColorAnalysis {
+  suitHeld: boolean
+  colorHeld: boolean
+}
+
+export function analyzeSuitColor(chain: Card[]): SuitColorAnalysis {
+  const realCards = chain.filter(c => !c.wild)
+  if (realCards.length === 0) return { suitHeld: true, colorHeld: true }
+  const first = realCards[0]
+  return {
+    suitHeld: realCards.every(c => c.suit === first.suit),
+    colorHeld: realCards.every(c => isRed(c) === isRed(first)),
+  }
+}
+
+export interface StairAnalysis {
+  held: boolean
+  dir: -1 | 0 | 1
+  len: number
+}
+
+export function analyzeStair(chain: Card[]): StairAnalysis {
+  let dir: -1 | 0 | 1 = 0
+  let len = 1
+  let prevReal: Card | null = null
+  let justHadWild = false
+
+  for (const c of chain) {
+    if (c.wild) {
+      justHadWild = true
+      continue
+    }
+    if (prevReal === null) {
+      prevReal = c
+      continue
+    }
+    if (justHadWild) {
+      if (dir !== 0) len += 1
+      justHadWild = false
+      prevReal = c
+      continue
+    }
+    let d = c.rank - prevReal.rank
+    if (d === 12) d = -1
+    if (d === -12) d = 1
+    if (Math.abs(d) !== 1) {
+      return { held: false, dir: 0, len: 1 }
+    }
+    if (dir === 0) {
+      dir = d as -1 | 1
+      len = 2
+    } else if (d === dir) {
+      len += 1
+    } else {
+      return { held: false, dir: 0, len: 1 }
+    }
+    prevReal = c
+  }
+  return { held: true, dir, len }
+}
