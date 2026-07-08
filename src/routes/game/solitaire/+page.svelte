@@ -1134,9 +1134,9 @@
 
 {#snippet cardFace(card: Card, full: boolean)}
   <div class="absolute inset-0 rounded-lg border border-indigo-500/50 p-1 flex flex-col items-start overflow-hidden bg-white">
-    <div class="leading-none {SUIT_COLOR[card.suit]}">
-      <div class="text-sm font-bold leading-none">{rankLabel(card.rank)}</div>
-      <div class="text-xs leading-none">{SUIT_SYMBOL[card.suit]}</div>
+    <div class="flex items-center gap-0.5 leading-none {SUIT_COLOR[card.suit]}">
+      <span class="text-sm font-bold leading-none">{rankLabel(card.rank)}</span>
+      <span class="text-xs leading-none">{SUIT_SYMBOL[card.suit]}</span>
     </div>
     {#if full}
       {#if card.rank <= 10}
@@ -1153,9 +1153,9 @@
           <span class="leading-none" style="font-size:26px;">{FACE_CHAR[card.rank]}</span>
         </div>
       {/if}
-      <div class="rotate-180 self-end leading-none {SUIT_COLOR[card.suit]}">
-        <div class="text-sm font-bold leading-none">{rankLabel(card.rank)}</div>
-        <div class="text-xs leading-none">{SUIT_SYMBOL[card.suit]}</div>
+      <div class="rotate-180 self-end flex items-center gap-0.5 leading-none {SUIT_COLOR[card.suit]}">
+        <span class="text-sm font-bold leading-none">{rankLabel(card.rank)}</span>
+        <span class="text-xs leading-none">{SUIT_SYMBOL[card.suit]}</span>
       </div>
     {/if}
   </div>
