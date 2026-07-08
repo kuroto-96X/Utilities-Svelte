@@ -254,6 +254,10 @@
     {/if}
   </div>
 
+  {#if displayWave.lastDrawEffect === 'pattern'}
+    <div class="px-4 text-center text-yellow-300 text-xs font-black animate-pulse mb-1">✦ パターン継続! ✦</div>
+  {/if}
+
   <div class="px-4 pb-5 pt-2 flex items-center gap-4">
     <button
       onclick={handleDraw}
