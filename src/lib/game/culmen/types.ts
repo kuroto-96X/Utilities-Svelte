@@ -19,6 +19,7 @@ export interface ScoreGain {
 export type WaveStatus = 'playing' | 'ended'
 export type WaveEndReason = 'target' | 'fullClear' | 'stuck' | null
 export type DrawEffect = 'wild' | 'shield' | 'pattern' | null
+export type ChainCardOrigin = 'play' | 'draw'
 
 export interface WaveState {
   tableau: Card[][]
@@ -28,6 +29,7 @@ export interface WaveState {
   combo: number
   shieldLeft: number
   chain: Card[]
+  chainOrigin: ChainCardOrigin[]
   linked: boolean
   columnsEmptiedThisCombo: number
   lastDrawEffect: DrawEffect
