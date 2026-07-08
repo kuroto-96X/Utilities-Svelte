@@ -148,7 +148,7 @@
 <div
   bind:this={rootEl}
   class="w-full flex flex-col bg-emerald-950 text-amber-50 mx-auto"
-  style="user-select:none; max-width:480px; min-height:{availableHeightPx !== null ? availableHeightPx + 'px' : '100vh'};"
+  style="user-select:none; max-width:480px; {run.phase === 'title' ? `min-height:${availableHeightPx !== null ? availableHeightPx + 'px' : '100vh'};` : ''}"
 >
 
 {#if run.phase === 'title'}
