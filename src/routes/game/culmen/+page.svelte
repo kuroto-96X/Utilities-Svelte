@@ -186,7 +186,7 @@
     const [t1, t2, t3] = params.ui.comboTierThresholds
     return displayWave.combo >= t3 ? 3 : displayWave.combo >= t2 ? 2 : displayWave.combo >= t1 ? 1 : 0
   })()}
-  {@const chainEntries = displayWave.chain.map((c, i) => ({ card: c, origin: displayWave.chainOrigin[i], globalIndex: i }))}
+  {@const chainEntries = displayWave.chain.map((c, i) => ({ card: c, origin: displayWave.chainOrigin[i] }))}
   {@const chainRows = chunk(chainEntries, 13)}
   <div class="px-4 pt-3">
     <div class="flex items-center justify-between text-xs">
@@ -272,10 +272,9 @@
       {#each chainRows as row, ri (ri)}
         <div class="relative" style="height:116px; width:{64 + (row.length - 1) * 32}px;">
           {#each row as entry, j (entry.card.id)}
-            {@const isLastUnlinked = !displayWave.linked && entry.globalIndex === displayWave.chain.length - 1}
             <div
               class="absolute"
-              style="left:{j * 32}px; top:{entry.origin === 'draw' ? 20 : 0}px; z-index:{j + 1}; width:64px; opacity:{isLastUnlinked ? 0.55 : 1};"
+              style="left:{j * 32}px; top:{entry.origin === 'draw' ? 20 : 0}px; z-index:{j + 1}; width:64px;"
             >
               {@render cardFace(entry.card, false)}
             </div>
