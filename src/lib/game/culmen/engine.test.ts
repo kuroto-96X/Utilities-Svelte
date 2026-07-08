@@ -341,6 +341,12 @@ describe('playCard', () => {
     const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
     expect(next.lastDrawEffect).toBeNull()
   })
+
+  test('chainOriginにplayが追記される', () => {
+    const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    expect(next.chainOrigin).toEqual(['play'])
+  })
 })
 
 describe('chainContinuesPattern', () => {
@@ -380,19 +386,21 @@ describe('drawStock', () => {
     expect(drawStock(DEFAULT_PARAMS, wave, [])).toBe(wave)
   })
 
-  test('通常時(継続条件なし): コンボ・チェーン・列一掃カウントがリセットされる', () => {
+  test('通常時(継続条件なし): コンボ・チェーン・列一掃カウントがリセットされ、捲った札1枚が新しい起点になる', () => {
     const wave = makeWave({
       stock: [card(1, '♠', 9)],
       combo: 3,
       shieldLeft: 0,
       chain: [card(2, '♣', 1)],
+      chainOrigin: ['play'],
       linked: true,
       columnsEmptiedThisCombo: 2,
     })
     const next = drawStock(DEFAULT_PARAMS, wave, [])
     expect(next.foundation).toEqual(card(1, '♠', 9))
     expect(next.combo).toBe(0)
-    expect(next.chain).toEqual([])
+    expect(next.chain).toEqual([card(1, '♠', 9)])
+    expect(next.chainOrigin).toEqual(['draw'])
     expect(next.linked).toBe(false)
     expect(next.columnsEmptiedThisCombo).toBe(0)
     expect(next.lastDrawEffect).toBeNull()
@@ -410,11 +418,13 @@ describe('drawStock', () => {
       stock: [card(1, '★', 0, true)],
       combo: 3,
       chain: [card(2, '♣', 5)],
+      chainOrigin: ['play'],
       linked: true,
     })
     const next = drawStock(DEFAULT_PARAMS, wave, [])
     expect(next.combo).toBe(3)
     expect(next.chain).toEqual([card(2, '♣', 5), card(1, '★', 0, true)])
+    expect(next.chainOrigin).toEqual(['play', 'draw'])
     expect(next.linked).toBe(true)
     expect(next.lastDrawEffect).toBe('wild')
   })
@@ -425,12 +435,14 @@ describe('drawStock', () => {
       combo: 2,
       shieldLeft: 1,
       chain: [card(2, '♥', 5)],
+      chainOrigin: ['play'],
       linked: true,
     })
     const next = drawStock(DEFAULT_PARAMS, wave, [])
     expect(next.combo).toBe(2)
     expect(next.shieldLeft).toBe(0)
     expect(next.chain).toEqual([card(2, '♥', 5), card(1, '♣', 9)])
+    expect(next.chainOrigin).toEqual(['play', 'draw'])
     expect(next.lastDrawEffect).toBe('shield')
   })
 
@@ -440,37 +452,42 @@ describe('drawStock', () => {
       combo: 2,
       shieldLeft: 0,
       chain: [card(2, '♠', 5)],
+      chainOrigin: ['play'],
       linked: true,
     })
     const next = drawStock(DEFAULT_PARAMS, wave, [])
     expect(next.combo).toBe(2)
     expect(next.chain).toEqual([card(2, '♠', 5), card(1, '♠', 9)])
+    expect(next.chainOrigin).toEqual(['play', 'draw'])
     expect(next.linked).toBe(true)
     expect(next.lastDrawEffect).toBe('pattern')
     expect(next.score).toBe(wave.score) // 得点は付かない
   })
 
-  test('パターンに合わずシールドも無ければ通常通りリセットする', () => {
+  test('パターンに合わずシールドも無ければ通常通りリセットし、捲った札1枚が新しい起点になる', () => {
     const wave = makeWave({
       stock: [card(1, '♣', 9)], // 同スートでも階段でもない
       combo: 2,
       shieldLeft: 0,
       chain: [card(2, '♥', 5)],
+      chainOrigin: ['play'],
       linked: true,
     })
     const next = drawStock(DEFAULT_PARAMS, wave, [])
     expect(next.combo).toBe(0)
-    expect(next.chain).toEqual([])
+    expect(next.chain).toEqual([card(1, '♣', 9)])
+    expect(next.chainOrigin).toEqual(['draw'])
     expect(next.linked).toBe(false)
     expect(next.lastDrawEffect).toBeNull()
   })
 
   test('コンボがbaseCombo以下ならシールドがあっても消費せずリセットする(パターン不一致の場合)', () => {
-    const wave = makeWave({ stock: [card(1, '♣', 9)], combo: 0, shieldLeft: 2, chain: [], linked: false })
+    const wave = makeWave({ stock: [card(1, '♣', 9)], combo: 0, shieldLeft: 2, chain: [], chainOrigin: [], linked: false })
     const next = drawStock(DEFAULT_PARAMS, wave, [])
     expect(next.shieldLeft).toBe(2)
     expect(next.combo).toBe(0)
-    expect(next.chain).toEqual([])
+    expect(next.chain).toEqual([card(1, '♣', 9)])
+    expect(next.chainOrigin).toEqual(['draw'])
   })
 
   test('山札を引くとlastGainがクリアされる(得点は山札からは発生しないため)', () => {
