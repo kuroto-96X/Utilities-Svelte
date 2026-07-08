@@ -733,7 +733,7 @@ describe('countSameRankBefore', () => {
     expect(countSameRankBefore([card(1, '♠', 5), card(2, '♥', 6)], 7)).toBe(0)
   })
 
-  test('同ランクが2枚あれば2を返す', () => {
+  test('同ランクが3枚あれば3を返す', () => {
     const cards = [card(1, '♠', 5), card(2, '♥', 5), card(3, '♦', 5)]
     expect(countSameRankBefore(cards, 5)).toBe(3)
   })
@@ -742,8 +742,6 @@ describe('countSameRankBefore', () => {
 describe('checkCompleteRun', () => {
   test('13ランク揃う直前(12種)ではfalse', () => {
     const before = Array.from({ length: 12 }, (_, i) => card(i + 1, '♠', (i + 1) as Card['rank']))
-    const now = [...before, card(13, '♥', 13)]
-    // beforeは1〜12(12種)、nowで13が追加され13種になる想定を後続テストで検証
     expect(checkCompleteRun(before.slice(0, 11), before)).toBe(false)
   })
 
