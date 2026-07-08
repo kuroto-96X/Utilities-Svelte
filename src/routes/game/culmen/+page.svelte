@@ -26,6 +26,14 @@
   }
   const FACE_CHAR: Record<number, string> = { 11: '♞', 12: '♛', 13: '♚' }
 
+  function chunk<T>(arr: T[], size: number): T[][] {
+    const result: T[][] = []
+    for (let i = 0; i < arr.length; i += size) {
+      result.push(arr.slice(i, i + size))
+    }
+    return result
+  }
+
   // タイトル画面の高さをプレイ画面に揃えるための計測専用ダミーウェーブ(実際のゲームには使わない)
   const measurementWave = startWave(params, 0, 0, [], 1)
   let measuredPlayHeight = $state(0)
@@ -178,6 +186,8 @@
     const [t1, t2, t3] = params.ui.comboTierThresholds
     return displayWave.combo >= t3 ? 3 : displayWave.combo >= t2 ? 2 : displayWave.combo >= t1 ? 1 : 0
   })()}
+  {@const chainEntries = displayWave.chain.map((c, i) => ({ card: c, origin: displayWave.chainOrigin[i], globalIndex: i }))}
+  {@const chainRows = chunk(chainEntries, 13)}
   <div class="px-4 pt-3">
     <div class="flex items-center justify-between text-xs">
       <div class="flex items-center gap-2">
@@ -246,35 +256,32 @@
     >取れる札がない → 山札をめくろう</div>
   </div>
 
-  <div class="px-4 overflow-x-auto" style="min-height: 2.6rem;">
-    <div class="relative" style="height:40px; width:{24 + (displayWave.chain.length - 1) * 10}px;">
-      {#each displayWave.chain as c, i (c.id)}
-        {@const isLastUnlinked = !displayWave.linked && i === displayWave.chain.length - 1}
-        <div
-          class="absolute rounded border text-center font-black leading-none flex flex-col items-center justify-center"
-          style="left:{i * 10}px; top:{displayWave.chainOrigin[i] === 'draw' ? 6 : 0}px; z-index:{i + 1}; width:24px; height:34px; font-size:11px; background:{c.wild ? '#EDE4FF' : '#FBF7EC'}; color:{c.wild ? '#6D28D9' : isRed(c) ? '#C7402D' : '#15181D'}; border-color:{c.wild ? '#A78BFA' : '#B8AE98'}; opacity:{isLastUnlinked ? 0.55 : 1}; box-shadow:1px 0 3px rgba(0,0,0,.35);"
-        >
-          <div>{rankLabel(c)}</div>
-          <div style="font-size:9px;">{c.suit}</div>
-        </div>
-      {/each}
-    </div>
-  </div>
-
   <div class="px-4 text-center text-yellow-300 text-xs font-black animate-pulse mb-1 {displayWave.lastDrawEffect === 'pattern' ? '' : 'invisible'}">✦ パターン継続! ✦</div>
 
-  <div class="px-4 pb-5 pt-2 flex items-center gap-4">
+  <div class="px-4 pb-5 pt-2 flex items-start gap-4">
     <button
       onclick={handleDraw}
       disabled={displayWave.stock.length === 0}
-      style="aspect-ratio: 2 / 3;"
-      class="w-16 rounded-lg border-2 flex flex-col items-center justify-center font-black active:scale-95 transition-transform {displayWave.stock.length > 0 ? 'bg-emerald-700 border-emerald-500 text-amber-50' : 'bg-emerald-900 border-emerald-800 text-emerald-700'}"
+      style="aspect-ratio: 2 / 3; margin-top:20px;"
+      class="w-16 shrink-0 rounded-lg border-2 flex flex-col items-center justify-center font-black active:scale-95 transition-transform {displayWave.stock.length > 0 ? 'bg-emerald-700 border-emerald-500 text-amber-50' : 'bg-emerald-900 border-emerald-800 text-emerald-700'}"
     >
       <div class="text-xs">山札</div>
       <div class="text-lg tabular-nums">{displayWave.stock.length}</div>
     </button>
-    <div class="w-16">
-      {@render cardFace(displayWave.foundation, false)}
+    <div class="overflow-x-auto min-w-0">
+      {#each chainRows as row, ri (ri)}
+        <div class="relative" style="height:116px; width:{64 + (row.length - 1) * 32}px;">
+          {#each row as entry, j (entry.card.id)}
+            {@const isLastUnlinked = !displayWave.linked && entry.globalIndex === displayWave.chain.length - 1}
+            <div
+              class="absolute"
+              style="left:{j * 32}px; top:{entry.origin === 'draw' ? 20 : 0}px; z-index:{j + 1}; width:64px; opacity:{isLastUnlinked ? 0.55 : 1};"
+            >
+              {@render cardFace(entry.card, false)}
+            </div>
+          {/each}
+        </div>
+      {/each}
     </div>
     <div class="flex-1 flex flex-wrap gap-1 justify-end">
       {#if displayWave.shieldLeft > 0}
