@@ -213,7 +213,7 @@
     {/if}
   </div>
 
-  <div class="flex-1 px-3 pt-1">
+  <div class="px-3 pt-1">
     <div class="grid gap-1" style="grid-template-columns: repeat({params.layout.cols}, minmax(0, 1fr));">
       {#each wave.tableau as col, ci (ci)}
         <div class="relative" style="min-height: 10.5rem;">
