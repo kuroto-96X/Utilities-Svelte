@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte'
   import { analyzeSuitColor, analyzeStair, isRed, rankLabel } from '$lib/game/culmen/engine'
   import type { WaveState, Suit, Rank, ScoreGain } from '$lib/game/culmen/types'
 
@@ -11,8 +12,11 @@
 
   $effect(() => {
     const gain = wave.lastGain
+    const combo = wave.combo
+    // gainLogの読み取り(スプレッド)をuntrackで囲まないと、この$effect自身が
+    // gainLogの変化に依存してしまい、書き込むたびに自分自身を再実行する無限ループになる
     if (gain) {
-      gainLog = [{ combo: wave.combo, gain }, ...gainLog].slice(0, 20)
+      gainLog = [{ combo, gain }, ...untrack(() => gainLog)].slice(0, 20)
     }
   })
 
