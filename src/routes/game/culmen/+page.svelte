@@ -3,10 +3,11 @@
   import { loadParams } from '$lib/game/culmen/params'
   import {
     createInitialRun, beginRun, applyPlayCard, applyDrawStock, applyStuckCheck,
-    resolveWaveEnd, pickItem, advanceStage, restartRun, startWave,
+    resolveWaveEnd, pickItem, advanceStage, restartRun, startWave, forceStockTop,
     getPlayableColumns, remainingCount, rankLabel, isRed, itemDesc, ITEM_NAMES,
   } from '$lib/game/culmen/engine'
-  import type { RunState, Card, ItemId, StageModifier, WaveState } from '$lib/game/culmen/types'
+  import type { RunState, Card, ItemId, StageModifier, WaveState, Suit, Rank } from '$lib/game/culmen/types'
+  import DebugPanel from './DebugPanel.svelte'
 
   const params = loadParams()
 
@@ -109,6 +110,12 @@
   function handleRestart() {
     run = restartRun(params)
     afterAction()
+  }
+
+  function handleForceDraw(suit: Suit, rank: Rank, wild: boolean) {
+    if (!run.wave) return
+    run = { ...run, wave: forceStockTop(run.wave, suit, rank, wild) }
+    handleDraw()
   }
 </script>
 
@@ -378,3 +385,9 @@
 {/if}
 
 </div>
+
+{#if import.meta.env.DEV && wave}
+  <div class="w-full mx-auto" style="max-width:480px;">
+    <DebugPanel {wave} onForceDraw={handleForceDraw} />
+  </div>
+{/if}
