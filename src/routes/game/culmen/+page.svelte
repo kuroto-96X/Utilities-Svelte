@@ -13,12 +13,6 @@
   // タイトル画面の高さをプレイ画面に揃えるための計測専用ダミーウェーブ(実際のゲームには使わない)
   const measurementWave = startWave(params, 0, 0, [], 1)
   let measuredPlayHeight = $state(0)
-  // タイトル文言(見出し・説明・ボタン)本来の高さ。プレイ画面と比べて過不足があれば
-  // transform: scale で伸縮させ、ぴったり同じ高さになるようにする
-  let titleNaturalHeight = $state(0)
-  let titleScale = $derived(
-    titleNaturalHeight > 0 && measuredPlayHeight > 0 ? measuredPlayHeight / titleNaturalHeight : 1
-  )
 
   let run = $state<RunState>(createInitialRun())
   // ウェーブ終了系のタイマーは常にこの1本にまとめ、次の予約前に必ず前の分をキャンセルする
@@ -259,31 +253,24 @@
   >
     {@render playArea(measurementWave, true)}
   </div>
-  <!-- 高さ補正ラッパー: transformはレイアウトフローに影響しないため手動で高さを補正する -->
-  <div style="height:{titleNaturalHeight * titleScale}px; overflow:hidden;">
-    <div
-      bind:offsetHeight={titleNaturalHeight}
-      style="transform: scale({titleScale}); transform-origin: top center; width:100%;"
-      class="flex flex-col items-center justify-center gap-6 text-center px-6 box-border"
-    >
-      <div>
-        <div class="text-xs tracking-widest text-emerald-300/70 mb-2">SOLITAIRE ROGUE</div>
-        <h1 class="text-4xl font-black text-amber-50">登頂ソリティア -Culmen-</h1>
-        <p class="text-emerald-100/70 text-sm mt-3 leading-relaxed">
-          ランクの±1を連鎖で取ってスコアを稼ぐ<br />
-          同スート・同色・階段(同方向3枚以上)で<br />
-          ボーナスが乗る。場札を全消しすると<br />
-          大きく加点され、3ウェーブ突破で<br />
-          ステージクリア。
-        </p>
-      </div>
-      <button
-        onclick={startGame}
-        class="px-10 py-3 rounded-full bg-yellow-400 text-emerald-950 font-black text-lg active:scale-95 transition-transform"
-      >
-        はじめる
-      </button>
+  <div class="flex flex-col items-center justify-center gap-6 text-center px-6" style="min-height:{measuredPlayHeight}px;">
+    <div>
+      <div class="text-xs tracking-widest text-emerald-300/70 mb-2">SOLITAIRE ROGUE</div>
+      <h1 class="text-4xl font-black text-amber-50">登頂ソリティア -Culmen-</h1>
+      <p class="text-emerald-100/70 text-sm mt-3 leading-relaxed">
+        ランクの±1を連鎖で取ってスコアを稼ぐ<br />
+        同スート・同色・階段(同方向3枚以上)で<br />
+        ボーナスが乗る。場札を全消しすると<br />
+        大きく加点され、3ウェーブ突破で<br />
+        ステージクリア。
+      </p>
     </div>
+    <button
+      onclick={startGame}
+      class="px-10 py-3 rounded-full bg-yellow-400 text-emerald-950 font-black text-lg active:scale-95 transition-transform"
+    >
+      はじめる
+    </button>
   </div>
 
 {:else if wave}
