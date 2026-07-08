@@ -507,3 +507,74 @@ export function checkCompleteRun(realCardsBefore: Card[], realCardsIncludingThis
   const distinctNow = new Set(realCardsIncludingThis.map(c => c.rank)).size
   return distinctBefore < 13 && distinctNow >= 13
 }
+
+export interface ChainBonusResult {
+  bonus: number
+  parts: string[]
+}
+
+export function evaluateChainBonus(
+  scoring: CulmenParams['scoring'],
+  chainBefore: Card[],
+  card: Card
+): ChainBonusResult {
+  if (chainBefore.length === 0) {
+    return { bonus: 0, parts: [] }
+  }
+
+  let bonus = 0
+  const parts: string[] = []
+
+  const prevIsWild = chainBefore[chainBefore.length - 1].wild
+  const realBefore = chainBefore.filter(c => !c.wild)
+  const chainIncludingThis = [...chainBefore, card]
+  const realIncludingThis = [...realBefore, card]
+
+  if (prevIsWild) {
+    bonus += scoring.wildSuitBonus
+    parts.push(`★同スート+${scoring.wildSuitBonus}`)
+  } else {
+    const { suitHeld, colorHeld } = analyzeSuitColor(chainIncludingThis)
+    if (suitHeld) {
+      bonus += scoring.suitBonus
+      parts.push(`同スート+${scoring.suitBonus}`)
+    } else if (colorHeld) {
+      bonus += scoring.colorBonus
+      parts.push(`同色+${scoring.colorBonus}`)
+    }
+  }
+
+  const stairInfo = analyzeStair(chainIncludingThis)
+  if (stairInfo.held && stairInfo.len >= scoring.stairMinLen) {
+    bonus += scoring.stairBonus
+    parts.push(`階段${stairInfo.len} +${scoring.stairBonus}`)
+  }
+
+  if (checkFlush(realIncludingThis)) {
+    bonus += scoring.flushBonus
+    parts.push(`フラッシュ+${scoring.flushBonus}`)
+  }
+
+  if (checkRoyalSet(realIncludingThis)) {
+    bonus += scoring.royalSetBonus
+    parts.push(`ロイヤル+${scoring.royalSetBonus}`)
+  }
+
+  const sameRankCount = countSameRankBefore(realBefore, card.rank)
+  if (sameRankCount > 0) {
+    const sameRankGain = scoring.sameRankBonusUnit * sameRankCount
+    bonus += sameRankGain
+    parts.push(`同ランク+${sameRankGain}`)
+  }
+
+  if (checkCompleteRun(realBefore, realIncludingThis)) {
+    bonus += scoring.completeRunBonus
+    parts.push(`コンプリートラン+${scoring.completeRunBonus}`)
+    if (analyzeSuitColor(realIncludingThis).suitHeld) {
+      bonus += scoring.completeRunSuitBonus
+      parts.push(`コンプリートラン(同スート)+${scoring.completeRunSuitBonus}`)
+    }
+  }
+
+  return { bonus, parts }
+}

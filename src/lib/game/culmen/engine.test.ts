@@ -33,6 +33,7 @@ import {
   checkRoyalSet,
   countSameRankBefore,
   checkCompleteRun,
+  evaluateChainBonus,
 } from './engine'
 import type { Card, WaveState, RunState } from './types'
 import { DEFAULT_PARAMS } from './params'
@@ -755,5 +756,72 @@ describe('checkCompleteRun', () => {
     const all13 = Array.from({ length: 13 }, (_, i) => card(i + 1, '♠', (i + 1) as Card['rank']))
     const withDup = [...all13, card(14, '♥', 5)]
     expect(checkCompleteRun(all13, withDup)).toBe(false)
+  })
+})
+
+describe('evaluateChainBonus', () => {
+  const scoring = DEFAULT_PARAMS.scoring
+
+  test('コンボ1枚目(chainBefore空)はボーナス0', () => {
+    const result = evaluateChainBonus(scoring, [], card(1, '♠', 5))
+    expect(result).toEqual({ bonus: 0, parts: [] })
+  })
+
+  test('同スートが継続していればsuitBonusが付く', () => {
+    const chainBefore = [card(1, '♠', 5)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(2, '♠', 6))
+    expect(result.bonus).toBe(scoring.suitBonus)
+    expect(result.parts).toEqual([`同スート+${scoring.suitBonus}`])
+  })
+
+  test('コンボ中に一度スートが崩れたら、以降同スートが来てもsuitBonusは付かない', () => {
+    const chainBefore = [card(1, '♠', 5), card(2, '♥', 6)] // 既にスート崩れ済み
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♠', 7))
+    expect(result.parts.some(p => p.startsWith('同スート'))).toBe(false)
+  })
+
+  test('ワイルド直後はwildSuitBonusのみ(同スート・同色は付かない)', () => {
+    const chainBefore = [card(1, '★', 0, true)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(2, '♠', 9))
+    expect(result.bonus).toBe(scoring.wildSuitBonus)
+    expect(result.parts).toEqual([`★同スート+${scoring.wildSuitBonus}`])
+  })
+
+  test('階段が一貫して続いていればstairMinLen以上でstairBonusが付く', () => {
+    const chainBefore = [card(1, '♠', 5), card(2, '♣', 6)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 7))
+    expect(result.parts).toContain(`階段3 +${scoring.stairBonus}`)
+  })
+
+  test('直近4枚で4スート揃うとflushBonusが付く', () => {
+    const chainBefore = [card(1, '♦', 3), card(2, '♠', 5), card(3, '♣', 9)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(4, '♥', 2))
+    expect(result.parts).toContain(`フラッシュ+${scoring.flushBonus}`)
+  })
+
+  test('直近3枚でJQK揃うとroyalSetBonusが付く', () => {
+    const chainBefore = [card(1, '♠', 13), card(2, '♥', 11)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 12))
+    expect(result.parts).toContain(`ロイヤル+${scoring.royalSetBonus}`)
+  })
+
+  test('同ランクが既に2枚あれば sameRankBonusUnit×2 が付く', () => {
+    const chainBefore = [card(1, '♠', 5), card(2, '♥', 5)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 5))
+    expect(result.parts).toContain(`同ランク+${scoring.sameRankBonusUnit * 2}`)
+  })
+
+  test('13ランクが揃った瞬間にcompleteRunBonusが付く(同スートでなければ追加ボーナスなし)', () => {
+    const chainBefore = Array.from({ length: 12 }, (_, i) => card(i + 1, i % 2 === 0 ? '♠' : '♥', (i + 1) as Card['rank']))
+    const result = evaluateChainBonus(scoring, chainBefore, card(13, '♦', 13))
+    expect(result.parts).toContain(`コンプリートラン+${scoring.completeRunBonus}`)
+    expect(result.parts.some(p => p.includes('コンプリートラン(同スート)'))).toBe(false)
+  })
+
+  test('13ランクが全て同じスートで揃うとcompleteRunSuitBonusも追加で付く', () => {
+    const chainBefore = Array.from({ length: 12 }, (_, i) => card(i + 1, '♠', (i + 1) as Card['rank']))
+    const result = evaluateChainBonus(scoring, chainBefore, card(13, '♠', 13))
+    expect(result.parts).toContain(`コンプリートラン+${scoring.completeRunBonus}`)
+    expect(result.parts).toContain(`コンプリートラン(同スート)+${scoring.completeRunSuitBonus}`)
   })
 })
