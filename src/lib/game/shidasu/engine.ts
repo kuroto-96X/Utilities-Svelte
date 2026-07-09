@@ -70,6 +70,7 @@ export function startWave(
     chainOrigin: ['draw'],
     linked: false,
     columnsEmptiedThisCombo: 0,
+    comboStreakColumnLengths: tableau.map(col => col.length),
     lastDrawEffect: null,
     status: 'playing',
     endReason: null as WaveEndReason,
@@ -101,8 +102,15 @@ export function playCard(
 
   const newTableau = wave.tableau.map((c, i) => (i === colIndex ? c.slice(0, -1) : c))
   const columnJustEmptied = newTableau[colIndex].length === 0
-  const newColumnsEmptied = columnJustEmptied ? wave.columnsEmptiedThisCombo + 1 : wave.columnsEmptiedThisCombo
-  if (columnJustEmptied) {
+  const streakStartLength = wave.comboStreakColumnLengths[colIndex]
+  const rows = params.layout.rows
+  const sweepQualifies = columnJustEmptied && (
+    items.includes('grace')
+      ? streakStartLength <= rows - params.items.columnSweepRelaxCards
+      : streakStartLength === rows
+  )
+  const newColumnsEmptied = sweepQualifies ? wave.columnsEmptiedThisCombo + 1 : wave.columnsEmptiedThisCombo
+  if (sweepQualifies) {
     const sweepGain = params.scoring.columnSweepBonus * newColumnsEmptied
     base += sweepGain
     parts.push(`列一掃+${sweepGain}`)
@@ -124,6 +132,7 @@ export function playCard(
     chainOrigin: [...wave.chainOrigin, 'play'],
     linked: true,
     columnsEmptiedThisCombo: newColumnsEmptied,
+    comboStreakColumnLengths: wave.comboStreakColumnLengths,
     lastDrawEffect: null,
     score: newScore,
     lastGain: { points: gained, parts },
@@ -187,6 +196,7 @@ export function drawStock(params: ShidasuParams, wave: WaveState, _items: ItemId
     chainOrigin: ['draw'],
     linked: false,
     columnsEmptiedThisCombo: 0,
+    comboStreakColumnLengths: wave.tableau.map(col => col.length),
     lastDrawEffect: null,
     lastGain: null,
   }
@@ -204,15 +214,20 @@ export function markStuck(wave: WaveState): WaveState {
   return { ...wave, status: 'ended', endReason: 'stuck' }
 }
 
-export const ITEM_POOL: ItemId[] = ['bridge']
+export const ITEM_POOL: ItemId[] = ['bridge', 'grace']
 
 export const ITEM_NAMES: Record<ItemId, string> = {
   bridge: '架橋の護符',
+  grace: '寛容の護符',
 }
 
 export function itemDesc(id: ItemId, params: ShidasuParams): string {
   switch (id) {
     case 'bridge': return `階段成立に必要な最小連続枚数を${params.scoring.stairMinLen}→${params.items.stairRelaxedMinLen}枚に緩和`
+    case 'grace': {
+      const relaxed = params.layout.rows - params.items.columnSweepRelaxCards
+      return `列一掃ボーナスの条件を「列の全${params.layout.rows}枚を1コンボで空に」→「残り${relaxed}枚から1コンボで空に」に緩和`
+    }
   }
 }
 

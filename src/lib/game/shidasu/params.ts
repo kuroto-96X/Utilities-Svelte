@@ -31,6 +31,7 @@ export interface ShidasuParams {
   }>
   items: {
     stairRelaxedMinLen: number
+    columnSweepRelaxCards: number
   }
   flow: {
     wavesPerStage: number
@@ -69,6 +70,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
   ],
   items: {
     stairRelaxedMinLen: 3,
+    columnSweepRelaxCards: 2,
   },
   flow: { wavesPerStage: 3, clearDelayMs: 450 },
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },

@@ -79,6 +79,7 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     chainOrigin: [],
     linked: false,
     columnsEmptiedThisCombo: 0,
+    comboStreakColumnLengths: [],
     lastDrawEffect: null,
     status: 'playing',
     endReason: null,
@@ -150,6 +151,11 @@ describe('startWave', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], 1)
     expect(wave.tableau).toHaveLength(DEFAULT_PARAMS.layout.cols)
     wave.tableau.forEach(col => expect(col).toHaveLength(DEFAULT_PARAMS.layout.rows))
+  })
+
+  test('comboStreakColumnLengthsは各列ともrows枚で初期化される', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], 1)
+    expect(wave.comboStreakColumnLengths).toEqual(wave.tableau.map(() => DEFAULT_PARAMS.layout.rows))
   })
 
   test('山札+場札+foundationで52枚になる(アイテムなし)', () => {
@@ -227,11 +233,34 @@ describe('playCard', () => {
     expect(next.score).toBe(afterFirst.score + Math.floor(scoring.basePoint * 1.1))
   })
 
-  test('列を空にすると列一掃ボーナスが加算される(1列目)', () => {
-    const wave = baseWave({ tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]] })
+  test('基本ルール: 列の全カードを1コンボで空にすると列一掃ボーナスが加算される(1列目)', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows, 1],
+    })
     const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
     expect(next.columnsEmptiedThisCombo).toBe(1)
     expect(next.score).toBe(scoring.basePoint + scoring.columnSweepBonus * 1)
+    expect(next.lastGain?.parts).toContain(`列一掃+${scoring.columnSweepBonus}`)
+  })
+
+  test('基本ルール: 列が現在の連続コンボ開始時点で全カードでなければ(=既に一部消化済みなら)列一掃ボーナスは付かない', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
+      comboStreakColumnLengths: [2, 1], // 列0はコンボ開始時点で2枚残っていた(rows=5と一致しないため、全カードを1コンボで消化したことにはならない)
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    expect(next.columnsEmptiedThisCombo).toBe(0)
+    expect(next.lastGain?.parts.some(p => p.startsWith('列一掃'))).toBe(false)
+  })
+
+  test('寛容の護符所持時: 列一掃の条件が「残りrows-columnSweepRelaxCards枚以下から1コンボで空に」に緩和される', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows - DEFAULT_PARAMS.items.columnSweepRelaxCards, 1],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['grace'], 1000000, 0)
+    expect(next.columnsEmptiedThisCombo).toBe(1)
     expect(next.lastGain?.parts).toContain(`列一掃+${scoring.columnSweepBonus}`)
   })
 
@@ -240,6 +269,7 @@ describe('playCard', () => {
       foundation: card(0, '♠', 6), // 列1(rank7)との差を1にして取れるようにする
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 7)]],
       columnsEmptiedThisCombo: 1,
+      comboStreakColumnLengths: [1, DEFAULT_PARAMS.layout.rows],
     })
     const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 1)
     expect(next.columnsEmptiedThisCombo).toBe(2)
@@ -247,7 +277,11 @@ describe('playCard', () => {
   })
 
   test('場札が0枚になったら全消しボーナス(clearBonus+残り山札×clearBonusPerStock)が加算されendReason=fullClear', () => {
-    const wave = baseWave({ tableau: [[card(1, '♣', 6)]], stock: [card(9, '♠', 1), card(10, '♠', 2)] })
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)]],
+      stock: [card(9, '♠', 1), card(10, '♠', 2)],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
+    })
     const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0)
     expect(next.tableau.reduce((n, c) => n + c.length, 0)).toBe(0)
     expect(next.status).toBe('ended')
@@ -359,7 +393,7 @@ describe('drawStock', () => {
     expect(drawStock(DEFAULT_PARAMS, wave, [])).toBe(wave)
   })
 
-  test('通常時(継続条件なし): コンボ・チェーン・列一掃カウントがリセットされ、捲った札1枚が新しい起点になる', () => {
+  test('通常時(継続条件なし): コンボ・チェーン・列一掃カウント・comboStreakColumnLengthsがリセットされ、捲った札1枚が新しい起点になる', () => {
     const wave = makeWave({
       stock: [card(1, '♠', 9)],
       combo: 3,
@@ -367,6 +401,8 @@ describe('drawStock', () => {
       chainOrigin: ['play'],
       linked: true,
       columnsEmptiedThisCombo: 2,
+      tableau: [[card(3, '♣', 2)], [card(4, '♦', 8), card(5, '♥', 9)]],
+      comboStreakColumnLengths: [0, 1],
     })
     const next = drawStock(DEFAULT_PARAMS, wave, [])
     expect(next.foundation).toEqual(card(1, '♠', 9))
@@ -375,6 +411,7 @@ describe('drawStock', () => {
     expect(next.chainOrigin).toEqual(['draw'])
     expect(next.linked).toBe(false)
     expect(next.columnsEmptiedThisCombo).toBe(0)
+    expect(next.comboStreakColumnLengths).toEqual([1, 2])
     expect(next.lastDrawEffect).toBeNull()
     expect(next.stock).toEqual([])
   })
@@ -386,6 +423,7 @@ describe('drawStock', () => {
       chain: [card(2, '♣', 5)],
       chainOrigin: ['play'],
       linked: true,
+      comboStreakColumnLengths: [4, 2],
     })
     const next = drawStock(DEFAULT_PARAMS, wave, [])
     expect(next.combo).toBe(3)
@@ -393,6 +431,7 @@ describe('drawStock', () => {
     expect(next.chainOrigin).toEqual(['play', 'draw'])
     expect(next.linked).toBe(true)
     expect(next.lastDrawEffect).toBe('wild')
+    expect(next.comboStreakColumnLengths).toEqual([4, 2])
   })
 
   test('パターンに合う札ならアイテム無しで特殊継続しlastDrawEffectはpattern', () => {
@@ -402,6 +441,7 @@ describe('drawStock', () => {
       chain: [card(2, '♠', 5)],
       chainOrigin: ['play'],
       linked: true,
+      comboStreakColumnLengths: [3, 2],
     })
     const next = drawStock(DEFAULT_PARAMS, wave, [])
     expect(next.combo).toBe(2)
@@ -410,6 +450,7 @@ describe('drawStock', () => {
     expect(next.linked).toBe(true)
     expect(next.lastDrawEffect).toBe('pattern')
     expect(next.score).toBe(wave.score) // 得点は付かない
+    expect(next.comboStreakColumnLengths).toEqual([3, 2])
   })
 
   test('パターンに合わなければ通常通りリセットし、捲った札1枚が新しい起点になる', () => {
@@ -489,24 +530,31 @@ describe('markStuck', () => {
 describe('rollItemOffer', () => {
   test('未所持のアイテムを全て返す(プールの上限は3件だが、実際のプール数がそれ以下ならそのまま返す)', () => {
     const offer = rollItemOffer([], createRng(1))
-    expect(offer).toEqual(['bridge'])
+    expect([...offer].sort()).toEqual(['bridge', 'grace'])
   })
 
   test('既に持っているアイテムは種類を問わず候補から除外される', () => {
     const offer = rollItemOffer(['bridge'], createRng(1))
+    expect(offer).toEqual(['grace'])
+  })
+
+  test('全て持っていれば候補は空になる', () => {
+    const offer = rollItemOffer(['bridge', 'grace'], createRng(1))
     expect(offer).toEqual([])
   })
 })
 
 describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
-  test('1種類のアイテムが定義されている', () => {
-    expect(ITEM_POOL).toHaveLength(1)
+  test('2種類のアイテムが定義されている', () => {
+    expect(ITEM_POOL).toHaveLength(2)
     ITEM_POOL.forEach(id => expect(ITEM_NAMES[id]).toBeTruthy())
   })
 
   test('itemDescはパラメータの数値を埋め込んだ説明文を返す', () => {
     expect(itemDesc('bridge', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.scoring.stairMinLen))
     expect(itemDesc('bridge', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.items.stairRelaxedMinLen))
+    expect(itemDesc('grace', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.layout.rows))
+    expect(itemDesc('grace', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.layout.rows - DEFAULT_PARAMS.items.columnSweepRelaxCards))
   })
 })
 
@@ -547,7 +595,8 @@ describe('resolveWaveEnd', () => {
     const run = endedRun({ waveIndex: 0 }, DEFAULT_PARAMS.stages[0].targets[0])
     const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
     expect(next.phase).toBe('itemSelect')
-    expect(next.offer).toEqual(['bridge'])
+    expect(next.offer).toHaveLength(2)
+    expect([...next.offer].sort()).toEqual(['bridge', 'grace'])
   })
 
   test('最終ウェーブクリア・次ステージありならstageClearになる', () => {
