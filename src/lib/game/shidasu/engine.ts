@@ -132,6 +132,8 @@ export function playCard(
     chainOrigin: [...wave.chainOrigin, 'play'],
     linked: true,
     columnsEmptiedThisCombo: newColumnsEmptied,
+    // コンボが継続する間はこのスナップショットを維持する。列の残り枚数が変化しても、
+    // 次にdrawStockでコンボがリセットされるまでは更新しない。
     comboStreakColumnLengths: wave.comboStreakColumnLengths,
     lastDrawEffect: null,
     score: newScore,

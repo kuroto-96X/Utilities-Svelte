@@ -31,6 +31,8 @@ export interface WaveState {
   chainOrigin: ChainCardOrigin[]
   linked: boolean
   columnsEmptiedThisCombo: number
+  // 各列について、現在の連続コンボが始まった時点(直近でcomboが0にリセットされた瞬間)での残り枚数のスナップショット。
+  // コンボが継続している間は更新されず、drawStockでコンボがリセットされる時とstartWaveでのみ再設定される。
   comboStreakColumnLengths: number[]
   lastDrawEffect: DrawEffect
   status: WaveStatus
