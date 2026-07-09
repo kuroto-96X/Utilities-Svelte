@@ -313,7 +313,7 @@
   <div class="flex flex-col items-center justify-center gap-6 text-center px-6" style="min-height:{measuredPlayHeight}px;">
     <div>
       <div class="text-xs tracking-widest text-emerald-300/70 mb-2">SOLITAIRE ROGUE</div>
-      <h1 class="text-4xl font-black text-amber-50">登頂ソリティア -Culmen-</h1>
+      <h1 class="text-4xl font-black text-amber-50">星詠みソリティア -Shidasu-</h1>
       <p class="text-emerald-100/70 text-sm mt-3 leading-relaxed">
         ランクの±1を連鎖で取ってスコアを稼ぐ<br />
         同スート・同色・階段(同方向3枚以上)で<br />

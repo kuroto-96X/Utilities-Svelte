@@ -111,7 +111,7 @@ export const site = {
     },
     {
       href: "/game/culmen",
-      label: "登頂ソリティア -Culmen-",
+      label: "星詠みソリティア -Shidasu-",
       description: "ゴルフソリティア×ローグライク。コンボと階段ボーナスでスコアを稼ぎ、アイテムで強化しながらステージを駆け上がる",
       category: 'game',
     },

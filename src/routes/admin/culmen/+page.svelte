@@ -151,7 +151,7 @@
   <a href="/admin" class="text-xs text-slate-400 hover:text-teal-600 mb-4 inline-block">← 管理ページ一覧</a>
 
   <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-slate-800">登頂ソリティア -Culmen- 設定</h1>
+    <h1 class="text-2xl font-bold text-slate-800">星詠みソリティア -Shidasu- 設定</h1>
     <div class="flex gap-2">
       <button onclick={() => loadConfig(true)} class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
         リロード
