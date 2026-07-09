@@ -41,27 +41,18 @@ export function remainingCount(tableau: Card[][]): number {
   return tableau.reduce((n, c) => n + c.length, 0)
 }
 
-function countItem(items: ItemId[], id: ItemId): number {
-  return items.filter(x => x === id).length
-}
-
 export function startWave(
   params: ShidasuParams,
   _stageIndex: number,
   _waveIndex: number,
-  items: ItemId[],
+  _items: ItemId[],
   seed?: number
 ): WaveState {
   const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
   let idSeq = 0
   const nextId = () => ++idSeq
 
-  const shieldCount = countItem(items, 'shield')
-  const stock5Count = countItem(items, 'stock5')
-  const wild1Count = countItem(items, 'wild1')
-  const hasStart1 = items.includes('start1')
-
-  let deck = shuffle(createDeck(nextId), rand)
+  const deck = shuffle(createDeck(nextId), rand)
   const { cols, rows } = params.layout
   const tableau: Card[][] = []
   for (let c = 0; c < cols; c++) {
@@ -69,30 +60,12 @@ export function startWave(
   }
   const foundation = deck.pop() as Card
 
-  const extra = stock5Count * params.items.extraStockCount
-  if (extra > 0) {
-    // createDeckは52枚単位でしか生成できないため、extraが52を超える場合は複数回生成して積み増す
-    const dupSource: Card[] = []
-    while (dupSource.length < extra) {
-      const need = extra - dupSource.length
-      dupSource.push(...shuffle(createDeck(nextId), rand).slice(0, need))
-    }
-    deck = shuffle([...deck, ...dupSource], rand)
-  }
-
-  const wildCount = wild1Count * params.items.wildPerPick
-  for (let i = 0; i < wildCount; i++) {
-    const pos = Math.floor(rand() * Math.max(1, deck.length))
-    deck.splice(pos, 0, { id: nextId(), suit: '★', rank: 0, wild: true })
-  }
-
   return {
     tableau,
     stock: deck,
     foundation,
     score: 0,
-    combo: hasStart1 ? params.items.startCombo : 0,
-    shieldLeft: shieldCount * params.items.shieldChargesPerPick,
+    combo: 0,
     chain: [foundation],
     chainOrigin: ['draw'],
     linked: false,
@@ -120,10 +93,9 @@ export function playCard(
 
   const newCombo = wave.combo + 1
   let base = params.scoring.basePoint
-  if (isRed(card) && items.includes('red5')) base += params.items.redBonusValue
-  if (isFace(card) && items.includes('face10')) base += params.items.faceBonusValue
 
-  const chainResult = evaluateChainBonus(params.scoring, wave.chain, card)
+  const effectiveStairMinLen = items.includes('bridge') ? params.items.stairRelaxedMinLen : params.scoring.stairMinLen
+  const chainResult = evaluateChainBonus(params.scoring, wave.chain, card, effectiveStairMinLen)
   base += chainResult.bonus
   const parts = [...chainResult.parts]
 
@@ -161,8 +133,7 @@ export function playCard(
 
   if (remaining === 0) {
     const clearBonus = params.scoring.clearBonus + wave.stock.length * params.scoring.clearBonusPerStock
-    const itemBonus = items.includes('clear300') ? params.items.fullClearItemBonus : 0
-    return { ...next, score: newScore + clearBonus + itemBonus, status: 'ended', endReason: 'fullClear' }
+    return { ...next, score: newScore + clearBonus, status: 'ended', endReason: 'fullClear' }
   }
 
   if (newScore >= target) {
@@ -172,7 +143,7 @@ export function playCard(
   return next
 }
 
-export function drawStock(params: ShidasuParams, wave: WaveState, items: ItemId[]): WaveState {
+export function drawStock(params: ShidasuParams, wave: WaveState, _items: ItemId[]): WaveState {
   if (wave.status !== 'playing') return wave
   if (wave.stock.length === 0) return wave
 
@@ -192,20 +163,17 @@ export function drawStock(params: ShidasuParams, wave: WaveState, items: ItemId[
     }
   }
 
-  const baseCombo = items.includes('start1') ? params.items.startCombo : 0
-  const canShieldProtect = wave.combo > baseCombo && wave.shieldLeft > 0
   const patternContinues = wave.linked && chainContinuesPattern(params.scoring, wave.chain, card)
 
-  if (canShieldProtect || patternContinues) {
+  if (patternContinues) {
     return {
       ...wave,
       stock: newStock,
       foundation: card,
-      shieldLeft: canShieldProtect ? wave.shieldLeft - 1 : wave.shieldLeft,
       chain: [...wave.chain, card],
       chainOrigin: [...wave.chainOrigin, 'draw'],
       linked: true,
-      lastDrawEffect: canShieldProtect ? 'shield' : 'pattern',
+      lastDrawEffect: 'pattern',
       lastGain: null,
     }
   }
@@ -214,7 +182,7 @@ export function drawStock(params: ShidasuParams, wave: WaveState, items: ItemId[
     ...wave,
     stock: newStock,
     foundation: card,
-    combo: baseCombo,
+    combo: 0,
     chain: [card],
     chainOrigin: ['draw'],
     linked: false,
@@ -236,28 +204,15 @@ export function markStuck(wave: WaveState): WaveState {
   return { ...wave, status: 'ended', endReason: 'stuck' }
 }
 
-export const ITEM_POOL: ItemId[] = ['red5', 'face10', 'shield', 'stock5', 'wild1', 'start1', 'clear300']
-export const UNIQUE_ITEMS: ItemId[] = ['red5', 'face10', 'start1', 'clear300']
+export const ITEM_POOL: ItemId[] = ['bridge']
 
 export const ITEM_NAMES: Record<ItemId, string> = {
-  red5: '紅の目利き',
-  face10: '宮廷の紋章',
-  shield: 'コンボシールド',
-  stock5: '厚めの山札',
-  wild1: 'ワイルド★',
-  start1: '助走',
-  clear300: '完全消去',
+  bridge: '架橋の護符',
 }
 
 export function itemDesc(id: ItemId, params: ShidasuParams): string {
   switch (id) {
-    case 'red5': return `♥♦の基礎点 +${params.items.redBonusValue}`
-    case 'face10': return `J/Q/Kの基礎点 +${params.items.faceBonusValue}`
-    case 'shield': return `山札めくりのコンボリセットを毎ウェーブ${params.items.shieldChargesPerPick}回無効`
-    case 'stock5': return `山札 +${params.items.extraStockCount}枚`
-    case 'wild1': return `毎ウェーブ山札に★を${params.items.wildPerPick}枚混入`
-    case 'start1': return `コンボが${params.items.startCombo}からスタート`
-    case 'clear300': return `全消しボーナス +${params.items.fullClearItemBonus}`
+    case 'bridge': return `階段成立に必要な最小連続枚数を${params.scoring.stairMinLen}→${params.items.stairRelaxedMinLen}枚に緩和`
   }
 }
 
@@ -268,7 +223,7 @@ function shuffleItems(list: ItemId[], rand: () => number): ItemId[] {
 }
 
 export function rollItemOffer(items: ItemId[], rand: () => number = Math.random): ItemId[] {
-  const available = ITEM_POOL.filter(id => !(UNIQUE_ITEMS.includes(id) && items.includes(id)))
+  const available = ITEM_POOL.filter(id => !items.includes(id))
   return shuffleItems(available, rand).slice(0, 3)
 }
 
@@ -455,7 +410,8 @@ export interface ChainBonusResult {
 export function evaluateChainBonus(
   scoring: ShidasuParams['scoring'],
   chainBefore: Card[],
-  card: Card
+  card: Card,
+  stairMinLen: number = scoring.stairMinLen
 ): ChainBonusResult {
   if (chainBefore.length === 0) {
     return { bonus: 0, parts: [] }
@@ -484,7 +440,7 @@ export function evaluateChainBonus(
   }
 
   const stairInfo = analyzeStair(chainIncludingThis)
-  if (stairInfo.held && stairInfo.len >= scoring.stairMinLen) {
+  if (stairInfo.held && stairInfo.len >= stairMinLen) {
     bonus += scoring.stairBonus
     parts.push(`階段${stairInfo.len} +${scoring.stairBonus}`)
   }

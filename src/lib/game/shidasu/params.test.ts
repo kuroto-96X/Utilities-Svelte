@@ -31,9 +31,6 @@ describe('DEFAULT_PARAMS', () => {
     expect(s.completeRunBonus % 10).toBe(0)
     expect(s.completeRunSuitBonus % 10).toBe(0)
     expect(s.columnSweepBonus % 10).toBe(0)
-    expect(DEFAULT_PARAMS.items.redBonusValue % 10).toBe(0)
-    expect(DEFAULT_PARAMS.items.faceBonusValue % 10).toBe(0)
-    expect(DEFAULT_PARAMS.items.fullClearItemBonus % 10).toBe(0)
     DEFAULT_PARAMS.stages.forEach(stage => {
       stage.targets.forEach(t => expect(t % 10).toBe(0))
     })

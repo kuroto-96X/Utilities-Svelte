@@ -30,13 +30,7 @@ export interface ShidasuParams {
     targets: [number, number, number]
   }>
   items: {
-    redBonusValue: number
-    faceBonusValue: number
-    shieldChargesPerPick: number
-    extraStockCount: number
-    wildPerPick: number
-    startCombo: number
-    fullClearItemBonus: number
+    stairRelaxedMinLen: number
   }
   flow: {
     wavesPerStage: number
@@ -56,7 +50,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     suitBonus: 100,
     colorBonus: 50,
     stairBonus: 150,
-    stairMinLen: 3,
+    stairMinLen: 5,
     wildSuitBonus: 100,
     clearBonus: 2000,
     clearBonusPerStock: 50,
@@ -74,13 +68,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     { name: 'STAGE 3', modifier: 'faceLock', targets: [8000, 15000, 26000] },
   ],
   items: {
-    redBonusValue: 50,
-    faceBonusValue: 100,
-    shieldChargesPerPick: 1,
-    extraStockCount: 5,
-    wildPerPick: 1,
-    startCombo: 1,
-    fullClearItemBonus: 3000,
+    stairRelaxedMinLen: 3,
   },
   flow: { wavesPerStage: 3, clearDelayMs: 450 },
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },

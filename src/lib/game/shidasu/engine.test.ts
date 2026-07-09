@@ -15,7 +15,6 @@ import {
   markStuck,
   rollItemOffer,
   ITEM_POOL,
-  UNIQUE_ITEMS,
   ITEM_NAMES,
   itemDesc,
   createInitialRun,
@@ -76,7 +75,6 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     foundation: card(0, '♠', 5),
     score: 0,
     combo: 0,
-    shieldLeft: 0,
     chain: [],
     chainOrigin: [],
     linked: false,
@@ -172,31 +170,9 @@ describe('startWave', () => {
     expect(wave.status).toBe('playing')
   })
 
-  test('「助走」所持時はコンボがstartComboから始まる', () => {
-    const wave = startWave(DEFAULT_PARAMS, 0, 0, ['start1'], 1)
-    expect(wave.combo).toBe(DEFAULT_PARAMS.items.startCombo)
-  })
-
-  test('「コンボシールド」所持数×shieldChargesPerPick がshieldLeftになる', () => {
-    const wave = startWave(DEFAULT_PARAMS, 0, 0, ['shield', 'shield'], 1)
-    expect(wave.shieldLeft).toBe(2 * DEFAULT_PARAMS.items.shieldChargesPerPick)
-  })
-
-  test('「厚めの山札」所持数に応じて山札が増える', () => {
-    const base = startWave(DEFAULT_PARAMS, 0, 0, [], 1)
-    const withItem = startWave(DEFAULT_PARAMS, 0, 0, ['stock5'], 1)
-    expect(withItem.stock.length).toBe(base.stock.length + DEFAULT_PARAMS.items.extraStockCount)
-  })
-
-  test('「ワイルド★」所持数に応じて山札にワイルドが混入する', () => {
-    const wave = startWave(DEFAULT_PARAMS, 0, 0, ['wild1', 'wild1'], 1)
-    const wildCount = wave.stock.filter(c => c.wild).length
-    expect(wildCount).toBe(2 * DEFAULT_PARAMS.items.wildPerPick)
-  })
-
-  test('同じシードなら同じ結果になる(決定的)', () => {
-    const a = startWave(DEFAULT_PARAMS, 0, 0, ['stock5', 'wild1'], 123)
-    const b = startWave(DEFAULT_PARAMS, 0, 0, ['stock5', 'wild1'], 123)
+  test('同じシードなら同じ結果になる(決定的、アイテムを持っていても山札生成自体は変わらない)', () => {
+    const a = startWave(DEFAULT_PARAMS, 0, 0, ['bridge'], 123)
+    const b = startWave(DEFAULT_PARAMS, 0, 0, ['bridge'], 123)
     expect(a).toEqual(b)
   })
 })
@@ -247,24 +223,8 @@ describe('playCard', () => {
     }
     const next = playCard(DEFAULT_PARAMS, wave2, 'none', [], 1000000, 1)
     expect(next.combo).toBe(2)
-    // 6→7は階段方向+1・長さ2(閾値3未満でボーナスなし)、スート♣→♦で色も違う→パターンボーナス0
+    // 6→7は階段方向+1・長さ2(既定stairMinLen=5未満でボーナスなし)、スート♣→♦で色も違う→パターンボーナス0
     expect(next.score).toBe(afterFirst.score + Math.floor(scoring.basePoint * 1.1))
-  })
-
-  test('「紅の目利き」所持時、赤札の基礎点が加算される(内訳表示には出ない)', () => {
-    const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♥', 6)], [card(2, '♦', 2)]] })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['red5'], 1000000, 0)
-    expect(next.score).toBe(scoring.basePoint + DEFAULT_PARAMS.items.redBonusValue)
-    expect(next.lastGain?.parts).toEqual([])
-  })
-
-  test('「宮廷の紋章」所持時、絵札の基礎点が加算される', () => {
-    const wave = baseWave({
-      tableau: [[card(1, '♣', 4)], [card(10, '♠', 2), card(2, '♣', 11)]],
-      foundation: card(0, '♣', 12),
-    })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['face10'], 1000000, 1)
-    expect(next.score).toBe(scoring.basePoint + DEFAULT_PARAMS.items.faceBonusValue)
   })
 
   test('列を空にすると列一掃ボーナスが加算される(1列目)', () => {
@@ -293,13 +253,6 @@ describe('playCard', () => {
     expect(next.status).toBe('ended')
     expect(next.endReason).toBe('fullClear')
     const expectedClearBonus = scoring.clearBonus + 2 * scoring.clearBonusPerStock
-    expect(next.score).toBe(scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus)
-  })
-
-  test('「完全消去」所持時は全消しボーナスにさらに加算される', () => {
-    const wave = baseWave({ tableau: [[card(1, '♣', 6)]], stock: [] })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['clear300'], 100000000, 0)
-    const expectedClearBonus = scoring.clearBonus + 0 * scoring.clearBonusPerStock + DEFAULT_PARAMS.items.fullClearItemBonus
     expect(next.score).toBe(scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus)
   })
 
@@ -347,6 +300,26 @@ describe('playCard', () => {
     const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
     expect(next.chainOrigin).toEqual(['play'])
   })
+
+  test('架橋の護符を持っていなければ、階段が3枚繋がっても既定のstairMinLen(5)未満のためボーナスが付かない', () => {
+    const wave = baseWave({
+      foundation: card(0, '♣', 5),
+      chain: [card(20, '♠', 4), card(0, '♣', 5)],
+      tableau: [[card(9, '♠', 1), card(1, '♦', 6)], [card(2, '♥', 2)]],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    expect(next.lastGain?.parts.some(p => p.startsWith('階段'))).toBe(false)
+  })
+
+  test('架橋の護符を持っていれば、階段成立に必要な最小連続枚数がstairRelaxedMinLen(3)に緩和される', () => {
+    const wave = baseWave({
+      foundation: card(0, '♣', 5),
+      chain: [card(20, '♠', 4), card(0, '♣', 5)],
+      tableau: [[card(9, '♠', 1), card(1, '♦', 6)], [card(2, '♥', 2)]],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['bridge'], 1000000, 0)
+    expect(next.lastGain?.parts).toContain(`階段3 +${scoring.stairBonus}`)
+  })
 })
 
 describe('chainContinuesPattern', () => {
@@ -390,7 +363,6 @@ describe('drawStock', () => {
     const wave = makeWave({
       stock: [card(1, '♠', 9)],
       combo: 3,
-      shieldLeft: 0,
       chain: [card(2, '♣', 1)],
       chainOrigin: ['play'],
       linked: true,
@@ -405,12 +377,6 @@ describe('drawStock', () => {
     expect(next.columnsEmptiedThisCombo).toBe(0)
     expect(next.lastDrawEffect).toBeNull()
     expect(next.stock).toEqual([])
-  })
-
-  test('「助走」所持時のリセット後コンボはstartComboになる', () => {
-    const wave = makeWave({ stock: [card(1, '♠', 9)], combo: 3, shieldLeft: 0 })
-    const next = drawStock(DEFAULT_PARAMS, wave, ['start1'])
-    expect(next.combo).toBe(DEFAULT_PARAMS.items.startCombo)
   })
 
   test('ワイルドがめくれた場合: コンボは変わらずチェーンに追加され、lastDrawEffectはwild', () => {
@@ -429,28 +395,10 @@ describe('drawStock', () => {
     expect(next.lastDrawEffect).toBe('wild')
   })
 
-  test('シールド発動時: コンボ維持・shieldLeft減少・得点は付かずチェーンに加わり、lastDrawEffectはshield', () => {
-    const wave = makeWave({
-      stock: [card(1, '♣', 9)], // チェーン継続条件を満たさない札にしてシールド発動だけを検証
-      combo: 2,
-      shieldLeft: 1,
-      chain: [card(2, '♥', 5)],
-      chainOrigin: ['play'],
-      linked: true,
-    })
-    const next = drawStock(DEFAULT_PARAMS, wave, [])
-    expect(next.combo).toBe(2)
-    expect(next.shieldLeft).toBe(0)
-    expect(next.chain).toEqual([card(2, '♥', 5), card(1, '♣', 9)])
-    expect(next.chainOrigin).toEqual(['play', 'draw'])
-    expect(next.lastDrawEffect).toBe('shield')
-  })
-
-  test('シールドが無くても、パターンに合う札ならアイテム無しで特殊継続しlastDrawEffectはpattern', () => {
+  test('パターンに合う札ならアイテム無しで特殊継続しlastDrawEffectはpattern', () => {
     const wave = makeWave({
       stock: [card(1, '♠', 9)], // 同スート継続
       combo: 2,
-      shieldLeft: 0,
       chain: [card(2, '♠', 5)],
       chainOrigin: ['play'],
       linked: true,
@@ -464,11 +412,10 @@ describe('drawStock', () => {
     expect(next.score).toBe(wave.score) // 得点は付かない
   })
 
-  test('パターンに合わずシールドも無ければ通常通りリセットし、捲った札1枚が新しい起点になる', () => {
+  test('パターンに合わなければ通常通りリセットし、捲った札1枚が新しい起点になる', () => {
     const wave = makeWave({
       stock: [card(1, '♣', 9)], // 同スートでも階段でもない
       combo: 2,
-      shieldLeft: 0,
       chain: [card(2, '♥', 5)],
       chainOrigin: ['play'],
       linked: true,
@@ -479,15 +426,6 @@ describe('drawStock', () => {
     expect(next.chainOrigin).toEqual(['draw'])
     expect(next.linked).toBe(false)
     expect(next.lastDrawEffect).toBeNull()
-  })
-
-  test('コンボがbaseCombo以下ならシールドがあっても消費せずリセットする(パターン不一致の場合)', () => {
-    const wave = makeWave({ stock: [card(1, '♣', 9)], combo: 0, shieldLeft: 2, chain: [], chainOrigin: [], linked: false })
-    const next = drawStock(DEFAULT_PARAMS, wave, [])
-    expect(next.shieldLeft).toBe(2)
-    expect(next.combo).toBe(0)
-    expect(next.chain).toEqual([card(1, '♣', 9)])
-    expect(next.chainOrigin).toEqual(['draw'])
   })
 
   test('山札を引くとlastGainがクリアされる(得点は山札からは発生しないため)', () => {
@@ -549,34 +487,26 @@ describe('markStuck', () => {
 })
 
 describe('rollItemOffer', () => {
-  test('3種類を返す', () => {
+  test('未所持のアイテムを全て返す(プールの上限は3件だが、実際のプール数がそれ以下ならそのまま返す)', () => {
     const offer = rollItemOffer([], createRng(1))
-    expect(offer).toHaveLength(3)
-    expect(new Set(offer).size).toBe(3)
+    expect(offer).toEqual(['bridge'])
   })
 
-  test('取得済みのユニークアイテムは候補から除外される', () => {
-    const owned = UNIQUE_ITEMS.slice(0, 3) // 4種のうち3種を所持済みにする
-    const offer = rollItemOffer(owned, createRng(1))
-    offer.forEach(id => expect(owned.includes(id)).toBe(false))
-  })
-
-  test('重複取得可能なアイテムは所持済みでも候補に残る', () => {
-    const rand = createRng(2)
-    const offer = rollItemOffer(['shield', 'shield', 'stock5'], rand)
-    expect(offer.length).toBe(3)
+  test('既に持っているアイテムは種類を問わず候補から除外される', () => {
+    const offer = rollItemOffer(['bridge'], createRng(1))
+    expect(offer).toEqual([])
   })
 })
 
 describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
-  test('7種類のアイテムが定義されている', () => {
-    expect(ITEM_POOL).toHaveLength(7)
+  test('1種類のアイテムが定義されている', () => {
+    expect(ITEM_POOL).toHaveLength(1)
     ITEM_POOL.forEach(id => expect(ITEM_NAMES[id]).toBeTruthy())
   })
 
   test('itemDescはパラメータの数値を埋め込んだ説明文を返す', () => {
-    expect(itemDesc('red5', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.items.redBonusValue))
-    expect(itemDesc('clear300', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.items.fullClearItemBonus))
+    expect(itemDesc('bridge', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.scoring.stairMinLen))
+    expect(itemDesc('bridge', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.items.stairRelaxedMinLen))
   })
 })
 
@@ -613,11 +543,11 @@ describe('resolveWaveEnd', () => {
     expect(next.phase).toBe('gameOver')
   })
 
-  test('ウェーブ1・2クリアならitemSelectになりofferが3件入る', () => {
+  test('ウェーブ1・2クリアならitemSelectになりofferにプール内の未所持アイテムが入る', () => {
     const run = endedRun({ waveIndex: 0 }, DEFAULT_PARAMS.stages[0].targets[0])
     const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
     expect(next.phase).toBe('itemSelect')
-    expect(next.offer).toHaveLength(3)
+    expect(next.offer).toEqual(['bridge'])
   })
 
   test('最終ウェーブクリア・次ステージありならstageClearになる', () => {
@@ -636,12 +566,11 @@ describe('resolveWaveEnd', () => {
 
 describe('pickItem / advanceStage / restartRun', () => {
   test('pickItemでアイテムが追加され次ウェーブが始まる', () => {
-    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', waveIndex: 0, offer: ['shield', 'stock5', 'wild1'] }
-    const next = pickItem(DEFAULT_PARAMS, run, 'shield', 2)
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', waveIndex: 0, offer: ['bridge'] }
+    const next = pickItem(DEFAULT_PARAMS, run, 'bridge', 2)
     expect(next.phase).toBe('playing')
-    expect(next.items).toEqual(['shield'])
+    expect(next.items).toEqual(['bridge'])
     expect(next.waveIndex).toBe(1)
-    expect(next.wave?.shieldLeft).toBe(DEFAULT_PARAMS.items.shieldChargesPerPick)
   })
 
   test('advanceStageで次ステージのウェーブ0から始まる', () => {
@@ -868,9 +797,22 @@ describe('evaluateChainBonus', () => {
     expect(result.parts).toEqual([`★同スート+${scoring.wildSuitBonus}`])
   })
 
-  test('階段が一貫して続いていればstairMinLen以上でstairBonusが付く', () => {
+  test('基本ルールでは階段は既定のstairMinLen(5)未満だとstairBonusが付かない', () => {
     const chainBefore = [card(1, '♠', 5), card(2, '♣', 6)]
     const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 7))
+    // 5→6→7で長さ3、既定のstairMinLen(5)未満のためstairBonusは付かない
+    expect(result.parts.some(p => p.startsWith('階段'))).toBe(false)
+  })
+
+  test('階段が既定のstairMinLen(5)以上続けばstairBonusが付く', () => {
+    const chainBefore = [card(1, '♠', 3), card(2, '♣', 4), card(3, '♦', 5), card(4, '♠', 6)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(5, '♣', 7))
+    expect(result.parts).toContain(`階段5 +${scoring.stairBonus}`)
+  })
+
+  test('stairMinLenを明示的に指定すると(架橋の護符相当)その値で判定される', () => {
+    const chainBefore = [card(1, '♠', 5), card(2, '♣', 6)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 7), 3)
     expect(result.parts).toContain(`階段3 +${scoring.stairBonus}`)
   })
 

@@ -2,7 +2,7 @@
 export type Suit = '♠' | '♥' | '♦' | '♣' | '★'
 export type Rank = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13
 export type StageModifier = 'none' | 'noLoop' | 'faceLock'
-export type ItemId = 'red5' | 'face10' | 'shield' | 'stock5' | 'wild1' | 'start1' | 'clear300'
+export type ItemId = 'bridge'
 
 export interface Card {
   id: number
@@ -18,7 +18,7 @@ export interface ScoreGain {
 
 export type WaveStatus = 'playing' | 'ended'
 export type WaveEndReason = 'target' | 'fullClear' | 'stuck' | null
-export type DrawEffect = 'wild' | 'shield' | 'pattern' | null
+export type DrawEffect = 'wild' | 'pattern' | null
 export type ChainCardOrigin = 'play' | 'draw'
 
 export interface WaveState {
@@ -27,7 +27,6 @@ export interface WaveState {
   foundation: Card
   score: number
   combo: number
-  shieldLeft: number
   chain: Card[]
   chainOrigin: ChainCardOrigin[]
   linked: boolean
