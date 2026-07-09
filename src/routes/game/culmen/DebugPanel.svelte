@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte'
-  import { analyzeSuitColor, analyzeStair, isRed, rankLabel } from '$lib/game/culmen/engine'
-  import type { WaveState, Suit, Rank, ScoreGain } from '$lib/game/culmen/types'
+  import { analyzeSuitColor, analyzeStair, isRed, rankLabel } from '$lib/game/shidasu/engine'
+  import type { WaveState, Suit, Rank, ScoreGain } from '$lib/game/shidasu/types'
 
   let { wave, onForceDraw }: {
     wave: WaveState

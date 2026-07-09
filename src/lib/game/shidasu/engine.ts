@@ -1,6 +1,6 @@
-// src/lib/game/culmen/engine.ts
+// src/lib/game/shidasu/engine.ts
 import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank } from './types'
-import type { CulmenParams } from './params'
+import type { ShidasuParams } from './params'
 import { createDeck, createRng, shuffle, shuffleInPlace } from './deck'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
@@ -46,7 +46,7 @@ function countItem(items: ItemId[], id: ItemId): number {
 }
 
 export function startWave(
-  params: CulmenParams,
+  params: ShidasuParams,
   _stageIndex: number,
   _waveIndex: number,
   items: ItemId[],
@@ -105,7 +105,7 @@ export function startWave(
 }
 
 export function playCard(
-  params: CulmenParams,
+  params: ShidasuParams,
   wave: WaveState,
   modifier: StageModifier,
   items: ItemId[],
@@ -172,7 +172,7 @@ export function playCard(
   return next
 }
 
-export function drawStock(params: CulmenParams, wave: WaveState, items: ItemId[]): WaveState {
+export function drawStock(params: ShidasuParams, wave: WaveState, items: ItemId[]): WaveState {
   if (wave.status !== 'playing') return wave
   if (wave.stock.length === 0) return wave
 
@@ -249,7 +249,7 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   clear300: '完全消去',
 }
 
-export function itemDesc(id: ItemId, params: CulmenParams): string {
+export function itemDesc(id: ItemId, params: ShidasuParams): string {
   switch (id) {
     case 'red5': return `♥♦の基礎点 +${params.items.redBonusValue}`
     case 'face10': return `J/Q/Kの基礎点 +${params.items.faceBonusValue}`
@@ -276,7 +276,7 @@ export function createInitialRun(): RunState {
   return { phase: 'title', stageIndex: 0, waveIndex: 0, items: [], offer: [], wave: null }
 }
 
-export function beginRun(params: CulmenParams, seed?: number): RunState {
+export function beginRun(params: ShidasuParams, seed?: number): RunState {
   return {
     phase: 'playing',
     stageIndex: 0,
@@ -287,7 +287,7 @@ export function beginRun(params: CulmenParams, seed?: number): RunState {
   }
 }
 
-export function resolveWaveEnd(params: CulmenParams, run: RunState, rand: () => number = Math.random): RunState {
+export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
   const wave = run.wave
   if (!wave || wave.status !== 'ended') return run
 
@@ -305,7 +305,7 @@ export function resolveWaveEnd(params: CulmenParams, run: RunState, rand: () => 
   return { ...run, phase: 'itemSelect', offer: rollItemOffer(run.items, rand) }
 }
 
-export function pickItem(params: CulmenParams, run: RunState, itemId: ItemId, seed?: number): RunState {
+export function pickItem(params: ShidasuParams, run: RunState, itemId: ItemId, seed?: number): RunState {
   if (run.phase !== 'itemSelect') return run
   const newItems = [...run.items, itemId]
   const newWaveIndex = run.waveIndex + 1
@@ -319,7 +319,7 @@ export function pickItem(params: CulmenParams, run: RunState, itemId: ItemId, se
   }
 }
 
-export function advanceStage(params: CulmenParams, run: RunState, seed?: number): RunState {
+export function advanceStage(params: ShidasuParams, run: RunState, seed?: number): RunState {
   if (run.phase !== 'stageClear') return run
   const newStageIndex = run.stageIndex + 1
   return {
@@ -331,7 +331,7 @@ export function advanceStage(params: CulmenParams, run: RunState, seed?: number)
   }
 }
 
-export function restartRun(params: CulmenParams, seed?: number): RunState {
+export function restartRun(params: ShidasuParams, seed?: number): RunState {
   return beginRun(params, seed)
 }
 
@@ -341,7 +341,7 @@ function withActiveWave(run: RunState, fn: (wave: WaveState) => WaveState): RunS
   return { ...run, wave: fn(run.wave) }
 }
 
-export function applyPlayCard(params: CulmenParams, run: RunState, colIndex: number): RunState {
+export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: number): RunState {
   return withActiveWave(run, wave => {
     const stage = params.stages[run.stageIndex]
     const target = stage.targets[run.waveIndex]
@@ -349,11 +349,11 @@ export function applyPlayCard(params: CulmenParams, run: RunState, colIndex: num
   })
 }
 
-export function applyDrawStock(params: CulmenParams, run: RunState): RunState {
+export function applyDrawStock(params: ShidasuParams, run: RunState): RunState {
   return withActiveWave(run, wave => drawStock(params, wave, run.items))
 }
 
-export function applyStuckCheck(params: CulmenParams, run: RunState): RunState {
+export function applyStuckCheck(params: ShidasuParams, run: RunState): RunState {
   return withActiveWave(run, wave => {
     const modifier = params.stages[run.stageIndex].modifier
     return isStuck(modifier, wave) ? markStuck(wave) : wave
@@ -453,7 +453,7 @@ export interface ChainBonusResult {
 }
 
 export function evaluateChainBonus(
-  scoring: CulmenParams['scoring'],
+  scoring: ShidasuParams['scoring'],
   chainBefore: Card[],
   card: Card
 ): ChainBonusResult {
@@ -519,7 +519,7 @@ export function evaluateChainBonus(
 }
 
 export function chainContinuesPattern(
-  scoring: CulmenParams['scoring'],
+  scoring: ShidasuParams['scoring'],
   chain: Card[],
   card: Card
 ): boolean {

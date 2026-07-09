@@ -1,12 +1,12 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
-  import { loadParams } from '$lib/game/culmen/params'
+  import { loadParams } from '$lib/game/shidasu/params'
   import {
     createInitialRun, beginRun, applyPlayCard, applyDrawStock, applyStuckCheck,
     resolveWaveEnd, pickItem, advanceStage, restartRun, startWave, forceStockTop,
     getPlayableColumns, remainingCount, rankLabel, isRed, itemDesc, ITEM_NAMES,
-  } from '$lib/game/culmen/engine'
-  import type { RunState, Card, ItemId, StageModifier, WaveState, Suit, Rank } from '$lib/game/culmen/types'
+  } from '$lib/game/shidasu/engine'
+  import type { RunState, Card, ItemId, StageModifier, WaveState, Suit, Rank } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
 
   const params = loadParams()

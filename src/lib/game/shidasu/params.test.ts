@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest'
 import { DEFAULT_PARAMS, loadParams } from './params'
-import culmenConfigJson from './culmen.config.json'
+import shidasuConfigJson from './shidasu.config.json'
 
 describe('DEFAULT_PARAMS', () => {
   test('レイアウトは7列5段', () => {
@@ -45,8 +45,8 @@ describe('DEFAULT_PARAMS', () => {
 })
 
 describe('loadParams', () => {
-  test('culmen.config.json の内容をそのまま返す', () => {
-    expect(loadParams()).toEqual(culmenConfigJson)
+  test('shidasu.config.json の内容をそのまま返す', () => {
+    expect(loadParams()).toEqual(shidasuConfigJson)
   })
 
   test('既定値と一致する(config.json が未編集の場合)', () => {

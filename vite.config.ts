@@ -33,7 +33,7 @@ function kuromojiDictRawPlugin(): Plugin {
 }
 
 // admin配下の各設定ページが使う「JSONファイルをGET/POSTで読み書きするだけ」のdevサーバーAPIを生成する共通ファクトリ。
-// site.config.json / anim.config.json / culmen.config.json はいずれもこの形で提供する。
+// site.config.json / anim.config.json / shidasu.config.json はいずれもこの形で提供する。
 function jsonFileApiPlugin(name: string, routePath: string, relativeConfigPath: string): Plugin {
   return {
     name,
@@ -80,19 +80,19 @@ function animConfigApiPlugin(): Plugin {
   return jsonFileApiPlugin('anim-config-api', '/api/admin/anim-config', 'src/lib/game/solitaire/anim.config.json')
 }
 
-function culmenConfigApiPlugin(): Plugin {
-  return jsonFileApiPlugin('culmen-config-api', '/api/admin/culmen-config', 'src/lib/game/culmen/culmen.config.json')
+function shidasuConfigApiPlugin(): Plugin {
+  return jsonFileApiPlugin('shidasu-config-api', '/api/admin/shidasu-config', 'src/lib/game/shidasu/shidasu.config.json')
 }
 
 export default defineConfig({
-  plugins: [sveltekit(), kuromojiDictRawPlugin(), adminApiPlugin(), animConfigApiPlugin(), culmenConfigApiPlugin()],
+  plugins: [sveltekit(), kuromojiDictRawPlugin(), adminApiPlugin(), animConfigApiPlugin(), shidasuConfigApiPlugin()],
   build: {
     outDir: 'dist'
   },
   server: {
     watch: {
       // 保存APIで書き換えるたびにHMRが発火してコンポーネントが再マウントされるのを防ぐ
-      ignored: ['**/site.config.json', '**/anim.config.json', '**/culmen.config.json']
+      ignored: ['**/site.config.json', '**/anim.config.json', '**/shidasu.config.json']
     }
   },
   resolve: {

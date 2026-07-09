@@ -1,8 +1,8 @@
-// src/lib/game/culmen/params.ts
-import culmenConfigJson from './culmen.config.json'
+// src/lib/game/shidasu/params.ts
+import shidasuConfigJson from './shidasu.config.json'
 import type { StageModifier } from './types'
 
-export interface CulmenParams {
+export interface ShidasuParams {
   layout: {
     cols: number
     rows: number
@@ -49,7 +49,7 @@ export interface CulmenParams {
   }
 }
 
-export const DEFAULT_PARAMS: CulmenParams = {
+export const DEFAULT_PARAMS: ShidasuParams = {
   layout: { cols: 7, rows: 5 },
   scoring: {
     basePoint: 100,
@@ -86,6 +86,6 @@ export const DEFAULT_PARAMS: CulmenParams = {
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },
 }
 
-export function loadParams(): CulmenParams {
-  return culmenConfigJson as CulmenParams
+export function loadParams(): ShidasuParams {
+  return shidasuConfigJson as ShidasuParams
 }

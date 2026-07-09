@@ -1,4 +1,4 @@
-// src/lib/game/culmen/engine.test.ts
+// src/lib/game/shidasu/engine.test.ts
 import { describe, test, expect } from 'vitest'
 import {
   isRed,

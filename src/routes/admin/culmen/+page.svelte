@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte'
-  import { DEFAULT_PARAMS, type CulmenParams } from '$lib/game/culmen/params'
+  import { DEFAULT_PARAMS, type ShidasuParams } from '$lib/game/shidasu/params'
 
-  let config = $state<CulmenParams | null>(null)
+  let config = $state<ShidasuParams | null>(null)
   let error = $state<string | null>(null)
   let flash = $state<string | null>(null)
   let flashTimer: ReturnType<typeof setTimeout> | null = null
@@ -36,13 +36,13 @@
 
   async function loadConfig(toast = false) {
     try {
-      const res = await fetch('/api/admin/culmen-config')
+      const res = await fetch('/api/admin/shidasu-config')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      config = await res.json() as CulmenParams
+      config = await res.json() as ShidasuParams
       error = null
       if (toast) showToast('リロードしました')
     } catch {
-      error = 'Culmen設定APIに接続できません。npm run dev で起動してください。'
+      error = 'Shidasu設定APIに接続できません。npm run dev で起動してください。'
       if (!config) config = JSON.parse(JSON.stringify(DEFAULT_PARAMS))
     }
   }
@@ -50,7 +50,7 @@
   async function save() {
     if (!config) return
     try {
-      const res = await fetch('/api/admin/culmen-config', {
+      const res = await fetch('/api/admin/shidasu-config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),
@@ -84,7 +84,7 @@
     jsonError = null
   }
 
-  function isValidCulmenParams(value: unknown): value is CulmenParams {
+  function isValidShidasuParams(value: unknown): value is ShidasuParams {
     if (typeof value !== 'object' || value === null) return false
     const v = value as Record<string, unknown>
     return (
@@ -100,7 +100,7 @@
   function applyJson() {
     try {
       const parsed = JSON.parse(jsonText)
-      if (!isValidCulmenParams(parsed)) {
+      if (!isValidShidasuParams(parsed)) {
         jsonError = '必須項目(layout/scoring/stages/items/flow/ui)が不足しています'
         return
       }
@@ -112,14 +112,14 @@
     }
   }
 
-  function setScoring<K extends keyof CulmenParams['scoring']>(key: K, value: number) {
+  function setScoring<K extends keyof ShidasuParams['scoring']>(key: K, value: number) {
     if (!config) return
-    config.scoring[key] = value as CulmenParams['scoring'][K]
+    config.scoring[key] = value as ShidasuParams['scoring'][K]
   }
 
-  function setItems<K extends keyof CulmenParams['items']>(key: K, value: number) {
+  function setItems<K extends keyof ShidasuParams['items']>(key: K, value: number) {
     if (!config) return
-    config.items[key] = value as CulmenParams['items'][K]
+    config.items[key] = value as ShidasuParams['items'][K]
   }
 
   function setTarget(stageIndex: number, targetIndex: 0 | 1 | 2, value: number) {
