@@ -26,6 +26,8 @@
     if (config.layout.cols * config.layout.rows > 51) return true
     if (!Number.isFinite(config.ui.chainCardsPerRow) || config.ui.chainCardsPerRow < 1) return true
     if (!Number.isFinite(config.ui.chainCardOffsetX) || config.ui.chainCardOffsetX < 0) return true
+    if (!Number.isFinite(config.items.stairRelaxedMinLen) || config.items.stairRelaxedMinLen < 1) return true
+    if (!Number.isFinite(config.items.columnSweepRelaxCards) || config.items.columnSweepRelaxCards < 0) return true
     return false
   })
 
@@ -312,32 +314,12 @@
         <h2 class="font-semibold text-slate-700 text-sm mb-3">アイテム</h2>
         <div class="grid grid-cols-2 gap-3">
           <label class="text-xs text-slate-500">
-            紅の目利き(redBonusValue)
-            {@render scaledNumberInput(config.items.redBonusValue, v => setItems('redBonusValue', v))}
+            架橋の護符: 階段成立に必要な枚数(stairRelaxedMinLen)
+            <input type="number" min="1" step="1" bind:value={config.items.stairRelaxedMinLen} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
           </label>
           <label class="text-xs text-slate-500">
-            宮廷の紋章(faceBonusValue)
-            {@render scaledNumberInput(config.items.faceBonusValue, v => setItems('faceBonusValue', v))}
-          </label>
-          <label class="text-xs text-slate-500">
-            コンボシールド回数(shieldChargesPerPick)
-            <input type="number" min="0" step="1" bind:value={config.items.shieldChargesPerPick} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            厚めの山札枚数(extraStockCount)
-            <input type="number" min="0" step="1" bind:value={config.items.extraStockCount} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            ワイルド混入枚数(wildPerPick)
-            <input type="number" min="0" step="1" bind:value={config.items.wildPerPick} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            助走コンボ値(startCombo)
-            <input type="number" min="0" step="1" bind:value={config.items.startCombo} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            完全消去加算(fullClearItemBonus)
-            {@render scaledNumberInput(config.items.fullClearItemBonus, v => setItems('fullClearItemBonus', v))}
+            寛容の護符: 列一掃緩和の猶予枚数(columnSweepRelaxCards)
+            <input type="number" min="0" step="1" bind:value={config.items.columnSweepRelaxCards} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
           </label>
         </div>
       </section>
