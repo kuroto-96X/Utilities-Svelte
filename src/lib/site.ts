@@ -110,7 +110,7 @@ export const site = {
       category: 'game',
     },
     {
-      href: "/game/culmen",
+      href: "/game/shidasu",
       label: "星詠みソリティア -Shidasu-",
       description: "ゴルフソリティア×ローグライク。コンボと階段ボーナスでスコアを稼ぎ、アイテムで強化しながらステージを駆け上がる",
       category: 'game',

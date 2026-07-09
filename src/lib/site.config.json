@@ -14,7 +14,7 @@
     "/investment/nisa-detailed-calculator": true,
     "/investment/nisa-accumulation-simulator": true,
     "/game/flick-typing": true,
-    "/game/culmen": true
+    "/game/shidasu": true
   },
   "toolVisibility": {
     "/music/bpm-tapper": true,
@@ -32,6 +32,6 @@
     "/investment/nisa-accumulation-simulator": false,
     "/game/solitaire": true,
     "/game/flick-typing": true,
-    "/game/culmen": true
+    "/game/shidasu": true
   }
 }
