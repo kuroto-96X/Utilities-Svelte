@@ -83,7 +83,7 @@ export const DEFAULT_PARAMS: CulmenParams = {
     fullClearItemBonus: 3000,
   },
   flow: { wavesPerStage: 3, clearDelayMs: 450 },
-  ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 32, chainCardsPerRow: 13 },
+  ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },
 }
 
 export function loadParams(): CulmenParams {
