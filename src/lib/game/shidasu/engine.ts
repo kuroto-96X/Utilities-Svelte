@@ -395,6 +395,9 @@ export function analyzeStair(chain: Card[]): StairAnalysis {
 
 const ALL_SUITS_REAL: Suit[] = ['♠', '♥', '♦', '♣']
 
+// checkFlush/checkRoyalSet/checkCompleteRunは、いずれもワイルド1枚につき不足分を1つ埋めたものとして扱う。
+// ただし現時点ではワイルドカードを山札に供給する手段が無いため(既存のワイルド供給アイテムは削除済み)、
+// この緩和ルールは実際のプレイでは発動しない。将来ワイルド供給アイテムが追加された際に機能する先行実装。
 export function checkFlush(chainIncludingThis: Card[]): boolean {
   if (chainIncludingThis.length < 4) return false
   const last4 = chainIncludingThis.slice(-4)
