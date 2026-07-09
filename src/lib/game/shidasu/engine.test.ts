@@ -770,6 +770,18 @@ describe('checkFlush', () => {
     // 直近4枚(3,4,5,6番目)が♦♠♥♣で揃っている
     expect(checkFlush(cards)).toBe(true)
   })
+
+  test('ワイルドが1枚あれば不足スート1つを埋めたものとして成立する', () => {
+    const cards = [card(1, '♦', 3), card(2, '♠', 5), card(3, '★', 0, true), card(4, '♥', 2)]
+    // 実スートは♦♠♥の3種類、ワイルド1枚が残り1種類(♣)を埋める
+    expect(checkFlush(cards)).toBe(true)
+  })
+
+  test('不足スート数がワイルド枚数を上回れば不成立', () => {
+    const cards = [card(1, '♦', 3), card(2, '♦', 5), card(3, '★', 0, true), card(4, '♥', 2)]
+    // 実スートは♦♥の2種類(♦が重複)、不足は♠♣の2つに対しワイルドは1枚のみ
+    expect(checkFlush(cards)).toBe(false)
+  })
 })
 
 describe('checkRoyalSet', () => {
@@ -784,6 +796,18 @@ describe('checkRoyalSet', () => {
 
   test('J/Q/K以外が混ざれば不成立', () => {
     const cards = [card(1, '♠', 13), card(2, '♥', 11), card(3, '♦', 5)]
+    expect(checkRoyalSet(cards)).toBe(false)
+  })
+
+  test('ワイルドが1枚あれば不足するJ/Q/Kのうち1つを埋めたものとして成立する', () => {
+    const cards = [card(1, '♠', 13), card(2, '★', 0, true), card(3, '♦', 12)]
+    // 実ランクはK・Qの2種類、ワイルド1枚が残り1種類(J)を埋める
+    expect(checkRoyalSet(cards)).toBe(true)
+  })
+
+  test('不足ランク数がワイルド枚数を上回れば不成立', () => {
+    const cards = [card(1, '♠', 13), card(2, '★', 0, true), card(3, '♦', 5)]
+    // 実ランクはKのみ、不足はQ・Jの2つに対しワイルドは1枚のみ
     expect(checkRoyalSet(cards)).toBe(false)
   })
 })
@@ -815,6 +839,21 @@ describe('checkCompleteRun', () => {
     const all13 = Array.from({ length: 13 }, (_, i) => card(i + 1, '♠', (i + 1) as Card['rank']))
     const withDup = [...all13, card(14, '♥', 5)]
     expect(checkCompleteRun(all13, withDup)).toBe(false)
+  })
+
+  test('ワイルド1枚が未出現ランク1つを埋め、実12種+ワイルド1枚で13種扱いになる', () => {
+    const before = [
+      ...Array.from({ length: 11 }, (_, i) => card(i + 1, '♠', (i + 1) as Card['rank'])),
+      card(90, '★', 0, true),
+    ] // 実11種+ワイルド1枚 = 12種扱い(まだ13種未満)
+    const now = [...before, card(13, '♥', 12)] // 実12種目を追加 = 12種+ワイルド1枚 = 13種扱い
+    expect(checkCompleteRun(before, now)).toBe(true)
+  })
+
+  test('ワイルドが無ければ実11種+実1種=実12種のままで13種に届かない', () => {
+    const before = Array.from({ length: 11 }, (_, i) => card(i + 1, '♠', (i + 1) as Card['rank']))
+    const now = [...before, card(13, '♥', 12)]
+    expect(checkCompleteRun(before, now)).toBe(false)
   })
 })
 

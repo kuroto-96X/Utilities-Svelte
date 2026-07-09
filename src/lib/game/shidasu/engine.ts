@@ -395,27 +395,37 @@ export function analyzeStair(chain: Card[]): StairAnalysis {
 
 const ALL_SUITS_REAL: Suit[] = ['♠', '♥', '♦', '♣']
 
-export function checkFlush(realCardsIncludingThis: Card[]): boolean {
-  if (realCardsIncludingThis.length < 4) return false
-  const last4 = realCardsIncludingThis.slice(-4)
-  const suitsPresent = new Set(last4.map(c => c.suit))
-  return ALL_SUITS_REAL.every(s => suitsPresent.has(s))
+export function checkFlush(chainIncludingThis: Card[]): boolean {
+  if (chainIncludingThis.length < 4) return false
+  const last4 = chainIncludingThis.slice(-4)
+  const wildCount = last4.filter(c => c.wild).length
+  const suitsPresent = new Set(last4.filter(c => !c.wild).map(c => c.suit))
+  const missingSuits = ALL_SUITS_REAL.filter(s => !suitsPresent.has(s)).length
+  return missingSuits <= wildCount
 }
 
-export function checkRoyalSet(realCardsIncludingThis: Card[]): boolean {
-  if (realCardsIncludingThis.length < 3) return false
-  const last3 = realCardsIncludingThis.slice(-3)
-  const ranksPresent = new Set(last3.map(c => c.rank))
-  return ranksPresent.has(11) && ranksPresent.has(12) && ranksPresent.has(13)
+export function checkRoyalSet(chainIncludingThis: Card[]): boolean {
+  if (chainIncludingThis.length < 3) return false
+  const last3 = chainIncludingThis.slice(-3)
+  const wildCount = last3.filter(c => c.wild).length
+  const ranksPresent = new Set(last3.filter(c => !c.wild).map(c => c.rank))
+  const requiredRanks: Card['rank'][] = [11, 12, 13]
+  const missingRanks = requiredRanks.filter(r => !ranksPresent.has(r)).length
+  return missingRanks <= wildCount
 }
 
 export function countSameRankBefore(realCardsBefore: Card[], rank: Card['rank']): number {
   return realCardsBefore.filter(c => c.rank === rank).length
 }
 
-export function checkCompleteRun(realCardsBefore: Card[], realCardsIncludingThis: Card[]): boolean {
-  const distinctBefore = new Set(realCardsBefore.map(c => c.rank)).size
-  const distinctNow = new Set(realCardsIncludingThis.map(c => c.rank)).size
+export function checkCompleteRun(chainBefore: Card[], chainIncludingThis: Card[]): boolean {
+  const distinctRealBefore = new Set(chainBefore.filter(c => !c.wild).map(c => c.rank)).size
+  const wildCountBefore = chainBefore.filter(c => c.wild).length
+  const distinctRealNow = new Set(chainIncludingThis.filter(c => !c.wild).map(c => c.rank)).size
+  const wildCountNow = chainIncludingThis.filter(c => c.wild).length
+
+  const distinctBefore = Math.min(13, distinctRealBefore + wildCountBefore)
+  const distinctNow = Math.min(13, distinctRealNow + wildCountNow)
   return distinctBefore < 13 && distinctNow >= 13
 }
 
@@ -462,12 +472,12 @@ export function evaluateChainBonus(
     parts.push(`階段${stairInfo.len} +${scoring.stairBonus}`)
   }
 
-  if (checkFlush(realIncludingThis)) {
+  if (checkFlush(chainIncludingThis)) {
     bonus += scoring.flushBonus
     parts.push(`フラッシュ+${scoring.flushBonus}`)
   }
 
-  if (checkRoyalSet(realIncludingThis)) {
+  if (checkRoyalSet(chainIncludingThis)) {
     bonus += scoring.royalSetBonus
     parts.push(`ロイヤル+${scoring.royalSetBonus}`)
   }
@@ -479,7 +489,7 @@ export function evaluateChainBonus(
     parts.push(`同ランク+${sameRankGain}`)
   }
 
-  if (checkCompleteRun(realBefore, realIncludingThis)) {
+  if (checkCompleteRun(chainBefore, chainIncludingThis)) {
     bonus += scoring.completeRunBonus
     parts.push(`コンプリートラン+${scoring.completeRunBonus}`)
     if (analyzeSuitColor(realIncludingThis).suitHeld) {
