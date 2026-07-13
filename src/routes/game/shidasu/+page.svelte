@@ -95,13 +95,13 @@
   }
 
   function handlePlayCard(colIndex: number) {
-    if (run.phase !== 'playing') return
+    if (run.phase !== 'playing' || run.wave?.status !== 'playing') return
     run = applyPlayCard(params, run, colIndex)
     afterAction()
   }
 
   function handleDraw() {
-    if (run.phase !== 'playing') return
+    if (run.phase !== 'playing' || run.wave?.status !== 'playing') return
     run = applyDrawStock(params, run)
     afterAction()
   }
