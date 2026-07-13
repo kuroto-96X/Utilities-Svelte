@@ -608,19 +608,21 @@ describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
 })
 
 describe('createInitialRun / beginRun', () => {
-  test('createInitialRunはtitleフェーズでwave=null', () => {
+  test('createInitialRunはtitleフェーズでwave=null、pendingNewItemはnull', () => {
     const run = createInitialRun()
     expect(run.phase).toBe('title')
     expect(run.wave).toBeNull()
     expect(run.items).toEqual([])
+    expect(run.pendingNewItem).toBeNull()
   })
 
-  test('beginRunはplayingフェーズでステージ0・ウェーブ0から始まる', () => {
+  test('beginRunはplayingフェーズでステージ0・ウェーブ0から始まる、pendingNewItemはnull', () => {
     const run = beginRun(DEFAULT_PARAMS, 1)
     expect(run.phase).toBe('playing')
     expect(run.stageIndex).toBe(0)
     expect(run.waveIndex).toBe(0)
     expect(run.wave).not.toBeNull()
+    expect(run.pendingNewItem).toBeNull()
   })
 })
 

@@ -49,4 +49,5 @@ export interface RunState {
   items: ItemId[]
   offer: ItemId[]
   wave: WaveState | null
+  pendingNewItem: ItemId | null
 }

@@ -233,7 +233,7 @@ export function rollItemOffer(items: ItemId[], rand: () => number = Math.random)
 }
 
 export function createInitialRun(): RunState {
-  return { phase: 'title', stageIndex: 0, waveIndex: 0, items: [], offer: [], wave: null }
+  return { phase: 'title', stageIndex: 0, waveIndex: 0, items: [], offer: [], wave: null, pendingNewItem: null }
 }
 
 export function beginRun(params: ShidasuParams, seed?: number): RunState {
@@ -244,6 +244,7 @@ export function beginRun(params: ShidasuParams, seed?: number): RunState {
     items: [],
     offer: [],
     wave: startWave(params, 0, 0, [], seed),
+    pendingNewItem: null,
   }
 }
 
@@ -262,7 +263,7 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
   if (isLastWave) {
     return { ...run, phase: isLastStage ? 'allClear' : 'stageClear' }
   }
-  return { ...run, phase: 'itemSelect', offer: rollItemOffer(run.items, rand) }
+  return { ...run, phase: 'itemSelect', offer: rollItemOffer(run.items, rand), pendingNewItem: null }
 }
 
 export function pickItem(params: ShidasuParams, run: RunState, itemId: ItemId, seed?: number): RunState {
