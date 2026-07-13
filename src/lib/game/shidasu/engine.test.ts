@@ -391,6 +391,15 @@ describe('playCard', () => {
     const order2 = playCard(DEFAULT_PARAMS, wave, 'none', ['temperance', 'purify'], 100000000, 0)
     expect(order1.score).not.toBe(order2.score)
   })
+
+  test('複数のgained護符も所持順に適用される(conscience→courageとcourage→conscienceで結果が異なる)', () => {
+    const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
+    const order1 = playCard(DEFAULT_PARAMS, wave, 'none', ['conscience', 'courage'], 1000000, 0)
+    const order2 = playCard(DEFAULT_PARAMS, wave, 'none', ['courage', 'conscience'], 1000000, 0)
+    expect(order1.score).not.toBe(order2.score)
+    expect(order1.score).toBe(Math.floor((scoring.basePoint + DEFAULT_PARAMS.talismans.conscience.n) * (1 + 1 * DEFAULT_PARAMS.talismans.courage.x)))
+    expect(order2.score).toBe(Math.floor(scoring.basePoint * (1 + 1 * DEFAULT_PARAMS.talismans.courage.x) + DEFAULT_PARAMS.talismans.conscience.n))
+  })
 })
 
 describe('chainContinuesPattern', () => {
