@@ -119,11 +119,6 @@
     config.scoring[key] = value as ShidasuParams['scoring'][K]
   }
 
-  function setItems<K extends keyof ShidasuParams['items']>(key: K, value: number) {
-    if (!config) return
-    config.items[key] = value as ShidasuParams['items'][K]
-  }
-
   function setTarget(stageIndex: number, targetIndex: 0 | 1 | 2, value: number) {
     if (!config) return
     config.stages[stageIndex].targets[targetIndex] = value
