@@ -39,7 +39,7 @@ import {
   evaluateChainBonus,
   forceStockTop,
 } from './engine'
-import type { Card, WaveState, RunState } from './types'
+import type { Card, WaveState, RunState, ItemId } from './types'
 import { DEFAULT_PARAMS } from './params'
 import { createRng } from './deck'
 
@@ -618,6 +618,19 @@ describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
     expect(itemDesc('bridge', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.items.stairRelaxedMinLen))
     expect(itemDesc('grace', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.layout.rows))
     expect(itemDesc('grace', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.layout.rows - DEFAULT_PARAMS.items.columnSweepRelaxCards))
+  })
+
+  test('新規追加した18個の護符も名前と説明文を持つ', () => {
+    const newIds: ItemId[] = [
+      'patience', 'purify', 'temperance',
+      'springBreeze', 'summerBreeze', 'autumnBreeze', 'winterBreeze',
+      'kinship', 'thaw', 'dusk', 'dawn', 'wit',
+      'courage', 'daybreak', 'twilight', 'cheerful', 'conscience', 'morningMist',
+    ]
+    newIds.forEach(id => {
+      expect(ITEM_NAMES[id]).toBeTruthy()
+      expect(itemDesc(id, DEFAULT_PARAMS)).toBeTruthy()
+    })
   })
 })
 

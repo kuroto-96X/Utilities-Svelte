@@ -27,6 +27,26 @@
     "columnSweepRelaxCards": 2,
     "maxItems": 5
   },
+  "talismans": {
+    "patience": { "x": 500 },
+    "purify": { "n": 10000 },
+    "temperance": { "x": 0.1 },
+    "springBreeze": { "n": 100 },
+    "summerBreeze": { "n": 100 },
+    "autumnBreeze": { "n": 100 },
+    "winterBreeze": { "n": 100 },
+    "kinship": { "n": 200 },
+    "thaw": { "n": 200 },
+    "dusk": { "n": 100 },
+    "dawn": { "n": 100 },
+    "wit": { "n": 200 },
+    "courage": { "x": 0.1 },
+    "daybreak": { "c": 3, "x": 2 },
+    "twilight": { "c": 8, "x": 2 },
+    "cheerful": { "n": 50 },
+    "conscience": { "n": 50 },
+    "morningMist": { "c": 5, "x": 3 }
+  },
   "flow": { "wavesPerStage": 3, "clearDelayMs": 450 },
   "ui": { "comboTierThresholds": [3, 5, 8], "chainCardOffsetX": 30, "chainCardsPerRow": 10 }
 }

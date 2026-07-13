@@ -209,6 +209,24 @@ export const ITEM_POOL: ItemId[] = ['bridge', 'grace']
 export const ITEM_NAMES: Record<ItemId, string> = {
   bridge: '架橋の護符',
   grace: '寛容の護符',
+  patience: '忍耐の護符',
+  purify: '浄化の護符',
+  temperance: '節制の護符',
+  springBreeze: '春風の護符',
+  summerBreeze: '夏風の護符',
+  autumnBreeze: '秋風の護符',
+  winterBreeze: '冬風の護符',
+  kinship: '友愛の護符',
+  thaw: '雪解の護符',
+  dusk: '宵闇の護符',
+  dawn: '払暁の護符',
+  wit: '機知の護符',
+  courage: '勇気の護符',
+  daybreak: '暁の護符',
+  twilight: '黄昏の護符',
+  cheerful: '快活の護符',
+  conscience: '良心の護符',
+  morningMist: '朝霧の護符',
 }
 
 export function itemDesc(id: ItemId, params: ShidasuParams): string {
@@ -218,6 +236,24 @@ export function itemDesc(id: ItemId, params: ShidasuParams): string {
       const relaxed = params.layout.rows - params.items.columnSweepRelaxCards
       return `列一掃ボーナスの条件を「列の全${params.layout.rows}枚を1コンボで空に」→「残り${relaxed}枚から1コンボで空に」に緩和`
     }
+    case 'patience': return `全消しボーナスに残り山札枚数×${params.talismans.patience.x}点を加算`
+    case 'purify': return `全消しボーナスに${params.talismans.purify.n}点を加算`
+    case 'temperance': return `全消しボーナスを残り山札枚数×${params.talismans.temperance.x}分だけ倍加`
+    case 'springBreeze': return `クラブ(♣)を取ったとき、${params.talismans.springBreeze.n}点加算`
+    case 'summerBreeze': return `ダイヤ(♦)を取ったとき、${params.talismans.summerBreeze.n}点加算`
+    case 'autumnBreeze': return `ハート(♥)を取ったとき、${params.talismans.autumnBreeze.n}点加算`
+    case 'winterBreeze': return `スペード(♠)を取ったとき、${params.talismans.winterBreeze.n}点加算`
+    case 'kinship': return `他のスートからハート(♥)を取ったとき、${params.talismans.kinship.n}点加算`
+    case 'thaw': return `スペード(♠)から別のスートを取ったとき、${params.talismans.thaw.n}点加算`
+    case 'dusk': return `赤から黒に変わったとき、${params.talismans.dusk.n}点加算`
+    case 'dawn': return `黒から赤に変わったとき、${params.talismans.dawn.n}点加算`
+    case 'wit': return `ワイルドを取ったとき、${params.talismans.wit.n}点加算`
+    case 'courage': return `コンボ数×${params.talismans.courage.x}分、獲得点を倍加`
+    case 'daybreak': return `コンボ数が${params.talismans.daybreak.c}以下のとき、獲得点を${params.talismans.daybreak.x}倍`
+    case 'twilight': return `コンボ数が${params.talismans.twilight.c}以上のとき、獲得点を${params.talismans.twilight.x}倍`
+    case 'cheerful': return `コンボ数が偶数のとき、${params.talismans.cheerful.n}点加算`
+    case 'conscience': return `コンボ数が奇数のとき、${params.talismans.conscience.n}点加算`
+    case 'morningMist': return `コンボ数が${params.talismans.morningMist.c}未満のとき獲得点を1/${params.talismans.morningMist.x}に、${params.talismans.morningMist.c}以上のとき${params.talismans.morningMist.x}倍に`
   }
 }
 
