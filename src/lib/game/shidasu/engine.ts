@@ -450,16 +450,12 @@ export function evaluateChainBonus(
   let bonus = 0
   const parts: string[] = []
 
-  const prevIsWild = chainBefore[chainBefore.length - 1].wild
   const realBefore = chainBefore.filter(c => !c.wild)
   const chainIncludingThis = [...chainBefore, card]
   const realIncludingThis = [...realBefore, card]
 
-  if (prevIsWild) {
-    bonus += scoring.wildSuitBonus
-    parts.push(`★同スート+${scoring.wildSuitBonus}`)
-  } else {
-    const { suitHeld, colorHeld } = analyzeSuitColor(chainIncludingThis)
+  const { suitHeld, colorHeld } = analyzeSuitColor(chainIncludingThis)
+  if (realIncludingThis.length >= scoring.suitColorMinLen) {
     if (suitHeld) {
       bonus += scoring.suitBonus
       parts.push(`同スート+${scoring.suitBonus}`)

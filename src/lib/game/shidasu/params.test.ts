@@ -22,7 +22,6 @@ describe('DEFAULT_PARAMS', () => {
     expect(s.suitBonus % 10).toBe(0)
     expect(s.colorBonus % 10).toBe(0)
     expect(s.stairBonus % 10).toBe(0)
-    expect(s.wildSuitBonus % 10).toBe(0)
     expect(s.clearBonus % 10).toBe(0)
     expect(s.clearBonusPerStock % 10).toBe(0)
     expect(s.flushBonus % 10).toBe(0)

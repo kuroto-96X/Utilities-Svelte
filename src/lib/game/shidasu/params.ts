@@ -11,9 +11,9 @@ export interface ShidasuParams {
     basePoint: number
     suitBonus: number
     colorBonus: number
+    suitColorMinLen: number
     stairBonus: number
     stairMinLen: number
-    wildSuitBonus: number
     clearBonus: number
     clearBonusPerStock: number
     comboMultiplierStep: number
@@ -50,9 +50,9 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     basePoint: 100,
     suitBonus: 100,
     colorBonus: 50,
+    suitColorMinLen: 3,
     stairBonus: 150,
     stairMinLen: 5,
-    wildSuitBonus: 100,
     clearBonus: 2000,
     clearBonusPerStock: 50,
     comboMultiplierStep: 0.1,

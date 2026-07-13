@@ -28,6 +28,7 @@
     if (!Number.isFinite(config.ui.chainCardOffsetX) || config.ui.chainCardOffsetX < 0) return true
     if (!Number.isFinite(config.items.stairRelaxedMinLen) || config.items.stairRelaxedMinLen < 1) return true
     if (!Number.isFinite(config.items.columnSweepRelaxCards) || config.items.columnSweepRelaxCards < 0) return true
+    if (!Number.isFinite(config.scoring.suitColorMinLen) || config.scoring.suitColorMinLen < 1) return true
     return false
   })
 
@@ -204,16 +205,16 @@
             {@render scaledNumberInput(config.scoring.colorBonus, v => setScoring('colorBonus', v))}
           </label>
           <label class="text-xs text-slate-500">
+            同スート/同色の成立に必要な実カード枚数(suitColorMinLen)
+            <input type="number" min="1" step="1" bind:value={config.scoring.suitColorMinLen} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
             階段ボーナス(stairBonus)
             {@render scaledNumberInput(config.scoring.stairBonus, v => setScoring('stairBonus', v))}
           </label>
           <label class="text-xs text-slate-500">
             階段成立枚数(stairMinLen)
             <input type="number" min="2" step="1" bind:value={config.scoring.stairMinLen} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            ワイルド直後ボーナス(wildSuitBonus)
-            {@render scaledNumberInput(config.scoring.wildSuitBonus, v => setScoring('wildSuitBonus', v))}
           </label>
           <label class="text-xs text-slate-500">
             全消しボーナス(clearBonus)

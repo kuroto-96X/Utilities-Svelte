@@ -865,9 +865,15 @@ describe('evaluateChainBonus', () => {
     expect(result).toEqual({ bonus: 0, parts: [] })
   })
 
-  test('同スートが継続していればsuitBonusが付く', () => {
+  test('実カード2枚(3枚未満)ではまだ同スートボーナスは付かない', () => {
     const chainBefore = [card(1, '♠', 5)]
     const result = evaluateChainBonus(scoring, chainBefore, card(2, '♠', 6))
+    expect(result.parts.some(p => p.startsWith('同スート'))).toBe(false)
+  })
+
+  test('実カード3枚以上になった瞬間から同スートボーナスが付く', () => {
+    const chainBefore = [card(1, '♠', 5), card(2, '♠', 6)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♠', 7))
     expect(result.bonus).toBe(scoring.suitBonus)
     expect(result.parts).toEqual([`同スート+${scoring.suitBonus}`])
   })
@@ -876,13 +882,6 @@ describe('evaluateChainBonus', () => {
     const chainBefore = [card(1, '♠', 5), card(2, '♥', 6), card(3, '♠', 7)] // 1枚目→2枚目でスート崩壊済み、3枚目は直前(2枚目...)
     const result = evaluateChainBonus(scoring, chainBefore, card(4, '♠', 8))
     expect(result.parts.some(p => p.startsWith('同スート'))).toBe(false)
-  })
-
-  test('ワイルド直後はwildSuitBonusのみ(同スート・同色は付かない)', () => {
-    const chainBefore = [card(1, '★', 0, true)]
-    const result = evaluateChainBonus(scoring, chainBefore, card(2, '♠', 9))
-    expect(result.bonus).toBe(scoring.wildSuitBonus)
-    expect(result.parts).toEqual([`★同スート+${scoring.wildSuitBonus}`])
   })
 
   test('基本ルールでは階段は既定のstairMinLen(5)未満だとstairBonusが付かない', () => {
