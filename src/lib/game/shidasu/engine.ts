@@ -94,11 +94,12 @@ export function playCard(
 
   const newCombo = wave.combo + 1
   let base = params.scoring.basePoint
+  const parts = [`基礎点+${base}`]
 
   const effectiveStairMinLen = items.includes('bridge') ? params.items.stairRelaxedMinLen : params.scoring.stairMinLen
   const chainResult = evaluateChainBonus(params.scoring, wave.chain, card, effectiveStairMinLen)
   base += chainResult.bonus
-  const parts = [...chainResult.parts]
+  parts.push(...chainResult.parts)
 
   const newTableau = wave.tableau.map((c, i) => (i === colIndex ? c.slice(0, -1) : c))
   const columnJustEmptied = newTableau[colIndex].length === 0
@@ -125,8 +126,11 @@ export function playCard(
 
   const comboMultiplierStep = params.scoring.comboMultiplierStep
   const multiplier = 1 + (newCombo - 1) * comboMultiplierStep
+  if (multiplier !== 1) parts.push(`コンボ倍率×${fmtMultiplier(multiplier)}`)
   const rawGained = Math.floor(base * multiplier)
-  const gained = Math.floor(applyItemEffects('gained', rawGained, items, itemEffectCtx, params))
+  const itemResult = applyItemEffects('gained', rawGained, items, itemEffectCtx, params)
+  parts.push(...itemResult.parts)
+  const gained = Math.floor(itemResult.value)
 
   const remaining = remainingCount(newTableau)
   const newScore = wave.score + gained
@@ -152,7 +156,7 @@ export function playCard(
 
   if (remaining === 0) {
     const rawClearBonus = params.scoring.clearBonus + wave.stock.length * params.scoring.clearBonusPerStock
-    const clearBonus = Math.floor(applyItemEffects('clearBonus', rawClearBonus, items, itemEffectCtx, params))
+    const clearBonus = Math.floor(applyItemEffects('clearBonus', rawClearBonus, items, itemEffectCtx, params).value)
     return { ...next, score: newScore + clearBonus, status: 'ended', endReason: 'fullClear' }
   }
 
@@ -220,83 +224,134 @@ export interface ItemEffectContext {
   stockRemaining: number
 }
 
-type ItemEffect = (value: number, ctx: ItemEffectContext, params: ShidasuParams) => number
+// 護符の内訳表示用に倍率を丸めて整形する(浮動小数の誤差で末尾が長くなるのを防ぐ)
+function fmtMultiplier(n: number): string {
+  return String(Math.round(n * 100) / 100)
+}
+
+type ItemEffect = (value: number, ctx: ItemEffectContext, params: ShidasuParams) => { value: number; part: string | null }
 
 const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; effect: ItemEffect }>> = {
   patience: {
     channel: 'clearBonus',
-    effect: (v, ctx, p) => v + ctx.stockRemaining * p.talismans.patience.x,
+    effect: (v, ctx, p) => {
+      const add = ctx.stockRemaining * p.talismans.patience.x
+      return { value: v + add, part: `忍耐+${add}` }
+    },
   },
   purify: {
     channel: 'clearBonus',
-    effect: (v, _ctx, p) => v + p.talismans.purify.n,
+    effect: (v, _ctx, p) => ({ value: v + p.talismans.purify.n, part: `浄化+${p.talismans.purify.n}` }),
   },
   temperance: {
     channel: 'clearBonus',
-    effect: (v, ctx, p) => v * (1 + ctx.stockRemaining * p.talismans.temperance.x),
+    effect: (v, ctx, p) => {
+      const factor = 1 + ctx.stockRemaining * p.talismans.temperance.x
+      return { value: v * factor, part: `節制×${fmtMultiplier(factor)}` }
+    },
   },
   springBreeze: {
     channel: 'gained',
-    effect: (v, ctx, p) => (ctx.card.suit === '♣' ? v + p.talismans.springBreeze.n : v),
+    effect: (v, ctx, p) =>
+      ctx.card.suit === '♣'
+        ? { value: v + p.talismans.springBreeze.n, part: `春風+${p.talismans.springBreeze.n}` }
+        : { value: v, part: null },
   },
   summerBreeze: {
     channel: 'gained',
-    effect: (v, ctx, p) => (ctx.card.suit === '♦' ? v + p.talismans.summerBreeze.n : v),
+    effect: (v, ctx, p) =>
+      ctx.card.suit === '♦'
+        ? { value: v + p.talismans.summerBreeze.n, part: `夏風+${p.talismans.summerBreeze.n}` }
+        : { value: v, part: null },
   },
   autumnBreeze: {
     channel: 'gained',
-    effect: (v, ctx, p) => (ctx.card.suit === '♥' ? v + p.talismans.autumnBreeze.n : v),
+    effect: (v, ctx, p) =>
+      ctx.card.suit === '♥'
+        ? { value: v + p.talismans.autumnBreeze.n, part: `秋風+${p.talismans.autumnBreeze.n}` }
+        : { value: v, part: null },
   },
   winterBreeze: {
     channel: 'gained',
-    effect: (v, ctx, p) => (ctx.card.suit === '♠' ? v + p.talismans.winterBreeze.n : v),
+    effect: (v, ctx, p) =>
+      ctx.card.suit === '♠'
+        ? { value: v + p.talismans.winterBreeze.n, part: `冬風+${p.talismans.winterBreeze.n}` }
+        : { value: v, part: null },
   },
   kinship: {
     channel: 'gained',
     effect: (v, ctx, p) =>
-      ctx.card.suit === '♥' && ctx.previousFoundation.suit !== '♥' ? v + p.talismans.kinship.n : v,
+      ctx.card.suit === '♥' && ctx.previousFoundation.suit !== '♥'
+        ? { value: v + p.talismans.kinship.n, part: `友愛+${p.talismans.kinship.n}` }
+        : { value: v, part: null },
   },
   thaw: {
     channel: 'gained',
     effect: (v, ctx, p) =>
-      ctx.previousFoundation.suit === '♠' && ctx.card.suit !== '♠' ? v + p.talismans.thaw.n : v,
+      ctx.previousFoundation.suit === '♠' && ctx.card.suit !== '♠'
+        ? { value: v + p.talismans.thaw.n, part: `雪解+${p.talismans.thaw.n}` }
+        : { value: v, part: null },
   },
   dusk: {
     channel: 'gained',
-    effect: (v, ctx, p) => (isRed(ctx.previousFoundation) && !isRed(ctx.card) ? v + p.talismans.dusk.n : v),
+    effect: (v, ctx, p) =>
+      isRed(ctx.previousFoundation) && !isRed(ctx.card)
+        ? { value: v + p.talismans.dusk.n, part: `宵闇+${p.talismans.dusk.n}` }
+        : { value: v, part: null },
   },
   dawn: {
     channel: 'gained',
-    effect: (v, ctx, p) => (!isRed(ctx.previousFoundation) && isRed(ctx.card) ? v + p.talismans.dawn.n : v),
+    effect: (v, ctx, p) =>
+      !isRed(ctx.previousFoundation) && isRed(ctx.card)
+        ? { value: v + p.talismans.dawn.n, part: `払暁+${p.talismans.dawn.n}` }
+        : { value: v, part: null },
   },
   wit: {
     channel: 'gained',
-    effect: (v, ctx, p) => (ctx.card.wild ? v + p.talismans.wit.n : v),
+    effect: (v, ctx, p) =>
+      ctx.card.wild ? { value: v + p.talismans.wit.n, part: `機知+${p.talismans.wit.n}` } : { value: v, part: null },
   },
   courage: {
     channel: 'gained',
-    effect: (v, ctx, p) => v * (1 + ctx.combo * p.talismans.courage.x),
+    effect: (v, ctx, p) => {
+      const factor = 1 + ctx.combo * p.talismans.courage.x
+      return { value: v * factor, part: `勇気×${fmtMultiplier(factor)}` }
+    },
   },
   daybreak: {
     channel: 'gained',
-    effect: (v, ctx, p) => (ctx.combo <= p.talismans.daybreak.c ? v * p.talismans.daybreak.x : v),
+    effect: (v, ctx, p) =>
+      ctx.combo <= p.talismans.daybreak.c
+        ? { value: v * p.talismans.daybreak.x, part: `暁×${fmtMultiplier(p.talismans.daybreak.x)}` }
+        : { value: v, part: null },
   },
   twilight: {
     channel: 'gained',
-    effect: (v, ctx, p) => (ctx.combo >= p.talismans.twilight.c ? v * p.talismans.twilight.x : v),
+    effect: (v, ctx, p) =>
+      ctx.combo >= p.talismans.twilight.c
+        ? { value: v * p.talismans.twilight.x, part: `黄昏×${fmtMultiplier(p.talismans.twilight.x)}` }
+        : { value: v, part: null },
   },
   cheerful: {
     channel: 'gained',
-    effect: (v, ctx, p) => (ctx.combo % 2 === 0 ? v + p.talismans.cheerful.n : v),
+    effect: (v, ctx, p) =>
+      ctx.combo % 2 === 0
+        ? { value: v + p.talismans.cheerful.n, part: `快活+${p.talismans.cheerful.n}` }
+        : { value: v, part: null },
   },
   conscience: {
     channel: 'gained',
-    effect: (v, ctx, p) => (ctx.combo % 2 !== 0 ? v + p.talismans.conscience.n : v),
+    effect: (v, ctx, p) =>
+      ctx.combo % 2 !== 0
+        ? { value: v + p.talismans.conscience.n, part: `良心+${p.talismans.conscience.n}` }
+        : { value: v, part: null },
   },
   morningMist: {
     channel: 'gained',
-    effect: (v, ctx, p) =>
-      ctx.combo < p.talismans.morningMist.c ? v / p.talismans.morningMist.x : v * p.talismans.morningMist.x,
+    effect: (v, ctx, p) => {
+      const factor = ctx.combo < p.talismans.morningMist.c ? 1 / p.talismans.morningMist.x : p.talismans.morningMist.x
+      return { value: v * factor, part: `朝霧×${fmtMultiplier(factor)}` }
+    },
   },
 }
 
@@ -306,11 +361,16 @@ export function applyItemEffects(
   items: ItemId[],
   ctx: ItemEffectContext,
   params: ShidasuParams
-): number {
-  return items.reduce((v, id) => {
+): { value: number; parts: string[] } {
+  const parts: string[] = []
+  const value = items.reduce((v, id) => {
     const entry = ITEM_EFFECTS[id]
-    return entry && entry.channel === channel ? entry.effect(v, ctx, params) : v
+    if (!entry || entry.channel !== channel) return v
+    const result = entry.effect(v, ctx, params)
+    if (result.part) parts.push(result.part)
+    return result.value
   }, baseValue)
+  return { value, parts }
 }
 
 export const ITEM_POOL: ItemId[] = [
