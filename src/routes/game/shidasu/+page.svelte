@@ -313,7 +313,7 @@
       <h1 class="text-4xl font-black text-amber-50">星詠みソリティア -Shidasu-</h1>
       <p class="text-emerald-100/70 text-sm mt-3 leading-relaxed">
         ランクの±1を連鎖で取ってスコアを稼ぐ<br />
-        同スート・同色・階段(同方向3枚以上)で<br />
+        同スート・同色・階段(同方向5枚以上)で<br />
         ボーナスが乗る。場札を全消しすると<br />
         大きく加点され、3ウェーブ突破で<br />
         ステージクリア。
