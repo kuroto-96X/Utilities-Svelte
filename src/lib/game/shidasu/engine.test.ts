@@ -359,6 +359,38 @@ describe('playCard', () => {
     const next = playCard(DEFAULT_PARAMS, wave, 'none', ['bridge'], 1000000, 0)
     expect(next.lastGain?.parts).toContain(`階段3 +${scoring.stairBonus}`)
   })
+
+  test('gainedチャンネルの護符(springBreeze)は♣を取った時、得点に加算される', () => {
+    const wave = baseWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['springBreeze'], 1000000, 0)
+    expect(next.score).toBe(scoring.basePoint + DEFAULT_PARAMS.talismans.springBreeze.n)
+  })
+
+  test('clearBonusチャンネルの護符(purify)は全消し時のみclearBonusに加算される', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)]],
+      stock: [card(9, '♠', 1), card(10, '♠', 2)],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['purify'], 100000000, 0)
+    expect(next.endReason).toBe('fullClear')
+    const expectedClearBonus = scoring.clearBonus + 2 * scoring.clearBonusPerStock + DEFAULT_PARAMS.talismans.purify.n
+    expect(next.score).toBe(scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus)
+  })
+
+  test('複数のclearBonus護符は所持順に適用される(purify→temperanceとtemperance→purifyで結果が異なる)', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)]],
+      stock: [card(9, '♠', 1), card(10, '♠', 2)],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
+    })
+    const order1 = playCard(DEFAULT_PARAMS, wave, 'none', ['purify', 'temperance'], 100000000, 0)
+    const order2 = playCard(DEFAULT_PARAMS, wave, 'none', ['temperance', 'purify'], 100000000, 0)
+    expect(order1.score).not.toBe(order2.score)
+  })
 })
 
 describe('chainContinuesPattern', () => {

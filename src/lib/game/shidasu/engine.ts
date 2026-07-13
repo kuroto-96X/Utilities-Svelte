@@ -116,9 +116,17 @@ export function playCard(
     parts.push(`列一掃+${sweepGain}`)
   }
 
+  const itemEffectCtx: ItemEffectContext = {
+    card,
+    previousFoundation: wave.foundation,
+    combo: newCombo,
+    stockRemaining: wave.stock.length,
+  }
+
   const comboMultiplierStep = params.scoring.comboMultiplierStep
   const multiplier = 1 + (newCombo - 1) * comboMultiplierStep
-  const gained = Math.floor(base * multiplier)
+  const rawGained = Math.floor(base * multiplier)
+  const gained = Math.floor(applyItemEffects('gained', rawGained, items, itemEffectCtx, params))
 
   const remaining = remainingCount(newTableau)
   const newScore = wave.score + gained
@@ -143,7 +151,8 @@ export function playCard(
   }
 
   if (remaining === 0) {
-    const clearBonus = params.scoring.clearBonus + wave.stock.length * params.scoring.clearBonusPerStock
+    const rawClearBonus = params.scoring.clearBonus + wave.stock.length * params.scoring.clearBonusPerStock
+    const clearBonus = Math.floor(applyItemEffects('clearBonus', rawClearBonus, items, itemEffectCtx, params))
     return { ...next, score: newScore + clearBonus, status: 'ended', endReason: 'fullClear' }
   }
 
