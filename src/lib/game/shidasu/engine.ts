@@ -204,6 +204,106 @@ export function markStuck(wave: WaveState): WaveState {
   return { ...wave, status: 'ended', endReason: 'stuck' }
 }
 
+export interface ItemEffectContext {
+  card: Card
+  previousFoundation: Card
+  combo: number
+  stockRemaining: number
+}
+
+type ItemEffect = (value: number, ctx: ItemEffectContext, params: ShidasuParams) => number
+
+const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; effect: ItemEffect }>> = {
+  patience: {
+    channel: 'clearBonus',
+    effect: (v, ctx, p) => v + ctx.stockRemaining * p.talismans.patience.x,
+  },
+  purify: {
+    channel: 'clearBonus',
+    effect: (v, _ctx, p) => v + p.talismans.purify.n,
+  },
+  temperance: {
+    channel: 'clearBonus',
+    effect: (v, ctx, p) => v * (1 + ctx.stockRemaining * p.talismans.temperance.x),
+  },
+  springBreeze: {
+    channel: 'gained',
+    effect: (v, ctx, p) => (ctx.card.suit === '♣' ? v + p.talismans.springBreeze.n : v),
+  },
+  summerBreeze: {
+    channel: 'gained',
+    effect: (v, ctx, p) => (ctx.card.suit === '♦' ? v + p.talismans.summerBreeze.n : v),
+  },
+  autumnBreeze: {
+    channel: 'gained',
+    effect: (v, ctx, p) => (ctx.card.suit === '♥' ? v + p.talismans.autumnBreeze.n : v),
+  },
+  winterBreeze: {
+    channel: 'gained',
+    effect: (v, ctx, p) => (ctx.card.suit === '♠' ? v + p.talismans.winterBreeze.n : v),
+  },
+  kinship: {
+    channel: 'gained',
+    effect: (v, ctx, p) =>
+      ctx.card.suit === '♥' && ctx.previousFoundation.suit !== '♥' ? v + p.talismans.kinship.n : v,
+  },
+  thaw: {
+    channel: 'gained',
+    effect: (v, ctx, p) =>
+      ctx.previousFoundation.suit === '♠' && ctx.card.suit !== '♠' ? v + p.talismans.thaw.n : v,
+  },
+  dusk: {
+    channel: 'gained',
+    effect: (v, ctx, p) => (isRed(ctx.previousFoundation) && !isRed(ctx.card) ? v + p.talismans.dusk.n : v),
+  },
+  dawn: {
+    channel: 'gained',
+    effect: (v, ctx, p) => (!isRed(ctx.previousFoundation) && isRed(ctx.card) ? v + p.talismans.dawn.n : v),
+  },
+  wit: {
+    channel: 'gained',
+    effect: (v, ctx, p) => (ctx.card.wild ? v + p.talismans.wit.n : v),
+  },
+  courage: {
+    channel: 'gained',
+    effect: (v, ctx, p) => v * (1 + ctx.combo * p.talismans.courage.x),
+  },
+  daybreak: {
+    channel: 'gained',
+    effect: (v, ctx, p) => (ctx.combo <= p.talismans.daybreak.c ? v * p.talismans.daybreak.x : v),
+  },
+  twilight: {
+    channel: 'gained',
+    effect: (v, ctx, p) => (ctx.combo >= p.talismans.twilight.c ? v * p.talismans.twilight.x : v),
+  },
+  cheerful: {
+    channel: 'gained',
+    effect: (v, ctx, p) => (ctx.combo % 2 === 0 ? v + p.talismans.cheerful.n : v),
+  },
+  conscience: {
+    channel: 'gained',
+    effect: (v, ctx, p) => (ctx.combo % 2 !== 0 ? v + p.talismans.conscience.n : v),
+  },
+  morningMist: {
+    channel: 'gained',
+    effect: (v, ctx, p) =>
+      ctx.combo < p.talismans.morningMist.c ? v / p.talismans.morningMist.x : v * p.talismans.morningMist.x,
+  },
+}
+
+export function applyItemEffects(
+  channel: 'gained' | 'clearBonus',
+  baseValue: number,
+  items: ItemId[],
+  ctx: ItemEffectContext,
+  params: ShidasuParams
+): number {
+  return items.reduce((v, id) => {
+    const entry = ITEM_EFFECTS[id]
+    return entry && entry.channel === channel ? entry.effect(v, ctx, params) : v
+  }, baseValue)
+}
+
 export const ITEM_POOL: ItemId[] = ['bridge', 'grace']
 
 export const ITEM_NAMES: Record<ItemId, string> = {

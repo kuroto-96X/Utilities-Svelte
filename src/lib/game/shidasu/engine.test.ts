@@ -17,6 +17,7 @@ import {
   ITEM_POOL,
   ITEM_NAMES,
   itemDesc,
+  applyItemEffects,
   createInitialRun,
   beginRun,
   resolveWaveEnd,
@@ -587,6 +588,149 @@ describe('markStuck', () => {
   test('既にendedなら変化しない', () => {
     const wave = makeWave({ status: 'ended', endReason: 'target' })
     expect(markStuck(wave)).toBe(wave)
+  })
+})
+
+describe('applyItemEffects', () => {
+  const params = DEFAULT_PARAMS
+
+  function ctx(overrides: Partial<{ card: Card; previousFoundation: Card; combo: number; stockRemaining: number }> = {}) {
+    return {
+      card: card(1, '♠', 5),
+      previousFoundation: card(2, '♣', 4),
+      combo: 1,
+      stockRemaining: 0,
+      ...overrides,
+    }
+  }
+
+  test('未登録の護符は素通りする', () => {
+    expect(applyItemEffects('gained', 100, ['bridge'], ctx(), params)).toBe(100)
+  })
+
+  test('patience: clearBonusチャンネルで残り山札数×xを加算', () => {
+    const result = applyItemEffects('clearBonus', 1000, ['patience'], ctx({ stockRemaining: 4 }), params)
+    expect(result).toBe(1000 + 4 * params.talismans.patience.x)
+  })
+
+  test('purify: clearBonusチャンネルでnを加算', () => {
+    const result = applyItemEffects('clearBonus', 1000, ['purify'], ctx(), params)
+    expect(result).toBe(1000 + params.talismans.purify.n)
+  })
+
+  test('temperance: clearBonusチャンネルで残り山札数×x分倍算', () => {
+    const result = applyItemEffects('clearBonus', 1000, ['temperance'], ctx({ stockRemaining: 4 }), params)
+    expect(result).toBe(1000 * (1 + 4 * params.talismans.temperance.x))
+  })
+
+  test('springBreeze: ♣を取った時のみgainedにnを加算', () => {
+    const withClub = applyItemEffects('gained', 100, ['springBreeze'], ctx({ card: card(1, '♣', 5) }), params)
+    expect(withClub).toBe(100 + params.talismans.springBreeze.n)
+    const withoutClub = applyItemEffects('gained', 100, ['springBreeze'], ctx({ card: card(1, '♥', 5) }), params)
+    expect(withoutClub).toBe(100)
+  })
+
+  test('summerBreeze: ♦を取った時のみgainedにnを加算', () => {
+    const result = applyItemEffects('gained', 100, ['summerBreeze'], ctx({ card: card(1, '♦', 5) }), params)
+    expect(result).toBe(100 + params.talismans.summerBreeze.n)
+  })
+
+  test('autumnBreeze: ♥を取った時のみgainedにnを加算', () => {
+    const result = applyItemEffects('gained', 100, ['autumnBreeze'], ctx({ card: card(1, '♥', 5) }), params)
+    expect(result).toBe(100 + params.talismans.autumnBreeze.n)
+  })
+
+  test('winterBreeze: ♠を取った時のみgainedにnを加算', () => {
+    const result = applyItemEffects('gained', 100, ['winterBreeze'], ctx({ card: card(1, '♠', 5) }), params)
+    expect(result).toBe(100 + params.talismans.winterBreeze.n)
+  })
+
+  test('kinship: 直前が♥以外から今回♥を取った時のみnを加算', () => {
+    const triggered = applyItemEffects('gained', 100, ['kinship'], ctx({ previousFoundation: card(2, '♣', 4), card: card(1, '♥', 5) }), params)
+    expect(triggered).toBe(100 + params.talismans.kinship.n)
+    const notTriggered = applyItemEffects('gained', 100, ['kinship'], ctx({ previousFoundation: card(2, '♥', 4), card: card(1, '♥', 5) }), params)
+    expect(notTriggered).toBe(100)
+  })
+
+  test('thaw: 直前が♠から今回♠以外を取った時のみnを加算', () => {
+    const triggered = applyItemEffects('gained', 100, ['thaw'], ctx({ previousFoundation: card(2, '♠', 4), card: card(1, '♥', 5) }), params)
+    expect(triggered).toBe(100 + params.talismans.thaw.n)
+    const notTriggered = applyItemEffects('gained', 100, ['thaw'], ctx({ previousFoundation: card(2, '♠', 4), card: card(1, '♠', 6) }), params)
+    expect(notTriggered).toBe(100)
+  })
+
+  test('dusk: 直前が赤から今回黒を取った時のみnを加算', () => {
+    const triggered = applyItemEffects('gained', 100, ['dusk'], ctx({ previousFoundation: card(2, '♥', 4), card: card(1, '♠', 5) }), params)
+    expect(triggered).toBe(100 + params.talismans.dusk.n)
+    const notTriggered = applyItemEffects('gained', 100, ['dusk'], ctx({ previousFoundation: card(2, '♠', 4), card: card(1, '♣', 5) }), params)
+    expect(notTriggered).toBe(100)
+  })
+
+  test('dawn: 直前が黒から今回赤を取った時のみnを加算', () => {
+    const triggered = applyItemEffects('gained', 100, ['dawn'], ctx({ previousFoundation: card(2, '♠', 4), card: card(1, '♥', 5) }), params)
+    expect(triggered).toBe(100 + params.talismans.dawn.n)
+    const notTriggered = applyItemEffects('gained', 100, ['dawn'], ctx({ previousFoundation: card(2, '♥', 4), card: card(1, '♦', 5) }), params)
+    expect(notTriggered).toBe(100)
+  })
+
+  test('wit: ワイルドを取った時のみnを加算', () => {
+    const triggered = applyItemEffects('gained', 100, ['wit'], ctx({ card: card(1, '★', 0, true) }), params)
+    expect(triggered).toBe(100 + params.talismans.wit.n)
+    const notTriggered = applyItemEffects('gained', 100, ['wit'], ctx({ card: card(1, '♠', 5) }), params)
+    expect(notTriggered).toBe(100)
+  })
+
+  test('courage: コンボ数×xで倍算', () => {
+    const result = applyItemEffects('gained', 100, ['courage'], ctx({ combo: 5 }), params)
+    expect(result).toBe(100 * (1 + 5 * params.talismans.courage.x))
+  })
+
+  test('daybreak: コンボ数がc以下の時のみx倍', () => {
+    const triggered = applyItemEffects('gained', 100, ['daybreak'], ctx({ combo: params.talismans.daybreak.c }), params)
+    expect(triggered).toBe(100 * params.talismans.daybreak.x)
+    const notTriggered = applyItemEffects('gained', 100, ['daybreak'], ctx({ combo: params.talismans.daybreak.c + 1 }), params)
+    expect(notTriggered).toBe(100)
+  })
+
+  test('twilight: コンボ数がc以上の時のみx倍', () => {
+    const triggered = applyItemEffects('gained', 100, ['twilight'], ctx({ combo: params.talismans.twilight.c }), params)
+    expect(triggered).toBe(100 * params.talismans.twilight.x)
+    const notTriggered = applyItemEffects('gained', 100, ['twilight'], ctx({ combo: params.talismans.twilight.c - 1 }), params)
+    expect(notTriggered).toBe(100)
+  })
+
+  test('cheerful: コンボ数が偶数の時のみnを加算', () => {
+    const triggered = applyItemEffects('gained', 100, ['cheerful'], ctx({ combo: 4 }), params)
+    expect(triggered).toBe(100 + params.talismans.cheerful.n)
+    const notTriggered = applyItemEffects('gained', 100, ['cheerful'], ctx({ combo: 5 }), params)
+    expect(notTriggered).toBe(100)
+  })
+
+  test('conscience: コンボ数が奇数の時のみnを加算', () => {
+    const triggered = applyItemEffects('gained', 100, ['conscience'], ctx({ combo: 5 }), params)
+    expect(triggered).toBe(100 + params.talismans.conscience.n)
+    const notTriggered = applyItemEffects('gained', 100, ['conscience'], ctx({ combo: 4 }), params)
+    expect(notTriggered).toBe(100)
+  })
+
+  test('morningMist: コンボ数がc未満なら1/x倍、c以上ならx倍', () => {
+    const below = applyItemEffects('gained', 100, ['morningMist'], ctx({ combo: params.talismans.morningMist.c - 1 }), params)
+    expect(below).toBe(100 / params.talismans.morningMist.x)
+    const aboveOrEqual = applyItemEffects('gained', 100, ['morningMist'], ctx({ combo: params.talismans.morningMist.c }), params)
+    expect(aboveOrEqual).toBe(100 * params.talismans.morningMist.x)
+  })
+
+  test('複数護符は所持順(配列順)に適用される(加算→倍算と倍算→加算で結果が変わることを確認)', () => {
+    const order1 = applyItemEffects('clearBonus', 1000, ['purify', 'temperance'], ctx({ stockRemaining: 4 }), params)
+    const order2 = applyItemEffects('clearBonus', 1000, ['temperance', 'purify'], ctx({ stockRemaining: 4 }), params)
+    expect(order1).not.toBe(order2)
+    expect(order1).toBe((1000 + params.talismans.purify.n) * (1 + 4 * params.talismans.temperance.x))
+    expect(order2).toBe(1000 * (1 + 4 * params.talismans.temperance.x) + params.talismans.purify.n)
+  })
+
+  test('gainedチャンネルの護符はclearBonusチャンネル計算には適用されない', () => {
+    const result = applyItemEffects('clearBonus', 1000, ['springBreeze'], ctx({ card: card(1, '♣', 5) }), params)
+    expect(result).toBe(1000)
   })
 })
 
