@@ -3,7 +3,8 @@
   import { loadParams } from '$lib/game/shidasu/params'
   import {
     createInitialRun, beginRun, applyPlayCard, applyDrawStock, applyStuckCheck,
-    resolveWaveEnd, pickItem, advanceStage, restartRun, startWave, forceStockTop,
+    resolveWaveEnd, pickItem, confirmItemSwap, cancelItemSwap, skipItemSelect,
+    advanceStage, restartRun, startWave, forceStockTop,
     getPlayableColumns, remainingCount, rankLabel, isRed, itemDesc, ITEM_NAMES,
   } from '$lib/game/shidasu/engine'
   import type { RunState, Card, ItemId, StageModifier, WaveState, Suit, Rank } from '$lib/game/shidasu/types'
@@ -107,7 +108,22 @@
 
   function handlePickItem(id: ItemId) {
     run = pickItem(params, run, id)
+    if (run.phase === 'itemSelect') return // 上限到達時: 交換対象選択待ちのため、まだウェーブは進んでいない
     afterAction()
+  }
+
+  function handleSkipItem() {
+    run = skipItemSelect(params, run)
+    afterAction()
+  }
+
+  function handleConfirmSwap(oldItemId: ItemId) {
+    run = confirmItemSwap(params, run, oldItemId)
+    afterAction()
+  }
+
+  function handleCancelSwap() {
+    run = cancelItemSwap(run)
   }
 
   function handleAdvanceStage() {
@@ -313,10 +329,10 @@
       <h1 class="text-4xl font-black text-amber-50">星詠みソリティア -Shidasu-</h1>
       <p class="text-emerald-100/70 text-sm mt-3 leading-relaxed">
         ランクの±1を連鎖で取ってスコアを稼ぐ<br />
-        同スート・同色・階段(同方向5枚以上)で<br />
-        ボーナスが乗る。場札を全消しすると<br />
-        大きく加点され、3ウェーブ突破で<br />
-        ステージクリア。
+        同スート・同色(3枚以上)・階段(同方向<br />
+        5枚以上)でボーナスが乗る。場札を<br />
+        全消しすると大きく加点され、3ウェーブ<br />
+        突破でステージクリア。
       </p>
     </div>
     <button
@@ -336,18 +352,45 @@
     <div class="w-full max-w-sm flex flex-col items-center text-center">
       <div class="text-yellow-300 text-xs tracking-widest mb-1">WAVE {run.waveIndex + 1} CLEAR</div>
       <div class="text-2xl font-black text-amber-50 mb-4">{run.wave?.score ?? 0} 点</div>
-      <div class="text-emerald-100/70 text-sm mb-4">アイテムを1つ選ぶ</div>
-      <div class="flex flex-col gap-3 w-full">
-        {#each run.offer as id (id)}
+      {#if run.pendingNewItem === null}
+        <div class="text-emerald-100/70 text-sm mb-4">アイテムを1つ選ぶ</div>
+        <div class="flex flex-col gap-3 w-full">
+          {#each run.offer as id (id)}
+            <button
+              onclick={() => handlePickItem(id)}
+              class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
+            >
+              <div class="font-black text-yellow-300">{ITEM_NAMES[id]}</div>
+              <div class="text-xs text-emerald-100/80 mt-0.5">{itemDesc(id, params)}</div>
+            </button>
+          {/each}
           <button
-            onclick={() => handlePickItem(id)}
-            class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
+            onclick={handleSkipItem}
+            class="text-center text-emerald-200/70 border border-emerald-700/60 rounded-xl px-4 py-2 active:scale-[0.98] transition-transform"
           >
-            <div class="font-black text-yellow-300">{ITEM_NAMES[id]}</div>
-            <div class="text-xs text-emerald-100/80 mt-0.5">{itemDesc(id, params)}</div>
+            取得しない
           </button>
-        {/each}
-      </div>
+        </div>
+      {:else}
+        <div class="text-emerald-100/70 text-sm mb-4">護符は最大{params.items.maxItems}個まで。入れ替える護符を選ぶ</div>
+        <div class="flex flex-col gap-3 w-full">
+          {#each run.items as id, i (i)}
+            <button
+              onclick={() => handleConfirmSwap(id)}
+              class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
+            >
+              <div class="font-black text-yellow-300">{ITEM_NAMES[id]}</div>
+              <div class="text-xs text-emerald-100/80 mt-0.5">{itemDesc(id, params)}</div>
+            </button>
+          {/each}
+          <button
+            onclick={handleCancelSwap}
+            class="text-center text-emerald-200/70 border border-emerald-700/60 rounded-xl px-4 py-2 active:scale-[0.98] transition-transform"
+          >
+            戻る
+          </button>
+        </div>
+      {/if}
     </div>
   </div>
 {:else if run.phase === 'stageClear'}
