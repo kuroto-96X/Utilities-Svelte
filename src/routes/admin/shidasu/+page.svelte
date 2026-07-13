@@ -28,6 +28,7 @@
     if (!Number.isFinite(config.ui.chainCardOffsetX) || config.ui.chainCardOffsetX < 0) return true
     if (!Number.isFinite(config.items.stairRelaxedMinLen) || config.items.stairRelaxedMinLen < 1) return true
     if (!Number.isFinite(config.items.columnSweepRelaxCards) || config.items.columnSweepRelaxCards < 0) return true
+    if (!Number.isFinite(config.items.maxItems) || config.items.maxItems < 1) return true
     if (!Number.isFinite(config.scoring.suitColorMinLen) || config.scoring.suitColorMinLen < 1) return true
     return false
   })
@@ -316,6 +317,10 @@
           <label class="text-xs text-slate-500">
             寛容の護符: 列一掃緩和の猶予枚数(columnSweepRelaxCards)
             <input type="number" min="0" step="1" bind:value={config.items.columnSweepRelaxCards} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            護符の所持上限枚数(maxItems)
+            <input type="number" min="1" step="1" bind:value={config.items.maxItems} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
           </label>
         </div>
       </section>
