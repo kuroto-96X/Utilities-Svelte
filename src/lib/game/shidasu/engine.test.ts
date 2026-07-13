@@ -767,25 +767,30 @@ describe('applyItemEffects', () => {
 })
 
 describe('rollItemOffer', () => {
-  test('未所持のアイテムを全て返す(プールの上限は3件だが、実際のプール数がそれ以下ならそのまま返す)', () => {
+  test('未所持のアイテムの中から最大3件返す(プール数が3件を超える場合)', () => {
     const offer = rollItemOffer([], createRng(1))
-    expect([...offer].sort()).toEqual(['bridge', 'grace'])
+    expect(offer).toHaveLength(3)
+    offer.forEach(id => expect(ITEM_POOL).toContain(id))
+    expect(new Set(offer).size).toBe(3) // 重複なし
   })
 
   test('既に持っているアイテムは種類を問わず候補から除外される', () => {
-    const offer = rollItemOffer(['bridge'], createRng(1))
-    expect(offer).toEqual(['grace'])
+    const owned = ITEM_POOL.slice(0, ITEM_POOL.length - 1) // 1個だけ未所持にする
+    const remaining = ITEM_POOL[ITEM_POOL.length - 1]
+    const offer = rollItemOffer(owned, createRng(1))
+    expect(offer).toEqual([remaining])
   })
 
   test('全て持っていれば候補は空になる', () => {
-    const offer = rollItemOffer(['bridge', 'grace'], createRng(1))
+    const offer = rollItemOffer([...ITEM_POOL], createRng(1))
     expect(offer).toEqual([])
   })
 })
 
 describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
-  test('2種類のアイテムが定義されている', () => {
-    expect(ITEM_POOL).toHaveLength(2)
+  test('20種類のアイテムが定義されている', () => {
+    expect(ITEM_POOL).toHaveLength(20)
+    expect(new Set(ITEM_POOL).size).toBe(20) // 重複なし
     ITEM_POOL.forEach(id => expect(ITEM_NAMES[id]).toBeTruthy())
   })
 
@@ -849,8 +854,9 @@ describe('resolveWaveEnd', () => {
     const run = endedRun({ waveIndex: 0 }, DEFAULT_PARAMS.stages[0].targets[0])
     const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
     expect(next.phase).toBe('itemSelect')
-    expect(next.offer).toHaveLength(2)
-    expect([...next.offer].sort()).toEqual(['bridge', 'grace'])
+    expect(next.offer).toHaveLength(3)
+    next.offer.forEach(id => expect(ITEM_POOL).toContain(id))
+    expect(new Set(next.offer).size).toBe(3) // 重複なし
   })
 
   test('最終ウェーブクリア・次ステージありならstageClearになる', () => {

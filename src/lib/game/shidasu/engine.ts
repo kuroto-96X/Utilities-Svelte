@@ -313,7 +313,13 @@ export function applyItemEffects(
   }, baseValue)
 }
 
-export const ITEM_POOL: ItemId[] = ['bridge', 'grace']
+export const ITEM_POOL: ItemId[] = [
+  'bridge', 'grace',
+  'patience', 'purify', 'temperance',
+  'springBreeze', 'summerBreeze', 'autumnBreeze', 'winterBreeze',
+  'kinship', 'thaw', 'dusk', 'dawn', 'wit',
+  'courage', 'daybreak', 'twilight', 'cheerful', 'conscience', 'morningMist',
+]
 
 export const ITEM_NAMES: Record<ItemId, string> = {
   bridge: '架橋の護符',
