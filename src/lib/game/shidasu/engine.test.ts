@@ -21,6 +21,9 @@ import {
   beginRun,
   resolveWaveEnd,
   pickItem,
+  confirmItemSwap,
+  cancelItemSwap,
+  skipItemSelect,
   advanceStage,
   restartRun,
   applyPlayCard,
@@ -687,6 +690,81 @@ describe('pickItem / advanceStage / restartRun', () => {
     expect(next.stageIndex).toBe(0)
     expect(next.waveIndex).toBe(0)
     expect(next.items).toEqual([])
+  })
+})
+
+describe('護符所持上限・交換(maxItems / confirmItemSwap / cancelItemSwap / skipItemSelect)', () => {
+  function fullItemsRun(overrides: Partial<RunState> = {}): RunState {
+    return {
+      ...beginRun(DEFAULT_PARAMS, 1),
+      phase: 'itemSelect',
+      // maxItems(5)ちょうどの所持状態を作るための検証用フィクスチャ。
+      // 実プレイでは護符プールが2種類しか無いため実際にこの状態には到達しないが、
+      // pickItem/confirmItemSwapの上限判定・入れ替えロジック自体は所持数のみで動くため検証できる。
+      items: ['bridge', 'grace', 'bridge', 'grace', 'bridge'],
+      offer: ['grace'],
+      pendingNewItem: null,
+      ...overrides,
+    }
+  }
+
+  test('所持数がmaxItems未満ならpickItemで即座に反映される(従来通り)', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', items: ['bridge'], offer: ['grace'] }
+    const next = pickItem(DEFAULT_PARAMS, run, 'grace', 2)
+    expect(next.phase).toBe('playing')
+    expect(next.items).toEqual(['bridge', 'grace'])
+    expect(next.pendingNewItem).toBeNull()
+  })
+
+  test('所持数がmaxItems以上ならpickItemはウェーブを進めずpendingNewItemをセットするのみ', () => {
+    const run = fullItemsRun()
+    const next = pickItem(DEFAULT_PARAMS, run, 'grace', 2)
+    expect(next.phase).toBe('itemSelect')
+    expect(next.items).toEqual(run.items)
+    expect(next.offer).toEqual(run.offer)
+    expect(next.pendingNewItem).toBe('grace')
+    expect(next.waveIndex).toBe(run.waveIndex)
+  })
+
+  test('confirmItemSwapで指定した護符が1つ入れ替わり次ウェーブへ進む', () => {
+    const run = fullItemsRun({ pendingNewItem: 'grace' })
+    // run.items = ['bridge', 'grace', 'bridge', 'grace', 'bridge'] (先頭のbridgeが入れ替え対象)
+    const next = confirmItemSwap(DEFAULT_PARAMS, run, 'bridge', 3)
+    expect(next.phase).toBe('playing')
+    expect(next.items).toEqual(['grace', 'bridge', 'grace', 'bridge', 'grace'])
+    expect(next.pendingNewItem).toBeNull()
+    expect(next.waveIndex).toBe(run.waveIndex + 1)
+  })
+
+  test('pendingNewItemが無い状態でconfirmItemSwapを呼んでも何も起きない', () => {
+    const run = fullItemsRun({ pendingNewItem: null })
+    const next = confirmItemSwap(DEFAULT_PARAMS, run, 'bridge', 3)
+    expect(next).toBe(run)
+  })
+
+  test('cancelItemSwapでpendingNewItemがnullに戻り、フェーズ・オファー・所持アイテムは変わらない', () => {
+    const run = fullItemsRun({ pendingNewItem: 'grace' })
+    const next = cancelItemSwap(run)
+    expect(next.pendingNewItem).toBeNull()
+    expect(next.phase).toBe('itemSelect')
+    expect(next.offer).toEqual(run.offer)
+    expect(next.items).toEqual(run.items)
+  })
+
+  test('skipItemSelectは護符を追加せずウェーブを進める', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', items: ['bridge'], offer: ['grace'] }
+    const next = skipItemSelect(DEFAULT_PARAMS, run, 2)
+    expect(next.phase).toBe('playing')
+    expect(next.items).toEqual(['bridge'])
+    expect(next.waveIndex).toBe(run.waveIndex + 1)
+    expect(next.pendingNewItem).toBeNull()
+  })
+
+  test('phaseがitemSelect以外ならconfirmItemSwap/cancelItemSwap/skipItemSelectは何もしない', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'playing' }
+    expect(confirmItemSwap(DEFAULT_PARAMS, run, 'bridge')).toBe(run)
+    expect(cancelItemSwap(run)).toBe(run)
+    expect(skipItemSelect(DEFAULT_PARAMS, run)).toBe(run)
   })
 })
 

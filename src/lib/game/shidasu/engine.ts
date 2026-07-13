@@ -268,6 +268,9 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
 
 export function pickItem(params: ShidasuParams, run: RunState, itemId: ItemId, seed?: number): RunState {
   if (run.phase !== 'itemSelect') return run
+  if (run.items.length >= params.items.maxItems) {
+    return { ...run, pendingNewItem: itemId }
+  }
   const newItems = [...run.items, itemId]
   const newWaveIndex = run.waveIndex + 1
   return {
@@ -276,7 +279,43 @@ export function pickItem(params: ShidasuParams, run: RunState, itemId: ItemId, s
     items: newItems,
     waveIndex: newWaveIndex,
     offer: [],
+    pendingNewItem: null,
     wave: startWave(params, run.stageIndex, newWaveIndex, newItems, seed),
+  }
+}
+
+export function confirmItemSwap(params: ShidasuParams, run: RunState, oldItemId: ItemId, seed?: number): RunState {
+  if (run.phase !== 'itemSelect' || run.pendingNewItem === null) return run
+  const idx = run.items.indexOf(oldItemId)
+  const remaining = idx === -1 ? [...run.items] : [...run.items.slice(0, idx), ...run.items.slice(idx + 1)]
+  const newItems = [...remaining, run.pendingNewItem]
+  const newWaveIndex = run.waveIndex + 1
+  return {
+    ...run,
+    phase: 'playing',
+    items: newItems,
+    waveIndex: newWaveIndex,
+    offer: [],
+    pendingNewItem: null,
+    wave: startWave(params, run.stageIndex, newWaveIndex, newItems, seed),
+  }
+}
+
+export function cancelItemSwap(run: RunState): RunState {
+  if (run.phase !== 'itemSelect') return run
+  return { ...run, pendingNewItem: null }
+}
+
+export function skipItemSelect(params: ShidasuParams, run: RunState, seed?: number): RunState {
+  if (run.phase !== 'itemSelect') return run
+  const newWaveIndex = run.waveIndex + 1
+  return {
+    ...run,
+    phase: 'playing',
+    waveIndex: newWaveIndex,
+    offer: [],
+    pendingNewItem: null,
+    wave: startWave(params, run.stageIndex, newWaveIndex, run.items, seed),
   }
 }
 
