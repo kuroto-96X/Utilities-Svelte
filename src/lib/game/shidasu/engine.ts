@@ -154,27 +154,15 @@ export function playCard(
   return next
 }
 
-export function drawStock(params: ShidasuParams, wave: WaveState, _items: ItemId[]): WaveState {
+export function drawStock(params: ShidasuParams, wave: WaveState, items: ItemId[]): WaveState {
   if (wave.status !== 'playing') return wave
   if (wave.stock.length === 0) return wave
 
   const newStock = [...wave.stock]
   const card = newStock.pop() as Card
 
-  if (card.wild) {
-    return {
-      ...wave,
-      stock: newStock,
-      foundation: card,
-      chain: [...wave.chain, card],
-      chainOrigin: [...wave.chainOrigin, 'draw'],
-      linked: true,
-      lastDrawEffect: 'wild',
-      lastGain: null,
-    }
-  }
-
-  const patternContinues = wave.linked && chainContinuesPattern(params.scoring, wave.chain, card)
+  const effectiveStairMinLen = items.includes('bridge') ? params.items.stairRelaxedMinLen : params.scoring.stairMinLen
+  const patternContinues = wave.linked && chainContinuesPattern(params.scoring, wave.chain, card, effectiveStairMinLen)
 
   if (patternContinues) {
     return {
@@ -184,7 +172,7 @@ export function drawStock(params: ShidasuParams, wave: WaveState, _items: ItemId
       chain: [...wave.chain, card],
       chainOrigin: [...wave.chainOrigin, 'draw'],
       linked: true,
-      lastDrawEffect: 'pattern',
+      lastDrawEffect: card.wild ? 'wild' : 'pattern',
       lastGain: null,
     }
   }
@@ -505,32 +493,17 @@ export function evaluateChainBonus(
 export function chainContinuesPattern(
   scoring: ShidasuParams['scoring'],
   chain: Card[],
-  card: Card
+  card: Card,
+  stairMinLen: number = scoring.stairMinLen
 ): boolean {
-  if (chain.length === 0) return false
+  const chainIncludingThis = [...chain, card]
 
-  const realChain = chain.filter(c => !c.wild)
-  const { suitHeld, colorHeld } = analyzeSuitColor(chain)
-  if (realChain.length > 0) {
-    const anchor = realChain[0]
-    // suitHeldは実カード1枚のみの場合も便宜上trueになる(analyzeSuitColorの仕様)ため、
-    // 「同スート」条件を優先評価し、それが不成立の場合のみ「同色」条件にフォールバックする
-    // (evaluateChainBonusのsuitBonus/colorBonus判定と同じ優先順位)
-    if (suitHeld) {
-      if (card.suit === anchor.suit) return true
-    } else if (colorHeld) {
-      if (isRed(card) === isRed(anchor)) return true
-    }
-  }
+  const { suitHeld, colorHeld } = analyzeSuitColor(chainIncludingThis)
+  const realCount = chainIncludingThis.filter(c => !c.wild).length
+  if (realCount >= scoring.suitColorMinLen && (suitHeld || colorHeld)) return true
 
-  const stairInfo = analyzeStair(chain)
-  if (stairInfo.held && stairInfo.dir !== 0 && realChain.length > 0) {
-    const lastReal = realChain[realChain.length - 1]
-    let d = card.rank - lastReal.rank
-    if (d === 12) d = -1
-    if (d === -12) d = 1
-    if (d === stairInfo.dir) return true
-  }
+  const stairInfo = analyzeStair(chainIncludingThis)
+  if (stairInfo.held && stairInfo.dir !== 0 && stairInfo.len >= stairMinLen) return true
 
   return false
 }

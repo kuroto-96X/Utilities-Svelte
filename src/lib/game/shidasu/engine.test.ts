@@ -361,7 +361,12 @@ describe('chainContinuesPattern', () => {
     expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, [], card(1, '♠', 5))).toBe(false)
   })
 
-  test('同スートが成立中で、捲った札が同じスートなら継続', () => {
+  test('実カード3枚未満では同スートが揃っていても継続不可', () => {
+    const chain = [card(1, '♠', 5)]
+    expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(2, '♠', 6))).toBe(false)
+  })
+
+  test('捲った札を含めて実カード3枚以上・同スートが揃えば継続', () => {
     const chain = [card(1, '♠', 5), card(2, '♠', 6)]
     expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '♠', 9))).toBe(true)
   })
@@ -371,14 +376,14 @@ describe('chainContinuesPattern', () => {
     expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '♥', 9))).toBe(false)
   })
 
-  test('実カード1枚のみのチェーンでは、色が一致してもスートが違えば継続しない(スート優先)', () => {
-    const chain = [card(1, '♠', 5)]
-    expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(2, '♣', 9))).toBe(false)
+  test('階段が成立中で、捲った札が同方向を継続し長さがstairMinLen以上になれば継続', () => {
+    const chain = [card(1, '♠', 5), card(2, '♣', 6)] // dir=+1, len=2
+    expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '♦', 7), 3)).toBe(true)
   })
 
-  test('階段が成立中で、捲った札が同方向を継続すれば継続', () => {
-    const chain = [card(1, '♠', 5), card(2, '♣', 6)] // dir=+1
-    expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '♦', 7))).toBe(true)
+  test('階段の長さがstairMinLen未満なら継続不可', () => {
+    const chain = [card(1, '♠', 5), card(2, '♣', 6)] // dir=+1, len=2
+    expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '♦', 7))).toBe(false) // 既定のstairMinLen(5)未満
   })
 
   test('全ての条件が既に崩れていれば継続不可', () => {
@@ -416,19 +421,36 @@ describe('drawStock', () => {
     expect(next.stock).toEqual([])
   })
 
-  test('ワイルドがめくれた場合: コンボは変わらずチェーンに追加され、lastDrawEffectはwild', () => {
+  test('ワイルドがめくれた場合(継続中のパターンが無い): コンボがリセットされ、ワイルド1枚が新しい起点になる', () => {
     const wave = makeWave({
       stock: [card(1, '★', 0, true)],
       combo: 3,
-      chain: [card(2, '♣', 5)],
+      chain: [card(2, '♣', 5)], // 実カード1枚のみ、パターン不成立
       chainOrigin: ['play'],
       linked: true,
       comboStreakColumnLengths: [4, 2],
     })
     const next = drawStock(DEFAULT_PARAMS, wave, [])
+    expect(next.combo).toBe(0)
+    expect(next.chain).toEqual([card(1, '★', 0, true)])
+    expect(next.chainOrigin).toEqual(['draw'])
+    expect(next.linked).toBe(false)
+    expect(next.lastDrawEffect).toBeNull()
+  })
+
+  test('ワイルドがめくれた場合(継続中のパターンがある): コンボが継続し、lastDrawEffectはwild', () => {
+    const wave = makeWave({
+      stock: [card(1, '★', 0, true)],
+      combo: 3,
+      chain: [card(2, '♠', 5), card(3, '♠', 6), card(4, '♠', 7)], // 実カード3枚・同スート継続中
+      chainOrigin: ['play', 'play', 'play'],
+      linked: true,
+      comboStreakColumnLengths: [4, 2],
+    })
+    const next = drawStock(DEFAULT_PARAMS, wave, [])
     expect(next.combo).toBe(3)
-    expect(next.chain).toEqual([card(2, '♣', 5), card(1, '★', 0, true)])
-    expect(next.chainOrigin).toEqual(['play', 'draw'])
+    expect(next.chain).toEqual([card(2, '♠', 5), card(3, '♠', 6), card(4, '♠', 7), card(1, '★', 0, true)])
+    expect(next.chainOrigin).toEqual(['play', 'play', 'play', 'draw'])
     expect(next.linked).toBe(true)
     expect(next.lastDrawEffect).toBe('wild')
     expect(next.comboStreakColumnLengths).toEqual([4, 2])
@@ -436,21 +458,48 @@ describe('drawStock', () => {
 
   test('パターンに合う札ならアイテム無しで特殊継続しlastDrawEffectはpattern', () => {
     const wave = makeWave({
-      stock: [card(1, '♠', 9)], // 同スート継続
+      stock: [card(1, '♠', 9)], // 同スート継続(捲った後で実カード3枚)
       combo: 2,
-      chain: [card(2, '♠', 5)],
-      chainOrigin: ['play'],
+      chain: [card(2, '♠', 4), card(3, '♠', 5)],
+      chainOrigin: ['play', 'play'],
       linked: true,
       comboStreakColumnLengths: [3, 2],
     })
     const next = drawStock(DEFAULT_PARAMS, wave, [])
     expect(next.combo).toBe(2)
-    expect(next.chain).toEqual([card(2, '♠', 5), card(1, '♠', 9)])
-    expect(next.chainOrigin).toEqual(['play', 'draw'])
+    expect(next.chain).toEqual([card(2, '♠', 4), card(3, '♠', 5), card(1, '♠', 9)])
+    expect(next.chainOrigin).toEqual(['play', 'play', 'draw'])
     expect(next.linked).toBe(true)
     expect(next.lastDrawEffect).toBe('pattern')
     expect(next.score).toBe(wave.score) // 得点は付かない
     expect(next.comboStreakColumnLengths).toEqual([3, 2])
+  })
+
+  test('架橋の護符所持時は、山札めくりの階段パターン継続判定にもstairRelaxedMinLenが使われる', () => {
+    const wave = makeWave({
+      stock: [card(1, '♦', 7)], // 階段継続: 5→6→7(長さ3)
+      combo: 2,
+      chain: [card(2, '♠', 5), card(3, '♣', 6)], // dir=+1, len=2
+      chainOrigin: ['play', 'play'],
+      linked: true,
+    })
+    const next = drawStock(DEFAULT_PARAMS, wave, ['bridge']) // stairRelaxedMinLen=3
+    expect(next.combo).toBe(2)
+    expect(next.lastDrawEffect).toBe('pattern')
+    expect(next.chain).toEqual([card(2, '♠', 5), card(3, '♣', 6), card(1, '♦', 7)])
+  })
+
+  test('架橋の護符を持っていなければ、同じ階段(長さ3)ではdrawStockのパターン継続は成立しない(既定stairMinLen(5)未満)', () => {
+    const wave = makeWave({
+      stock: [card(1, '♦', 7)],
+      combo: 2,
+      chain: [card(2, '♠', 5), card(3, '♣', 6)],
+      chainOrigin: ['play', 'play'],
+      linked: true,
+    })
+    const next = drawStock(DEFAULT_PARAMS, wave, [])
+    expect(next.combo).toBe(0) // リセットされる
+    expect(next.lastDrawEffect).toBeNull()
   })
 
   test('パターンに合わなければ通常通りリセットし、捲った札1枚が新しい起点になる', () => {
