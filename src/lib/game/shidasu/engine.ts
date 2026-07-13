@@ -381,44 +381,47 @@ export interface StairAnalysis {
   len: number
 }
 
-export function analyzeStair(chain: Card[]): StairAnalysis {
-  let dir: -1 | 0 | 1 = 0
-  let len = 1
-  let prevReal: Card | null = null
-  let justHadWild = false
+// rankをdir方向にsteps回分ずらした値を返す(1〜13の循環、K⇔Aのループも跨ぐ)
+function stepRank(rank: number, dir: -1 | 1, steps: number): number {
+  const zeroBased = rank - 1
+  const shifted = ((zeroBased + dir * steps) % 13 + 13) % 13
+  return shifted + 1
+}
 
-  for (const c of chain) {
-    if (c.wild) {
-      justHadWild = true
-      continue
-    }
-    if (prevReal === null) {
-      prevReal = c
-      continue
-    }
-    if (justHadWild) {
-      if (dir !== 0) len += 1
-      justHadWild = false
-      prevReal = c
-      continue
-    }
-    let d = c.rank - prevReal.rank
-    if (d === 12) d = -1
-    if (d === -12) d = 1
-    if (Math.abs(d) !== 1) {
-      return { held: false, dir: 0, len: 1 }
-    }
-    if (dir === 0) {
-      dir = d as -1 | 1
-      len = 2
-    } else if (d === dir) {
-      len += 1
-    } else {
-      return { held: false, dir: 0, len: 1 }
-    }
-    prevReal = c
+export function analyzeStair(chain: Card[]): StairAnalysis {
+  if (chain.length === 0) return { held: true, dir: 0, len: 1 }
+
+  const realPositions = chain
+    .map((c, i) => ({ card: c, index: i }))
+    .filter(p => !p.card.wild)
+
+  if (realPositions.length === 0) {
+    // 実カードが1枚も無い場合、比較対象が無く矛盾しないため都合よく一直線とみなす
+    return { held: true, dir: chain.length >= 2 ? 1 : 0, len: chain.length }
   }
-  return { held: true, dir, len }
+  if (realPositions.length === 1) {
+    // 方向を確立する相手(2つ目の実カード)が無いため未確立のまま
+    return { held: true, dir: 0, len: 1 }
+  }
+
+  let dir: -1 | 0 | 1 = 0
+  for (let k = 1; k < realPositions.length; k++) {
+    const prev = realPositions[k - 1]
+    const curr = realPositions[k]
+    const gap = curr.index - prev.index // 間にあるワイルド枚数+1
+
+    const matchesAscending = stepRank(prev.card.rank, 1, gap) === curr.card.rank
+    const matchesDescending = stepRank(prev.card.rank, -1, gap) === curr.card.rank
+
+    if (dir === 0) {
+      if (matchesAscending) dir = 1
+      else if (matchesDescending) dir = -1
+      else return { held: false, dir: 0, len: 1 }
+    } else if (!(dir === 1 ? matchesAscending : matchesDescending)) {
+      return { held: false, dir: 0, len: 1 }
+    }
+  }
+  return { held: true, dir, len: chain.length }
 }
 
 const ALL_SUITS_REAL: Suit[] = ['♠', '♥', '♦', '♣']
@@ -451,6 +454,18 @@ export function countSameRankBefore(chainBefore: Card[], rank: Card['rank']): nu
   return realMatches + wildCount
 }
 
+// ワイルド自身をプレイした場合の同ランクボーナス判定用: チェーン内で既に発生している
+// 同ランクの最大枚数(既存ワイルドの代役分を含む)に+1枚した数で発生させる(まだ発生していなければ2枚)
+export function countSameRankForWildPlay(chainBefore: Card[]): number {
+  const realRankCounts = new Map<Card['rank'], number>()
+  for (const c of chainBefore) {
+    if (!c.wild) realRankCounts.set(c.rank, (realRankCounts.get(c.rank) ?? 0) + 1)
+  }
+  const maxRealRankCount = realRankCounts.size === 0 ? 0 : Math.max(...realRankCounts.values())
+  const wildCountInChain = chainBefore.filter(c => c.wild).length
+  return Math.max(maxRealRankCount + wildCountInChain, 1) + 1
+}
+
 export function checkCompleteRun(chainBefore: Card[], chainIncludingThis: Card[]): boolean {
   const distinctRealBefore = new Set(chainBefore.filter(c => !c.wild).map(c => c.rank)).size
   const wildCountBefore = chainBefore.filter(c => c.wild).length
@@ -480,12 +495,10 @@ export function evaluateChainBonus(
   let bonus = 0
   const parts: string[] = []
 
-  const realBefore = chainBefore.filter(c => !c.wild)
   const chainIncludingThis = [...chainBefore, card]
-  const realIncludingThis = card.wild ? realBefore : [...realBefore, card]
 
   const { suitHeld, colorHeld } = analyzeSuitColor(chainIncludingThis)
-  if (realIncludingThis.length >= scoring.suitColorMinLen) {
+  if (chainIncludingThis.length >= scoring.suitColorMinLen) {
     if (suitHeld) {
       bonus += scoring.suitBonus
       parts.push(`同スート+${scoring.suitBonus}`)
@@ -511,7 +524,7 @@ export function evaluateChainBonus(
     parts.push(`ロイヤル+${scoring.royalSetBonus}`)
   }
 
-  const sameRankCount = countSameRankBefore(chainBefore, card.rank)
+  const sameRankCount = card.wild ? countSameRankForWildPlay(chainBefore) : countSameRankBefore(chainBefore, card.rank)
   if (sameRankCount > 0) {
     const sameRankGain = scoring.sameRankBonusUnit * sameRankCount
     bonus += sameRankGain
@@ -521,7 +534,7 @@ export function evaluateChainBonus(
   if (checkCompleteRun(chainBefore, chainIncludingThis)) {
     bonus += scoring.completeRunBonus
     parts.push(`コンプリートラン+${scoring.completeRunBonus}`)
-    if (analyzeSuitColor(realIncludingThis).suitHeld) {
+    if (suitHeld) {
       bonus += scoring.completeRunSuitBonus
       parts.push(`コンプリートラン(同スート)+${scoring.completeRunSuitBonus}`)
     }
@@ -539,8 +552,7 @@ export function chainContinuesPattern(
   const chainIncludingThis = [...chain, card]
 
   const { suitHeld, colorHeld } = analyzeSuitColor(chainIncludingThis)
-  const realCount = chainIncludingThis.filter(c => !c.wild).length
-  if (realCount >= scoring.suitColorMinLen && (suitHeld || colorHeld)) return true
+  if (chainIncludingThis.length >= scoring.suitColorMinLen && (suitHeld || colorHeld)) return true
 
   const stairInfo = analyzeStair(chainIncludingThis)
   if (stairInfo.held && stairInfo.dir !== 0 && stairInfo.len >= stairMinLen) return true

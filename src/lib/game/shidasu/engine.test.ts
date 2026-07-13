@@ -34,6 +34,7 @@ import {
   checkFlush,
   checkRoyalSet,
   countSameRankBefore,
+  countSameRankForWildPlay,
   checkCompleteRun,
   evaluateChainBonus,
   forceStockTop,
@@ -392,6 +393,16 @@ describe('chainContinuesPattern', () => {
   test('全ての条件が既に崩れていれば継続不可', () => {
     const chain = [card(1, '♠', 5), card(2, '♥', 8)] // スートも色も階段も不成立
     expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '♣', 2))).toBe(false)
+  })
+
+  test('全てワイルドでも母数を満たせば継続する(比較対象の実カードが無く矛盾しないため)', () => {
+    const chain = [card(1, '★', 0, true), card(2, '★', 0, true)]
+    expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '★', 0, true))).toBe(true)
+  })
+
+  test('階段がワイルドで橋渡しされていても、方向確立に使われて継続する', () => {
+    const chain = [card(1, '♠', 5), card(2, '★', 0, true)]
+    expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '♦', 7), 3)).toBe(true)
   })
 })
 
@@ -867,15 +878,43 @@ describe('analyzeStair', () => {
     expect(analyzeStair(chain)).toEqual({ held: true, dir: 1, len: 3 })
   })
 
-  test('方向確立前にワイルドが来ても継続扱いにはならない(まだheld/未確立のまま)', () => {
-    const chain = [card(1, '♠', 5), card(2, '★', 0, true), card(3, '♣', 9)]
-    expect(analyzeStair(chain)).toEqual({ held: true, dir: 0, len: 1 })
+  test('実カード2枚をワイルド1枚が橋渡しし、差がちょうど埋まれば方向確立に使われる', () => {
+    const chain = [card(1, '♠', 5), card(2, '★', 0, true), card(3, '♣', 7)]
+    // 5→7の差2をワイルド1枚(6扱い)で埋め、方向+1・長さ3で成立する
+    expect(analyzeStair(chain)).toEqual({ held: true, dir: 1, len: 3 })
   })
 
-  test('方向確立後のワイルドは実際の差を問わず長さ+1で延長する', () => {
-    const chain = [card(1, '♠', 5), card(2, '♣', 6), card(3, '★', 0, true), card(4, '♦', 9)]
-    // 5→6で dir=1,len=2。ワイルドを挟んで9が来ても無条件でlen+1=3
+  test('ワイルドで埋めても差が合わなければheld:false', () => {
+    const chain = [card(1, '♠', 5), card(2, '★', 0, true), card(3, '♣', 9)]
+    // 5→9の差4に対しワイルドは1枚(1ステップ分)しか無く埋めきれないため不成立
+    expect(analyzeStair(chain)).toEqual({ held: false, dir: 0, len: 1 })
+  })
+
+  test('ワイルドを挟んだK⇔Aループ跨ぎも方向確立に使われる', () => {
+    const chain = [card(1, '♠', 13), card(2, '★', 0, true), card(3, '♣', 2)]
+    // K→2の間をワイルド(A扱い)1枚で埋め、ループ跨ぎで方向+1・長さ3が成立する
     expect(analyzeStair(chain)).toEqual({ held: true, dir: 1, len: 3 })
+  })
+
+  test('方向確立後、実際の差が合わないワイルド越しの札は継続しない', () => {
+    const chain = [card(1, '♠', 5), card(2, '♣', 6), card(3, '★', 0, true), card(4, '♦', 9)]
+    // 5→6でdir=1確立。6→9の差3をワイルド1枚(1ステップ分)では埋めきれないため不成立
+    expect(analyzeStair(chain)).toEqual({ held: false, dir: 0, len: 1 })
+  })
+
+  test('方向確立後、ワイルド越しでも差が正しく埋まれば継続する', () => {
+    const chain = [card(1, '♠', 5), card(2, '♣', 6), card(3, '★', 0, true), card(4, '♦', 8)]
+    // 5→6でdir=1確立。6→8の差2をワイルド1枚(7扱い)で埋め、長さ4で継続する
+    expect(analyzeStair(chain)).toEqual({ held: true, dir: 1, len: 4 })
+  })
+
+  test('全てワイルド(2枚以上)の場合は都合よく一直線とみなされる', () => {
+    const chain = [card(1, '★', 0, true), card(2, '★', 0, true), card(3, '★', 0, true)]
+    expect(analyzeStair(chain)).toEqual({ held: true, dir: 1, len: 3 })
+  })
+
+  test('ワイルド1枚のみ(実カード無し)ではheld:true, dir:0, len:1', () => {
+    expect(analyzeStair([card(1, '★', 0, true)])).toEqual({ held: true, dir: 0, len: 1 })
   })
 })
 
@@ -962,6 +1001,28 @@ describe('countSameRankBefore', () => {
   })
 })
 
+describe('countSameRankForWildPlay', () => {
+  test('同ランクの重複が無ければ2を返す(既発生の最大枚数1+1)', () => {
+    const cards = [card(1, '♠', 5), card(2, '♥', 3), card(3, '♦', 7)]
+    expect(countSameRankForWildPlay(cards)).toBe(2)
+  })
+
+  test('既に同ランクが2枚あるランクが存在すれば、その枚数+1を返す', () => {
+    const cards = [card(1, '♠', 5), card(2, '♥', 5), card(3, '♦', 3), card(4, '♣', 3)]
+    expect(countSameRankForWildPlay(cards)).toBe(3)
+  })
+
+  test('チェーン内の既存ワイルドは最大枚数の算出に加算される', () => {
+    const cards = [card(1, '♠', 5), card(2, '♥', 5), card(3, '★', 0, true)]
+    // 実カードの最大重複は5の2枚、既存ワイルド1枚を加えて3、+1で4
+    expect(countSameRankForWildPlay(cards)).toBe(4)
+  })
+
+  test('チェーンが空でも2を返す(下限)', () => {
+    expect(countSameRankForWildPlay([])).toBe(2)
+  })
+})
+
 describe('checkCompleteRun', () => {
   test('13ランク揃う直前(12種)ではfalse', () => {
     const before = Array.from({ length: 12 }, (_, i) => card(i + 1, '♠', (i + 1) as Card['rank']))
@@ -1017,11 +1078,18 @@ describe('evaluateChainBonus', () => {
     expect(result.parts).toEqual([`同スート+${scoring.suitBonus}`])
   })
 
-  test('新たに加えたカード自身がワイルドの場合、実カード数のカウントに含めない(3枚未満なら同スートボーナスは付かない)', () => {
+  test('新たに加えたカード自身がワイルドの場合も母数に含める(3枚以上なら同スートボーナスが付く)', () => {
     const chainBefore = [card(1, '♠', 5), card(2, '♠', 7)] // 実カード2枚、同スート
     const result = evaluateChainBonus(scoring, chainBefore, card(3, '★', 0, true))
-    // ワイルド自身は実カードにカウントされないため、実カードは依然2枚(3枚未満)のまま
-    expect(result.parts.some(p => p.startsWith('同スート'))).toBe(false)
+    // ワイルド自身も母数に含めるため、実カード2枚+ワイルド1枚=3枚として同スートボーナスが成立する
+    // (ワイルドをプレイすると同ランクボーナスも同時に発生するため、部分一致で検証する)
+    expect(result.parts).toContain(`同スート+${scoring.suitBonus}`)
+  })
+
+  test('3枚全てワイルドでも母数を満たせば都合よく同スートボーナスが成立する', () => {
+    const chainBefore = [card(1, '★', 0, true), card(2, '★', 0, true)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '★', 0, true))
+    expect(result.parts).toContain(`同スート+${scoring.suitBonus}`)
   })
 
   test('コンボ中に一度スートが崩れたら、以降同スートが来てもsuitBonusは付かない', () => {
@@ -1049,6 +1117,13 @@ describe('evaluateChainBonus', () => {
     expect(result.parts).toContain(`階段3 +${scoring.stairBonus}`)
   })
 
+  test('ワイルドで橋渡しされた階段もstairBonusの対象になる', () => {
+    const chainBefore = [card(1, '♠', 5), card(2, '★', 0, true)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 7), 3)
+    // 5→(ワイルド=6扱い)→7で長さ3、stairMinLen=3(架橋の護符相当)で成立
+    expect(result.parts).toContain(`階段3 +${scoring.stairBonus}`)
+  })
+
   test('直近4枚で4スート揃うとflushBonusが付く', () => {
     const chainBefore = [card(1, '♦', 3), card(2, '♠', 5), card(3, '♣', 9)]
     const result = evaluateChainBonus(scoring, chainBefore, card(4, '♥', 2))
@@ -1071,6 +1146,19 @@ describe('evaluateChainBonus', () => {
     const chainBefore = [card(1, '♠', 5), card(2, '★', 0, true)]
     const result = evaluateChainBonus(scoring, chainBefore, card(3, '♥', 5))
     // 実カード1枚(5)+ワイルド1枚 = 2枚扱い
+    expect(result.parts).toContain(`同ランク+${scoring.sameRankBonusUnit * 2}`)
+  })
+
+  test('ワイルド自身をプレイした場合、既発生の最大同ランク数+1枚として同ランクボーナスが発生する', () => {
+    const chainBefore = [card(1, '♠', 5), card(2, '♥', 5), card(3, '♦', 3), card(4, '♣', 3)]
+    // 5が2枚・3が2枚 → 既発生の最大枚数は2、ワイルドは2+1=3枚分として発生
+    const result = evaluateChainBonus(scoring, chainBefore, card(5, '★', 0, true))
+    expect(result.parts).toContain(`同ランク+${scoring.sameRankBonusUnit * 3}`)
+  })
+
+  test('チェーン内に同ランクの重複が無い状態でワイルドをプレイすると2枚分として発生する', () => {
+    const chainBefore = [card(1, '♠', 5), card(2, '♥', 3), card(3, '♦', 7)] // 全て異なるランク
+    const result = evaluateChainBonus(scoring, chainBefore, card(4, '★', 0, true))
     expect(result.parts).toContain(`同ランク+${scoring.sameRankBonusUnit * 2}`)
   })
 
