@@ -482,7 +482,7 @@ export function evaluateChainBonus(
 
   const realBefore = chainBefore.filter(c => !c.wild)
   const chainIncludingThis = [...chainBefore, card]
-  const realIncludingThis = [...realBefore, card]
+  const realIncludingThis = card.wild ? realBefore : [...realBefore, card]
 
   const { suitHeld, colorHeld } = analyzeSuitColor(chainIncludingThis)
   if (realIncludingThis.length >= scoring.suitColorMinLen) {

@@ -1017,6 +1017,13 @@ describe('evaluateChainBonus', () => {
     expect(result.parts).toEqual([`同スート+${scoring.suitBonus}`])
   })
 
+  test('新たに加えたカード自身がワイルドの場合、実カード数のカウントに含めない(3枚未満なら同スートボーナスは付かない)', () => {
+    const chainBefore = [card(1, '♠', 5), card(2, '♠', 7)] // 実カード2枚、同スート
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '★', 0, true))
+    // ワイルド自身は実カードにカウントされないため、実カードは依然2枚(3枚未満)のまま
+    expect(result.parts.some(p => p.startsWith('同スート'))).toBe(false)
+  })
+
   test('コンボ中に一度スートが崩れたら、以降同スートが来てもsuitBonusは付かない', () => {
     const chainBefore = [card(1, '♠', 5), card(2, '♥', 6), card(3, '♠', 7)] // 1枚目→2枚目でスート崩壊済み、3枚目は直前(2枚目...)
     const result = evaluateChainBonus(scoring, chainBefore, card(4, '♠', 8))
