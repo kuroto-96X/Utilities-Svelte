@@ -30,6 +30,7 @@
     if (!Number.isFinite(config.items.columnSweepRelaxCards) || config.items.columnSweepRelaxCards < 0) return true
     if (!Number.isFinite(config.items.maxItems) || config.items.maxItems < 1) return true
     if (!Number.isFinite(config.scoring.suitColorMinLen) || config.scoring.suitColorMinLen < 1) return true
+    if (!Number.isFinite(config.talismans.morningMist.x) || config.talismans.morningMist.x <= 0) return true
     return false
   })
 
@@ -97,7 +98,8 @@
       Array.isArray(v.stages) && v.stages.length >= 1 &&
       typeof v.items === 'object' && v.items !== null &&
       typeof v.flow === 'object' && v.flow !== null &&
-      typeof v.ui === 'object' && v.ui !== null
+      typeof v.ui === 'object' && v.ui !== null &&
+      typeof v.talismans === 'object' && v.talismans !== null
     )
   }
 
@@ -321,6 +323,96 @@
           <label class="text-xs text-slate-500">
             護符の所持上限枚数(maxItems)
             <input type="number" min="1" step="1" bind:value={config.items.maxItems} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+        </div>
+      </section>
+
+      <section class="bg-white border border-slate-200 rounded-xl p-4">
+        <h2 class="font-semibold text-slate-700 text-sm mb-3">護符パラメータ(グループ1〜3)</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="text-xs text-slate-500">
+            忍耐: 残り山札数倍率(patience.x)
+            <input type="number" min="0" step="1" bind:value={config.talismans.patience.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            浄化: 全消しボーナス加算(purify.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.purify.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            節制: 残り山札数倍率(temperance.x)
+            <input type="number" min="0" step="0.01" bind:value={config.talismans.temperance.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            春風: ♣取得時加算(springBreeze.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.springBreeze.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            夏風: ♦取得時加算(summerBreeze.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.summerBreeze.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            秋風: ♥取得時加算(autumnBreeze.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.autumnBreeze.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            冬風: ♠取得時加算(winterBreeze.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.winterBreeze.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            友愛: 他スート→♥切替時加算(kinship.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.kinship.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            雪解: ♠→他スート切替時加算(thaw.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.thaw.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            宵闇: 赤→黒切替時加算(dusk.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.dusk.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            払暁: 黒→赤切替時加算(dawn.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.dawn.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            機知: ワイルド取得時加算(wit.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.wit.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            勇気: コンボ数倍率(courage.x)
+            <input type="number" min="0" step="0.01" bind:value={config.talismans.courage.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            暁: 閾値(daybreak.c)
+            <input type="number" min="0" step="1" bind:value={config.talismans.daybreak.c} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            暁: 倍率(daybreak.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.daybreak.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            黄昏: 閾値(twilight.c)
+            <input type="number" min="0" step="1" bind:value={config.talismans.twilight.c} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            黄昏: 倍率(twilight.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.twilight.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            快活: コンボ偶数時加算(cheerful.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.cheerful.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            良心: コンボ奇数時加算(conscience.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.conscience.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            朝霧: 閾値(morningMist.c)
+            <input type="number" min="0" step="1" bind:value={config.talismans.morningMist.c} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            朝霧: 倍率(morningMist.x)
+            <input type="number" min="0.01" step="0.1" bind:value={config.talismans.morningMist.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
           </label>
         </div>
       </section>
