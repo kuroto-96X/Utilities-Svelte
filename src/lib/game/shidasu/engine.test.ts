@@ -817,9 +817,19 @@ describe('countSameRankBefore', () => {
     expect(countSameRankBefore([card(1, '♠', 5), card(2, '♥', 6)], 7)).toBe(0)
   })
 
-  test('同ランクが3枚あれば3を返す', () => {
+  test('同ランクの実カードが3枚あれば3を返す', () => {
     const cards = [card(1, '♠', 5), card(2, '♥', 5), card(3, '♦', 5)]
     expect(countSameRankBefore(cards, 5)).toBe(3)
+  })
+
+  test('ワイルドはランクを問わず加算される', () => {
+    const cards = [card(1, '♠', 5), card(2, '♥', 5), card(3, '★', 0, true)]
+    expect(countSameRankBefore(cards, 5)).toBe(3) // 実カード2枚+ワイルド1枚
+  })
+
+  test('指定ランクと無関係な実カードが混ざっていても、ワイルドの枚数分は必ず加算される', () => {
+    const cards = [card(1, '♠', 9), card(2, '★', 0, true), card(3, '★', 0, true)]
+    expect(countSameRankBefore(cards, 5)).toBe(2) // 実カード0枚(9はランク不一致)+ワイルド2枚
   })
 })
 
@@ -918,6 +928,13 @@ describe('evaluateChainBonus', () => {
   test('同ランクが既に2枚あれば sameRankBonusUnit×2 が付く', () => {
     const chainBefore = [card(1, '♠', 5), card(2, '♥', 5)]
     const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 5))
+    expect(result.parts).toContain(`同ランク+${scoring.sameRankBonusUnit * 2}`)
+  })
+
+  test('チェーン内にワイルドが含まれる場合、同ランクボーナスにワイルドの枚数分も加算される', () => {
+    const chainBefore = [card(1, '♠', 5), card(2, '★', 0, true)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♥', 5))
+    // 実カード1枚(5)+ワイルド1枚 = 2枚扱い
     expect(result.parts).toContain(`同ランク+${scoring.sameRankBonusUnit * 2}`)
   })
 

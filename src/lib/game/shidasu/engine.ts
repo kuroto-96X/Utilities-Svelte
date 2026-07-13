@@ -417,8 +417,10 @@ export function checkRoyalSet(chainIncludingThis: Card[]): boolean {
   return missingRanks <= wildCount
 }
 
-export function countSameRankBefore(realCardsBefore: Card[], rank: Card['rank']): number {
-  return realCardsBefore.filter(c => c.rank === rank).length
+export function countSameRankBefore(chainBefore: Card[], rank: Card['rank']): number {
+  const realMatches = chainBefore.filter(c => !c.wild && c.rank === rank).length
+  const wildCount = chainBefore.filter(c => c.wild).length
+  return realMatches + wildCount
 }
 
 export function checkCompleteRun(chainBefore: Card[], chainIncludingThis: Card[]): boolean {
@@ -481,7 +483,7 @@ export function evaluateChainBonus(
     parts.push(`ロイヤル+${scoring.royalSetBonus}`)
   }
 
-  const sameRankCount = countSameRankBefore(realBefore, card.rank)
+  const sameRankCount = countSameRankBefore(chainBefore, card.rank)
   if (sameRankCount > 0) {
     const sameRankGain = scoring.sameRankBonusUnit * sameRankCount
     bonus += sameRankGain
