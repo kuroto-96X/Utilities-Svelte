@@ -768,6 +768,7 @@ export const ITEM_POOL: ItemId[] = [
   'blessing', 'focus', 'lapis', 'jade', 'emptyMind',
   'prologue', 'interlude', 'morningDew',
   'drizzle',
+  'eternity', 'abundance', 'silence', 'resilience',
 ]
 
 export const ITEM_NAMES: Record<ItemId, string> = {
@@ -826,6 +827,10 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   interlude: '幕間の護符',
   morningDew: '朝露の護符',
   drizzle: '小雨の護符',
+  eternity: '永劫の護符',
+  abundance: '豊穣の護符',
+  silence: '静寂の護符',
+  resilience: '不屈の護符',
 }
 
 export function itemDesc(id: ItemId, params: ShidasuParams): string {
@@ -888,6 +893,10 @@ export function itemDesc(id: ItemId, params: ShidasuParams): string {
     case 'interlude': return `コンボが${params.talismans.interlude.m}枚目に達するたび、${params.talismans.interlude.n}点加算`
     case 'morningDew': return `ウェーブで最初にプレイしたカードのとき、${params.talismans.morningDew.n}点加算`
     case 'drizzle': return `場札を取るたび、${params.talismans.drizzle.n}点加算`
+    case 'eternity': return `ウェーブ開始時、山札にワイルドを1枚追加(以後のウェーブにも引き継がれる)`
+    case 'abundance': return `ウェーブ開始時、デッキ内の1枚がランダムにワイルドへ変換される(以後のウェーブにも引き継がれる)`
+    case 'silence': return `山札めくりで取れる場札が無いままコンボがリセットされた時、めくった札をワイルドに変換する(デッキにも永続的に反映)`
+    case 'resilience': return `山札が無く場札も取れない手詰まり時、スコアの${params.talismans.resilience.p}%を消費して捨て札の半数を山札に戻す`
   }
 }
 

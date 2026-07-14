@@ -1069,9 +1069,9 @@ describe('DEFAULT_PARAMS.talismans.resilience', () => {
 })
 
 describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
-  test('55種類のアイテムが定義されている', () => {
-    expect(ITEM_POOL).toHaveLength(55)
-    expect(new Set(ITEM_POOL).size).toBe(55) // 重複なし
+  test('59種類のアイテムが定義されている', () => {
+    expect(ITEM_POOL).toHaveLength(59)
+    expect(new Set(ITEM_POOL).size).toBe(59) // 重複なし
     ITEM_POOL.forEach(id => expect(ITEM_NAMES[id]).toBeTruthy())
   })
 
@@ -1107,6 +1107,14 @@ describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
       'drizzle',
     ]
     expect(newIds).toHaveLength(35)
+    newIds.forEach(id => {
+      expect(ITEM_NAMES[id]).toBeTruthy()
+      expect(itemDesc(id, DEFAULT_PARAMS)).toBeTruthy()
+    })
+  })
+
+  test('永劫・豊穣・静寂・不屈も名前と説明文を持つ', () => {
+    const newIds: ItemId[] = ['eternity', 'abundance', 'silence', 'resilience']
     newIds.forEach(id => {
       expect(ITEM_NAMES[id]).toBeTruthy()
       expect(itemDesc(id, DEFAULT_PARAMS)).toBeTruthy()
