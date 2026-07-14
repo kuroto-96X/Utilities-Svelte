@@ -71,6 +71,9 @@
     pendingTimer = setTimeout(() => {
       pendingTimer = null
       const checked = applyStuckCheck(params, run)
+      // 不屈の護符による復活はstatusが'playing'のまま(手詰まりだけ解消される)ため、
+      // ここは必ず無条件でrunへ反映すること。「status==='ended'の時だけ反映」に戻すと、
+      // 復活結果(捨て札→山札・スコア消費)が画面に一切反映されず実質操作不能になる。
       run = checked
       if (checked.wave?.status === 'ended') {
         run = resolveWaveEnd(params, checked)
