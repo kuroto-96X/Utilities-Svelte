@@ -615,6 +615,22 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
       return { value: v * factor, part: `威光×${fmtMultiplier(factor)}` }
     },
   },
+  omen: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (ctx.remainingTableauCount > p.talismans.omen.m) return { value: v, part: null }
+      const factor = p.talismans.omen.x
+      return { value: v * factor, part: `兆し×${fmtMultiplier(factor)}` }
+    },
+  },
+  crescent: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (ctx.remainingTableauCount > p.talismans.crescent.m) return { value: v, part: null }
+      const factor = p.talismans.crescent.x
+      return { value: v * factor, part: `三日月×${fmtMultiplier(factor)}` }
+    },
+  },
 }
 
 export function applyItemEffects(
@@ -688,6 +704,8 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   cycle: '循環の護符',
   reincarnation: '輪廻の護符',
   majesty: '威光の護符',
+  omen: '兆しの護符',
+  crescent: '三日月の護符',
 }
 
 export function itemDesc(id: ItemId, params: ShidasuParams): string {
@@ -739,6 +757,8 @@ export function itemDesc(id: ItemId, params: ShidasuParams): string {
     case 'cycle': return `KからA、またはAからKを取ったとき、獲得点を${params.talismans.cycle.x}倍`
     case 'reincarnation': return `コンプリートラン(全ランク階段)にK↔Aループが含まれるとき、獲得点を${params.talismans.reincarnation.x}倍`
     case 'majesty': return `同スートかつ全ランク階段を達成したとき、獲得点を${params.talismans.majesty.x}倍`
+    case 'omen': return `場札の残り枚数が${params.talismans.omen.m}枚以下のとき、獲得点を${params.talismans.omen.x}倍`
+    case 'crescent': return `場札の残り枚数が${params.talismans.crescent.m}枚以下のとき、獲得点を${params.talismans.crescent.x}倍`
   }
 }
 

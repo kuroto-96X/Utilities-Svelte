@@ -1847,3 +1847,33 @@ describe('applyItemEffects (グループ4-d: 既存フラグ再利用・KAルー
     expect(notFired.value).toBe(100)
   })
 })
+
+describe('applyItemEffects (グループ5: 場札残数系)', () => {
+  const params = DEFAULT_PARAMS
+  function ctx(overrides: Partial<ItemEffectContext> = {}): ItemEffectContext {
+    return {
+      card: card(1, '♠', 5),
+      previousFoundation: card(2, '♣', 4),
+      combo: 1,
+      stockRemaining: 0,
+      chain: [card(2, '♣', 4), card(1, '♠', 5)],
+      remainingTableauCount: 10,
+      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      isFirstPlayOfWave: false,
+      effectiveStairMinLen: params.scoring.stairMinLen,
+      ...overrides,
+    }
+  }
+
+  test('兆し: 場札残数がm以下なら倍算、超えていれば不発動', () => {
+    const fired = applyItemEffects('gained', 100, ['omen'], ctx({ remainingTableauCount: params.talismans.omen.m }), params)
+    expect(fired.value).toBe(100 * params.talismans.omen.x)
+    const notFired = applyItemEffects('gained', 100, ['omen'], ctx({ remainingTableauCount: params.talismans.omen.m + 1 }), params)
+    expect(notFired.value).toBe(100)
+  })
+
+  test('三日月: 場札残数がm以下なら倍算', () => {
+    const result = applyItemEffects('gained', 100, ['crescent'], ctx({ remainingTableauCount: params.talismans.crescent.m }), params)
+    expect(result.value).toBe(100 * params.talismans.crescent.x)
+  })
+})
