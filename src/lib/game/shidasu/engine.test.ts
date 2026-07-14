@@ -1760,6 +1760,13 @@ describe('applyItemEffects (グループ4-c: 枚数カウント系)', () => {
     expect(unbalanced.value).toBe(100)
   })
 
+  test('均衡: 合計枚数が奇数だとワイルドをどう振り分けても同数にできないため不発動', () => {
+    const singleWild = applyItemEffects('gained', 100, ['balance'], ctx({ chain: [card(1, '★', 0, true)] }), params)
+    expect(singleWild.value).toBe(100)
+    const oddTotal = applyItemEffects('gained', 100, ['balance'], ctx({ chain: [card(1, '♠', 3), card(2, '★', 0, true), card(3, '★', 0, true)] }), params)
+    expect(oddTotal.value).toBe(100)
+  })
+
   test('調和: 赤黒枚数が同数なら倍算', () => {
     const result = applyItemEffects('gained', 100, ['harmony'], ctx({ chain: [card(1, '♠', 3), card(2, '♥', 5)] }), params)
     expect(result.value).toBe(100 * params.talismans.harmony.x)

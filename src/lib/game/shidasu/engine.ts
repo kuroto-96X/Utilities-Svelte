@@ -280,11 +280,20 @@ function countRankInChain(chain: Card[], rank: Card['rank']): number {
   return real + wild
 }
 
+// 赤黒の差(diff)をワイルドで埋めて同数にできるかを判定する。
+// ワイルドをwildToRed/wildToBlackに振り分けてrealRed+wildToRed = realBlack+wildToBlackを
+// 満たすには、wildToRed-wildToBlack = diffかつwildToRed+wildToBlack = wildCountを共に
+// 満たす非負整数解が要る。これはdiff<=wildCountに加えて、両者の差(wildCount-diff)が
+// 偶数である場合のみ整数解になる(そうでなければワイルドを半端に割ることになり不可能)。
+// (wildCount-diff)の偶奇は合計枚数(realRed+realBlack+wildCount)の偶奇と一致するため、
+// 後者で判定する。
 function redBlackBalanced(chain: Card[]): boolean {
   const realRed = chain.filter(c => !c.wild && isRed(c)).length
   const realBlack = chain.filter(c => !c.wild && !isRed(c)).length
   const wildCount = chain.filter(c => c.wild).length
-  return Math.abs(realRed - realBlack) <= wildCount
+  const diff = Math.abs(realRed - realBlack)
+  const totalIsEven = (realRed + realBlack + wildCount) % 2 === 0
+  return diff <= wildCount && totalIsEven
 }
 
 const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; effect: ItemEffect }>> = {
