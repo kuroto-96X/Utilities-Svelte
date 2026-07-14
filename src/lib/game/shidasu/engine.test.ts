@@ -770,6 +770,19 @@ describe('drawStock', () => {
     expect(next.foundation.wild).toBe(false)
     expect(deckComposition.filter(c => c.wild)).toHaveLength(0)
   })
+
+  test('静寂: faceLockステージでは、リセット前のコンボ数に関わらずリセット後のcombo=0を基準に取れる場札を判定する(絵札は取れないため発動する)', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 13)], // King(絵札)、ランク差1でfaceLockが無ければ取れる
+      tableau: [[card(2, '♠', 12)]], // Queen(絵札)
+      chain: [card(3, '♥', 5)],
+      combo: 3, // リセット前のコンボ数(この値をそのまま参照すると誤ってfaceLockを通過してしまう)
+      linked: true,
+    })
+    const composition = standardDeckComposition()
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['silence'], composition, 'faceLock', createRng(1))
+    expect(next.foundation.wild).toBe(true)
+  })
 })
 
 describe('isStuck', () => {

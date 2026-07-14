@@ -232,7 +232,9 @@ export function drawStock(
     }
   }
 
-  const hasPlayableColumns = getPlayableColumns(modifier, { ...wave, foundation: drawnCard }).size > 0
+  // combo: 0 を明示するのは、faceLock(絵札はコンボ2以上でのみ取得可)を正しく評価するため。
+  // ここはリセット後の状態を先読みして判定しており、実際にリセットが起きた後のcomboは常に0になる。
+  const hasPlayableColumns = getPlayableColumns(modifier, { ...wave, foundation: drawnCard, combo: 0 }).size > 0
   const silenceFires = !hasPlayableColumns && items.includes('silence')
   const card = silenceFires ? { ...drawnCard, wild: true } : drawnCard
   const newDeckComposition = silenceFires ? convertRandomCardToWild(deckComposition, rand) : deckComposition
