@@ -548,6 +548,17 @@ describe('playCard', () => {
     expect(next.discardPile).toHaveLength(0)
   })
 
+  test('治癒: 復活後の列はcomboStreakColumnLengthsが実際の復活枚数に更新される(部分復活が誤って満列扱いされるのを防ぐ)', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows, 1],
+      discardPile: [card(10, '♦', 1), card(11, '♦', 2)], // rows未満しかない → 部分復活
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['healing'], 1000000, 0, createRng(1))
+    expect(next.comboStreakColumnLengths[0]).toBe(2) // rows(古い基準)ではなく実際の復活枚数
+    expect(next.comboStreakColumnLengths[1]).toBe(1) // 治癒が発動しなかった列は据え置きのまま
+  })
+
   test('治癒: 捨て札が空なら復活は起こらない', () => {
     const wave = baseWave({
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
@@ -2820,6 +2831,22 @@ describe('drawStock (素朴の得点ルール変更)', () => {
     const withoutIntuition = drawStock(DEFAULT_PARAMS, wave, ['naive'], standardDeckComposition())
     const withIntuition = drawStock(DEFAULT_PARAMS, wave, ['naive', 'intuition'], standardDeckComposition())
     expect(withIntuition.wave.score).toBeGreaterThan(withoutIntuition.wave.score)
+  })
+
+  test('素朴: パターン継続めくりで役が成立すると、roleFiredThisChain/flushActiveThisComboがwaveに反映される', () => {
+    const wave = makeWave({
+      // 階段継続(3,4,5,6 → 7で継続、stairMinLen=5を満たす)かつ、末尾4枚が4スート
+      // 揃うためcheckFlushも成立する組み合わせ。
+      stock: [card(5, '♠', 7)],
+      combo: 4,
+      chain: [card(1, '♠', 3), card(2, '♥', 4), card(3, '♦', 5), card(4, '♣', 6)],
+      linked: true,
+      roleFiredThisChain: false,
+      flushActiveThisCombo: false,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['naive'], standardDeckComposition())
+    expect(next.roleFiredThisChain).toBe(true)
+    expect(next.flushActiveThisCombo).toBe(true)
   })
 })
 

@@ -174,6 +174,7 @@ export function playCard(
 
   let healedTableau = newTableau
   let healedDiscardPile = wave.discardPile
+  let healedComboStreakColumnLengths = wave.comboStreakColumnLengths
   if (sweepQualifies && items.includes('healing') && wave.discardPile.length > 0) {
     const pool = [...wave.discardPile]
     shuffleInPlace(pool, rand)
@@ -181,6 +182,10 @@ export function playCard(
     const revived = pool.slice(0, reviveCount)
     healedDiscardPile = pool.slice(reviveCount)
     healedTableau = newTableau.map((c, i) => (i === colIndex ? revived : c))
+    // 復活後の列は実際の枚数(revived.length)を新たな基準長として記録する。
+    // 据え置いたままだと、山札切れ前の基準(rows)と比較され続け、
+    // 一部しか復活しなかった列でも列一掃条件を満たしてしまう。
+    healedComboStreakColumnLengths = wave.comboStreakColumnLengths.map((len, i) => (i === colIndex ? revived.length : len))
   }
   const remaining = remainingCount(healedTableau)
 
@@ -240,8 +245,8 @@ export function playCard(
     linked: true,
     columnsEmptiedThisCombo: newColumnsEmptied,
     // コンボが継続する間はこのスナップショットを維持する。列の残り枚数が変化しても、
-    // 次にdrawStockでコンボがリセットされるまでは更新しない。
-    comboStreakColumnLengths: wave.comboStreakColumnLengths,
+    // 次にdrawStockでコンボがリセットされるまでは更新しない(治癒で復活した列のみ例外)。
+    comboStreakColumnLengths: healedComboStreakColumnLengths,
     lastDrawEffect: null,
     score: newScore,
     lastGain: { points: gained, parts },
@@ -346,6 +351,8 @@ export function drawStock(
     let naiveGained = 0
     let naiveParts: string[] = []
     let naiveCombo = wave.combo
+    let naiveRoleFiredThisChain = wave.roleFiredThisChain
+    let naiveFlushActiveThisCombo = wave.flushActiveThisCombo
     if (wouldContinue && items.includes('naive')) {
       const newCombo = wave.combo + 1
       let base = params.scoring.basePoint
@@ -353,6 +360,8 @@ export function drawStock(
       const chainResult = evaluateChainBonus(params.scoring, wave.chain, drawnCard, effectiveStairMinLen)
       base += chainResult.bonus
       parts.push(...chainResult.parts)
+      naiveRoleFiredThisChain = wave.roleFiredThisChain || chainResult.roleFired.length > 0
+      naiveFlushActiveThisCombo = wave.flushActiveThisCombo || chainResult.roleFired.some(r => r.name === 'flush')
       const naiveCtx: ItemEffectContext = {
         card: drawnCard,
         previousFoundation: wave.foundation,
@@ -366,7 +375,7 @@ export function drawStock(
         sameColumnStreak: wave.sameColumnStreak,
         totalColumnsEmptiedThisWave: wave.totalColumnsEmptiedThisWave,
         maxComboThisWave: Math.max(wave.maxComboThisWave, newCombo),
-        flushActiveThisCombo: wave.flushActiveThisCombo || chainResult.roleFired.some(r => r.name === 'flush'),
+        flushActiveThisCombo: naiveFlushActiveThisCombo,
         columnSweepActiveThisWave: wave.columnSweepActiveThisWave,
         drawContinueCountThisChain: newDrawContinueCount,
       }
@@ -396,6 +405,8 @@ export function drawStock(
         drawContinueCountThisChain: newDrawContinueCount,
         benevolenceUsedThisCombo: benevolenceFires ? true : wave.benevolenceUsedThisCombo,
         maxComboThisWave: Math.max(wave.maxComboThisWave, naiveCombo),
+        roleFiredThisChain: naiveRoleFiredThisChain,
+        flushActiveThisCombo: naiveFlushActiveThisCombo,
       },
       deckComposition,
     }
