@@ -44,7 +44,7 @@ import {
 } from './engine'
 import type { Card, WaveState, RunState, ItemId } from './types'
 import { DEFAULT_PARAMS } from './params'
-import { createRng } from './deck'
+import { createRng, standardDeckComposition } from './deck'
 
 function card(id: number, suit: Card['suit'], rank: Card['rank'], wild = false): Card {
   return { id, suit, rank, wild }
@@ -157,24 +157,24 @@ describe('getPlayableColumns / remainingCount', () => {
 
 describe('startWave', () => {
   test('場札はcols×rowsの列数・枚数になる', () => {
-    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], 1)
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1)
     expect(wave.tableau).toHaveLength(DEFAULT_PARAMS.layout.cols)
     wave.tableau.forEach(col => expect(col).toHaveLength(DEFAULT_PARAMS.layout.rows))
   })
 
   test('comboStreakColumnLengthsは各列ともrows枚で初期化される', () => {
-    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], 1)
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1)
     expect(wave.comboStreakColumnLengths).toEqual(wave.tableau.map(() => DEFAULT_PARAMS.layout.rows))
   })
 
   test('山札+場札+foundationで52枚になる(アイテムなし)', () => {
-    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], 1)
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1)
     const tableauCount = wave.tableau.reduce((n, c) => n + c.length, 0)
     expect(tableauCount + wave.stock.length + 1).toBe(52)
   })
 
-  test('初期状態: チェーンにfoundationが1枚(由来はdraw)、スコア0、コンボ0、列一掃0、演出フラグnull', () => {
-    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], 1)
+  test('初期状態: チェーンにfoundationが1枚(由来はdraw)、スコア0、コンボ0、列一掃0、演出フラグnull、捨て札は空', () => {
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1)
     expect(wave.score).toBe(0)
     expect(wave.combo).toBe(0)
     expect(wave.chain).toEqual([wave.foundation])
@@ -183,12 +183,33 @@ describe('startWave', () => {
     expect(wave.columnsEmptiedThisCombo).toBe(0)
     expect(wave.lastDrawEffect).toBeNull()
     expect(wave.status).toBe('playing')
+    expect(wave.discardPile).toEqual([])
   })
 
   test('同じシードなら同じ結果になる(決定的、アイテムを持っていても山札生成自体は変わらない)', () => {
-    const a = startWave(DEFAULT_PARAMS, 0, 0, ['bridge'], 123)
-    const b = startWave(DEFAULT_PARAMS, 0, 0, ['bridge'], 123)
+    const a = startWave(DEFAULT_PARAMS, 0, 0, ['bridge'], standardDeckComposition(), 123)
+    const b = startWave(DEFAULT_PARAMS, 0, 0, ['bridge'], standardDeckComposition(), 123)
     expect(a).toEqual(b)
+  })
+
+  test('永劫を持っていればdeckCompositionにワイルドが1枚追加され、山札構築に反映される(53枚になる)', () => {
+    const { wave, deckComposition } = startWave(DEFAULT_PARAMS, 0, 0, ['eternity'], standardDeckComposition(), 1)
+    expect(deckComposition).toHaveLength(53)
+    const tableauCount = wave.tableau.reduce((n, c) => n + c.length, 0)
+    expect(tableauCount + wave.stock.length + 1).toBe(53)
+  })
+
+  test('豊穣を持っていればdeckComposition内の1枚がワイルドに変換される(枚数は52枚のまま)', () => {
+    const { deckComposition } = startWave(DEFAULT_PARAMS, 0, 0, ['abundance'], standardDeckComposition(), 1)
+    expect(deckComposition).toHaveLength(52)
+    expect(deckComposition.filter(c => c.wild)).toHaveLength(1)
+  })
+
+  test('永劫・豊穣を複数ウェーブ保持し続けると効果が蓄積する', () => {
+    const first = startWave(DEFAULT_PARAMS, 0, 0, ['eternity', 'abundance'], standardDeckComposition(), 1)
+    const second = startWave(DEFAULT_PARAMS, 0, 1, ['eternity', 'abundance'], first.deckComposition, 2)
+    expect(second.deckComposition).toHaveLength(54) // 標準52枚+永劫2ウェーブ分
+    expect(second.deckComposition.filter(c => c.wild)).toHaveLength(4) // 永劫追加2枚+豊穣変換2枚
   })
 })
 

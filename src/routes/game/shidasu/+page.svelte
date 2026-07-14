@@ -7,6 +7,7 @@
     advanceStage, restartRun, startWave, forceStockTop,
     getPlayableColumns, remainingCount, rankLabel, isRed, itemDesc, ITEM_NAMES,
   } from '$lib/game/shidasu/engine'
+  import { standardDeckComposition } from '$lib/game/shidasu/deck'
   import type { RunState, Card, ItemId, StageModifier, WaveState, Suit, Rank } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
 
@@ -36,7 +37,7 @@
   }
 
   // タイトル画面の高さをプレイ画面に揃えるための計測専用ダミーウェーブ(実際のゲームには使わない)
-  const measurementWave = startWave(params, 0, 0, [], 1)
+  const measurementWave = startWave(params, 0, 0, [], standardDeckComposition(), 1).wave
   let measuredPlayHeight = $state(0)
 
   let run = $state<RunState>(createInitialRun())

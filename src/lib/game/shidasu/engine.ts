@@ -1,7 +1,7 @@
 // src/lib/game/shidasu/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard } from './types'
 import type { ShidasuParams } from './params'
-import { createDeck, createRng, shuffle, shuffleInPlace } from './deck'
+import { createDeck, createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
 
@@ -41,18 +41,35 @@ export function remainingCount(tableau: Card[][]): number {
   return tableau.reduce((n, c) => n + c.length, 0)
 }
 
+// デッキ構成のうち非ワイルドの1枚をランダムに選びワイルドへ変換した新しい配列を返す(候補が無ければそのまま返す)
+function convertRandomCardToWild(composition: DeckCard[], rand: () => number): DeckCard[] {
+  const candidates = composition.map((c, i) => i).filter(i => !composition[i].wild)
+  if (candidates.length === 0) return composition
+  const target = candidates[Math.floor(rand() * candidates.length)]
+  return composition.map((c, i) => (i === target ? { ...c, wild: true } : c))
+}
+
 export function startWave(
   params: ShidasuParams,
   _stageIndex: number,
   _waveIndex: number,
-  _items: ItemId[],
+  items: ItemId[],
+  deckComposition: DeckCard[],
   seed?: number
-): WaveState {
+): { wave: WaveState; deckComposition: DeckCard[] } {
   const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
   let idSeq = 0
   const nextId = () => ++idSeq
 
-  const deck = shuffle(createDeck(nextId), rand)
+  let composition = deckComposition
+  if (items.includes('eternity')) {
+    composition = [...composition, { suit: '★', rank: 0 as Rank, wild: true }]
+  }
+  if (items.includes('abundance')) {
+    composition = convertRandomCardToWild(composition, rand)
+  }
+
+  const deck = shuffle(composition.map(c => ({ id: nextId(), ...c })), rand)
   const { cols, rows } = params.layout
   const tableau: Card[][] = []
   for (let c = 0; c < cols; c++) {
@@ -60,7 +77,7 @@ export function startWave(
   }
   const foundation = deck.pop() as Card
 
-  return {
+  const wave: WaveState = {
     tableau,
     stock: deck,
     foundation,
@@ -76,7 +93,10 @@ export function startWave(
     endReason: null as WaveEndReason,
     lastGain: null,
     firstPlayDone: false,
+    discardPile: [],
   }
+
+  return { wave, deckComposition: composition }
 }
 
 export function playCard(
@@ -862,18 +882,20 @@ export function rollItemOffer(items: ItemId[], rand: () => number = Math.random)
 }
 
 export function createInitialRun(): RunState {
-  return { phase: 'title', stageIndex: 0, waveIndex: 0, items: [], offer: [], wave: null, pendingNewItem: null }
+  return { phase: 'title', stageIndex: 0, waveIndex: 0, items: [], offer: [], wave: null, pendingNewItem: null, deckComposition: standardDeckComposition() }
 }
 
 export function beginRun(params: ShidasuParams, seed?: number): RunState {
+  const { wave, deckComposition } = startWave(params, 0, 0, [], standardDeckComposition(), seed)
   return {
     phase: 'playing',
     stageIndex: 0,
     waveIndex: 0,
     items: [],
     offer: [],
-    wave: startWave(params, 0, 0, [], seed),
+    wave,
     pendingNewItem: null,
+    deckComposition,
   }
 }
 
@@ -902,6 +924,7 @@ export function pickItem(params: ShidasuParams, run: RunState, itemId: ItemId, s
   }
   const newItems = [...run.items, itemId]
   const newWaveIndex = run.waveIndex + 1
+  const { wave, deckComposition } = startWave(params, run.stageIndex, newWaveIndex, newItems, run.deckComposition, seed)
   return {
     ...run,
     phase: 'playing',
@@ -909,7 +932,8 @@ export function pickItem(params: ShidasuParams, run: RunState, itemId: ItemId, s
     waveIndex: newWaveIndex,
     offer: [],
     pendingNewItem: null,
-    wave: startWave(params, run.stageIndex, newWaveIndex, newItems, seed),
+    wave,
+    deckComposition,
   }
 }
 
@@ -919,6 +943,7 @@ export function confirmItemSwap(params: ShidasuParams, run: RunState, oldItemId:
   const remaining = idx === -1 ? [...run.items] : [...run.items.slice(0, idx), ...run.items.slice(idx + 1)]
   const newItems = [...remaining, run.pendingNewItem]
   const newWaveIndex = run.waveIndex + 1
+  const { wave, deckComposition } = startWave(params, run.stageIndex, newWaveIndex, newItems, run.deckComposition, seed)
   return {
     ...run,
     phase: 'playing',
@@ -926,7 +951,8 @@ export function confirmItemSwap(params: ShidasuParams, run: RunState, oldItemId:
     waveIndex: newWaveIndex,
     offer: [],
     pendingNewItem: null,
-    wave: startWave(params, run.stageIndex, newWaveIndex, newItems, seed),
+    wave,
+    deckComposition,
   }
 }
 
@@ -938,25 +964,29 @@ export function cancelItemSwap(run: RunState): RunState {
 export function skipItemSelect(params: ShidasuParams, run: RunState, seed?: number): RunState {
   if (run.phase !== 'itemSelect') return run
   const newWaveIndex = run.waveIndex + 1
+  const { wave, deckComposition } = startWave(params, run.stageIndex, newWaveIndex, run.items, run.deckComposition, seed)
   return {
     ...run,
     phase: 'playing',
     waveIndex: newWaveIndex,
     offer: [],
     pendingNewItem: null,
-    wave: startWave(params, run.stageIndex, newWaveIndex, run.items, seed),
+    wave,
+    deckComposition,
   }
 }
 
 export function advanceStage(params: ShidasuParams, run: RunState, seed?: number): RunState {
   if (run.phase !== 'stageClear') return run
   const newStageIndex = run.stageIndex + 1
+  const { wave, deckComposition } = startWave(params, newStageIndex, 0, run.items, run.deckComposition, seed)
   return {
     ...run,
     phase: 'playing',
     stageIndex: newStageIndex,
     waveIndex: 0,
-    wave: startWave(params, newStageIndex, 0, run.items, seed),
+    wave,
+    deckComposition,
   }
 }
 
