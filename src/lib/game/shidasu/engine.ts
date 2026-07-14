@@ -717,6 +717,14 @@ export const ITEM_POOL: ItemId[] = [
   'springBreeze', 'summerBreeze', 'autumnBreeze', 'winterBreeze',
   'kinship', 'thaw', 'dusk', 'dawn', 'wit',
   'courage', 'daybreak', 'twilight', 'cheerful', 'conscience', 'morningMist',
+  'calm', 'serenity', 'destiny', 'fate', 'relief',
+  'verdantGreen', 'gem', 'resolve', 'grail', 'moonlight', 'sunlight',
+  'crown', 'cloverLeaf', 'coin', 'blade', 'chalice', 'balance', 'harmony',
+  'nobility', 'tenacity', 'determination', 'cycle', 'reincarnation', 'majesty',
+  'omen', 'crescent',
+  'blessing', 'focus', 'lapis', 'jade', 'emptyMind',
+  'prologue', 'interlude', 'morningDew',
+  'drizzle',
 ]
 
 export const ITEM_NAMES: Record<ItemId, string> = {

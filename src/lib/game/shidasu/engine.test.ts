@@ -978,9 +978,9 @@ describe('DEFAULT_PARAMS.talismans (グループ4〜8)', () => {
 })
 
 describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
-  test('20種類のアイテムが定義されている', () => {
-    expect(ITEM_POOL).toHaveLength(20)
-    expect(new Set(ITEM_POOL).size).toBe(20) // 重複なし
+  test('55種類のアイテムが定義されている', () => {
+    expect(ITEM_POOL).toHaveLength(55)
+    expect(new Set(ITEM_POOL).size).toBe(55) // 重複なし
     ITEM_POOL.forEach(id => expect(ITEM_NAMES[id]).toBeTruthy())
   })
 
@@ -998,6 +998,24 @@ describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
       'kinship', 'thaw', 'dusk', 'dawn', 'wit',
       'courage', 'daybreak', 'twilight', 'cheerful', 'conscience', 'morningMist',
     ]
+    newIds.forEach(id => {
+      expect(ITEM_NAMES[id]).toBeTruthy()
+      expect(itemDesc(id, DEFAULT_PARAMS)).toBeTruthy()
+    })
+  })
+
+  test('新規追加した35個(グループ4〜8)の護符も名前と説明文を持つ', () => {
+    const newIds: ItemId[] = [
+      'calm', 'serenity', 'destiny', 'fate', 'relief',
+      'verdantGreen', 'gem', 'resolve', 'grail', 'moonlight', 'sunlight',
+      'crown', 'cloverLeaf', 'coin', 'blade', 'chalice', 'balance', 'harmony',
+      'nobility', 'tenacity', 'determination', 'cycle', 'reincarnation', 'majesty',
+      'omen', 'crescent',
+      'blessing', 'focus', 'lapis', 'jade', 'emptyMind',
+      'prologue', 'interlude', 'morningDew',
+      'drizzle',
+    ]
+    expect(newIds).toHaveLength(35)
     newIds.forEach(id => {
       expect(ITEM_NAMES[id]).toBeTruthy()
       expect(itemDesc(id, DEFAULT_PARAMS)).toBeTruthy()
