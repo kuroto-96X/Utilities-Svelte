@@ -1036,9 +1036,11 @@ export function applyDrawStock(params: ShidasuParams, run: RunState, rand: () =>
   return { ...run, wave, deckComposition }
 }
 
-// 不屈の護符: 捨て札があれば約半数をランダムに山札へ戻しスコアを消費する(捨て札が無ければ元のwaveをそのまま返す)
+// 不屈の護符: 捨て札があれば約半数をランダムに山札へ戻しスコアを消費する。
+// 発動条件を満たさない場合は元のwaveと同一の参照をそのまま返す(呼び出し元のapplyStuckCheckが
+// この参照の同一性を「発動したかどうか」の判定に使っているため、契約として維持すること)。
 function tryResilienceRevive(params: ShidasuParams, wave: WaveState, items: ItemId[], rand: () => number): WaveState {
-  if (!items.includes('resilience') || wave.discardPile.length === 0) return wave
+  if (wave.status !== 'playing' || !items.includes('resilience') || wave.discardPile.length === 0) return wave
   const pool = [...wave.discardPile]
   shuffleInPlace(pool, rand)
   const reviveCount = Math.max(1, Math.ceil(pool.length / 2))
@@ -1058,6 +1060,7 @@ export function applyStuckCheck(params: ShidasuParams, run: RunState, rand: () =
     const modifier = params.stages[run.stageIndex].modifier
     if (!isStuck(modifier, wave)) return wave
     const revived = tryResilienceRevive(params, wave, run.items, rand)
+    // 復活が発動した場合、stockに最低1枚は戻っているため手詰まりは解消済み(isStuckの再判定は不要)
     if (revived !== wave) return revived
     return markStuck(wave)
   })
