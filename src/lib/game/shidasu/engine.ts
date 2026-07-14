@@ -253,9 +253,35 @@ export function drawStock(
   const drawnCard = newStock.pop() as Card
 
   const effectiveStairMinLen = items.includes('bridge') ? params.items.stairRelaxedMinLen : params.scoring.stairMinLen
-  const patternContinues = wave.linked && chainContinuesPattern(params.scoring, wave.chain, drawnCard, effectiveStairMinLen)
+  const wouldContinue = wave.linked && chainContinuesPattern(params.scoring, wave.chain, drawnCard, effectiveStairMinLen)
+  const benevolenceFires = !wouldContinue && items.includes('benevolence') && !wave.benevolenceUsedThisCombo
+  const patternContinues = wouldContinue || benevolenceFires
+
+  let scoreAfterStockEmpty = wave.score
+  if (newStock.length === 0) {
+    const stockEmptyCtx: DirectEffectContext = {
+      comboBeforeReset: 0,
+      hasPlayableColumns: true,
+      roleFiredThisChain: false,
+      remainingTableauCount: remainingCount(wave.tableau),
+      combo: wave.combo,
+      colorHeld: false,
+    }
+    scoreAfterStockEmpty += applyDirectEffects('stockEmptyDirect', items, stockEmptyCtx, params)
+  }
 
   if (patternContinues) {
+    const { colorHeld } = analyzeSuitColor([...wave.chain, drawnCard])
+    const { suitHeld } = analyzeSuitColor([...wave.chain, drawnCard])
+    const drawContinueCtx: DirectEffectContext = {
+      comboBeforeReset: 0,
+      hasPlayableColumns: true,
+      roleFiredThisChain: false,
+      remainingTableauCount: remainingCount(wave.tableau),
+      combo: wave.combo,
+      colorHeld: colorHeld && !suitHeld,
+    }
+    const directGain = wouldContinue ? applyDirectEffects('drawContinueDirect', items, drawContinueCtx, params) : 0
     return {
       wave: {
         ...wave,
@@ -266,6 +292,9 @@ export function drawStock(
         linked: true,
         lastDrawEffect: drawnCard.wild ? 'wild' : 'pattern',
         lastGain: null,
+        score: scoreAfterStockEmpty + directGain,
+        drawContinueCountThisChain: wouldContinue ? wave.drawContinueCountThisChain + 1 : wave.drawContinueCountThisChain,
+        benevolenceUsedThisCombo: benevolenceFires ? true : wave.benevolenceUsedThisCombo,
       },
       deckComposition,
     }
@@ -277,6 +306,16 @@ export function drawStock(
   const silenceFires = !hasPlayableColumns && items.includes('silence')
   const card = silenceFires ? { ...drawnCard, wild: true } : drawnCard
   const newDeckComposition = silenceFires ? convertRandomCardToWild(deckComposition, rand) : deckComposition
+
+  const resetCtx: DirectEffectContext = {
+    comboBeforeReset: wave.combo,
+    hasPlayableColumns,
+    roleFiredThisChain: wave.roleFiredThisChain,
+    remainingTableauCount: remainingCount(wave.tableau),
+    combo: wave.combo,
+    colorHeld: false,
+  }
+  const resetDirectGain = applyDirectEffects('resetDirect', items, resetCtx, params)
 
   return {
     wave: {
@@ -292,6 +331,13 @@ export function drawStock(
       lastDrawEffect: null,
       lastGain: null,
       discardPile: [...wave.discardPile, ...wave.chain],
+      score: scoreAfterStockEmpty + resetDirectGain,
+      roleFiredThisChain: false,
+      drawContinueCountThisChain: 0,
+      flushActiveThisCombo: false,
+      sameColumnStreak: 0,
+      lastPlayedColumn: null,
+      benevolenceUsedThisCombo: false,
     },
     deckComposition: newDeckComposition,
   }

@@ -861,6 +861,134 @@ describe('drawStock', () => {
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['silence'], composition, 'faceLock', createRng(1))
     expect(next.foundation.wild).toBe(true)
   })
+
+  test('沈着: リセット時に取れる場札が無ければ直接点が加算される', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)],
+      tableau: [[card(2, '♠', 2)]], // 差が大きく取れない
+      chain: [card(3, '♥', 5)],
+      linked: true,
+      score: 100,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['composure'], standardDeckComposition())
+    expect(next.score).toBe(100 + DEFAULT_PARAMS.talismans.composure.n)
+  })
+
+  test('冷静: リセットされるチェーンで役が一つも成立していなければ直接点が加算される', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)],
+      tableau: [[card(2, '♣', 8)]],
+      chain: [card(3, '♥', 5)],
+      linked: true,
+      roleFiredThisChain: false,
+      score: 100,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['clarity'], standardDeckComposition())
+    expect(next.score).toBe(100 + DEFAULT_PARAMS.talismans.clarity.n)
+  })
+
+  test('冷静: 役が成立していたチェーンのリセットでは発動しない', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)],
+      tableau: [[card(2, '♣', 8)]],
+      chain: [card(3, '♥', 5)],
+      linked: true,
+      roleFiredThisChain: true,
+      score: 100,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['clarity'], standardDeckComposition())
+    expect(next.score).toBe(100)
+  })
+
+  test('残響: リセット時、リセット前のコンボ数×nが直接加算される', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)],
+      tableau: [[card(2, '♣', 8)]],
+      chain: [card(3, '♥', 5)],
+      linked: true,
+      combo: 4,
+      score: 100,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['echo'], standardDeckComposition())
+    expect(next.score).toBe(100 + 4 * DEFAULT_PARAMS.talismans.echo.n)
+  })
+
+  test('リセット時、roleFiredThisChainがfalseに戻る', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)],
+      chain: [card(3, '♥', 5)],
+      linked: true,
+      roleFiredThisChain: true,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
+    expect(next.roleFiredThisChain).toBe(false)
+  })
+
+  test('慢心: 山札が0枚になった瞬間、場札残数×xが直接加算される', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)],
+      tableau: [[card(2, '♣', 8)], [card(4, '♦', 5)]],
+      chain: [card(3, '♥', 1)],
+      linked: false,
+      score: 100,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['arrogance'], standardDeckComposition())
+    expect(next.stock).toHaveLength(0)
+    expect(next.score).toBe(100 + 2 * DEFAULT_PARAMS.talismans.arrogance.x)
+  })
+
+  test('誠実: パターン継続めくりが同色パターンで成立すると直接点が加算される', () => {
+    const wave = makeWave({
+      stock: [card(1, '♠', 6)], // 黒(色継続)
+      chain: [card(2, '♣', 4), card(3, '♠', 5)], // 黒2枚、同色成立中
+      linked: true,
+      combo: 2,
+      score: 100,
+      drawContinueCountThisChain: 0,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['sincerity'], standardDeckComposition())
+    expect(next.linked).toBe(true)
+    expect(next.score).toBe(100 + DEFAULT_PARAMS.talismans.sincerity.n)
+    expect(next.drawContinueCountThisChain).toBe(1)
+  })
+
+  test('パターン継続めくりが同スートパターンで成立した場合、誠実は発動しない(同色専用)', () => {
+    const wave = makeWave({
+      stock: [card(1, '♠', 6)],
+      chain: [card(2, '♠', 4), card(3, '♠', 5)], // 同スート成立中
+      linked: true,
+      score: 100,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['sincerity'], standardDeckComposition())
+    expect(next.score).toBe(100)
+  })
+
+  test('博愛: コンボごとに1回だけリセットを無効化し、パターン継続と同じ扱いになる', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)], // 同スートでも階段でもなく本来リセットする
+      chain: [card(2, '♥', 5)],
+      linked: true,
+      combo: 2,
+      benevolenceUsedThisCombo: false,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['benevolence'], standardDeckComposition())
+    expect(next.combo).toBe(2) // リセットされず維持
+    expect(next.linked).toBe(true)
+    expect(next.chain).toEqual([card(2, '♥', 5), card(1, '♣', 9)])
+    expect(next.benevolenceUsedThisCombo).toBe(true)
+  })
+
+  test('博愛: 既に今のコンボで使っていれば通常通りリセットされる', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)],
+      chain: [card(2, '♥', 5)],
+      linked: true,
+      combo: 2,
+      benevolenceUsedThisCombo: true,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['benevolence'], standardDeckComposition())
+    expect(next.combo).toBe(0)
+  })
 })
 
 describe('isStuck', () => {
