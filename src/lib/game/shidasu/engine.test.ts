@@ -1772,3 +1772,69 @@ describe('applyItemEffects (グループ4-c: 枚数カウント系)', () => {
     expect(result.value).toBe(100 * params.talismans.harmony.x)
   })
 })
+
+describe('applyItemEffects (グループ4-d: 既存フラグ再利用・KAループ系)', () => {
+  const params = DEFAULT_PARAMS
+  function ctx(overrides: Partial<ItemEffectContext> = {}): ItemEffectContext {
+    return {
+      card: card(1, '♠', 5),
+      previousFoundation: card(2, '♣', 4),
+      combo: 1,
+      stockRemaining: 0,
+      chain: [card(2, '♣', 4), card(1, '♠', 5)],
+      remainingTableauCount: 10,
+      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      isFirstPlayOfWave: false,
+      effectiveStairMinLen: params.scoring.stairMinLen,
+      ...overrides,
+    }
+  }
+
+  test('高潔: 同スートパターン成立時(3枚以上・同スート)に加算', () => {
+    const chain = [card(1, '♠', 3), card(2, '♠', 5), card(3, '♠', 9)]
+    const fired = applyItemEffects('gained', 100, ['nobility'], ctx({ chain }), params)
+    expect(fired.value).toBe(100 + params.talismans.nobility.n)
+    const tooShort = applyItemEffects('gained', 100, ['nobility'], ctx({ chain: chain.slice(0, 2) }), params)
+    expect(tooShort.value).toBe(100)
+  })
+
+  test('執念: 同スートパターン成立時、チェーン長×xで倍算', () => {
+    const chain = [card(1, '♠', 3), card(2, '♠', 5), card(3, '♠', 9)]
+    const result = applyItemEffects('gained', 100, ['tenacity'], ctx({ chain }), params)
+    expect(result.value).toBe(100 * (1 + chain.length * params.talismans.tenacity.x))
+  })
+
+  test('覚悟: 階段成立時(effectiveStairMinLen以上)、階段長×xで倍算', () => {
+    const chain = [card(1, '♠', 3), card(2, '♦', 4), card(3, '♥', 5), card(4, '♣', 6), card(5, '♠', 7)]
+    const result = applyItemEffects('gained', 100, ['determination'], ctx({ chain, effectiveStairMinLen: 5 }), params)
+    expect(result.value).toBe(100 * (1 + 5 * params.talismans.determination.x))
+  })
+
+  test('循環: K→A、A→Kの遷移で倍算し、ワイルドが絡む場合も都合よく成立する', () => {
+    const kToA = applyItemEffects('gained', 100, ['cycle'], ctx({ previousFoundation: card(1, '♠', 13), card: card(2, '♦', 1) }), params)
+    expect(kToA.value).toBe(100 * params.talismans.cycle.x)
+    const wildAsA = applyItemEffects('gained', 100, ['cycle'], ctx({ previousFoundation: card(1, '♠', 13), card: card(2, '★', 0, true) }), params)
+    expect(wildAsA.value).toBe(100 * params.talismans.cycle.x)
+    const notFired = applyItemEffects('gained', 100, ['cycle'], ctx({ previousFoundation: card(1, '♠', 7), card: card(2, '♦', 8) }), params)
+    expect(notFired.value).toBe(100)
+  })
+
+  const kaLoopChain: Card[] = [8, 9, 10, 11, 12, 13, 1, 2, 3, 4, 5, 6, 7].map((r, i) => card(i + 1, '♠', r as Card['rank']))
+  const completeRunRoleFired = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'completeRun' as const, usedWild: false }] }
+
+  test('輪廻: コンプリートラン成立かつ階段成立かつK↔Aループを跨ぐ場合に倍算', () => {
+    const fired = applyItemEffects('gained', 100, ['reincarnation'], ctx({ chain: kaLoopChain, chainBonus: completeRunRoleFired }), params)
+    expect(fired.value).toBe(100 * params.talismans.reincarnation.x)
+    const noLoopChain = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((r, i) => card(i + 1, '♠', r as Card['rank']))
+    const notFired = applyItemEffects('gained', 100, ['reincarnation'], ctx({ chain: noLoopChain, chainBonus: completeRunRoleFired }), params)
+    expect(notFired.value).toBe(100)
+  })
+
+  test('威光: コンプリートラン成立かつ階段成立かつ同スート専有の場合に倍算', () => {
+    const fired = applyItemEffects('gained', 100, ['majesty'], ctx({ chain: kaLoopChain, chainBonus: completeRunRoleFired }), params)
+    expect(fired.value).toBe(100 * params.talismans.majesty.x)
+    const mixedSuitChain = kaLoopChain.map((c, i) => (i === 0 ? { ...c, suit: '♦' as const } : c))
+    const notFired = applyItemEffects('gained', 100, ['majesty'], ctx({ chain: mixedSuitChain, chainBonus: completeRunRoleFired }), params)
+    expect(notFired.value).toBe(100)
+  })
+})

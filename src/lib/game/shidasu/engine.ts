@@ -557,6 +557,64 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
       return { value: v * factor, part: `調和×${fmtMultiplier(factor)}` }
     },
   },
+  nobility: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      const { suitHeld } = analyzeSuitColor(ctx.chain)
+      if (ctx.chain.length < p.scoring.suitColorMinLen || !suitHeld) return { value: v, part: null }
+      return { value: v + p.talismans.nobility.n, part: `高潔+${p.talismans.nobility.n}` }
+    },
+  },
+  tenacity: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      const { suitHeld } = analyzeSuitColor(ctx.chain)
+      if (ctx.chain.length < p.scoring.suitColorMinLen || !suitHeld) return { value: v, part: null }
+      const factor = 1 + ctx.chain.length * p.talismans.tenacity.x
+      return { value: v * factor, part: `執念×${fmtMultiplier(factor)}` }
+    },
+  },
+  determination: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      const stairInfo = analyzeStair(ctx.chain)
+      if (!stairInfo.held || stairInfo.dir === 0 || stairInfo.len < ctx.effectiveStairMinLen) return { value: v, part: null }
+      const factor = 1 + stairInfo.len * p.talismans.determination.x
+      return { value: v * factor, part: `覚悟×${fmtMultiplier(factor)}` }
+    },
+  },
+  cycle: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      const matches = (c: Card, rank: Card['rank']) => c.wild || c.rank === rank
+      const kToA = matches(ctx.previousFoundation, 13) && matches(ctx.card, 1)
+      const aToK = matches(ctx.previousFoundation, 1) && matches(ctx.card, 13)
+      if (!kToA && !aToK) return { value: v, part: null }
+      const factor = p.talismans.cycle.x
+      return { value: v * factor, part: `循環×${fmtMultiplier(factor)}` }
+    },
+  },
+  reincarnation: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      const stairInfo = analyzeStair(ctx.chain)
+      const completeRunFired = ctx.chainBonus.roleFired.some(r => r.name === 'completeRun')
+      if (!completeRunFired || !stairInfo.held || stairInfo.dir === 0 || !stairUsesKALoop(ctx.chain)) return { value: v, part: null }
+      const factor = p.talismans.reincarnation.x
+      return { value: v * factor, part: `輪廻×${fmtMultiplier(factor)}` }
+    },
+  },
+  majesty: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      const stairInfo = analyzeStair(ctx.chain)
+      const { suitHeld } = analyzeSuitColor(ctx.chain)
+      const completeRunFired = ctx.chainBonus.roleFired.some(r => r.name === 'completeRun')
+      if (!completeRunFired || !stairInfo.held || stairInfo.dir === 0 || !suitHeld) return { value: v, part: null }
+      const factor = p.talismans.majesty.x
+      return { value: v * factor, part: `威光×${fmtMultiplier(factor)}` }
+    },
+  },
 }
 
 export function applyItemEffects(
@@ -624,6 +682,12 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   chalice: '献杯の護符',
   balance: '均衡の護符',
   harmony: '調和の護符',
+  nobility: '高潔の護符',
+  tenacity: '執念の護符',
+  determination: '覚悟の護符',
+  cycle: '循環の護符',
+  reincarnation: '輪廻の護符',
+  majesty: '威光の護符',
 }
 
 export function itemDesc(id: ItemId, params: ShidasuParams): string {
@@ -669,6 +733,12 @@ export function itemDesc(id: ItemId, params: ShidasuParams): string {
     case 'chalice': return `コンボ内のハート(♥)枚数×${params.talismans.chalice.n}点を加算`
     case 'balance': return `コンボ内の赤黒枚数が同数のとき、${params.talismans.balance.n}点加算`
     case 'harmony': return `コンボ内の赤黒枚数が同数のとき、獲得点を${params.talismans.harmony.x}倍`
+    case 'nobility': return `同スートパターン成立時、${params.talismans.nobility.n}点加算`
+    case 'tenacity': return `同スートパターン成立時、コンボ内枚数×${params.talismans.tenacity.x}分、獲得点を倍加`
+    case 'determination': return `階段成立時、階段の長さ×${params.talismans.determination.x}分、獲得点を倍加`
+    case 'cycle': return `KからA、またはAからKを取ったとき、獲得点を${params.talismans.cycle.x}倍`
+    case 'reincarnation': return `コンプリートラン(全ランク階段)にK↔Aループが含まれるとき、獲得点を${params.talismans.reincarnation.x}倍`
+    case 'majesty': return `同スートかつ全ランク階段を達成したとき、獲得点を${params.talismans.majesty.x}倍`
   }
 }
 
