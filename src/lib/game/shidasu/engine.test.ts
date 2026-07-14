@@ -568,6 +568,51 @@ describe('playCard', () => {
     expect(next.tableau[0]).toHaveLength(0)
     expect(next.discardPile).toHaveLength(2)
   })
+
+  test('再生: 全消し時に捨て札があれば、スコアp%を消費して場札を復活させウェーブを継続する', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)]],
+      stock: [],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
+      discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3)],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], 100000000, 0, createRng(1))
+    expect(next.status).toBe('playing') // 全消し終了せず継続
+    expect(next.endReason).toBeNull()
+    const revivedCount = next.tableau.reduce((n, c) => n + c.length, 0)
+    expect(revivedCount).toBe(3)
+    expect(next.discardPile).toHaveLength(0)
+    // 単一列・単一カードでも comboStreakColumnLengths=[rows] により列一掃ボーナスも同時発火する
+    // (328行目の全消しテストと同じフィクスチャパターン。scoreBeforeCostにcolumnSweepBonusを含める必要がある)
+    const expectedClearBonus = DEFAULT_PARAMS.scoring.clearBonus + 0 * DEFAULT_PARAMS.scoring.clearBonusPerStock
+    const scoreBeforeCost = scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus
+    const expectedCost = Math.floor(scoreBeforeCost * DEFAULT_PARAMS.talismans.regeneration.p / 100)
+    expect(next.score).toBe(scoreBeforeCost - expectedCost)
+  })
+
+  test('再生: 捨て札が無ければ通常通り全消し終了になる', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)]],
+      stock: [],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
+      discardPile: [],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], 100000000, 0, createRng(1))
+    expect(next.status).toBe('ended')
+    expect(next.endReason).toBe('fullClear')
+  })
+
+  test('再生を持っていなければ通常通り全消し終了になる', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)]],
+      stock: [],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
+      discardPile: [card(10, '♦', 1)],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0, createRng(1))
+    expect(next.status).toBe('ended')
+    expect(next.endReason).toBe('fullClear')
+  })
 })
 
 describe('chainContinuesPattern', () => {

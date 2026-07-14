@@ -260,7 +260,32 @@ export function playCard(
   if (remaining === 0) {
     const rawClearBonus = params.scoring.clearBonus + wave.stock.length * params.scoring.clearBonusPerStock
     const clearBonus = Math.floor(applyItemEffects('clearBonus', rawClearBonus, items, itemEffectCtx, params).value)
-    return { ...next, score: newScore + clearBonus, status: 'ended', endReason: 'fullClear' }
+    const scoreAfterClear = newScore + clearBonus
+
+    if (items.includes('regeneration') && healedDiscardPile.length > 0) {
+      const pool = [...healedDiscardPile]
+      shuffleInPlace(pool, rand)
+      const reviveTotal = Math.min(params.layout.cols * rows, pool.length)
+      const cost = Math.floor(scoreAfterClear * params.talismans.regeneration.p / 100)
+      let cursor = 0
+      const revivedTableau: Card[][] = []
+      for (let c = 0; c < params.layout.cols; c++) {
+        const take = Math.min(rows, reviveTotal - cursor)
+        revivedTableau.push(take > 0 ? pool.slice(cursor, cursor + take) : [])
+        cursor += Math.max(take, 0)
+      }
+      return {
+        ...next,
+        tableau: revivedTableau,
+        comboStreakColumnLengths: revivedTableau.map(col => col.length),
+        discardPile: pool.slice(reviveTotal),
+        score: scoreAfterClear - cost,
+        status: 'playing',
+        endReason: null,
+      }
+    }
+
+    return { ...next, score: scoreAfterClear, status: 'ended', endReason: 'fullClear' }
   }
 
   if (newScore >= target) {
