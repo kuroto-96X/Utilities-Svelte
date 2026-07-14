@@ -44,7 +44,7 @@ import {
   type ItemEffectContext,
   type DirectEffectContext,
 } from './engine'
-import type { Card, WaveState, RunState, ItemId } from './types'
+import type { Card, WaveState, RunState, ItemId, RoleName } from './types'
 import { DEFAULT_PARAMS } from './params'
 import { createRng, standardDeckComposition } from './deck'
 
@@ -1221,6 +1221,7 @@ describe('applyItemEffects', () => {
       flushActiveThisCombo: false,
       columnSweepActiveThisWave: false,
       drawContinueCountThisChain: 0,
+      mercyActiveNextCombo: false,
       ...overrides,
     }
   }
@@ -2156,6 +2157,30 @@ describe('evaluateChainBonus', () => {
     expect(result.parts).toContain(`コンプリートラン+${scoring.completeRunBonus}`)
     expect(result.parts).toContain(`コンプリートラン(同スート)+${scoring.completeRunSuitBonus}`)
   })
+
+  test('roleFiredの各要素は実際の加点額(amount)を持つ', () => {
+    const chainBefore = [card(1, '♥', 9), card(2, '♦', 10), card(3, '♣', 11)]
+    const result = evaluateChainBonus(DEFAULT_PARAMS.scoring, chainBefore, card(4, '♠', 12))
+    const flushEntry = result.roleFired.find(r => r.name === 'flush')
+    expect(flushEntry).toBeDefined()
+    expect(flushEntry?.amount).toBe(DEFAULT_PARAMS.scoring.flushBonus)
+  })
+
+  test('roleBonusMultiplierを渡すと役ボーナスの額に倍率がかかる(パターンボーナスには影響しない)', () => {
+    const chainBefore = [card(1, '♥', 9), card(2, '♦', 10), card(3, '♣', 11)]
+    const multiplier = (name: RoleName) => (name === 'flush' ? 2 : 1)
+    const result = evaluateChainBonus(DEFAULT_PARAMS.scoring, chainBefore, card(4, '♠', 12), DEFAULT_PARAMS.scoring.stairMinLen, multiplier)
+    const flushEntry = result.roleFired.find(r => r.name === 'flush')
+    expect(flushEntry?.amount).toBe(DEFAULT_PARAMS.scoring.flushBonus * 2)
+    expect(result.bonus).toBe(DEFAULT_PARAMS.scoring.flushBonus * 2)
+  })
+
+  test('roleBonusMultiplierを省略すると常に等倍(既存挙動と同じ)', () => {
+    const chainBefore = [card(1, '♣', 5), card(2, '♣', 6)]
+    const withoutMultiplier = evaluateChainBonus(DEFAULT_PARAMS.scoring, chainBefore, card(3, '♣', 5))
+    const withIdentityMultiplier = evaluateChainBonus(DEFAULT_PARAMS.scoring, chainBefore, card(3, '♣', 5), DEFAULT_PARAMS.scoring.stairMinLen, () => 1)
+    expect(withoutMultiplier).toEqual(withIdentityMultiplier)
+  })
 })
 
 describe('forceStockTop', () => {
@@ -2212,6 +2237,7 @@ describe('applyItemEffects (グループ4-a: 絵札条件系)', () => {
       flushActiveThisCombo: false,
       columnSweepActiveThisWave: false,
       drawContinueCountThisChain: 0,
+      mercyActiveNextCombo: false,
       ...overrides,
     }
   }
@@ -2269,6 +2295,7 @@ describe('applyItemEffects (グループ4-b: スート/色専有系)', () => {
       flushActiveThisCombo: false,
       columnSweepActiveThisWave: false,
       drawContinueCountThisChain: 0,
+      mercyActiveNextCombo: false,
       ...overrides,
     }
   }
@@ -2329,6 +2356,7 @@ describe('applyItemEffects (グループ4-c: 枚数カウント系)', () => {
       flushActiveThisCombo: false,
       columnSweepActiveThisWave: false,
       drawContinueCountThisChain: 0,
+      mercyActiveNextCombo: false,
       ...overrides,
     }
   }
@@ -2406,6 +2434,7 @@ describe('applyItemEffects (グループ4-d: 既存フラグ再利用・KAルー
       flushActiveThisCombo: false,
       columnSweepActiveThisWave: false,
       drawContinueCountThisChain: 0,
+      mercyActiveNextCombo: false,
       ...overrides,
     }
   }
@@ -2449,7 +2478,7 @@ describe('applyItemEffects (グループ4-d: 既存フラグ再利用・KAルー
   })
 
   const kaLoopChain: Card[] = [8, 9, 10, 11, 12, 13, 1, 2, 3, 4, 5, 6, 7].map((r, i) => card(i + 1, '♠', r as Card['rank']))
-  const completeRunRoleFired = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'completeRun' as const, usedWild: false }] }
+  const completeRunRoleFired = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'completeRun' as const, usedWild: false, amount: 0 }] }
 
   test('輪廻: コンプリートラン成立かつ階段成立かつK↔Aループを跨ぐ場合に倍算', () => {
     const fired = applyItemEffects('gained', 100, ['reincarnation'], ctx({ chain: kaLoopChain, chainBonus: completeRunRoleFired }), params)
@@ -2487,6 +2516,7 @@ describe('applyItemEffects (グループ5: 場札残数系)', () => {
       flushActiveThisCombo: false,
       columnSweepActiveThisWave: false,
       drawContinueCountThisChain: 0,
+      mercyActiveNextCombo: false,
       ...overrides,
     }
   }
@@ -2523,12 +2553,13 @@ describe('applyItemEffects (グループ6: 役・パターン成立状況系)', 
       flushActiveThisCombo: false,
       columnSweepActiveThisWave: false,
       drawContinueCountThisChain: 0,
+      mercyActiveNextCombo: false,
       ...overrides,
     }
   }
 
   test('恩寵: いずれかの役ボーナスが成立していれば倍算', () => {
-    const chainBonus = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: false }] }
+    const chainBonus = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: false, amount: 0 }] }
     const fired = applyItemEffects('gained', 100, ['blessing'], ctx({ chainBonus }), params)
     expect(fired.value).toBe(100 * params.talismans.blessing.x)
     const notFired = applyItemEffects('gained', 100, ['blessing'], ctx(), params)
@@ -2536,10 +2567,10 @@ describe('applyItemEffects (グループ6: 役・パターン成立状況系)', 
   })
 
   test('集中: 同ランクによる役が含まれていれば倍算', () => {
-    const chainBonus = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'sameRank' as const, usedWild: false }] }
+    const chainBonus = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'sameRank' as const, usedWild: false, amount: 0 }] }
     const fired = applyItemEffects('gained', 100, ['focus'], ctx({ chainBonus }), params)
     expect(fired.value).toBe(100 * params.talismans.focus.x)
-    const otherRole = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: false }] }
+    const otherRole = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: false, amount: 0 }] }
     const notFired = applyItemEffects('gained', 100, ['focus'], ctx({ chainBonus: otherRole }), params)
     expect(notFired.value).toBe(100)
   })
@@ -2547,20 +2578,20 @@ describe('applyItemEffects (グループ6: 役・パターン成立状況系)', 
   test('瑠璃: 役ボーナスが2種類以上同時発生していれば倍算', () => {
     const chainBonus = {
       bonus: 0, parts: [], patternFired: false,
-      roleFired: [{ name: 'flush' as const, usedWild: false }, { name: 'sameRank' as const, usedWild: false }],
+      roleFired: [{ name: 'flush' as const, usedWild: false, amount: 0 }, { name: 'sameRank' as const, usedWild: false, amount: 0 }],
     }
     const fired = applyItemEffects('gained', 100, ['lapis'], ctx({ chainBonus }), params)
     expect(fired.value).toBe(100 * params.talismans.lapis.x)
-    const singleRole = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: false }] }
+    const singleRole = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: false, amount: 0 }] }
     const notFired = applyItemEffects('gained', 100, ['lapis'], ctx({ chainBonus: singleRole }), params)
     expect(notFired.value).toBe(100)
   })
 
   test('翡翠: 役の成立にワイルドが使われていれば加算', () => {
-    const chainBonus = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: true }] }
+    const chainBonus = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: true, amount: 0 }] }
     const fired = applyItemEffects('gained', 100, ['jade'], ctx({ chainBonus }), params)
     expect(fired.value).toBe(100 + params.talismans.jade.n)
-    const withoutWild = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: false }] }
+    const withoutWild = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: false, amount: 0 }] }
     const notFired = applyItemEffects('gained', 100, ['jade'], ctx({ chainBonus: withoutWild }), params)
     expect(notFired.value).toBe(100)
   })
@@ -2593,6 +2624,7 @@ describe('applyItemEffects (グループ7: コンボ内位置系)', () => {
       flushActiveThisCombo: false,
       columnSweepActiveThisWave: false,
       drawContinueCountThisChain: 0,
+      mercyActiveNextCombo: false,
       ...overrides,
     }
   }
@@ -2639,6 +2671,7 @@ describe('applyItemEffects (グループ8: 無条件固定加算)', () => {
       flushActiveThisCombo: false,
       columnSweepActiveThisWave: false,
       drawContinueCountThisChain: 0,
+      mercyActiveNextCombo: false,
       ...overrides,
     }
   }
@@ -2737,6 +2770,7 @@ describe('applyItemEffects (グループ9: 列選択の連続性)', () => {
       flushActiveThisCombo: false,
       columnSweepActiveThisWave: false,
       drawContinueCountThisChain: 0,
+      mercyActiveNextCombo: false,
       ...overrides,
     }
   }
@@ -2775,6 +2809,7 @@ describe('applyItemEffects (グループ10: ウェーブ内累積state)', () => 
       flushActiveThisCombo: false,
       columnSweepActiveThisWave: false,
       drawContinueCountThisChain: 0,
+      mercyActiveNextCombo: false,
       ...overrides,
     }
   }
@@ -2809,6 +2844,7 @@ describe('applyItemEffects (グループ16: 持続効果)', () => {
       flushActiveThisCombo: false,
       columnSweepActiveThisWave: false,
       drawContinueCountThisChain: 0,
+      mercyActiveNextCombo: false,
       ...overrides,
     }
   }
@@ -2847,6 +2883,7 @@ describe('applyItemEffects (グループ12: 直感)', () => {
       flushActiveThisCombo: false,
       columnSweepActiveThisWave: false,
       drawContinueCountThisChain: 0,
+      mercyActiveNextCombo: false,
       ...overrides,
     }
   }

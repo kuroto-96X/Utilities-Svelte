@@ -529,6 +529,8 @@ export interface ItemEffectContext {
   columnSweepActiveThisWave: boolean
   // 直感用: 現在のチェーン中に山札めくりでコンボ継続した回数
   drawContinueCountThisChain: number
+  // 慈悲用: 次のコンボの間、倍率xを適用中か
+  mercyActiveNextCombo: boolean
 }
 
 // 護符の内訳表示用に倍率を丸めて整形する(浮動小数の誤差で末尾が長くなるのを防ぐ)
@@ -1632,14 +1634,17 @@ export interface ChainBonusResult {
   // flush/royalSet/completeRunは「実カードだけでは成立せずワイルドの穴埋めが必須だったか」(必要性ベース)。
   // sameRankは同ランクボーナスの加点量自体がワイルド枚数を無条件に含むため、
   // 「チェーンにワイルドが1枚でも存在すれば常にtrue」(寄与ベース)になる。
-  roleFired: { name: RoleName; usedWild: boolean }[]
+  // amountはこの役が実際に加算した点数(roleBonusMultiplier適用後、completeRunは同スート追加分を含む)。
+  // 明星(倍率適用)・水鏡(遅延複製)が参照する。
+  roleFired: { name: RoleName; usedWild: boolean; amount: number }[]
 }
 
 export function evaluateChainBonus(
   scoring: ShidasuParams['scoring'],
   chainBefore: Card[],
   card: Card,
-  stairMinLen: number = scoring.stairMinLen
+  stairMinLen: number = scoring.stairMinLen,
+  roleBonusMultiplier: (name: RoleName) => number = () => 1
 ): ChainBonusResult {
   if (chainBefore.length === 0) {
     return { bonus: 0, parts: [], patternFired: false, roleFired: [] }
@@ -1648,7 +1653,7 @@ export function evaluateChainBonus(
   let bonus = 0
   const parts: string[] = []
   let patternFired = false
-  const roleFired: { name: RoleName; usedWild: boolean }[] = []
+  const roleFired: { name: RoleName; usedWild: boolean; amount: number }[] = []
 
   const chainIncludingThis = [...chainBefore, card]
 
@@ -1673,44 +1678,50 @@ export function evaluateChainBonus(
   }
 
   if (checkFlush(chainIncludingThis)) {
-    bonus += scoring.flushBonus
-    parts.push(`フラッシュ+${scoring.flushBonus}`)
+    const flushGain = Math.floor(scoring.flushBonus * roleBonusMultiplier('flush'))
+    bonus += flushGain
+    parts.push(`フラッシュ+${flushGain}`)
     const last4 = chainIncludingThis.slice(-4)
     const realSuits = new Set(last4.filter(c => !c.wild).map(c => c.suit))
     const flushUsedWild = ALL_SUITS_REAL.some(s => !realSuits.has(s))
-    roleFired.push({ name: 'flush', usedWild: flushUsedWild })
+    roleFired.push({ name: 'flush', usedWild: flushUsedWild, amount: flushGain })
   }
 
   if (checkRoyalSet(chainIncludingThis)) {
-    bonus += scoring.royalSetBonus
-    parts.push(`ロイヤル+${scoring.royalSetBonus}`)
+    const royalSetGain = Math.floor(scoring.royalSetBonus * roleBonusMultiplier('royalSet'))
+    bonus += royalSetGain
+    parts.push(`ロイヤル+${royalSetGain}`)
     const last3 = chainIncludingThis.slice(-3)
     const realRanks = new Set(last3.filter(c => !c.wild).map(c => c.rank))
     const requiredRanks: Card['rank'][] = [11, 12, 13]
     const royalSetUsedWild = requiredRanks.some(r => !realRanks.has(r))
-    roleFired.push({ name: 'royalSet', usedWild: royalSetUsedWild })
+    roleFired.push({ name: 'royalSet', usedWild: royalSetUsedWild, amount: royalSetGain })
   }
 
   const sameRankCount = card.wild ? countSameRankForWildPlay(chainBefore) : countSameRankBefore(chainBefore, card.rank)
   if (sameRankCount > 0) {
-    const sameRankGain = scoring.sameRankBonusUnit * sameRankCount
+    const sameRankGain = Math.floor(scoring.sameRankBonusUnit * sameRankCount * roleBonusMultiplier('sameRank'))
     bonus += sameRankGain
     parts.push(`同ランク+${sameRankGain}`)
     const sameRankUsedWild = card.wild || chainBefore.some(c => c.wild)
-    roleFired.push({ name: 'sameRank', usedWild: sameRankUsedWild })
+    roleFired.push({ name: 'sameRank', usedWild: sameRankUsedWild, amount: sameRankGain })
   }
 
   if (checkCompleteRun(chainBefore, chainIncludingThis)) {
-    bonus += scoring.completeRunBonus
-    parts.push(`コンプリートラン+${scoring.completeRunBonus}`)
+    const completeRunGain = Math.floor(scoring.completeRunBonus * roleBonusMultiplier('completeRun'))
+    bonus += completeRunGain
+    parts.push(`コンプリートラン+${completeRunGain}`)
     const distinctRealNow = new Set(chainIncludingThis.filter(c => !c.wild).map(c => c.rank)).size
     const wildCountNow = chainIncludingThis.filter(c => c.wild).length
     const completeRunUsedWild = distinctRealNow < 13 && wildCountNow > 0
-    roleFired.push({ name: 'completeRun', usedWild: completeRunUsedWild })
+    let completeRunTotalGain = completeRunGain
     if (suitHeld) {
-      bonus += scoring.completeRunSuitBonus
-      parts.push(`コンプリートラン(同スート)+${scoring.completeRunSuitBonus}`)
+      const completeRunSuitGain = Math.floor(scoring.completeRunSuitBonus * roleBonusMultiplier('completeRun'))
+      bonus += completeRunSuitGain
+      parts.push(`コンプリートラン(同スート)+${completeRunSuitGain}`)
+      completeRunTotalGain += completeRunSuitGain
     }
+    roleFired.push({ name: 'completeRun', usedWild: completeRunUsedWild, amount: completeRunTotalGain })
   }
 
   return { bonus, parts, patternFired, roleFired }
