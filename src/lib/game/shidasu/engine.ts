@@ -244,10 +244,20 @@ export function playCard(
   const newRoleFiredThisChain = wave.roleFiredThisChain || roleFired.length > 0
   const newFlushActiveThisCombo = wave.flushActiveThisCombo || roleFired.some(r => r.name === 'flush')
 
+  // 庇護・大地: 所持順(itemsの並び順)で一時comboに順に適用する。wave.combo(実コンボ)自体は変化しない。
+  let effectiveCombo = newCombo
+  for (const id of items) {
+    if (id === 'protection' && effectiveCombo < params.talismans.protection.c) {
+      effectiveCombo = params.talismans.protection.c
+    } else if (id === 'earth') {
+      effectiveCombo += params.talismans.earth.c
+    }
+  }
+
   const itemEffectCtx: ItemEffectContext = {
     card,
     previousFoundation: wave.foundation,
-    combo: newCombo,
+    combo: effectiveCombo,
     stockRemaining: wave.stock.length,
     chain: chainIncludingThis,
     remainingTableauCount: remaining,
@@ -263,7 +273,7 @@ export function playCard(
   }
 
   const comboMultiplierStep = params.scoring.comboMultiplierStep
-  const multiplier = 1 + (newCombo - 1) * comboMultiplierStep
+  const multiplier = 1 + (effectiveCombo - 1) * comboMultiplierStep
   if (multiplier !== 1) parts.push(`コンボ倍率×${fmtMultiplier(multiplier)}`)
   const rawGained = Math.floor(base * multiplier)
   const itemResult = applyItemEffects('gained', rawGained, items, itemEffectCtx, params)
@@ -398,10 +408,19 @@ export function drawStock(
       parts.push(...chainResult.parts)
       naiveRoleFiredThisChain = wave.roleFiredThisChain || chainResult.roleFired.length > 0
       naiveFlushActiveThisCombo = wave.flushActiveThisCombo || chainResult.roleFired.some(r => r.name === 'flush')
+      let effectiveCombo = newCombo
+      for (const id of items) {
+        if (id === 'protection' && effectiveCombo < params.talismans.protection.c) {
+          effectiveCombo = params.talismans.protection.c
+        } else if (id === 'earth') {
+          effectiveCombo += params.talismans.earth.c
+        }
+      }
+
       const naiveCtx: ItemEffectContext = {
         card: drawnCard,
         previousFoundation: wave.foundation,
-        combo: newCombo,
+        combo: effectiveCombo,
         stockRemaining: newStock.length,
         chain: [...wave.chain, drawnCard],
         remainingTableauCount: remainingCount(wave.tableau),
@@ -416,7 +435,7 @@ export function drawStock(
         drawContinueCountThisChain: newDrawContinueCount,
       }
       const comboMultiplierStep = params.scoring.comboMultiplierStep
-      const multiplier = 1 + (newCombo - 1) * comboMultiplierStep
+      const multiplier = 1 + (effectiveCombo - 1) * comboMultiplierStep
       if (multiplier !== 1) parts.push(`コンボ倍率×${fmtMultiplier(multiplier)}`)
       const rawGained = Math.floor(base * multiplier)
       const itemResult = applyItemEffects('gained', rawGained, items, naiveCtx, params)

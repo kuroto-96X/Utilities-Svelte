@@ -692,6 +692,33 @@ describe('playCard', () => {
     const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
     expect(next.combo).toBe(4)
   })
+
+  test('庇護: コンボ数(計算用)がc未満ならcとして計算される', () => {
+    const wave = baseWave({ combo: 0, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
+    // combo=0でプレイするとnewCombo=1。庇護c=3未満なので一時comboは3として計算される。
+    const withProtection = playCard(DEFAULT_PARAMS, wave, 'none', ['protection'], 1000000, 0)
+    const without = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    expect(withProtection.score).toBeGreaterThan(without.score)
+  })
+
+  test('大地: コンボ数(計算用)に常にcが加算される', () => {
+    const wave = baseWave({ combo: 5, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
+    const withEarth = playCard(DEFAULT_PARAMS, wave, 'none', ['earth'], 1000000, 0)
+    const without = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    expect(withEarth.score).toBeGreaterThan(without.score)
+    // wave.combo自体(実コンボ)は一時comboの影響を受けない
+    expect(withEarth.combo).toBe(without.combo)
+  })
+
+  test('庇護・大地は所持順で一時comboに適用され、大地→庇護の順だと庇護が不発化しうる', () => {
+    // combo=0でプレイ: newCombo=1。大地(c=2)が先に+2して一時combo=3。
+    // 庇護(c=3)は「3 < 3」が偽なので不発化(3のまま)。
+    const wave = baseWave({ combo: 0, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
+    const earthThenProtection = playCard(DEFAULT_PARAMS, wave, 'none', ['earth', 'protection'], 1000000, 0)
+    // 庇護→大地の順なら: newCombo=1→庇護でc=3に底上げ→大地で+2して5になる。より高スコアになるはず。
+    const protectionThenEarth = playCard(DEFAULT_PARAMS, wave, 'none', ['protection', 'earth'], 1000000, 0)
+    expect(protectionThenEarth.score).toBeGreaterThan(earthThenProtection.score)
+  })
 })
 
 describe('chainContinuesPattern', () => {
