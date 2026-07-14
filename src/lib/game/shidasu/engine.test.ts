@@ -1647,3 +1647,57 @@ describe('applyItemEffects (グループ4-a: 絵札条件系)', () => {
     expect(faceCard.value).toBe(100)
   })
 })
+
+describe('applyItemEffects (グループ4-b: スート/色専有系)', () => {
+  const params = DEFAULT_PARAMS
+  function ctx(overrides: Partial<ItemEffectContext> = {}): ItemEffectContext {
+    return {
+      card: card(1, '♠', 5),
+      previousFoundation: card(2, '♣', 4),
+      combo: 1,
+      stockRemaining: 0,
+      chain: [card(2, '♣', 4), card(1, '♠', 5)],
+      remainingTableauCount: 10,
+      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      isFirstPlayOfWave: false,
+      effectiveStairMinLen: params.scoring.stairMinLen,
+      ...overrides,
+    }
+  }
+
+  test('深緑: ♣専有チェーンで倍算、他スートが混ざれば不発動、全ワイルドでも都合よく発動', () => {
+    const pure = applyItemEffects('gained', 100, ['verdantGreen'], ctx({ chain: [card(1, '♣', 3), card(2, '♣', 5)] }), params)
+    expect(pure.value).toBe(100 * params.talismans.verdantGreen.x)
+    const mixed = applyItemEffects('gained', 100, ['verdantGreen'], ctx({ chain: [card(1, '♣', 3), card(2, '♦', 5)] }), params)
+    expect(mixed.value).toBe(100)
+    const allWild = applyItemEffects('gained', 100, ['verdantGreen'], ctx({ chain: [card(1, '★', 0, true), card(2, '★', 0, true)] }), params)
+    expect(allWild.value).toBe(100 * params.talismans.verdantGreen.x)
+  })
+
+  test('宝石: ♦専有チェーンで倍算', () => {
+    const result = applyItemEffects('gained', 100, ['gem'], ctx({ chain: [card(1, '♦', 3), card(2, '♦', 5)] }), params)
+    expect(result.value).toBe(100 * params.talismans.gem.x)
+  })
+
+  test('真剣: ♠専有チェーンで倍算', () => {
+    const result = applyItemEffects('gained', 100, ['resolve'], ctx({ chain: [card(1, '♠', 3), card(2, '♠', 5)] }), params)
+    expect(result.value).toBe(100 * params.talismans.resolve.x)
+  })
+
+  test('聖杯: ♥専有チェーンで倍算', () => {
+    const result = applyItemEffects('gained', 100, ['grail'], ctx({ chain: [card(1, '♥', 3), card(2, '♥', 5)] }), params)
+    expect(result.value).toBe(100 * params.talismans.grail.x)
+  })
+
+  test('月光: 黒専有チェーンで倍算、赤が混ざれば不発動', () => {
+    const pure = applyItemEffects('gained', 100, ['moonlight'], ctx({ chain: [card(1, '♠', 3), card(2, '♣', 5)] }), params)
+    expect(pure.value).toBe(100 * params.talismans.moonlight.x)
+    const mixed = applyItemEffects('gained', 100, ['moonlight'], ctx({ chain: [card(1, '♠', 3), card(2, '♥', 5)] }), params)
+    expect(mixed.value).toBe(100)
+  })
+
+  test('陽光: 赤専有チェーンで倍算', () => {
+    const result = applyItemEffects('gained', 100, ['sunlight'], ctx({ chain: [card(1, '♥', 3), card(2, '♦', 5)] }), params)
+    expect(result.value).toBe(100 * params.talismans.sunlight.x)
+  })
+})

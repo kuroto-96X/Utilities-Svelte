@@ -260,6 +260,14 @@ function chainIsFaceOnly(chain: Card[]): boolean {
   return chain.every(c => c.wild || isFace(c))
 }
 
+function chainSuitExclusive(chain: Card[], suit: Suit): boolean {
+  return chain.every(c => c.wild || c.suit === suit)
+}
+
+function chainColorExclusive(chain: Card[], red: boolean): boolean {
+  return chain.every(c => c.wild || isRed(c) === red)
+}
+
 const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; effect: ItemEffect }>> = {
   patience: {
     channel: 'clearBonus',
@@ -415,6 +423,54 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
         ? { value: v + p.talismans.relief.n, part: `安堵+${p.talismans.relief.n}` }
         : { value: v, part: null },
   },
+  verdantGreen: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (!chainSuitExclusive(ctx.chain, '♣')) return { value: v, part: null }
+      const factor = p.talismans.verdantGreen.x
+      return { value: v * factor, part: `深緑×${fmtMultiplier(factor)}` }
+    },
+  },
+  gem: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (!chainSuitExclusive(ctx.chain, '♦')) return { value: v, part: null }
+      const factor = p.talismans.gem.x
+      return { value: v * factor, part: `宝石×${fmtMultiplier(factor)}` }
+    },
+  },
+  resolve: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (!chainSuitExclusive(ctx.chain, '♠')) return { value: v, part: null }
+      const factor = p.talismans.resolve.x
+      return { value: v * factor, part: `真剣×${fmtMultiplier(factor)}` }
+    },
+  },
+  grail: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (!chainSuitExclusive(ctx.chain, '♥')) return { value: v, part: null }
+      const factor = p.talismans.grail.x
+      return { value: v * factor, part: `聖杯×${fmtMultiplier(factor)}` }
+    },
+  },
+  moonlight: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (!chainColorExclusive(ctx.chain, false)) return { value: v, part: null }
+      const factor = p.talismans.moonlight.x
+      return { value: v * factor, part: `月光×${fmtMultiplier(factor)}` }
+    },
+  },
+  sunlight: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (!chainColorExclusive(ctx.chain, true)) return { value: v, part: null }
+      const factor = p.talismans.sunlight.x
+      return { value: v * factor, part: `陽光×${fmtMultiplier(factor)}` }
+    },
+  },
 }
 
 export function applyItemEffects(
@@ -469,6 +525,12 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   destiny: '運命の護符',
   fate: '宿命の護符',
   relief: '安堵の護符',
+  verdantGreen: '深緑の護符',
+  gem: '宝石の護符',
+  resolve: '真剣の護符',
+  grail: '聖杯の護符',
+  moonlight: '月光の護符',
+  sunlight: '陽光の護符',
 }
 
 export function itemDesc(id: ItemId, params: ShidasuParams): string {
@@ -501,6 +563,12 @@ export function itemDesc(id: ItemId, params: ShidasuParams): string {
     case 'destiny': return `コンボ内がJQKのみのとき、${params.talismans.destiny.n}点加算`
     case 'fate': return `コンボ内がJQKのみのとき、獲得点を${params.talismans.fate.x}倍`
     case 'relief': return `取得したカード1枚のランクが1〜10のとき、${params.talismans.relief.n}点加算`
+    case 'verdantGreen': return `コンボがクラブ(♣)専有のとき、獲得点を${params.talismans.verdantGreen.x}倍`
+    case 'gem': return `コンボがダイヤ(♦)専有のとき、獲得点を${params.talismans.gem.x}倍`
+    case 'resolve': return `コンボがスペード(♠)専有のとき、獲得点を${params.talismans.resolve.x}倍`
+    case 'grail': return `コンボがハート(♥)専有のとき、獲得点を${params.talismans.grail.x}倍`
+    case 'moonlight': return `コンボが黒専有のとき、獲得点を${params.talismans.moonlight.x}倍`
+    case 'sunlight': return `コンボが赤専有のとき、獲得点を${params.talismans.sunlight.x}倍`
   }
 }
 
