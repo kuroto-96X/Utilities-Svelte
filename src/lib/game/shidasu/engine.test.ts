@@ -589,7 +589,8 @@ describe('evaluateChainBonus (patternFired/roleFired)', () => {
 describe('drawStock', () => {
   test('山札が空なら何もしない', () => {
     const wave = makeWave({ stock: [] })
-    expect(drawStock(DEFAULT_PARAMS, wave, [])).toBe(wave)
+    const composition = standardDeckComposition()
+    expect(drawStock(DEFAULT_PARAMS, wave, [], composition).wave).toBe(wave)
   })
 
   test('通常時(継続条件なし): コンボ・チェーン・列一掃カウント・comboStreakColumnLengthsがリセットされ、捲った札1枚が新しい起点になる', () => {
@@ -603,7 +604,7 @@ describe('drawStock', () => {
       tableau: [[card(3, '♣', 2)], [card(4, '♦', 8), card(5, '♥', 9)]],
       comboStreakColumnLengths: [0, 1],
     })
-    const next = drawStock(DEFAULT_PARAMS, wave, [])
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
     expect(next.foundation).toEqual(card(1, '♠', 9))
     expect(next.combo).toBe(0)
     expect(next.chain).toEqual([card(1, '♠', 9)])
@@ -624,7 +625,7 @@ describe('drawStock', () => {
       linked: true,
       comboStreakColumnLengths: [4, 2],
     })
-    const next = drawStock(DEFAULT_PARAMS, wave, [])
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
     expect(next.combo).toBe(0)
     expect(next.chain).toEqual([card(1, '★', 0, true)])
     expect(next.chainOrigin).toEqual(['draw'])
@@ -641,7 +642,7 @@ describe('drawStock', () => {
       linked: true,
       comboStreakColumnLengths: [4, 2],
     })
-    const next = drawStock(DEFAULT_PARAMS, wave, [])
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
     expect(next.combo).toBe(3)
     expect(next.chain).toEqual([card(2, '♠', 5), card(3, '♠', 6), card(4, '♠', 7), card(1, '★', 0, true)])
     expect(next.chainOrigin).toEqual(['play', 'play', 'play', 'draw'])
@@ -659,7 +660,7 @@ describe('drawStock', () => {
       linked: true,
       comboStreakColumnLengths: [3, 2],
     })
-    const next = drawStock(DEFAULT_PARAMS, wave, [])
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
     expect(next.combo).toBe(2)
     expect(next.chain).toEqual([card(2, '♠', 4), card(3, '♠', 5), card(1, '♠', 9)])
     expect(next.chainOrigin).toEqual(['play', 'play', 'draw'])
@@ -677,7 +678,7 @@ describe('drawStock', () => {
       chainOrigin: ['play', 'play'],
       linked: true,
     })
-    const next = drawStock(DEFAULT_PARAMS, wave, ['bridge']) // stairRelaxedMinLen=3
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['bridge'], standardDeckComposition()) // stairRelaxedMinLen=3
     expect(next.combo).toBe(2)
     expect(next.lastDrawEffect).toBe('pattern')
     expect(next.chain).toEqual([card(2, '♠', 5), card(3, '♣', 6), card(1, '♦', 7)])
@@ -691,7 +692,7 @@ describe('drawStock', () => {
       chainOrigin: ['play', 'play'],
       linked: true,
     })
-    const next = drawStock(DEFAULT_PARAMS, wave, [])
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
     expect(next.combo).toBe(0) // リセットされる
     expect(next.lastDrawEffect).toBeNull()
   })
@@ -704,7 +705,7 @@ describe('drawStock', () => {
       chainOrigin: ['play'],
       linked: true,
     })
-    const next = drawStock(DEFAULT_PARAMS, wave, [])
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
     expect(next.combo).toBe(0)
     expect(next.chain).toEqual([card(1, '♣', 9)])
     expect(next.chainOrigin).toEqual(['draw'])
@@ -717,8 +718,57 @@ describe('drawStock', () => {
       stock: [card(1, '★', 0, true)],
       lastGain: { points: 100, parts: ['同スート+100'] },
     })
-    const next = drawStock(DEFAULT_PARAMS, wave, [])
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
     expect(next.lastGain).toBeNull()
+  })
+
+  test('リセット時、直前のチェーンが捨て札に追加される', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)],
+      chain: [card(2, '♥', 5), card(3, '♥', 6)],
+      linked: true,
+      discardPile: [card(9, '♦', 1)],
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
+    expect(next.discardPile).toEqual([card(9, '♦', 1), card(2, '♥', 5), card(3, '♥', 6)])
+  })
+
+  test('パターン継続時は捨て札に何も追加されない', () => {
+    const wave = makeWave({
+      stock: [card(1, '♠', 9)],
+      chain: [card(2, '♠', 4), card(3, '♠', 5)],
+      linked: true,
+      discardPile: [],
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
+    expect(next.discardPile).toEqual([])
+  })
+
+  test('静寂: リセット時に取れる場札が無ければ、めくった札がそのウェーブ内でワイルド化し、deckCompositionも1枚ワイルドに変換される', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)],
+      tableau: [[card(2, '♠', 2)]], // foundation想定rank9との差が大きく取れない
+      chain: [card(3, '♥', 5)],
+      linked: true,
+    })
+    const composition = standardDeckComposition()
+    const { wave: next, deckComposition } = drawStock(DEFAULT_PARAMS, wave, ['silence'], composition, 'none', createRng(1))
+    expect(next.foundation.wild).toBe(true)
+    expect(next.chain).toEqual([{ ...card(1, '♣', 9), wild: true }])
+    expect(deckComposition.filter(c => c.wild)).toHaveLength(1)
+  })
+
+  test('静寂を持っていても取れる場札があれば発動しない', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)],
+      tableau: [[card(2, '♣', 8)]], // 差1、取れる
+      chain: [card(3, '♥', 5)],
+      linked: true,
+    })
+    const composition = standardDeckComposition()
+    const { wave: next, deckComposition } = drawStock(DEFAULT_PARAMS, wave, ['silence'], composition, 'none', createRng(1))
+    expect(next.foundation.wild).toBe(false)
+    expect(deckComposition.filter(c => c.wild)).toHaveLength(0)
   })
 })
 

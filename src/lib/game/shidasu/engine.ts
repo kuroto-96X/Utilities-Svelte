@@ -199,41 +199,60 @@ export function playCard(
   return next
 }
 
-export function drawStock(params: ShidasuParams, wave: WaveState, items: ItemId[]): WaveState {
-  if (wave.status !== 'playing') return wave
-  if (wave.stock.length === 0) return wave
+export function drawStock(
+  params: ShidasuParams,
+  wave: WaveState,
+  items: ItemId[],
+  deckComposition: DeckCard[],
+  modifier: StageModifier = 'none',
+  rand: () => number = Math.random
+): { wave: WaveState; deckComposition: DeckCard[] } {
+  if (wave.status !== 'playing') return { wave, deckComposition }
+  if (wave.stock.length === 0) return { wave, deckComposition }
 
   const newStock = [...wave.stock]
-  const card = newStock.pop() as Card
+  const drawnCard = newStock.pop() as Card
 
   const effectiveStairMinLen = items.includes('bridge') ? params.items.stairRelaxedMinLen : params.scoring.stairMinLen
-  const patternContinues = wave.linked && chainContinuesPattern(params.scoring, wave.chain, card, effectiveStairMinLen)
+  const patternContinues = wave.linked && chainContinuesPattern(params.scoring, wave.chain, drawnCard, effectiveStairMinLen)
 
   if (patternContinues) {
     return {
-      ...wave,
-      stock: newStock,
-      foundation: card,
-      chain: [...wave.chain, card],
-      chainOrigin: [...wave.chainOrigin, 'draw'],
-      linked: true,
-      lastDrawEffect: card.wild ? 'wild' : 'pattern',
-      lastGain: null,
+      wave: {
+        ...wave,
+        stock: newStock,
+        foundation: drawnCard,
+        chain: [...wave.chain, drawnCard],
+        chainOrigin: [...wave.chainOrigin, 'draw'],
+        linked: true,
+        lastDrawEffect: drawnCard.wild ? 'wild' : 'pattern',
+        lastGain: null,
+      },
+      deckComposition,
     }
   }
 
+  const hasPlayableColumns = getPlayableColumns(modifier, { ...wave, foundation: drawnCard }).size > 0
+  const silenceFires = !hasPlayableColumns && items.includes('silence')
+  const card = silenceFires ? { ...drawnCard, wild: true } : drawnCard
+  const newDeckComposition = silenceFires ? convertRandomCardToWild(deckComposition, rand) : deckComposition
+
   return {
-    ...wave,
-    stock: newStock,
-    foundation: card,
-    combo: 0,
-    chain: [card],
-    chainOrigin: ['draw'],
-    linked: false,
-    columnsEmptiedThisCombo: 0,
-    comboStreakColumnLengths: wave.tableau.map(col => col.length),
-    lastDrawEffect: null,
-    lastGain: null,
+    wave: {
+      ...wave,
+      stock: newStock,
+      foundation: card,
+      combo: 0,
+      chain: [card],
+      chainOrigin: ['draw'],
+      linked: false,
+      columnsEmptiedThisCombo: 0,
+      comboStreakColumnLengths: wave.tableau.map(col => col.length),
+      lastDrawEffect: null,
+      lastGain: null,
+      discardPile: [...wave.discardPile, ...wave.chain],
+    },
+    deckComposition: newDeckComposition,
   }
 }
 
@@ -1008,8 +1027,11 @@ export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: nu
   })
 }
 
-export function applyDrawStock(params: ShidasuParams, run: RunState): RunState {
-  return withActiveWave(run, wave => drawStock(params, wave, run.items))
+export function applyDrawStock(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
+  if (run.phase !== 'playing' || !run.wave) return run
+  const modifier = params.stages[run.stageIndex].modifier
+  const { wave, deckComposition } = drawStock(params, run.wave, run.items, run.deckComposition, modifier, rand)
+  return { ...run, wave, deckComposition }
 }
 
 export function applyStuckCheck(params: ShidasuParams, run: RunState): RunState {
