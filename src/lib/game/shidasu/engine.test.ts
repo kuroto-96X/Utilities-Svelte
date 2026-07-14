@@ -1701,3 +1701,67 @@ describe('applyItemEffects (グループ4-b: スート/色専有系)', () => {
     expect(result.value).toBe(100 * params.talismans.sunlight.x)
   })
 })
+
+describe('applyItemEffects (グループ4-c: 枚数カウント系)', () => {
+  const params = DEFAULT_PARAMS
+  function ctx(overrides: Partial<ItemEffectContext> = {}): ItemEffectContext {
+    return {
+      card: card(1, '♠', 5),
+      previousFoundation: card(2, '♣', 4),
+      combo: 1,
+      stockRemaining: 0,
+      chain: [card(2, '♣', 4), card(1, '♠', 5)],
+      remainingTableauCount: 10,
+      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      isFirstPlayOfWave: false,
+      effectiveStairMinLen: params.scoring.stairMinLen,
+      ...overrides,
+    }
+  }
+
+  test('王冠: チェーン内のK枚数(ワイルド込み)×xで倍算、K無しなら不発動', () => {
+    const chain = [card(1, '♠', 13), card(2, '♦', 13), card(3, '★', 0, true)]
+    const result = applyItemEffects('gained', 100, ['crown'], ctx({ chain }), params)
+    expect(result.value).toBe(100 * (1 + 3 * params.talismans.crown.x))
+    const noKing = applyItemEffects('gained', 100, ['crown'], ctx({ chain: [card(1, '♠', 5)] }), params)
+    expect(noKing.value).toBe(100)
+  })
+
+  test('青葉: チェーン内の♣枚数(ワイルド込み)×nで加算', () => {
+    const chain = [card(1, '♣', 3), card(2, '♣', 5), card(3, '★', 0, true)]
+    const result = applyItemEffects('gained', 100, ['cloverLeaf'], ctx({ chain }), params)
+    expect(result.value).toBe(100 + 3 * params.talismans.cloverLeaf.n)
+  })
+
+  test('硬貨: チェーン内の♦枚数×nで加算', () => {
+    const chain = [card(1, '♦', 3), card(2, '♦', 5)]
+    const result = applyItemEffects('gained', 100, ['coin'], ctx({ chain }), params)
+    expect(result.value).toBe(100 + 2 * params.talismans.coin.n)
+  })
+
+  test('武器: チェーン内の♠枚数×nで加算', () => {
+    const chain = [card(1, '♠', 3), card(2, '♠', 5)]
+    const result = applyItemEffects('gained', 100, ['blade'], ctx({ chain }), params)
+    expect(result.value).toBe(100 + 2 * params.talismans.blade.n)
+  })
+
+  test('献杯: チェーン内の♥枚数×nで加算', () => {
+    const chain = [card(1, '♥', 3), card(2, '♥', 5)]
+    const result = applyItemEffects('gained', 100, ['chalice'], ctx({ chain }), params)
+    expect(result.value).toBe(100 + 2 * params.talismans.chalice.n)
+  })
+
+  test('均衡: 赤黒枚数が同数(ワイルドで調整可)なら加算', () => {
+    const balanced = applyItemEffects('gained', 100, ['balance'], ctx({ chain: [card(1, '♠', 3), card(2, '♥', 5)] }), params)
+    expect(balanced.value).toBe(100 + params.talismans.balance.n)
+    const adjustedByWild = applyItemEffects('gained', 100, ['balance'], ctx({ chain: [card(1, '♠', 3), card(2, '♥', 4), card(3, '♠', 5), card(4, '★', 0, true)] }), params)
+    expect(adjustedByWild.value).toBe(100 + params.talismans.balance.n)
+    const unbalanced = applyItemEffects('gained', 100, ['balance'], ctx({ chain: [card(1, '♠', 3), card(2, '♠', 4), card(3, '♥', 5)] }), params)
+    expect(unbalanced.value).toBe(100)
+  })
+
+  test('調和: 赤黒枚数が同数なら倍算', () => {
+    const result = applyItemEffects('gained', 100, ['harmony'], ctx({ chain: [card(1, '♠', 3), card(2, '♥', 5)] }), params)
+    expect(result.value).toBe(100 * params.talismans.harmony.x)
+  })
+})

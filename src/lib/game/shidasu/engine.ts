@@ -268,6 +268,25 @@ function chainColorExclusive(chain: Card[], red: boolean): boolean {
   return chain.every(c => c.wild || isRed(c) === red)
 }
 
+function countSuitInChain(chain: Card[], suit: Suit): number {
+  const real = chain.filter(c => !c.wild && c.suit === suit).length
+  const wild = chain.filter(c => c.wild).length
+  return real + wild
+}
+
+function countRankInChain(chain: Card[], rank: Card['rank']): number {
+  const real = chain.filter(c => !c.wild && c.rank === rank).length
+  const wild = chain.filter(c => c.wild).length
+  return real + wild
+}
+
+function redBlackBalanced(chain: Card[]): boolean {
+  const realRed = chain.filter(c => !c.wild && isRed(c)).length
+  const realBlack = chain.filter(c => !c.wild && !isRed(c)).length
+  const wildCount = chain.filter(c => c.wild).length
+  return Math.abs(realRed - realBlack) <= wildCount
+}
+
 const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; effect: ItemEffect }>> = {
   patience: {
     channel: 'clearBonus',
@@ -471,6 +490,64 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
       return { value: v * factor, part: `陽光×${fmtMultiplier(factor)}` }
     },
   },
+  crown: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      const count = countRankInChain(ctx.chain, 13)
+      if (count === 0) return { value: v, part: null }
+      const factor = 1 + count * p.talismans.crown.x
+      return { value: v * factor, part: `王冠×${fmtMultiplier(factor)}` }
+    },
+  },
+  cloverLeaf: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      const count = countSuitInChain(ctx.chain, '♣')
+      if (count === 0) return { value: v, part: null }
+      const add = count * p.talismans.cloverLeaf.n
+      return { value: v + add, part: `青葉+${add}` }
+    },
+  },
+  coin: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      const count = countSuitInChain(ctx.chain, '♦')
+      if (count === 0) return { value: v, part: null }
+      const add = count * p.talismans.coin.n
+      return { value: v + add, part: `硬貨+${add}` }
+    },
+  },
+  blade: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      const count = countSuitInChain(ctx.chain, '♠')
+      if (count === 0) return { value: v, part: null }
+      const add = count * p.talismans.blade.n
+      return { value: v + add, part: `武器+${add}` }
+    },
+  },
+  chalice: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      const count = countSuitInChain(ctx.chain, '♥')
+      if (count === 0) return { value: v, part: null }
+      const add = count * p.talismans.chalice.n
+      return { value: v + add, part: `献杯+${add}` }
+    },
+  },
+  balance: {
+    channel: 'gained',
+    effect: (v, ctx, p) =>
+      redBlackBalanced(ctx.chain) ? { value: v + p.talismans.balance.n, part: `均衡+${p.talismans.balance.n}` } : { value: v, part: null },
+  },
+  harmony: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (!redBlackBalanced(ctx.chain)) return { value: v, part: null }
+      const factor = p.talismans.harmony.x
+      return { value: v * factor, part: `調和×${fmtMultiplier(factor)}` }
+    },
+  },
 }
 
 export function applyItemEffects(
@@ -531,6 +608,13 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   grail: '聖杯の護符',
   moonlight: '月光の護符',
   sunlight: '陽光の護符',
+  crown: '王冠の護符',
+  cloverLeaf: '青葉の護符',
+  coin: '硬貨の護符',
+  blade: '武器の護符',
+  chalice: '献杯の護符',
+  balance: '均衡の護符',
+  harmony: '調和の護符',
 }
 
 export function itemDesc(id: ItemId, params: ShidasuParams): string {
@@ -569,6 +653,13 @@ export function itemDesc(id: ItemId, params: ShidasuParams): string {
     case 'grail': return `コンボがハート(♥)専有のとき、獲得点を${params.talismans.grail.x}倍`
     case 'moonlight': return `コンボが黒専有のとき、獲得点を${params.talismans.moonlight.x}倍`
     case 'sunlight': return `コンボが赤専有のとき、獲得点を${params.talismans.sunlight.x}倍`
+    case 'crown': return `コンボ内のK枚数×${params.talismans.crown.x}分、獲得点を倍加`
+    case 'cloverLeaf': return `コンボ内のクラブ(♣)枚数×${params.talismans.cloverLeaf.n}点を加算`
+    case 'coin': return `コンボ内のダイヤ(♦)枚数×${params.talismans.coin.n}点を加算`
+    case 'blade': return `コンボ内のスペード(♠)枚数×${params.talismans.blade.n}点を加算`
+    case 'chalice': return `コンボ内のハート(♥)枚数×${params.talismans.chalice.n}点を加算`
+    case 'balance': return `コンボ内の赤黒枚数が同数のとき、${params.talismans.balance.n}点加算`
+    case 'harmony': return `コンボ内の赤黒枚数が同数のとき、獲得点を${params.talismans.harmony.x}倍`
   }
 }
 
