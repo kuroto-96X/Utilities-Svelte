@@ -183,6 +183,7 @@ export function playCard(
     && items.includes('healing') && items.includes('regeneration')
     && healingIndex !== -1 && regenerationIndex !== -1 && healingIndex < regenerationIndex
 
+  // workingXxx: 再生の解決を経た状態(再生が発動しなければnewTableau等のまま)。
   let workingTableau = newTableau
   let workingDiscardPile = wave.discardPile
   let workingComboStreakColumnLengths = wave.comboStreakColumnLengths
@@ -207,8 +208,11 @@ export function playCard(
     regenerationRevivedNow = true
   }
 
-  // 治癒: 復活対象(一掃した列)が、再生の再配布後も含めてまだ空であれば発動する
-  // (再生の再配布が捨て札不足などでその列まで届かなかった場合は、治癒が追加で発動しうる)。
+  // 治癒: 復活対象(一掃した列)が、再生の再配布後も含めてまだ空であれば発動する。
+  // (現在の再配布ループは「捨て札を使い切るか、全列をrows枚まで満たすか」のいずれかで
+  // 終わるため、対象列だけ空のまま捨て札が残るケースは実際には発生しない。将来、再配布の
+  // アルゴリズムが変わった場合に備えた安全側のチェックとして残している。)
+  // healedXxx: 治癒の解決まで経た最終状態。next(戻り値)はこれを使う。
   let healedTableau = workingTableau
   let healedDiscardPile = workingDiscardPile
   let healedComboStreakColumnLengths = workingComboStreakColumnLengths
