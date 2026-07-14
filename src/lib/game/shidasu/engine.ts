@@ -761,6 +761,59 @@ export function applyItemEffects(
   return { value, parts }
 }
 
+export type DirectChannel = 'resetDirect' | 'stockEmptyDirect' | 'comboMilestoneDirect' | 'drawContinueDirect'
+
+export interface DirectEffectContext {
+  comboBeforeReset: number
+  hasPlayableColumns: boolean
+  roleFiredThisChain: boolean
+  remainingTableauCount: number
+  combo: number
+  colorHeld: boolean
+}
+
+type DirectEffect = (ctx: DirectEffectContext, params: ShidasuParams) => number
+
+const DIRECT_EFFECTS: Partial<Record<ItemId, { channel: DirectChannel; effect: DirectEffect }>> = {
+  composure: {
+    channel: 'resetDirect',
+    effect: (ctx, p) => (ctx.hasPlayableColumns ? 0 : p.talismans.composure.n),
+  },
+  clarity: {
+    channel: 'resetDirect',
+    effect: (ctx, p) => (ctx.roleFiredThisChain ? 0 : p.talismans.clarity.n),
+  },
+  echo: {
+    channel: 'resetDirect',
+    effect: (ctx, p) => ctx.comboBeforeReset * p.talismans.echo.n,
+  },
+  arrogance: {
+    channel: 'stockEmptyDirect',
+    effect: (ctx, p) => ctx.remainingTableauCount * p.talismans.arrogance.x,
+  },
+  shootingStar: {
+    channel: 'comboMilestoneDirect',
+    effect: (ctx, p) => (ctx.combo === p.talismans.shootingStar.c ? p.talismans.shootingStar.n : 0),
+  },
+  sincerity: {
+    channel: 'drawContinueDirect',
+    effect: (ctx, p) => (ctx.colorHeld ? p.talismans.sincerity.n : 0),
+  },
+}
+
+export function applyDirectEffects(
+  channel: DirectChannel,
+  items: ItemId[],
+  ctx: DirectEffectContext,
+  params: ShidasuParams
+): number {
+  return items.reduce((total, id) => {
+    const entry = DIRECT_EFFECTS[id]
+    if (!entry || entry.channel !== channel) return total
+    return total + entry.effect(ctx, params)
+  }, 0)
+}
+
 // rollItemOfferは重み付けなしの完全均等抽選(レアリティによる出現率差は未実装)。
 // docs/shidasu-gofu-candidates.mdのC/U/Rレアリティ区分は検討用の分類であり、抽選確率には反映されていない。
 export const ITEM_POOL: ItemId[] = [

@@ -18,6 +18,7 @@ import {
   ITEM_NAMES,
   itemDesc,
   applyItemEffects,
+  applyDirectEffects,
   createInitialRun,
   beginRun,
   resolveWaveEnd,
@@ -41,6 +42,7 @@ import {
   stairUsesKALoop,
   forceStockTop,
   type ItemEffectContext,
+  type DirectEffectContext,
 } from './engine'
 import type { Card, WaveState, RunState, ItemId } from './types'
 import { DEFAULT_PARAMS } from './params'
@@ -2204,5 +2206,74 @@ describe('applyItemEffects (グループ8: 無条件固定加算)', () => {
   test('小雨: 常にn点加算', () => {
     const result = applyItemEffects('gained', 100, ['drizzle'], ctx(), params)
     expect(result.value).toBe(100 + params.talismans.drizzle.n)
+  })
+})
+
+describe('applyDirectEffects', () => {
+  const params = DEFAULT_PARAMS
+
+  function directCtx(overrides: Partial<DirectEffectContext> = {}): DirectEffectContext {
+    return {
+      comboBeforeReset: 0,
+      hasPlayableColumns: true,
+      roleFiredThisChain: false,
+      remainingTableauCount: 10,
+      combo: 1,
+      colorHeld: false,
+      ...overrides,
+    }
+  }
+
+  test('未登録の護符は素通りする', () => {
+    const result = applyDirectEffects('resetDirect', ['bridge'], directCtx(), params)
+    expect(result).toBe(0)
+  })
+
+  test('沈着: 取れる場札が無ければresetDirectで加算', () => {
+    const fired = applyDirectEffects('resetDirect', ['composure'], directCtx({ hasPlayableColumns: false }), params)
+    expect(fired).toBe(params.talismans.composure.n)
+    const notFired = applyDirectEffects('resetDirect', ['composure'], directCtx({ hasPlayableColumns: true }), params)
+    expect(notFired).toBe(0)
+  })
+
+  test('冷静: 役が一つも成立していなければresetDirectで加算', () => {
+    const fired = applyDirectEffects('resetDirect', ['clarity'], directCtx({ roleFiredThisChain: false }), params)
+    expect(fired).toBe(params.talismans.clarity.n)
+    const notFired = applyDirectEffects('resetDirect', ['clarity'], directCtx({ roleFiredThisChain: true }), params)
+    expect(notFired).toBe(0)
+  })
+
+  test('残響: resetDirectでリセット前のコンボ数×nを加算', () => {
+    const result = applyDirectEffects('resetDirect', ['echo'], directCtx({ comboBeforeReset: 5 }), params)
+    expect(result).toBe(5 * params.talismans.echo.n)
+  })
+
+  test('沈着・冷静・残響は同時に発火しうる(合算される)', () => {
+    const result = applyDirectEffects('resetDirect', ['composure', 'clarity', 'echo'], directCtx({ hasPlayableColumns: false, roleFiredThisChain: false, comboBeforeReset: 2 }), params)
+    expect(result).toBe(params.talismans.composure.n + params.talismans.clarity.n + 2 * params.talismans.echo.n)
+  })
+
+  test('慢心: stockEmptyDirectで場札残数×xを加算', () => {
+    const result = applyDirectEffects('stockEmptyDirect', ['arrogance'], directCtx({ remainingTableauCount: 7 }), params)
+    expect(result).toBe(7 * params.talismans.arrogance.x)
+  })
+
+  test('流星: comboMilestoneDirectでコンボ数がちょうどcの時のみ加算', () => {
+    const fired = applyDirectEffects('comboMilestoneDirect', ['shootingStar'], directCtx({ combo: params.talismans.shootingStar.c }), params)
+    expect(fired).toBe(params.talismans.shootingStar.n)
+    const notFired = applyDirectEffects('comboMilestoneDirect', ['shootingStar'], directCtx({ combo: params.talismans.shootingStar.c + 1 }), params)
+    expect(notFired).toBe(0)
+  })
+
+  test('誠実: drawContinueDirectで同色パターン継続の時のみ加算', () => {
+    const fired = applyDirectEffects('drawContinueDirect', ['sincerity'], directCtx({ colorHeld: true }), params)
+    expect(fired).toBe(params.talismans.sincerity.n)
+    const notFired = applyDirectEffects('drawContinueDirect', ['sincerity'], directCtx({ colorHeld: false }), params)
+    expect(notFired).toBe(0)
+  })
+
+  test('gainedチャンネルの護符はdirectチャンネルには影響しない', () => {
+    const result = applyDirectEffects('resetDirect', ['courage'], directCtx(), params)
+    expect(result).toBe(0)
   })
 })
