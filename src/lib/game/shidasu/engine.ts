@@ -284,19 +284,61 @@ export function drawStock(
     // benevolenceFiresによる継続扱いは「本来リセットするところの救済」であり、
     // パターン継続そのものの報酬である誠実の対象にはしない。
     const directGain = wouldContinue ? applyDirectEffects('drawContinueDirect', items, drawContinueCtx, params) : 0
+    const newDrawContinueCount = wouldContinue ? wave.drawContinueCountThisChain + 1 : wave.drawContinueCountThisChain
+
+    let naiveGained = 0
+    let naiveParts: string[] = []
+    let naiveCombo = wave.combo
+    if (wouldContinue && items.includes('naive')) {
+      const newCombo = wave.combo + 1
+      let base = params.scoring.basePoint
+      const parts = [`基礎点+${base}`]
+      const chainResult = evaluateChainBonus(params.scoring, wave.chain, drawnCard, effectiveStairMinLen)
+      base += chainResult.bonus
+      parts.push(...chainResult.parts)
+      const naiveCtx: ItemEffectContext = {
+        card: drawnCard,
+        previousFoundation: wave.foundation,
+        combo: newCombo,
+        stockRemaining: newStock.length,
+        chain: [...wave.chain, drawnCard],
+        remainingTableauCount: remainingCount(wave.tableau),
+        chainBonus: chainResult,
+        isFirstPlayOfWave: !wave.firstPlayDone,
+        effectiveStairMinLen,
+        sameColumnStreak: wave.sameColumnStreak,
+        totalColumnsEmptiedThisWave: wave.totalColumnsEmptiedThisWave,
+        maxComboThisWave: Math.max(wave.maxComboThisWave, newCombo),
+        flushActiveThisCombo: wave.flushActiveThisCombo || chainResult.roleFired.some(r => r.name === 'flush'),
+        columnSweepActiveThisWave: wave.columnSweepActiveThisWave,
+        drawContinueCountThisChain: newDrawContinueCount,
+      }
+      const comboMultiplierStep = params.scoring.comboMultiplierStep
+      const multiplier = 1 + (newCombo - 1) * comboMultiplierStep
+      if (multiplier !== 1) parts.push(`コンボ倍率×${fmtMultiplier(multiplier)}`)
+      const rawGained = Math.floor(base * multiplier)
+      const itemResult = applyItemEffects('gained', rawGained, items, naiveCtx, params)
+      parts.push(...itemResult.parts)
+      naiveGained = Math.floor(itemResult.value)
+      naiveParts = parts
+      naiveCombo = newCombo
+    }
+
     return {
       wave: {
         ...wave,
         stock: newStock,
         foundation: drawnCard,
+        combo: naiveCombo,
         chain: [...wave.chain, drawnCard],
         chainOrigin: [...wave.chainOrigin, 'draw'],
         linked: true,
         lastDrawEffect: drawnCard.wild ? 'wild' : 'pattern',
-        lastGain: null,
-        score: scoreAfterStockEmpty + directGain,
-        drawContinueCountThisChain: wouldContinue ? wave.drawContinueCountThisChain + 1 : wave.drawContinueCountThisChain,
+        lastGain: naiveGained > 0 ? { points: naiveGained, parts: naiveParts } : null,
+        score: scoreAfterStockEmpty + directGain + naiveGained,
+        drawContinueCountThisChain: newDrawContinueCount,
         benevolenceUsedThisCombo: benevolenceFires ? true : wave.benevolenceUsedThisCombo,
+        maxComboThisWave: Math.max(wave.maxComboThisWave, naiveCombo),
       },
       deckComposition,
     }
@@ -876,6 +918,14 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
       ctx.columnSweepActiveThisWave
         ? { value: v * p.talismans.fightingSpirit.x, part: `闘志×${fmtMultiplier(p.talismans.fightingSpirit.x)}` }
         : { value: v, part: null },
+  },
+  intuition: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (ctx.drawContinueCountThisChain === 0) return { value: v, part: null }
+      const factor = 1 + ctx.drawContinueCountThisChain * p.talismans.intuition.x
+      return { value: v * factor, part: `直感×${fmtMultiplier(factor)}` }
+    },
   },
 }
 

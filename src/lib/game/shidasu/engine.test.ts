@@ -2636,3 +2636,76 @@ describe('applyItemEffects (グループ16: 持続効果)', () => {
     expect(notFired.value).toBe(100)
   })
 })
+
+describe('applyItemEffects (グループ12: 直感)', () => {
+  const params = DEFAULT_PARAMS
+  function ctx(overrides: Partial<ItemEffectContext> = {}): ItemEffectContext {
+    return {
+      card: card(1, '♠', 5),
+      previousFoundation: card(2, '♣', 4),
+      combo: 1,
+      stockRemaining: 0,
+      chain: [card(2, '♣', 4), card(1, '♠', 5)],
+      remainingTableauCount: 10,
+      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      isFirstPlayOfWave: false,
+      effectiveStairMinLen: params.scoring.stairMinLen,
+      sameColumnStreak: 1,
+      totalColumnsEmptiedThisWave: 0,
+      maxComboThisWave: 1,
+      flushActiveThisCombo: false,
+      columnSweepActiveThisWave: false,
+      drawContinueCountThisChain: 0,
+      ...overrides,
+    }
+  }
+
+  test('直感: drawContinueCountThisChainが0より大きい時のみ、その回数×xで倍算', () => {
+    const notFired = applyItemEffects('gained', 100, ['intuition'], ctx({ drawContinueCountThisChain: 0 }), params)
+    expect(notFired.value).toBe(100)
+    const fired = applyItemEffects('gained', 100, ['intuition'], ctx({ drawContinueCountThisChain: 3 }), params)
+    expect(fired.value).toBe(100 * (1 + 3 * params.talismans.intuition.x))
+  })
+})
+
+describe('drawStock (素朴の得点ルール変更)', () => {
+  test('素朴: パターン継続めくりが通常プレイと同じ得点計算になり、コンボ数も加算される', () => {
+    const wave = makeWave({
+      stock: [card(1, '♠', 9)], // 同スート継続(捲った後で実カード3枚)
+      combo: 2,
+      chain: [card(2, '♠', 4), card(3, '♠', 5)],
+      linked: true,
+      score: 0,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['naive'], standardDeckComposition())
+    expect(next.combo).toBe(3) // 通常プレイと同様にコンボが加算される
+    expect(next.score).toBeGreaterThan(0) // 得点が発生する(通常は0のまま)
+  })
+
+  test('素朴を持たない場合は、パターン継続めくりで得点もコンボ加算も発生しない(既存挙動)', () => {
+    const wave = makeWave({
+      stock: [card(1, '♠', 9)],
+      combo: 2,
+      chain: [card(2, '♠', 4), card(3, '♠', 5)],
+      linked: true,
+      score: 0,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
+    expect(next.combo).toBe(2) // 据え置き
+    expect(next.score).toBe(0)
+  })
+
+  test('素朴+直感: パターン継続めくりの得点計算に直感の倍率が適用される', () => {
+    const wave = makeWave({
+      stock: [card(1, '♠', 9)],
+      combo: 2,
+      chain: [card(2, '♠', 4), card(3, '♠', 5)],
+      linked: true,
+      score: 0,
+      drawContinueCountThisChain: 2,
+    })
+    const withoutIntuition = drawStock(DEFAULT_PARAMS, wave, ['naive'], standardDeckComposition())
+    const withIntuition = drawStock(DEFAULT_PARAMS, wave, ['naive', 'intuition'], standardDeckComposition())
+    expect(withIntuition.wave.score).toBeGreaterThan(withoutIntuition.wave.score)
+  })
+})
