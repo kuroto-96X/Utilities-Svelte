@@ -89,6 +89,26 @@ export interface ShidasuParams {
     morningDew: { n: number }
     drizzle: { n: number }
     resilience: { p: number }
+    gentleBreeze: { n: number }
+    resonance: { x: number }
+    azureSky: { x: number }
+    amber: { x: number }
+    composure: { n: number }
+    clarity: { n: number }
+    arrogance: { x: number }
+    echo: { n: number }
+    shootingStar: { c: number; n: number }
+    naive: Record<string, never>
+    intuition: { x: number }
+    sincerity: { n: number }
+    promise: Record<string, never>
+    darkClouds: { r: number }
+    regeneration: { p: number }
+    benevolence: Record<string, never>
+    healing: Record<string, never>
+    guidance: Record<string, never>
+    passion: { x: number }
+    fightingSpirit: { x: number }
   }
   flow: {
     wavesPerStage: number
@@ -185,6 +205,26 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     morningDew: { n: 5000 },
     drizzle: { n: 50 },
     resilience: { p: 30 },
+    gentleBreeze: { n: 100 },
+    resonance: { x: 0.3 },
+    azureSky: { x: 0.3 },
+    amber: { x: 0.1 },
+    composure: { n: 500 },
+    clarity: { n: 500 },
+    arrogance: { x: 50 },
+    echo: { n: 200 },
+    shootingStar: { c: 10, n: 1000 },
+    naive: {},
+    intuition: { x: 0.3 },
+    sincerity: { n: 300 },
+    promise: {},
+    darkClouds: { r: 1 },
+    regeneration: { p: 50 },
+    benevolence: {},
+    healing: {},
+    guidance: {},
+    passion: { x: 1.5 },
+    fightingSpirit: { x: 1.3 },
   },
   flow: { wavesPerStage: 3, clearDelayMs: 450 },
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },

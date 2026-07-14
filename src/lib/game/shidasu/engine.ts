@@ -94,6 +94,15 @@ export function startWave(
     lastGain: null,
     firstPlayDone: false,
     discardPile: [],
+    lastPlayedColumn: null,
+    sameColumnStreak: 0,
+    maxComboThisWave: 0,
+    totalColumnsEmptiedThisWave: 0,
+    roleFiredThisChain: false,
+    drawContinueCountThisChain: 0,
+    flushActiveThisCombo: false,
+    columnSweepActiveThisWave: false,
+    benevolenceUsedThisCombo: false,
   }
 
   return { wave, deckComposition: composition }
@@ -831,6 +840,26 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   abundance: '豊穣の護符',
   silence: '静寂の護符',
   resilience: '不屈の護符',
+  gentleBreeze: '微風の護符',
+  resonance: '共鳴の護符',
+  azureSky: '蒼穹の護符',
+  amber: '琥珀の護符',
+  composure: '沈着の護符',
+  clarity: '冷静の護符',
+  arrogance: '慢心の護符',
+  echo: '残響の護符',
+  shootingStar: '流星の護符',
+  naive: '素朴の護符',
+  intuition: '直感の護符',
+  sincerity: '誠実の護符',
+  promise: '約束の護符',
+  darkClouds: '暗雲の護符',
+  regeneration: '再生の護符',
+  benevolence: '博愛の護符',
+  healing: '治癒の護符',
+  guidance: '導きの護符',
+  passion: '情熱の護符',
+  fightingSpirit: '闘志の護符',
 }
 
 export function itemDesc(id: ItemId, params: ShidasuParams): string {
@@ -897,6 +926,26 @@ export function itemDesc(id: ItemId, params: ShidasuParams): string {
     case 'abundance': return `ウェーブ開始時、デッキ内の1枚がランダムにワイルドへ変換される(以後のウェーブにも引き継がれる)`
     case 'silence': return `山札めくりで取れる場札が無いままコンボがリセットされた時、めくった札をワイルドに変換する(デッキにも永続的に反映)`
     case 'resilience': return `山札が無く場札も取れない手詰まり時、スコアの${params.talismans.resilience.p}%を消費して捨て札の半数を山札に戻す`
+    case 'gentleBreeze': return `同じ列を連続でプレイしたとき(2回目以降)、連続回数×${params.talismans.gentleBreeze.n}点加算`
+    case 'resonance': return `同じ列を連続でプレイしたとき(2回目以降)、連続回数×${params.talismans.resonance.x}分獲得点を倍加`
+    case 'azureSky': return `ウェーブ内で列一掃した累計回数×${params.talismans.azureSky.x}分、獲得点を倍加`
+    case 'amber': return `ウェーブ内の最大到達コンボ数×${params.talismans.amber.x}分、獲得点を倍加`
+    case 'composure': return `山札めくりでコンボリセットされた時、取れる場札が無ければ直接${params.talismans.composure.n}点加算`
+    case 'clarity': return `コンボリセット時、そのチェーンで役が一つも成立していなければ直接${params.talismans.clarity.n}点加算`
+    case 'arrogance': return `山札が無くなった時、場札の残り枚数×${params.talismans.arrogance.x}点を直接加算`
+    case 'echo': return `コンボがリセットされる瞬間、リセット前のコンボ数×${params.talismans.echo.n}点を直接加算`
+    case 'shootingStar': return `コンボ数が${params.talismans.shootingStar.c}に到達した瞬間、直接${params.talismans.shootingStar.n}点加算`
+    case 'naive': return `山札めくりがパターン継続だった場合、通常のプレイと同様に得点計算する(コンボ数も加算)`
+    case 'intuition': return `(素朴と組み合わせて機能)現在のチェーン中に山札めくりでコンボ継続した回数×${params.talismans.intuition.x}分、獲得点を倍加`
+    case 'sincerity': return `山札めくりで同色パターンによりコンボ継続した時、直接${params.talismans.sincerity.n}点加算`
+    case 'promise': return `山札の次のカードが、今のコンボが継続できるカードになる`
+    case 'darkClouds': return `ウェーブ開始時、場札が${params.talismans.darkClouds.r}行多く配られる`
+    case 'regeneration': return `全消し時、スコアの${params.talismans.regeneration.p}%を消費して捨て札から場札を復活させる(復活すればウェーブ継続)`
+    case 'benevolence': return `コンボごとに1回、コンボリセットを無効化する`
+    case 'healing': return `列一掃時、捨て札から最大rows枚を空いた列へ戻す`
+    case 'guidance': return `山札の次のカードが見えるようになる`
+    case 'passion': return `このコンボ中にフラッシュが成立していれば、獲得点を${params.talismans.passion.x}倍`
+    case 'fightingSpirit': return `このウェーブ中に列一掃が発生していれば、獲得点を${params.talismans.fightingSpirit.x}倍`
   }
 }
 

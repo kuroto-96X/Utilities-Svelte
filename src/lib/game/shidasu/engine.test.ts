@@ -93,6 +93,15 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     lastGain: null,
     firstPlayDone: false,
     discardPile: [],
+    lastPlayedColumn: null,
+    sameColumnStreak: 0,
+    maxComboThisWave: 0,
+    totalColumnsEmptiedThisWave: 0,
+    roleFiredThisChain: false,
+    drawContinueCountThisChain: 0,
+    flushActiveThisCombo: false,
+    columnSweepActiveThisWave: false,
+    benevolenceUsedThisCombo: false,
     ...overrides,
   }
 }
@@ -1065,6 +1074,27 @@ describe('DEFAULT_PARAMS.talismans (グループ4〜8)', () => {
 describe('DEFAULT_PARAMS.talismans.resilience', () => {
   test('既定値が設定されている', () => {
     expect(DEFAULT_PARAMS.talismans.resilience.p).toBe(30)
+  })
+})
+
+describe('DEFAULT_PARAMS.talismans (グループ9〜16)', () => {
+  test('既定値が正しく設定されている', () => {
+    expect(DEFAULT_PARAMS.talismans.gentleBreeze.n).toBe(100)
+    expect(DEFAULT_PARAMS.talismans.resonance.x).toBe(0.3)
+    expect(DEFAULT_PARAMS.talismans.azureSky.x).toBe(0.3)
+    expect(DEFAULT_PARAMS.talismans.amber.x).toBe(0.1)
+    expect(DEFAULT_PARAMS.talismans.composure.n).toBe(500)
+    expect(DEFAULT_PARAMS.talismans.clarity.n).toBe(500)
+    expect(DEFAULT_PARAMS.talismans.arrogance.x).toBe(50)
+    expect(DEFAULT_PARAMS.talismans.echo.n).toBe(200)
+    expect(DEFAULT_PARAMS.talismans.shootingStar.c).toBe(10)
+    expect(DEFAULT_PARAMS.talismans.shootingStar.n).toBe(1000)
+    expect(DEFAULT_PARAMS.talismans.intuition.x).toBe(0.3)
+    expect(DEFAULT_PARAMS.talismans.sincerity.n).toBe(300)
+    expect(DEFAULT_PARAMS.talismans.darkClouds.r).toBe(1)
+    expect(DEFAULT_PARAMS.talismans.regeneration.p).toBe(50)
+    expect(DEFAULT_PARAMS.talismans.passion.x).toBe(1.5)
+    expect(DEFAULT_PARAMS.talismans.fightingSpirit.x).toBe(1.3)
   })
 })
 

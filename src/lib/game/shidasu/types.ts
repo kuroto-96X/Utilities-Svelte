@@ -17,6 +17,14 @@ export type ItemId =
   | 'prologue' | 'interlude' | 'morningDew'
   | 'drizzle'
   | 'eternity' | 'abundance' | 'silence' | 'resilience'
+  | 'gentleBreeze' | 'resonance'
+  | 'azureSky' | 'amber'
+  | 'composure' | 'clarity' | 'arrogance' | 'echo' | 'shootingStar'
+  | 'naive' | 'intuition' | 'sincerity'
+  | 'promise' | 'darkClouds' | 'regeneration'
+  | 'benevolence' | 'healing'
+  | 'guidance'
+  | 'passion' | 'fightingSpirit'
 
 export interface Card {
   id: number
@@ -63,6 +71,24 @@ export interface WaveState {
   firstPlayDone: boolean
   // コンボリセット時にチェーンにあった札が送られる、ウェーブ内限定の捨て札(不屈の護符が参照する。ウェーブを跨いで持続しない)
   discardPile: Card[]
+  // 微風・共鳴用: 直前にプレイした列番号(未プレイならnull)
+  lastPlayedColumn: number | null
+  // 微風・共鳴用: 同一列を連続でプレイした回数(1回目は1、以後連続でインクリメント)
+  sameColumnStreak: number
+  // 琥珀用: ウェーブ内で過去に到達した最大コンボ数
+  maxComboThisWave: number
+  // 蒼穹用: ウェーブ内で列一掃が発生した累計回数
+  totalColumnsEmptiedThisWave: number
+  // 冷静用: 現在のチェーン中に一度でも役ボーナスが成立したか
+  roleFiredThisChain: boolean
+  // 直感用: 現在のチェーン中に山札めくりでコンボ継続した回数(プレイを挟んでも加算され続け、コンボ/チェーンのリセットでのみ0に戻る)
+  drawContinueCountThisChain: number
+  // 情熱用: 現在のコンボ中にフラッシュが成立したか
+  flushActiveThisCombo: boolean
+  // 闘志用: このウェーブ中に列一掃が一度でも発生したか
+  columnSweepActiveThisWave: boolean
+  // 博愛用: 現在のコンボで無効化を既に使ったか
+  benevolenceUsedThisCombo: boolean
 }
 
 export type RunPhase = 'title' | 'playing' | 'itemSelect' | 'stageClear' | 'allClear' | 'gameOver'
