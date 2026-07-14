@@ -576,6 +576,16 @@
       </section>
 
       <section class="bg-white border border-slate-200 rounded-xl p-4">
+        <h2 class="font-semibold text-slate-700 text-sm mb-3">護符パラメータ(永続デッキ系)</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="text-xs text-slate-500">
+            不屈: 手詰まり復活時のスコア消費率%(resilience.p)
+            <input type="number" min="0" max="100" step="1" bind:value={config.talismans.resilience.p} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+        </div>
+      </section>
+
+      <section class="bg-white border border-slate-200 rounded-xl p-4">
         <h2 class="font-semibold text-slate-700 text-sm mb-3">フロー・UI</h2>
         <div class="grid grid-cols-2 gap-3">
           <label class="text-xs text-slate-500">
