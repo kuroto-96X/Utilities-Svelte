@@ -271,8 +271,7 @@ export function drawStock(
   }
 
   if (patternContinues) {
-    const { colorHeld } = analyzeSuitColor([...wave.chain, drawnCard])
-    const { suitHeld } = analyzeSuitColor([...wave.chain, drawnCard])
+    const { colorHeld, suitHeld } = analyzeSuitColor([...wave.chain, drawnCard])
     const drawContinueCtx: DirectEffectContext = {
       comboBeforeReset: 0,
       hasPlayableColumns: true,
@@ -281,6 +280,9 @@ export function drawStock(
       combo: wave.combo,
       colorHeld: colorHeld && !suitHeld,
     }
+    // 誠実(drawContinueDirect)はwouldContinue(実際のパターン継続)でのみ発火する。
+    // benevolenceFiresによる継続扱いは「本来リセットするところの救済」であり、
+    // パターン継続そのものの報酬である誠実の対象にはしない。
     const directGain = wouldContinue ? applyDirectEffects('drawContinueDirect', items, drawContinueCtx, params) : 0
     return {
       wave: {
