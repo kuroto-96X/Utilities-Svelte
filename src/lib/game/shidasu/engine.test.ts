@@ -2721,34 +2721,49 @@ describe('約束・暗雲', () => {
     // これは約束の実装不備ではなく、「継続」概念そのものがウェーブ開始直後には成立し得ないため。
     // そのためこのテストではsuitColorMinLenを2に緩めたパラメータを使い、
     // 「継続可能なカードが山札にあれば末尾に来る」という約束の実装意図そのものを検証する。
+    // 単に発生回数を数えるだけでは、並べ替えロジックをno-opにすり替えても偶然
+    // (末尾のカードがたまたま継続可能)パスしてしまう可能性がある。そのため各シードごとに
+    // 「山札全体に継続可能なカードが1枚でもあれば、末尾のカードも継続可能である」という
+    // 含意そのものを検証する(no-opだと、この含意が偽になるシードが高確率で出現するはず)。
     const relaxedParams = {
       ...DEFAULT_PARAMS,
       scoring: { ...DEFAULT_PARAMS.scoring, suitColorMinLen: 2 },
     }
-    let continueCount = 0
+    let anyContinuesCount = 0
     const trials = 30
     for (let seed = 1; seed <= trials; seed++) {
       const { wave } = startWave(relaxedParams, 0, 0, ['promise'], standardDeckComposition(), seed)
       if (wave.stock.length === 0) continue
       const nextCard = wave.stock[wave.stock.length - 1]
-      if (chainContinuesPattern(relaxedParams.scoring, wave.chain, nextCard)) continueCount++
+      const anyContinues = wave.stock.some(c => chainContinuesPattern(relaxedParams.scoring, wave.chain, c))
+      if (anyContinues) {
+        anyContinuesCount++
+        expect(chainContinuesPattern(relaxedParams.scoring, wave.chain, nextCard)).toBe(true)
+      }
     }
-    expect(continueCount).toBeGreaterThan(0)
+    expect(anyContinuesCount).toBeGreaterThan(0)
   })
 
-  test('約束: drawStockの後も、次のカードが継続可能なら並べ替えが維持される', () => {
+  test('約束: drawStockの後、末尾ではない位置にあった継続可能なカードが末尾に並べ替えられる', () => {
     const wave = makeWave({
-      stock: [card(1, '♦', 1), card(2, '♠', 6), card(3, '♣', 2)], // 末尾がcard(3)、継続には合わない可能性
-      chain: [card(9, '♠', 4), card(10, '♠', 5)], // 同スート継続中(♠6が来れば継続)
+      // card(3,♣,2)を引いた後のchainは黒3枚継続中になる。継続可能なcard(2,♠,6)は
+      // 末尾ではない位置にあり、並べ替え無しなら継続不可のcard(1,♦,1)が末尾に残る。
+      stock: [card(2, '♠', 6), card(1, '♦', 1), card(3, '♣', 2)],
+      chain: [card(9, '♠', 4), card(10, '♠', 5)], // 黒2枚継続中
       linked: true,
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['promise'], standardDeckComposition())
-    if (next.stock.length > 0) {
-      const nextCard = next.stock[next.stock.length - 1]
-      const doesContinue = chainContinuesPattern(DEFAULT_PARAMS.scoring, next.chain, nextCard)
-      const anyContinues = next.stock.some(c => chainContinuesPattern(DEFAULT_PARAMS.scoring, next.chain, c))
-      if (anyContinues) expect(doesContinue).toBe(true)
-    }
+    expect(next.stock[next.stock.length - 1]).toEqual(card(2, '♠', 6))
+  })
+
+  test('約束を持たなければ山札の並び順は変わらない(既存挙動)', () => {
+    const wave = makeWave({
+      stock: [card(2, '♠', 6), card(1, '♦', 1), card(3, '♣', 2)],
+      chain: [card(9, '♠', 4), card(10, '♠', 5)],
+      linked: true,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
+    expect(next.stock).toEqual([card(2, '♠', 6), card(1, '♦', 1)])
   })
 
   test('暗雲: ウェーブ開始時、場札がrows+r枚配られる', () => {
