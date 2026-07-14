@@ -89,6 +89,7 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     status: 'playing',
     endReason: null,
     lastGain: null,
+    firstPlayDone: false,
     ...overrides,
   }
 }
@@ -818,6 +819,49 @@ describe('rollItemOffer', () => {
   test('全て持っていれば候補は空になる', () => {
     const offer = rollItemOffer([...ITEM_POOL], createRng(1))
     expect(offer).toEqual([])
+  })
+})
+
+describe('DEFAULT_PARAMS.talismans (グループ4〜8)', () => {
+  test('35個分の既定値が正しく設定されている', () => {
+    expect(DEFAULT_PARAMS.talismans.calm.n).toBe(200)
+    expect(DEFAULT_PARAMS.talismans.serenity.x).toBe(1.5)
+    expect(DEFAULT_PARAMS.talismans.destiny.n).toBe(300)
+    expect(DEFAULT_PARAMS.talismans.fate.x).toBe(2.0)
+    expect(DEFAULT_PARAMS.talismans.relief.n).toBe(100)
+    expect(DEFAULT_PARAMS.talismans.verdantGreen.x).toBe(3)
+    expect(DEFAULT_PARAMS.talismans.gem.x).toBe(3)
+    expect(DEFAULT_PARAMS.talismans.resolve.x).toBe(3)
+    expect(DEFAULT_PARAMS.talismans.grail.x).toBe(3)
+    expect(DEFAULT_PARAMS.talismans.moonlight.x).toBe(1.5)
+    expect(DEFAULT_PARAMS.talismans.sunlight.x).toBe(1.5)
+    expect(DEFAULT_PARAMS.talismans.crown.x).toBe(0.5)
+    expect(DEFAULT_PARAMS.talismans.cloverLeaf.n).toBe(50)
+    expect(DEFAULT_PARAMS.talismans.coin.n).toBe(50)
+    expect(DEFAULT_PARAMS.talismans.blade.n).toBe(50)
+    expect(DEFAULT_PARAMS.talismans.chalice.n).toBe(50)
+    expect(DEFAULT_PARAMS.talismans.balance.n).toBe(200)
+    expect(DEFAULT_PARAMS.talismans.harmony.x).toBe(1.5)
+    expect(DEFAULT_PARAMS.talismans.nobility.n).toBe(200)
+    expect(DEFAULT_PARAMS.talismans.tenacity.x).toBe(0.1)
+    expect(DEFAULT_PARAMS.talismans.determination.x).toBe(0.1)
+    expect(DEFAULT_PARAMS.talismans.cycle.x).toBe(3)
+    expect(DEFAULT_PARAMS.talismans.reincarnation.x).toBe(10)
+    expect(DEFAULT_PARAMS.talismans.majesty.x).toBe(50)
+    expect(DEFAULT_PARAMS.talismans.omen.m).toBe(20)
+    expect(DEFAULT_PARAMS.talismans.omen.x).toBe(1.5)
+    expect(DEFAULT_PARAMS.talismans.crescent.m).toBe(10)
+    expect(DEFAULT_PARAMS.talismans.crescent.x).toBe(3)
+    expect(DEFAULT_PARAMS.talismans.blessing.x).toBe(1.5)
+    expect(DEFAULT_PARAMS.talismans.focus.x).toBe(3)
+    expect(DEFAULT_PARAMS.talismans.lapis.x).toBe(2)
+    expect(DEFAULT_PARAMS.talismans.jade.n).toBe(200)
+    expect(DEFAULT_PARAMS.talismans.emptyMind.x).toBe(4)
+    expect(DEFAULT_PARAMS.talismans.prologue.n).toBe(500)
+    expect(DEFAULT_PARAMS.talismans.interlude.m).toBe(5)
+    expect(DEFAULT_PARAMS.talismans.interlude.n).toBe(1000)
+    expect(DEFAULT_PARAMS.talismans.morningDew.n).toBe(5000)
+    expect(DEFAULT_PARAMS.talismans.drizzle.n).toBe(50)
   })
 })
 

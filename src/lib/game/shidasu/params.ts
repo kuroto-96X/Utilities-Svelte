@@ -53,6 +53,41 @@ export interface ShidasuParams {
     cheerful: { n: number }
     conscience: { n: number }
     morningMist: { c: number; x: number }
+    calm: { n: number }
+    serenity: { x: number }
+    destiny: { n: number }
+    fate: { x: number }
+    relief: { n: number }
+    verdantGreen: { x: number }
+    gem: { x: number }
+    resolve: { x: number }
+    grail: { x: number }
+    moonlight: { x: number }
+    sunlight: { x: number }
+    crown: { x: number }
+    cloverLeaf: { n: number }
+    coin: { n: number }
+    blade: { n: number }
+    chalice: { n: number }
+    balance: { n: number }
+    harmony: { x: number }
+    nobility: { n: number }
+    tenacity: { x: number }
+    determination: { x: number }
+    cycle: { x: number }
+    reincarnation: { x: number }
+    majesty: { x: number }
+    omen: { m: number; x: number }
+    crescent: { m: number; x: number }
+    blessing: { x: number }
+    focus: { x: number }
+    lapis: { x: number }
+    jade: { n: number }
+    emptyMind: { x: number }
+    prologue: { n: number }
+    interlude: { m: number; n: number }
+    morningDew: { n: number }
+    drizzle: { n: number }
   }
   flow: {
     wavesPerStage: number
@@ -113,6 +148,41 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     cheerful: { n: 50 },
     conscience: { n: 50 },
     morningMist: { c: 5, x: 3 },
+    calm: { n: 200 },
+    serenity: { x: 1.5 },
+    destiny: { n: 300 },
+    fate: { x: 2.0 },
+    relief: { n: 100 },
+    verdantGreen: { x: 3 },
+    gem: { x: 3 },
+    resolve: { x: 3 },
+    grail: { x: 3 },
+    moonlight: { x: 1.5 },
+    sunlight: { x: 1.5 },
+    crown: { x: 0.5 },
+    cloverLeaf: { n: 50 },
+    coin: { n: 50 },
+    blade: { n: 50 },
+    chalice: { n: 50 },
+    balance: { n: 200 },
+    harmony: { x: 1.5 },
+    nobility: { n: 200 },
+    tenacity: { x: 0.1 },
+    determination: { x: 0.1 },
+    cycle: { x: 3 },
+    reincarnation: { x: 10 },
+    majesty: { x: 50 },
+    omen: { m: 20, x: 1.5 },
+    crescent: { m: 10, x: 3 },
+    blessing: { x: 1.5 },
+    focus: { x: 3 },
+    lapis: { x: 2 },
+    jade: { n: 200 },
+    emptyMind: { x: 4 },
+    prologue: { n: 500 },
+    interlude: { m: 5, n: 1000 },
+    morningDew: { n: 5000 },
+    drizzle: { n: 50 },
   },
   flow: { wavesPerStage: 3, clearDelayMs: 450 },
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },

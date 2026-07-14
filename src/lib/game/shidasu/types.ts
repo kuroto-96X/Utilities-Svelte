@@ -8,6 +8,14 @@ export type ItemId =
   | 'springBreeze' | 'summerBreeze' | 'autumnBreeze' | 'winterBreeze'
   | 'kinship' | 'thaw' | 'dusk' | 'dawn' | 'wit'
   | 'courage' | 'daybreak' | 'twilight' | 'cheerful' | 'conscience' | 'morningMist'
+  | 'calm' | 'serenity' | 'destiny' | 'fate' | 'relief'
+  | 'verdantGreen' | 'gem' | 'resolve' | 'grail' | 'moonlight' | 'sunlight'
+  | 'crown' | 'cloverLeaf' | 'coin' | 'blade' | 'chalice' | 'balance' | 'harmony'
+  | 'nobility' | 'tenacity' | 'determination' | 'cycle' | 'reincarnation' | 'majesty'
+  | 'omen' | 'crescent'
+  | 'blessing' | 'focus' | 'lapis' | 'jade' | 'emptyMind'
+  | 'prologue' | 'interlude' | 'morningDew'
+  | 'drizzle'
 
 export interface Card {
   id: number
@@ -43,6 +51,8 @@ export interface WaveState {
   status: WaveStatus
   endReason: WaveEndReason
   lastGain: ScoreGain | null
+  // ウェーブ開始後、一度でも場札をプレイしたか(朝露の護符の判定に使用。山札めくりでは変化しない)
+  firstPlayDone: boolean
 }
 
 export type RunPhase = 'title' | 'playing' | 'itemSelect' | 'stageClear' | 'allClear' | 'gameOver'

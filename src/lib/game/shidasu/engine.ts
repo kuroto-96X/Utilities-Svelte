@@ -75,6 +75,7 @@ export function startWave(
     status: 'playing',
     endReason: null as WaveEndReason,
     lastGain: null,
+    firstPlayDone: false,
   }
 }
 
