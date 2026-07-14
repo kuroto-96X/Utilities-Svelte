@@ -1303,6 +1303,61 @@ describe('applyPlayCard / applyDrawStock / applyStuckCheck', () => {
   })
 })
 
+describe('applyStuckCheck (不屈の護符)', () => {
+  test('不屈を持ち捨て札があれば、手詰まり時にスコア消費して山札へ約半数戻し手詰まりを回避する', () => {
+    const wave = makeWave({
+      tableau: [[card(1, '♠', 5)]],
+      stock: [],
+      foundation: card(0, '♣', 1), // 差が4で取れない
+      score: 1000,
+      discardPile: [card(10, '♦', 2), card(11, '♦', 3), card(12, '♦', 4), card(13, '♦', 5)],
+    })
+    const run: RunState = {
+      phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['resilience'], offer: [],
+      wave, pendingNewItem: null, deckComposition: standardDeckComposition(),
+    }
+    const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
+    expect(next.wave!.status).toBe('playing') // 手詰まりが解消されている
+    expect(next.wave!.score).toBe(700) // 1000 - 30%
+    expect(next.wave!.stock).toHaveLength(2) // 4枚の半数
+    expect(next.wave!.discardPile).toHaveLength(2)
+  })
+
+  test('不屈を持っていても捨て札が無ければ通常通り手詰まりになる', () => {
+    const wave = makeWave({
+      tableau: [[card(1, '♠', 5)]],
+      stock: [],
+      foundation: card(0, '♣', 1),
+      score: 1000,
+      discardPile: [],
+    })
+    const run: RunState = {
+      phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['resilience'], offer: [],
+      wave, pendingNewItem: null, deckComposition: standardDeckComposition(),
+    }
+    const next = applyStuckCheck(DEFAULT_PARAMS, run)
+    expect(next.wave!.status).toBe('ended')
+    expect(next.wave!.endReason).toBe('stuck')
+  })
+
+  test('不屈を持っていなければ捨て札があっても通常通り手詰まりになる', () => {
+    const wave = makeWave({
+      tableau: [[card(1, '♠', 5)]],
+      stock: [],
+      foundation: card(0, '♣', 1),
+      score: 1000,
+      discardPile: [card(10, '♦', 2), card(11, '♦', 3)],
+    })
+    const run: RunState = {
+      phase: 'playing', stageIndex: 0, waveIndex: 0, items: [], offer: [],
+      wave, pendingNewItem: null, deckComposition: standardDeckComposition(),
+    }
+    const next = applyStuckCheck(DEFAULT_PARAMS, run)
+    expect(next.wave!.status).toBe('ended')
+    expect(next.wave!.endReason).toBe('stuck')
+  })
+})
+
 describe('analyzeSuitColor', () => {
   test('空のチェーンは両方true', () => {
     expect(analyzeSuitColor([])).toEqual({ suitHeld: true, colorHeld: true })

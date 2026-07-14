@@ -1036,10 +1036,30 @@ export function applyDrawStock(params: ShidasuParams, run: RunState, rand: () =>
   return { ...run, wave, deckComposition }
 }
 
-export function applyStuckCheck(params: ShidasuParams, run: RunState): RunState {
+// 不屈の護符: 捨て札があれば約半数をランダムに山札へ戻しスコアを消費する(捨て札が無ければ元のwaveをそのまま返す)
+function tryResilienceRevive(params: ShidasuParams, wave: WaveState, items: ItemId[], rand: () => number): WaveState {
+  if (!items.includes('resilience') || wave.discardPile.length === 0) return wave
+  const pool = [...wave.discardPile]
+  shuffleInPlace(pool, rand)
+  const reviveCount = Math.max(1, Math.ceil(pool.length / 2))
+  const revived = pool.slice(0, reviveCount)
+  const remaining = pool.slice(reviveCount)
+  const cost = Math.floor(wave.score * params.talismans.resilience.p / 100)
+  return {
+    ...wave,
+    score: wave.score - cost,
+    stock: [...wave.stock, ...revived],
+    discardPile: remaining,
+  }
+}
+
+export function applyStuckCheck(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
   return withActiveWave(run, wave => {
     const modifier = params.stages[run.stageIndex].modifier
-    return isStuck(modifier, wave) ? markStuck(wave) : wave
+    if (!isStuck(modifier, wave)) return wave
+    const revived = tryResilienceRevive(params, wave, run.items, rand)
+    if (revived !== wave) return revived
+    return markStuck(wave)
   })
 }
 
