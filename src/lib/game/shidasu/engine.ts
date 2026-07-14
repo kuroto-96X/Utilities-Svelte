@@ -670,6 +670,23 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
       return { value: v * factor, part: `無心×${fmtMultiplier(factor)}` }
     },
   },
+  prologue: {
+    channel: 'gained',
+    effect: (v, ctx, p) =>
+      ctx.combo === 1 ? { value: v + p.talismans.prologue.n, part: `序章+${p.talismans.prologue.n}` } : { value: v, part: null },
+  },
+  interlude: {
+    channel: 'gained',
+    effect: (v, ctx, p) =>
+      ctx.combo % p.talismans.interlude.m === 0
+        ? { value: v + p.talismans.interlude.n, part: `幕間+${p.talismans.interlude.n}` }
+        : { value: v, part: null },
+  },
+  morningDew: {
+    channel: 'gained',
+    effect: (v, ctx, p) =>
+      ctx.isFirstPlayOfWave ? { value: v + p.talismans.morningDew.n, part: `朝露+${p.talismans.morningDew.n}` } : { value: v, part: null },
+  },
 }
 
 export function applyItemEffects(
@@ -750,6 +767,9 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   lapis: '瑠璃の護符',
   jade: '翡翠の護符',
   emptyMind: '無心の護符',
+  prologue: '序章の護符',
+  interlude: '幕間の護符',
+  morningDew: '朝露の護符',
 }
 
 export function itemDesc(id: ItemId, params: ShidasuParams): string {
@@ -808,6 +828,9 @@ export function itemDesc(id: ItemId, params: ShidasuParams): string {
     case 'lapis': return `2種類以上の役ボーナスが同時に発生したとき、獲得点を${params.talismans.lapis.x}倍`
     case 'jade': return `役の成立にワイルドが使われたとき、${params.talismans.jade.n}点加算`
     case 'emptyMind': return `役・パターンがどちらも無いとき、獲得点を${params.talismans.emptyMind.x}倍`
+    case 'prologue': return `コンボ1枚目のとき、${params.talismans.prologue.n}点加算`
+    case 'interlude': return `コンボが${params.talismans.interlude.m}枚目に達するたび、${params.talismans.interlude.n}点加算`
+    case 'morningDew': return `ウェーブで最初にプレイしたカードのとき、${params.talismans.morningDew.n}点加算`
   }
 }
 

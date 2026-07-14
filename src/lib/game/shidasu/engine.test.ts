@@ -1941,3 +1941,43 @@ describe('applyItemEffects (グループ6: 役・パターン成立状況系)', 
     expect(notFired.value).toBe(100)
   })
 })
+
+describe('applyItemEffects (グループ7: コンボ内位置系)', () => {
+  const params = DEFAULT_PARAMS
+  function ctx(overrides: Partial<ItemEffectContext> = {}): ItemEffectContext {
+    return {
+      card: card(1, '♠', 5),
+      previousFoundation: card(2, '♣', 4),
+      combo: 1,
+      stockRemaining: 0,
+      chain: [card(2, '♣', 4), card(1, '♠', 5)],
+      remainingTableauCount: 10,
+      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      isFirstPlayOfWave: false,
+      effectiveStairMinLen: params.scoring.stairMinLen,
+      ...overrides,
+    }
+  }
+
+  test('序章: コンボ1枚目のみ加算', () => {
+    const fired = applyItemEffects('gained', 100, ['prologue'], ctx({ combo: 1 }), params)
+    expect(fired.value).toBe(100 + params.talismans.prologue.n)
+    const notFired = applyItemEffects('gained', 100, ['prologue'], ctx({ combo: 2 }), params)
+    expect(notFired.value).toBe(100)
+  })
+
+  test('幕間: コンボがm枚目に達するたび加算', () => {
+    const m = params.talismans.interlude.m
+    const fired = applyItemEffects('gained', 100, ['interlude'], ctx({ combo: m * 2 }), params)
+    expect(fired.value).toBe(100 + params.talismans.interlude.n)
+    const notFired = applyItemEffects('gained', 100, ['interlude'], ctx({ combo: m + 1 }), params)
+    expect(notFired.value).toBe(100)
+  })
+
+  test('朝露: ウェーブで最初にプレイしたカードのみ加算', () => {
+    const fired = applyItemEffects('gained', 100, ['morningDew'], ctx({ isFirstPlayOfWave: true }), params)
+    expect(fired.value).toBe(100 + params.talismans.morningDew.n)
+    const notFired = applyItemEffects('gained', 100, ['morningDew'], ctx({ isFirstPlayOfWave: false }), params)
+    expect(notFired.value).toBe(100)
+  })
+})
