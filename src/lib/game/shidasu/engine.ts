@@ -234,10 +234,15 @@ export interface ItemEffectContext {
   previousFoundation: Card
   combo: number
   stockRemaining: number
+  // 今回プレイしたカード(card)を含むチェーン全体(chainBefore + card)
   chain: Card[]
+  // このプレイ後の場札総残数
   remainingTableauCount: number
+  // このプレイで成立したパターン/役ボーナスの内訳(evaluateChainBonusの戻り値。列一掃も合流済み)
   chainBonus: ChainBonusResult
+  // このプレイがウェーブ開始後の最初のプレイかどうか(山札めくりでは変化しない)
   isFirstPlayOfWave: boolean
+  // 護符(架橋等)による緩和を反映した、現在有効な階段成立の最小連続枚数
   effectiveStairMinLen: number
 }
 
@@ -776,7 +781,12 @@ export type RoleName = 'flush' | 'royalSet' | 'sameRank' | 'completeRun' | 'colu
 export interface ChainBonusResult {
   bonus: number
   parts: string[]
+  // 同スート/同色/階段のいずれかの「パターンボーナス」が成立したか
   patternFired: boolean
+  // 成立した「役ボーナス」の一覧。usedWildの意味はrole名によって異なる:
+  // flush/royalSet/completeRunは「実カードだけでは成立せずワイルドの穴埋めが必須だったか」(必要性ベース)。
+  // sameRankは同ランクボーナスの加点量自体がワイルド枚数を無条件に含むため、
+  // 「チェーンにワイルドが1枚でも存在すれば常にtrue」(寄与ベース)になる。
   roleFired: { name: RoleName; usedWild: boolean }[]
 }
 

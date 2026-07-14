@@ -515,6 +515,48 @@ describe('evaluateChainBonus (patternFired/roleFired)', () => {
     expect(flush?.usedWild).toBe(true)
   })
 
+  test('ロイヤルセット成立時、実カードだけで揃っていればusedWild=false', () => {
+    const chainBefore = [card(1, '♠', 11), card(2, '♥', 12)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 13))
+    const royalSet = result.roleFired.find(r => r.name === 'royalSet')
+    expect(royalSet?.usedWild).toBe(false)
+  })
+
+  test('ロイヤルセット成立時、ワイルドで穴埋めしていればusedWild=true', () => {
+    const chainBefore = [card(1, '♠', 11), card(2, '★', 0, true)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 13))
+    const royalSet = result.roleFired.find(r => r.name === 'royalSet')
+    expect(royalSet?.usedWild).toBe(true)
+  })
+
+  test('同ランクボーナス成立時、チェーンにワイルドが無ければusedWild=false', () => {
+    const chainBefore = [card(1, '♠', 5), card(2, '♥', 5)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 5))
+    const sameRank = result.roleFired.find(r => r.name === 'sameRank')
+    expect(sameRank?.usedWild).toBe(false)
+  })
+
+  test('同ランクボーナス成立時、実カードだけで既に成立していてもチェーンにワイルドがあればusedWild=true(加点量に無条件で寄与するため)', () => {
+    const chainBefore = [card(1, '♠', 5), card(2, '★', 0, true)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 5))
+    const sameRank = result.roleFired.find(r => r.name === 'sameRank')
+    expect(sameRank?.usedWild).toBe(true)
+  })
+
+  test('コンプリートラン成立時、実カードだけで全ランク揃っていればusedWild=false', () => {
+    const chainBefore = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((r, i) => card(i + 1, '♠', r as Card['rank']))
+    const result = evaluateChainBonus(scoring, chainBefore, card(20, '♦', 13))
+    const completeRun = result.roleFired.find(r => r.name === 'completeRun')
+    expect(completeRun?.usedWild).toBe(false)
+  })
+
+  test('コンプリートラン成立時、ワイルドで穴埋めしていればusedWild=true', () => {
+    const chainBefore = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((r, i) => card(i + 1, '♠', r as Card['rank'])).concat(card(12, '★', 0, true))
+    const result = evaluateChainBonus(scoring, chainBefore, card(20, '♦', 13))
+    const completeRun = result.roleFired.find(r => r.name === 'completeRun')
+    expect(completeRun?.usedWild).toBe(true)
+  })
+
   test('役もパターンも成立しなければpatternFired=false・roleFired=[]', () => {
     const result = evaluateChainBonus(scoring, [card(1, '♠', 2)], card(2, '♥', 9))
     expect(result.patternFired).toBe(false)
