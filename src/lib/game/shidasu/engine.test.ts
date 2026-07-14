@@ -2598,3 +2598,41 @@ describe('applyItemEffects (グループ10: ウェーブ内累積state)', () => 
     expect(result.value).toBe(100 * (1 + 8 * params.talismans.amber.x))
   })
 })
+
+describe('applyItemEffects (グループ16: 持続効果)', () => {
+  const params = DEFAULT_PARAMS
+  function ctx(overrides: Partial<ItemEffectContext> = {}): ItemEffectContext {
+    return {
+      card: card(1, '♠', 5),
+      previousFoundation: card(2, '♣', 4),
+      combo: 1,
+      stockRemaining: 0,
+      chain: [card(2, '♣', 4), card(1, '♠', 5)],
+      remainingTableauCount: 10,
+      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      isFirstPlayOfWave: false,
+      effectiveStairMinLen: params.scoring.stairMinLen,
+      sameColumnStreak: 1,
+      totalColumnsEmptiedThisWave: 0,
+      maxComboThisWave: 1,
+      flushActiveThisCombo: false,
+      columnSweepActiveThisWave: false,
+      drawContinueCountThisChain: 0,
+      ...overrides,
+    }
+  }
+
+  test('情熱: フラッシュ成立中フラグが立っていれば倍算', () => {
+    const fired = applyItemEffects('gained', 100, ['passion'], ctx({ flushActiveThisCombo: true }), params)
+    expect(fired.value).toBe(100 * params.talismans.passion.x)
+    const notFired = applyItemEffects('gained', 100, ['passion'], ctx({ flushActiveThisCombo: false }), params)
+    expect(notFired.value).toBe(100)
+  })
+
+  test('闘志: 列一掃発生済みフラグが立っていれば倍算', () => {
+    const fired = applyItemEffects('gained', 100, ['fightingSpirit'], ctx({ columnSweepActiveThisWave: true }), params)
+    expect(fired.value).toBe(100 * params.talismans.fightingSpirit.x)
+    const notFired = applyItemEffects('gained', 100, ['fightingSpirit'], ctx({ columnSweepActiveThisWave: false }), params)
+    expect(notFired.value).toBe(100)
+  })
+})

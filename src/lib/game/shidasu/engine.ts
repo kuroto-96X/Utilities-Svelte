@@ -863,6 +863,20 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
       return { value: v * factor, part: `琥珀×${fmtMultiplier(factor)}` }
     },
   },
+  passion: {
+    channel: 'gained',
+    effect: (v, ctx, p) =>
+      ctx.flushActiveThisCombo
+        ? { value: v * p.talismans.passion.x, part: `情熱×${fmtMultiplier(p.talismans.passion.x)}` }
+        : { value: v, part: null },
+  },
+  fightingSpirit: {
+    channel: 'gained',
+    effect: (v, ctx, p) =>
+      ctx.columnSweepActiveThisWave
+        ? { value: v * p.talismans.fightingSpirit.x, part: `闘志×${fmtMultiplier(p.talismans.fightingSpirit.x)}` }
+        : { value: v, part: null },
+  },
 }
 
 export function applyItemEffects(
