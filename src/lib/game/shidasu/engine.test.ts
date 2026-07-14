@@ -2526,3 +2526,41 @@ describe('applyDirectEffects', () => {
     expect(result).toBe(0)
   })
 })
+
+describe('applyItemEffects (グループ9: 列選択の連続性)', () => {
+  const params = DEFAULT_PARAMS
+  function ctx(overrides: Partial<ItemEffectContext> = {}): ItemEffectContext {
+    return {
+      card: card(1, '♠', 5),
+      previousFoundation: card(2, '♣', 4),
+      combo: 1,
+      stockRemaining: 0,
+      chain: [card(2, '♣', 4), card(1, '♠', 5)],
+      remainingTableauCount: 10,
+      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      isFirstPlayOfWave: false,
+      effectiveStairMinLen: params.scoring.stairMinLen,
+      sameColumnStreak: 1,
+      totalColumnsEmptiedThisWave: 0,
+      maxComboThisWave: 1,
+      flushActiveThisCombo: false,
+      columnSweepActiveThisWave: false,
+      drawContinueCountThisChain: 0,
+      ...overrides,
+    }
+  }
+
+  test('微風: 同一列連続2回目以降のみ、連続回数×nを加算', () => {
+    const notFired = applyItemEffects('gained', 100, ['gentleBreeze'], ctx({ sameColumnStreak: 1 }), params)
+    expect(notFired.value).toBe(100)
+    const fired = applyItemEffects('gained', 100, ['gentleBreeze'], ctx({ sameColumnStreak: 3 }), params)
+    expect(fired.value).toBe(100 + 3 * params.talismans.gentleBreeze.n)
+  })
+
+  test('共鳴: 同一列連続2回目以降のみ、連続回数×xで倍算', () => {
+    const notFired = applyItemEffects('gained', 100, ['resonance'], ctx({ sameColumnStreak: 1 }), params)
+    expect(notFired.value).toBe(100)
+    const fired = applyItemEffects('gained', 100, ['resonance'], ctx({ sameColumnStreak: 3 }), params)
+    expect(fired.value).toBe(100 * (1 + 3 * params.talismans.resonance.x))
+  })
+})

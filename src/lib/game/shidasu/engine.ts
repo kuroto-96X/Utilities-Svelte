@@ -831,6 +831,22 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
     channel: 'gained',
     effect: (v, _ctx, p) => ({ value: v + p.talismans.drizzle.n, part: `小雨+${p.talismans.drizzle.n}` }),
   },
+  gentleBreeze: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (ctx.sameColumnStreak < 2) return { value: v, part: null }
+      const add = ctx.sameColumnStreak * p.talismans.gentleBreeze.n
+      return { value: v + add, part: `微風+${add}` }
+    },
+  },
+  resonance: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (ctx.sameColumnStreak < 2) return { value: v, part: null }
+      const factor = 1 + ctx.sameColumnStreak * p.talismans.resonance.x
+      return { value: v * factor, part: `共鳴×${fmtMultiplier(factor)}` }
+    },
+  },
 }
 
 export function applyItemEffects(
