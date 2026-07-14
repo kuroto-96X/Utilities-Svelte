@@ -624,6 +624,56 @@ describe('playCard', () => {
     expect(next.status).toBe('ended')
     expect(next.endReason).toBe('fullClear')
   })
+
+  test('治癒と再生を同時所持し発動条件が重なる場合、所持順で治癒が先なら治癒が優先され再生は発動しない', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)]],
+      stock: [],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
+      discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3)],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['healing', 'regeneration'], 100000000, 0, createRng(1))
+    // 治癒が先に列を復活させるため場札が空にならず、再生の全消し継続は発動しない
+    expect(next.status).toBe('playing')
+    expect(next.endReason).toBeNull()
+    expect(next.tableau[0].length).toBeGreaterThan(0) // 治癒による復活
+    expect(next.discardPile).toHaveLength(0) // 3枚とも治癒が使い切る(rows未満のため全部)
+  })
+
+  test('治癒と再生を同時所持し発動条件が重なる場合、所持順で再生が先なら再生が優先され場札全体が復活する', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)]],
+      stock: [],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
+      discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3)],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration', 'healing'], 100000000, 0, createRng(1))
+    expect(next.status).toBe('playing')
+    expect(next.endReason).toBeNull()
+    // 再生の再配布は列0(=colIndex)から順に埋めるため、治癒の対象列も再生によって
+    // 既に埋められ、治癒は追加発動しない(捨て札が使い切られていることで確認)
+    expect(next.discardPile).toHaveLength(0)
+    const revivedCount = next.tableau.reduce((n, c) => n + c.length, 0)
+    expect(revivedCount).toBe(3)
+    const expectedClearBonus = DEFAULT_PARAMS.scoring.clearBonus + 0 * DEFAULT_PARAMS.scoring.clearBonusPerStock
+    const scoreBeforeCost = scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus
+    const expectedCost = Math.floor(scoreBeforeCost * DEFAULT_PARAMS.talismans.regeneration.p / 100)
+    expect(next.score).toBe(scoreBeforeCost - expectedCost) // 再生のコスト計算式で消費されている(治癒は不発火)
+  })
+
+  test('治癒・再生の発動条件が重ならない通常の全消し(列一掃を伴わない)では、所持順に関係なく再生が発動する', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)]],
+      stock: [],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows + 1], // 列一掃条件(===rows)を満たさない
+      discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3)],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['healing', 'regeneration'], 100000000, 0, createRng(1))
+    expect(next.status).toBe('playing')
+    expect(next.endReason).toBeNull()
+    const revivedCount = next.tableau.reduce((n, c) => n + c.length, 0)
+    expect(revivedCount).toBe(3) // 列一掃が不成立のため治癒は無関係、再生のみが発動する
+  })
 })
 
 describe('chainContinuesPattern', () => {

@@ -172,23 +172,57 @@ export function playCard(
     roleFired.push({ name: 'columnSweep', usedWild: false })
   }
 
-  // 治癒は再生より先に評価される。最後の列を空にする一手が列一掃と全消しを同時に
-  // 満たす場合、治癒が先にその列へカードを戻すため remaining は0にならず、
-  // 再生の全消し時復活・ウェーブ継続は発動しない(意図的な優先順位。両立はさせない)。
-  let healedTableau = newTableau
-  let healedDiscardPile = wave.discardPile
-  let healedComboStreakColumnLengths = wave.comboStreakColumnLengths
-  if (sweepQualifies && items.includes('healing') && wave.discardPile.length > 0) {
-    const pool = [...wave.discardPile]
+  // 護符は所持順(itemsの並び順)で解決するのが大原則。治癒(復活対象=一掃した列)と
+  // 再生(復活対象=場札全体)は、解決時に自分の復活対象が既に空でなければ発動しない。
+  // 通常は独立して発動するが、最後の列を空にする一手が列一掃と全消しを同時に満たす場合のみ
+  // 両者の対象が重なるため、所持順で先にある方から順に解決する。
+  const remainingBeforeRevival = remainingCount(newTableau)
+  const healingIndex = items.indexOf('healing')
+  const regenerationIndex = items.indexOf('regeneration')
+  const overlapWithHealingFirst = sweepQualifies && remainingBeforeRevival === 0
+    && items.includes('healing') && items.includes('regeneration')
+    && healingIndex !== -1 && regenerationIndex !== -1 && healingIndex < regenerationIndex
+
+  let workingTableau = newTableau
+  let workingDiscardPile = wave.discardPile
+  let workingComboStreakColumnLengths = wave.comboStreakColumnLengths
+  let regenerationRevivedNow = false
+
+  // 再生: 重複時に治癒が所持順で先でない限り、全消し(復活対象=場札全体が空)なら先に解決する。
+  const regenerationShouldAttempt = remainingBeforeRevival === 0 && items.includes('regeneration') && !overlapWithHealingFirst
+  if (regenerationShouldAttempt && workingDiscardPile.length > 0) {
+    const pool = [...workingDiscardPile]
+    shuffleInPlace(pool, rand)
+    const reviveTotal = Math.min(params.layout.cols * rows, pool.length)
+    let cursor = 0
+    const revivedTableau: Card[][] = []
+    for (let c = 0; c < params.layout.cols; c++) {
+      const take = Math.min(rows, reviveTotal - cursor)
+      revivedTableau.push(take > 0 ? pool.slice(cursor, cursor + take) : [])
+      cursor += Math.max(take, 0)
+    }
+    workingTableau = revivedTableau
+    workingDiscardPile = pool.slice(reviveTotal)
+    workingComboStreakColumnLengths = revivedTableau.map(col => col.length)
+    regenerationRevivedNow = true
+  }
+
+  // 治癒: 復活対象(一掃した列)が、再生の再配布後も含めてまだ空であれば発動する
+  // (再生の再配布が捨て札不足などでその列まで届かなかった場合は、治癒が追加で発動しうる)。
+  let healedTableau = workingTableau
+  let healedDiscardPile = workingDiscardPile
+  let healedComboStreakColumnLengths = workingComboStreakColumnLengths
+  if (sweepQualifies && items.includes('healing') && workingTableau[colIndex].length === 0 && workingDiscardPile.length > 0) {
+    const pool = [...workingDiscardPile]
     shuffleInPlace(pool, rand)
     const reviveCount = Math.min(rows, pool.length)
     const revived = pool.slice(0, reviveCount)
     healedDiscardPile = pool.slice(reviveCount)
-    healedTableau = newTableau.map((c, i) => (i === colIndex ? revived : c))
+    healedTableau = workingTableau.map((c, i) => (i === colIndex ? revived : c))
     // 復活後の列は実際の枚数(revived.length)を新たな基準長として記録する。
     // 据え置いたままだと、山札切れ前の基準(rows)と比較され続け、
     // 一部しか復活しなかった列でも列一掃条件を満たしてしまう。
-    healedComboStreakColumnLengths = wave.comboStreakColumnLengths.map((len, i) => (i === colIndex ? revived.length : len))
+    healedComboStreakColumnLengths = workingComboStreakColumnLengths.map((len, i) => (i === colIndex ? revived.length : len))
   }
   const remaining = remainingCount(healedTableau)
 
@@ -265,35 +299,23 @@ export function playCard(
     columnSweepActiveThisWave: newColumnSweepActiveThisWave,
   }
 
-  if (remaining === 0) {
+  if (remainingBeforeRevival === 0) {
     const rawClearBonus = params.scoring.clearBonus + wave.stock.length * params.scoring.clearBonusPerStock
     const clearBonus = Math.floor(applyItemEffects('clearBonus', rawClearBonus, items, itemEffectCtx, params).value)
     const scoreAfterClear = newScore + clearBonus
 
-    if (items.includes('regeneration') && healedDiscardPile.length > 0) {
-      const pool = [...healedDiscardPile]
-      shuffleInPlace(pool, rand)
-      const reviveTotal = Math.min(params.layout.cols * rows, pool.length)
+    if (regenerationRevivedNow) {
+      // 再配布そのものは上で(治癒より先に)実行済み。ここではコスト計算とスコア反映のみ行う。
       const cost = Math.floor(scoreAfterClear * params.talismans.regeneration.p / 100)
-      let cursor = 0
-      const revivedTableau: Card[][] = []
-      for (let c = 0; c < params.layout.cols; c++) {
-        const take = Math.min(rows, reviveTotal - cursor)
-        revivedTableau.push(take > 0 ? pool.slice(cursor, cursor + take) : [])
-        cursor += Math.max(take, 0)
-      }
-      return {
-        ...next,
-        tableau: revivedTableau,
-        comboStreakColumnLengths: revivedTableau.map(col => col.length),
-        discardPile: pool.slice(reviveTotal),
-        score: scoreAfterClear - cost,
-        status: 'playing',
-        endReason: null,
-      }
+      return { ...next, score: scoreAfterClear - cost, status: 'playing', endReason: null }
     }
 
-    return { ...next, score: scoreAfterClear, status: 'ended', endReason: 'fullClear' }
+    if (remaining === 0) {
+      // 治癒・再生いずれも介入しなかった(通常の全消し)
+      return { ...next, score: scoreAfterClear, status: 'ended', endReason: 'fullClear' }
+    }
+    // 治癒が介入して場が復活した場合は全消しにならず、全消しボーナスも付与しない。
+    // 通常のプレイ続行として下のフローへ進む。
   }
 
   if (newScore >= target) {
