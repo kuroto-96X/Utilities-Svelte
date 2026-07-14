@@ -1714,6 +1714,8 @@ export function evaluateChainBonus(
     const distinctRealNow = new Set(chainIncludingThis.filter(c => !c.wild).map(c => c.rank)).size
     const wildCountNow = chainIncludingThis.filter(c => c.wild).length
     const completeRunUsedWild = distinctRealNow < 13 && wildCountNow > 0
+    // completeRunのみ、同スート追加ボーナスの有無を確定させてからroleFiredにpushする
+    // (他の役は単一の加点のみだが、completeRunは同スート追加分も合算してamountに含めるため)。
     let completeRunTotalGain = completeRunGain
     if (suitHeld) {
       const completeRunSuitGain = Math.floor(scoring.completeRunSuitBonus * roleBonusMultiplier('completeRun'))
