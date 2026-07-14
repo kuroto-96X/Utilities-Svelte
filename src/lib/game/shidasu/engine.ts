@@ -223,6 +223,11 @@ export interface ItemEffectContext {
   previousFoundation: Card
   combo: number
   stockRemaining: number
+  chain: Card[]
+  remainingTableauCount: number
+  chainBonus: ChainBonusResult
+  isFirstPlayOfWave: boolean
+  effectiveStairMinLen: number
 }
 
 // 護符の内訳表示用に倍率を丸めて整形する(浮動小数の誤差で末尾が長くなるのを防ぐ)
@@ -636,6 +641,22 @@ export function analyzeStair(chain: Card[]): StairAnalysis {
   return { held: true, dir, len: chain.length }
 }
 
+// 階段のチェーンが13→1、または1→13の境界を跨いだか(ワイルドで橋渡しされた区間内の越境も検出する)
+export function stairUsesKALoop(chain: Card[]): boolean {
+  const analysis = analyzeStair(chain)
+  if (!analysis.held || analysis.dir === 0) return false
+  const realPositions = chain.map((c, i) => ({ card: c, index: i })).filter(p => !p.card.wild)
+  if (realPositions.length < 2) return true
+  for (let k = 1; k < realPositions.length; k++) {
+    const prev = realPositions[k - 1]
+    const curr = realPositions[k]
+    const gap = curr.index - prev.index
+    if (analysis.dir === 1 && prev.card.rank + gap > 13) return true
+    if (analysis.dir === -1 && prev.card.rank - gap < 1) return true
+  }
+  return false
+}
+
 const ALL_SUITS_REAL: Suit[] = ['♠', '♥', '♦', '♣']
 
 // checkFlush/checkRoyalSet/checkCompleteRunは、いずれもワイルド1枚につき不足分を1つ埋めたものとして扱う。
@@ -689,9 +710,13 @@ export function checkCompleteRun(chainBefore: Card[], chainIncludingThis: Card[]
   return distinctBefore < 13 && distinctNow >= 13
 }
 
+export type RoleName = 'flush' | 'royalSet' | 'sameRank' | 'completeRun' | 'columnSweep'
+
 export interface ChainBonusResult {
   bonus: number
   parts: string[]
+  patternFired: boolean
+  roleFired: { name: RoleName; usedWild: boolean }[]
 }
 
 export function evaluateChainBonus(
@@ -701,11 +726,13 @@ export function evaluateChainBonus(
   stairMinLen: number = scoring.stairMinLen
 ): ChainBonusResult {
   if (chainBefore.length === 0) {
-    return { bonus: 0, parts: [] }
+    return { bonus: 0, parts: [], patternFired: false, roleFired: [] }
   }
 
   let bonus = 0
   const parts: string[] = []
+  let patternFired = false
+  const roleFired: { name: RoleName; usedWild: boolean }[] = []
 
   const chainIncludingThis = [...chainBefore, card]
 
@@ -714,9 +741,11 @@ export function evaluateChainBonus(
     if (suitHeld) {
       bonus += scoring.suitBonus
       parts.push(`同スート+${scoring.suitBonus}`)
+      patternFired = true
     } else if (colorHeld) {
       bonus += scoring.colorBonus
       parts.push(`同色+${scoring.colorBonus}`)
+      patternFired = true
     }
   }
 
@@ -724,16 +753,26 @@ export function evaluateChainBonus(
   if (stairInfo.held && stairInfo.len >= stairMinLen) {
     bonus += scoring.stairBonus
     parts.push(`階段${stairInfo.len} +${scoring.stairBonus}`)
+    patternFired = true
   }
 
   if (checkFlush(chainIncludingThis)) {
     bonus += scoring.flushBonus
     parts.push(`フラッシュ+${scoring.flushBonus}`)
+    const last4 = chainIncludingThis.slice(-4)
+    const realSuits = new Set(last4.filter(c => !c.wild).map(c => c.suit))
+    const flushUsedWild = ALL_SUITS_REAL.some(s => !realSuits.has(s))
+    roleFired.push({ name: 'flush', usedWild: flushUsedWild })
   }
 
   if (checkRoyalSet(chainIncludingThis)) {
     bonus += scoring.royalSetBonus
     parts.push(`ロイヤル+${scoring.royalSetBonus}`)
+    const last3 = chainIncludingThis.slice(-3)
+    const realRanks = new Set(last3.filter(c => !c.wild).map(c => c.rank))
+    const requiredRanks: Card['rank'][] = [11, 12, 13]
+    const royalSetUsedWild = requiredRanks.some(r => !realRanks.has(r))
+    roleFired.push({ name: 'royalSet', usedWild: royalSetUsedWild })
   }
 
   const sameRankCount = card.wild ? countSameRankForWildPlay(chainBefore) : countSameRankBefore(chainBefore, card.rank)
@@ -741,18 +780,24 @@ export function evaluateChainBonus(
     const sameRankGain = scoring.sameRankBonusUnit * sameRankCount
     bonus += sameRankGain
     parts.push(`同ランク+${sameRankGain}`)
+    const sameRankUsedWild = card.wild || chainBefore.some(c => c.wild)
+    roleFired.push({ name: 'sameRank', usedWild: sameRankUsedWild })
   }
 
   if (checkCompleteRun(chainBefore, chainIncludingThis)) {
     bonus += scoring.completeRunBonus
     parts.push(`コンプリートラン+${scoring.completeRunBonus}`)
+    const distinctRealNow = new Set(chainIncludingThis.filter(c => !c.wild).map(c => c.rank)).size
+    const wildCountNow = chainIncludingThis.filter(c => c.wild).length
+    const completeRunUsedWild = distinctRealNow < 13 && wildCountNow > 0
+    roleFired.push({ name: 'completeRun', usedWild: completeRunUsedWild })
     if (suitHeld) {
       bonus += scoring.completeRunSuitBonus
       parts.push(`コンプリートラン(同スート)+${scoring.completeRunSuitBonus}`)
     }
   }
 
-  return { bonus, parts }
+  return { bonus, parts, patternFired, roleFired }
 }
 
 export function chainContinuesPattern(

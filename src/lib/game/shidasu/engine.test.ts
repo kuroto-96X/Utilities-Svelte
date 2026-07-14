@@ -38,7 +38,9 @@ import {
   countSameRankForWildPlay,
   checkCompleteRun,
   evaluateChainBonus,
+  stairUsesKALoop,
   forceStockTop,
+  type ItemEffectContext,
 } from './engine'
 import type { Card, WaveState, RunState, ItemId } from './types'
 import { DEFAULT_PARAMS } from './params'
@@ -457,6 +459,62 @@ describe('chainContinuesPattern', () => {
   })
 })
 
+describe('stairUsesKALoop', () => {
+  test('実カード同士が隣接してK→A(13→1)を跨ぐ場合はtrue', () => {
+    const chain = [card(1, '♠', 12), card(2, '♠', 13), card(3, '♠', 1), card(4, '♠', 2)]
+    expect(stairUsesKALoop(chain)).toBe(true)
+  })
+
+  test('ワイルドで橋渡しされた区間の内側でK→Aを跨ぐ場合もtrue', () => {
+    const chain = [card(1, '♠', 12), card(2, '★', 0, true), card(3, '★', 0, true), card(4, '♠', 2)]
+    expect(stairUsesKALoop(chain)).toBe(true)
+  })
+
+  test('境界を跨がない階段はfalse', () => {
+    const chain = [card(1, '♠', 3), card(2, '♠', 4), card(3, '♠', 5)]
+    expect(stairUsesKALoop(chain)).toBe(false)
+  })
+
+  test('階段が成立していなければfalse', () => {
+    const chain = [card(1, '♠', 3), card(2, '♠', 9)]
+    expect(stairUsesKALoop(chain)).toBe(false)
+  })
+
+  test('実カードが2枚未満なら比較対象が無く都合よくtrueとみなす', () => {
+    expect(stairUsesKALoop([card(1, '★', 0, true), card(2, '★', 0, true)])).toBe(true)
+  })
+})
+
+describe('evaluateChainBonus (patternFired/roleFired)', () => {
+  const scoring = DEFAULT_PARAMS.scoring
+
+  test('同スートパターン成立時はpatternFired=trueになる', () => {
+    const result = evaluateChainBonus(scoring, [card(1, '♠', 3), card(2, '♠', 5)], card(3, '♠', 9))
+    expect(result.patternFired).toBe(true)
+    expect(result.roleFired).toEqual([])
+  })
+
+  test('フラッシュ成立時、実カードだけで4スート揃っていればusedWild=false', () => {
+    const chainBefore = [card(1, '♠', 1), card(2, '♥', 2), card(3, '♦', 3)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(4, '♣', 4))
+    const flush = result.roleFired.find(r => r.name === 'flush')
+    expect(flush?.usedWild).toBe(false)
+  })
+
+  test('フラッシュ成立時、ワイルドで穴埋めしていればusedWild=true', () => {
+    const chainBefore = [card(1, '♠', 1), card(2, '★', 0, true), card(3, '♦', 3)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(4, '♣', 4))
+    const flush = result.roleFired.find(r => r.name === 'flush')
+    expect(flush?.usedWild).toBe(true)
+  })
+
+  test('役もパターンも成立しなければpatternFired=false・roleFired=[]', () => {
+    const result = evaluateChainBonus(scoring, [card(1, '♠', 2)], card(2, '♥', 9))
+    expect(result.patternFired).toBe(false)
+    expect(result.roleFired).toEqual([])
+  })
+})
+
 describe('drawStock', () => {
   test('山札が空なら何もしない', () => {
     const wave = makeWave({ stock: [] })
@@ -644,12 +702,17 @@ describe('markStuck', () => {
 describe('applyItemEffects', () => {
   const params = DEFAULT_PARAMS
 
-  function ctx(overrides: Partial<{ card: Card; previousFoundation: Card; combo: number; stockRemaining: number }> = {}) {
+  function ctx(overrides: Partial<ItemEffectContext> = {}): ItemEffectContext {
     return {
       card: card(1, '♠', 5),
       previousFoundation: card(2, '♣', 4),
       combo: 1,
       stockRemaining: 0,
+      chain: [card(2, '♣', 4), card(1, '♠', 5)],
+      remainingTableauCount: 10,
+      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      isFirstPlayOfWave: false,
+      effectiveStairMinLen: params.scoring.stairMinLen,
       ...overrides,
     }
   }
@@ -1335,7 +1398,7 @@ describe('evaluateChainBonus', () => {
 
   test('コンボ1枚目(chainBefore空)はボーナス0', () => {
     const result = evaluateChainBonus(scoring, [], card(1, '♠', 5))
-    expect(result).toEqual({ bonus: 0, parts: [] })
+    expect(result).toEqual({ bonus: 0, parts: [], patternFired: false, roleFired: [] })
   })
 
   test('実カード2枚(3枚未満)ではまだ同スートボーナスは付かない', () => {
