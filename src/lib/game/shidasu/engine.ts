@@ -942,7 +942,7 @@ export function itemDesc(id: ItemId, params: ShidasuParams): string {
     case 'darkClouds': return `ウェーブ開始時、場札が${params.talismans.darkClouds.r}行多く配られる`
     case 'regeneration': return `全消し時、スコアの${params.talismans.regeneration.p}%を消費して捨て札から場札を復活させる(復活すればウェーブ継続)`
     case 'benevolence': return `コンボごとに1回、コンボリセットを無効化する`
-    case 'healing': return `列一掃時、捨て札から最大rows枚を空いた列へ戻す`
+    case 'healing': return `列一掃時、捨て札から最大${params.layout.rows}枚を空いた列へ戻す`
     case 'guidance': return `山札の次のカードが見えるようになる`
     case 'passion': return `このコンボ中にフラッシュが成立していれば、獲得点を${params.talismans.passion.x}倍`
     case 'fightingSpirit': return `このウェーブ中に列一掃が発生していれば、獲得点を${params.talismans.fightingSpirit.x}倍`
