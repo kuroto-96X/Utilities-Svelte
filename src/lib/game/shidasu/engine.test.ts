@@ -451,6 +451,73 @@ describe('playCard', () => {
     expect(order1.score).toBe(Math.floor((scoring.basePoint + DEFAULT_PARAMS.talismans.conscience.n) * (1 + 1 * DEFAULT_PARAMS.talismans.courage.x)))
     expect(order2.score).toBe(Math.floor(scoring.basePoint * (1 + 1 * DEFAULT_PARAMS.talismans.courage.x) + DEFAULT_PARAMS.talismans.conscience.n))
   })
+
+  test('同じ列を連続でプレイするとsameColumnStreakが増え、違う列なら1に戻る', () => {
+    // 列0: 1回目で6(基礎rank5と隣接)を取ったあと、残る7が新foundation(6)と隣接するようにする
+    const wave = baseWave({
+      tableau: [[card(9, '♠', 7), card(1, '♣', 6)], [card(10, '♠', 2), card(2, '♦', 7)]],
+    })
+    const first = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    expect(first.sameColumnStreak).toBe(1)
+    expect(first.lastPlayedColumn).toBe(0)
+    const second = playCard(DEFAULT_PARAMS, first, 'none', [], 1000000, 0)
+    expect(second.sameColumnStreak).toBe(2)
+    // 列1: 1回目で列0の6を取ったあと、列1の7が(上書き後の)foundation(6)と隣接するようにする
+    const wave2 = baseWave({
+      tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(10, '♠', 2), card(11, '♦', 7)]],
+    })
+    const thirdSetup = playCard(DEFAULT_PARAMS, wave2, 'none', [], 1000000, 0)
+    const differentColumn = playCard(DEFAULT_PARAMS, { ...thirdSetup, foundation: card(1, '♣', 6) }, 'none', [], 1000000, 1)
+    expect(differentColumn.sameColumnStreak).toBe(1)
+    expect(differentColumn.lastPlayedColumn).toBe(1)
+  })
+
+  test('maxComboThisWaveはこれまでの最大コンボ数を保持する', () => {
+    const wave = baseWave({ combo: 5, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]], maxComboThisWave: 5 })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    expect(next.combo).toBe(6)
+    expect(next.maxComboThisWave).toBe(6)
+    const wave2 = baseWave({ combo: 2, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]], maxComboThisWave: 10 })
+    const next2 = playCard(DEFAULT_PARAMS, wave2, 'none', [], 1000000, 0)
+    expect(next2.maxComboThisWave).toBe(10) // 既存の最大値の方が大きければ維持
+  })
+
+  test('列一掃が成立するとtotalColumnsEmptiedThisWaveとcolumnSweepActiveThisWaveが更新される', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows, 1],
+      totalColumnsEmptiedThisWave: 3,
+      columnSweepActiveThisWave: false,
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    expect(next.totalColumnsEmptiedThisWave).toBe(4)
+    expect(next.columnSweepActiveThisWave).toBe(true)
+  })
+
+  test('役ボーナスが成立するとroleFiredThisChainがtrueになり、フラッシュならflushActiveThisComboもtrueになる', () => {
+    const wave = baseWave({
+      foundation: card(0, '♠', 1),
+      chain: [card(20, '♥', 11), card(21, '♦', 12)], // ロイヤル役成立目前(J,Q)
+      tableau: [[card(1, '♣', 13)], [card(2, '♦', 2)]],
+      roleFiredThisChain: false,
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    expect(next.roleFiredThisChain).toBe(true)
+  })
+
+  test('流星: コンボ数がcに到達した瞬間、直接点が加算される', () => {
+    const c = DEFAULT_PARAMS.talismans.shootingStar.c
+    const wave = baseWave({
+      combo: c - 1,
+      tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['shootingStar'], 1000000, 0)
+    expect(next.combo).toBe(c)
+    // コンボ倍率(comboMultiplierStep)込みの通常獲得点 + 流星の直接加算点
+    const multiplier = 1 + (c - 1) * scoring.comboMultiplierStep
+    const expectedGained = Math.floor(scoring.basePoint * multiplier) + DEFAULT_PARAMS.talismans.shootingStar.n
+    expect(next.score).toBe(expectedGained)
+  })
 })
 
 describe('chainContinuesPattern', () => {
@@ -858,6 +925,12 @@ describe('applyItemEffects', () => {
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      sameColumnStreak: 1,
+      totalColumnsEmptiedThisWave: 0,
+      maxComboThisWave: 1,
+      flushActiveThisCombo: false,
+      columnSweepActiveThisWave: false,
+      drawContinueCountThisChain: 0,
       ...overrides,
     }
   }
@@ -1814,6 +1887,12 @@ describe('applyItemEffects (グループ4-a: 絵札条件系)', () => {
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      sameColumnStreak: 1,
+      totalColumnsEmptiedThisWave: 0,
+      maxComboThisWave: 1,
+      flushActiveThisCombo: false,
+      columnSweepActiveThisWave: false,
+      drawContinueCountThisChain: 0,
       ...overrides,
     }
   }
@@ -1865,6 +1944,12 @@ describe('applyItemEffects (グループ4-b: スート/色専有系)', () => {
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      sameColumnStreak: 1,
+      totalColumnsEmptiedThisWave: 0,
+      maxComboThisWave: 1,
+      flushActiveThisCombo: false,
+      columnSweepActiveThisWave: false,
+      drawContinueCountThisChain: 0,
       ...overrides,
     }
   }
@@ -1919,6 +2004,12 @@ describe('applyItemEffects (グループ4-c: 枚数カウント系)', () => {
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      sameColumnStreak: 1,
+      totalColumnsEmptiedThisWave: 0,
+      maxComboThisWave: 1,
+      flushActiveThisCombo: false,
+      columnSweepActiveThisWave: false,
+      drawContinueCountThisChain: 0,
       ...overrides,
     }
   }
@@ -1990,6 +2081,12 @@ describe('applyItemEffects (グループ4-d: 既存フラグ再利用・KAルー
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      sameColumnStreak: 1,
+      totalColumnsEmptiedThisWave: 0,
+      maxComboThisWave: 1,
+      flushActiveThisCombo: false,
+      columnSweepActiveThisWave: false,
+      drawContinueCountThisChain: 0,
       ...overrides,
     }
   }
@@ -2065,6 +2162,12 @@ describe('applyItemEffects (グループ5: 場札残数系)', () => {
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      sameColumnStreak: 1,
+      totalColumnsEmptiedThisWave: 0,
+      maxComboThisWave: 1,
+      flushActiveThisCombo: false,
+      columnSweepActiveThisWave: false,
+      drawContinueCountThisChain: 0,
       ...overrides,
     }
   }
@@ -2095,6 +2198,12 @@ describe('applyItemEffects (グループ6: 役・パターン成立状況系)', 
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      sameColumnStreak: 1,
+      totalColumnsEmptiedThisWave: 0,
+      maxComboThisWave: 1,
+      flushActiveThisCombo: false,
+      columnSweepActiveThisWave: false,
+      drawContinueCountThisChain: 0,
       ...overrides,
     }
   }
@@ -2159,6 +2268,12 @@ describe('applyItemEffects (グループ7: コンボ内位置系)', () => {
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      sameColumnStreak: 1,
+      totalColumnsEmptiedThisWave: 0,
+      maxComboThisWave: 1,
+      flushActiveThisCombo: false,
+      columnSweepActiveThisWave: false,
+      drawContinueCountThisChain: 0,
       ...overrides,
     }
   }
@@ -2199,6 +2314,12 @@ describe('applyItemEffects (グループ8: 無条件固定加算)', () => {
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      sameColumnStreak: 1,
+      totalColumnsEmptiedThisWave: 0,
+      maxComboThisWave: 1,
+      flushActiveThisCombo: false,
+      columnSweepActiveThisWave: false,
+      drawContinueCountThisChain: 0,
       ...overrides,
     }
   }

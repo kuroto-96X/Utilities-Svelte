@@ -153,6 +153,13 @@ export function playCard(
 
   const remaining = remainingCount(newTableau)
 
+  const newSameColumnStreak = wave.lastPlayedColumn === colIndex ? wave.sameColumnStreak + 1 : 1
+  const newMaxComboThisWave = Math.max(wave.maxComboThisWave, newCombo)
+  const newTotalColumnsEmptiedThisWave = wave.totalColumnsEmptiedThisWave + (sweepQualifies ? 1 : 0)
+  const newColumnSweepActiveThisWave = wave.columnSweepActiveThisWave || sweepQualifies
+  const newRoleFiredThisChain = wave.roleFiredThisChain || roleFired.length > 0
+  const newFlushActiveThisCombo = wave.flushActiveThisCombo || roleFired.some(r => r.name === 'flush')
+
   const itemEffectCtx: ItemEffectContext = {
     card,
     previousFoundation: wave.foundation,
@@ -163,6 +170,12 @@ export function playCard(
     chainBonus: { ...chainResult, roleFired },
     isFirstPlayOfWave: !wave.firstPlayDone,
     effectiveStairMinLen,
+    sameColumnStreak: newSameColumnStreak,
+    totalColumnsEmptiedThisWave: newTotalColumnsEmptiedThisWave,
+    maxComboThisWave: newMaxComboThisWave,
+    flushActiveThisCombo: newFlushActiveThisCombo,
+    columnSweepActiveThisWave: newColumnSweepActiveThisWave,
+    drawContinueCountThisChain: wave.drawContinueCountThisChain,
   }
 
   const comboMultiplierStep = params.scoring.comboMultiplierStep
@@ -171,7 +184,17 @@ export function playCard(
   const rawGained = Math.floor(base * multiplier)
   const itemResult = applyItemEffects('gained', rawGained, items, itemEffectCtx, params)
   parts.push(...itemResult.parts)
-  const gained = Math.floor(itemResult.value)
+  let gained = Math.floor(itemResult.value)
+
+  const milestoneCtx: DirectEffectContext = {
+    comboBeforeReset: 0,
+    hasPlayableColumns: true,
+    roleFiredThisChain: newRoleFiredThisChain,
+    remainingTableauCount: remaining,
+    combo: newCombo,
+    colorHeld: false,
+  }
+  gained += applyDirectEffects('comboMilestoneDirect', items, milestoneCtx, params)
 
   const newScore = wave.score + gained
 
@@ -193,6 +216,13 @@ export function playCard(
     status: 'playing',
     endReason: null,
     firstPlayDone: true,
+    lastPlayedColumn: colIndex,
+    sameColumnStreak: newSameColumnStreak,
+    maxComboThisWave: newMaxComboThisWave,
+    totalColumnsEmptiedThisWave: newTotalColumnsEmptiedThisWave,
+    roleFiredThisChain: newRoleFiredThisChain,
+    flushActiveThisCombo: newFlushActiveThisCombo,
+    columnSweepActiveThisWave: newColumnSweepActiveThisWave,
   }
 
   if (remaining === 0) {
@@ -294,6 +324,18 @@ export interface ItemEffectContext {
   isFirstPlayOfWave: boolean
   // 護符(架橋等)による緩和を反映した、現在有効な階段成立の最小連続枚数
   effectiveStairMinLen: number
+  // 微風・共鳴用: このプレイ後の同一列連続回数
+  sameColumnStreak: number
+  // 蒼穹用: このプレイ後のウェーブ内列一掃累計回数
+  totalColumnsEmptiedThisWave: number
+  // 琥珀用: このプレイ後のウェーブ内最大到達コンボ数
+  maxComboThisWave: number
+  // 情熱用: このプレイ後、現在のコンボ中にフラッシュが成立しているか
+  flushActiveThisCombo: boolean
+  // 闘志用: このプレイ後、このウェーブ中に列一掃が発生しているか
+  columnSweepActiveThisWave: boolean
+  // 直感用: 現在のチェーン中に山札めくりでコンボ継続した回数
+  drawContinueCountThisChain: number
 }
 
 // 護符の内訳表示用に倍率を丸めて整形する(浮動小数の誤差で末尾が長くなるのを防ぐ)
