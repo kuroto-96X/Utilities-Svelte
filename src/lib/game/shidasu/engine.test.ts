@@ -518,6 +518,12 @@ describe('playCard', () => {
     const expectedGained = Math.floor(scoring.basePoint * multiplier) + DEFAULT_PARAMS.talismans.shootingStar.n
     expect(next.score).toBe(expectedGained)
   })
+
+  test('playCardはrand引数を省略してもデフォルト(Math.random)で動作する(既存呼び出しの後方互換性)', () => {
+    const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    expect(next.combo).toBe(1)
+  })
 })
 
 describe('chainContinuesPattern', () => {

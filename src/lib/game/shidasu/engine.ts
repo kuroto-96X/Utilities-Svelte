@@ -134,7 +134,8 @@ export function playCard(
   modifier: StageModifier,
   items: ItemId[],
   target: number,
-  colIndex: number
+  colIndex: number,
+  rand: () => number = Math.random
 ): WaveState {
   if (wave.status !== 'playing') return wave
   const col = wave.tableau[colIndex]
@@ -1338,11 +1339,11 @@ function withActiveWave(run: RunState, fn: (wave: WaveState) => WaveState): RunS
   return { ...run, wave: fn(run.wave) }
 }
 
-export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: number): RunState {
+export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: number, rand: () => number = Math.random): RunState {
   return withActiveWave(run, wave => {
     const stage = params.stages[run.stageIndex]
     const target = stage.targets[run.waveIndex]
-    return playCard(params, wave, stage.modifier, run.items, target, colIndex)
+    return playCard(params, wave, stage.modifier, run.items, target, colIndex, rand)
   })
 }
 
