@@ -49,6 +49,22 @@ function convertRandomCardToWild(composition: DeckCard[], rand: () => number): D
   return composition.map((c, i) => (i === target ? { ...c, wild: true } : c))
 }
 
+// 山札(末尾が次にめくられる位置)の中から、今のチェーンが継続できる最初のカードを探し、末尾と交換する。
+// 候補が無ければ何もしない(元の配列をそのまま返す)。
+function arrangeNextCardForContinuation(scoring: ShidasuParams['scoring'], stock: Card[], chain: Card[], stairMinLen: number): Card[] {
+  if (stock.length === 0) return stock
+  const lastIndex = stock.length - 1
+  for (let i = 0; i <= lastIndex; i++) {
+    if (chainContinuesPattern(scoring, chain, stock[i], stairMinLen)) {
+      if (i === lastIndex) return stock
+      const arranged = [...stock]
+      ;[arranged[i], arranged[lastIndex]] = [arranged[lastIndex], arranged[i]]
+      return arranged
+    }
+  }
+  return stock
+}
+
 export function startWave(
   params: ShidasuParams,
   _stageIndex: number,
@@ -70,16 +86,20 @@ export function startWave(
   }
 
   const deck = shuffle(composition.map(c => ({ id: nextId(), ...c })), rand)
-  const { cols, rows } = params.layout
+  const { cols } = params.layout
+  const rows = params.layout.rows + (items.includes('darkClouds') ? params.talismans.darkClouds.r : 0)
   const tableau: Card[][] = []
   for (let c = 0; c < cols; c++) {
     tableau.push(deck.splice(0, rows))
   }
   const foundation = deck.pop() as Card
+  const stockAfterDeal = items.includes('promise')
+    ? arrangeNextCardForContinuation(params.scoring, deck, [foundation], params.scoring.stairMinLen)
+    : deck
 
   const wave: WaveState = {
     tableau,
-    stock: deck,
+    stock: stockAfterDeal,
     foundation,
     score: 0,
     combo: 0,
@@ -327,7 +347,7 @@ export function drawStock(
     return {
       wave: {
         ...wave,
-        stock: newStock,
+        stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [...wave.chain, drawnCard], effectiveStairMinLen) : newStock,
         foundation: drawnCard,
         combo: naiveCombo,
         chain: [...wave.chain, drawnCard],
@@ -364,7 +384,7 @@ export function drawStock(
   return {
     wave: {
       ...wave,
-      stock: newStock,
+      stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [card], effectiveStairMinLen) : newStock,
       foundation: card,
       combo: 0,
       chain: [card],
