@@ -680,6 +680,18 @@ describe('playCard', () => {
     const revivedCount = next.tableau.reduce((n, c) => n + c.length, 0)
     expect(revivedCount).toBe(3) // 列一掃が不成立のため治癒は無関係、再生のみが発動する
   })
+
+  test('黄金: コンボが+1ではなく+2進む', () => {
+    const wave = baseWave({ combo: 3, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['golden'], 1000000, 0)
+    expect(next.combo).toBe(5)
+  })
+
+  test('黄金を持たなければ通常通りコンボは+1', () => {
+    const wave = baseWave({ combo: 3, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    expect(next.combo).toBe(4)
+  })
 })
 
 describe('chainContinuesPattern', () => {
@@ -2951,6 +2963,18 @@ describe('drawStock (素朴の得点ルール変更)', () => {
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['naive'], standardDeckComposition())
     expect(next.roleFiredThisChain).toBe(true)
     expect(next.flushActiveThisCombo).toBe(true)
+  })
+
+  test('黄金: 素朴パスでもコンボが+2進む', () => {
+    const wave = makeWave({
+      stock: [card(1, '♠', 9)],
+      combo: 2,
+      chain: [card(2, '♠', 4), card(3, '♠', 5)],
+      linked: true,
+      score: 0,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['naive', 'golden'], standardDeckComposition())
+    expect(next.combo).toBe(4)
   })
 })
 

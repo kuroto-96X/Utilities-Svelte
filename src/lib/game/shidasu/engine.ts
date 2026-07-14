@@ -149,7 +149,8 @@ export function playCard(
   if (!card) return wave
   if (!isPlayable(modifier, wave, card)) return wave
 
-  const newCombo = wave.combo + 1
+  // 黄金: 通常のコンボ加算処理そのものを+1ではなく+2にする(他の護符には無干渉)
+  const newCombo = wave.combo + (items.includes('golden') ? 2 : 1)
   let base = params.scoring.basePoint
   const parts = [`基礎点+${base}`]
 
@@ -389,7 +390,7 @@ export function drawStock(
     let naiveRoleFiredThisChain = wave.roleFiredThisChain
     let naiveFlushActiveThisCombo = wave.flushActiveThisCombo
     if (wouldContinue && items.includes('naive')) {
-      const newCombo = wave.combo + 1
+      const newCombo = wave.combo + (items.includes('golden') ? 2 : 1)
       let base = params.scoring.basePoint
       const parts = [`基礎点+${base}`]
       const chainResult = evaluateChainBonus(params.scoring, wave.chain, drawnCard, effectiveStairMinLen)
