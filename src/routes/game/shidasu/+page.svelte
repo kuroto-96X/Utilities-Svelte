@@ -289,6 +289,13 @@
       <div class="text-xs">山札</div>
       <div class="text-lg tabular-nums">{displayWave.stock.length}</div>
     </button>
+    {#if run.items.includes('guidance') && displayWave.stock.length > 0}
+      {@const nextCard = displayWave.stock[displayWave.stock.length - 1]}
+      <div class="flex flex-col items-center justify-center" style="margin-top:20px;">
+        <div class="text-[10px] text-emerald-300/70 mb-1">次の札</div>
+        {@render cardFace(nextCard, false)}
+      </div>
+    {/if}
     <div class="overflow-x-auto min-w-0">
       {#each chainRows as row, ri (ri)}
         <div class="relative" style="height:116px; width:{64 + (row.length - 1) * params.ui.chainCardOffsetX}px;">

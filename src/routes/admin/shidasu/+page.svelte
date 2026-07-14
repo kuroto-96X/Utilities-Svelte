@@ -586,6 +586,76 @@
       </section>
 
       <section class="bg-white border border-slate-200 rounded-xl p-4">
+        <h2 class="font-semibold text-slate-700 text-sm mb-3">護符パラメータ(グループ9〜16)</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="text-xs text-slate-500">
+            微風: 連続回数あたり加算(gentleBreeze.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.gentleBreeze.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            共鳴: 連続回数あたり倍率(resonance.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.resonance.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            蒼穹: 列一掃累計あたり倍率(azureSky.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.azureSky.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            琥珀: 最大コンボあたり倍率(amber.x)
+            <input type="number" min="0" step="0.01" bind:value={config.talismans.amber.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            沈着: リセット時直接加算(composure.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.composure.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            冷静: リセット時直接加算(clarity.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.clarity.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            慢心: 場札残数あたり直接加算(arrogance.x)
+            <input type="number" min="0" step="1" bind:value={config.talismans.arrogance.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            残響: コンボ数あたり直接加算(echo.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.echo.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            流星: 到達コンボ数の閾値(shootingStar.c)
+            <input type="number" min="1" step="1" bind:value={config.talismans.shootingStar.c} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            流星: 直接加算(shootingStar.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.shootingStar.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            直感: 継続回数あたり倍率(intuition.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.intuition.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            誠実: 直接加算(sincerity.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.sincerity.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            暗雲: 追加配布行数(darkClouds.r)
+            <input type="number" min="0" step="1" bind:value={config.talismans.darkClouds.r} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            再生: スコア消費率%(regeneration.p)
+            <input type="number" min="0" max="100" step="1" bind:value={config.talismans.regeneration.p} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            情熱: フラッシュ成立中倍率(passion.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.passion.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            闘志: 列一掃発生中倍率(fightingSpirit.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.fightingSpirit.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+        </div>
+      </section>
+
+      <section class="bg-white border border-slate-200 rounded-xl p-4">
         <h2 class="font-semibold text-slate-700 text-sm mb-3">フロー・UI</h2>
         <div class="grid grid-cols-2 gap-3">
           <label class="text-xs text-slate-500">
