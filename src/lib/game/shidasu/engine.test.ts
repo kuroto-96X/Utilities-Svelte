@@ -345,6 +345,13 @@ describe('playCard', () => {
     expect(next.lastDrawEffect).toBeNull()
   })
 
+  test('プレイするとfirstPlayDoneがtrueになる(ウェーブ開始直後はfalse)', () => {
+    const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
+    expect(wave.firstPlayDone).toBe(false)
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    expect(next.firstPlayDone).toBe(true)
+  })
+
   test('chainOriginにplayが追記される', () => {
     const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
     const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)

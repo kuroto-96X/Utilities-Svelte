@@ -102,6 +102,8 @@ export function playCard(
   base += chainResult.bonus
   parts.push(...chainResult.parts)
 
+  const chainIncludingThis = [...wave.chain, card]
+
   const newTableau = wave.tableau.map((c, i) => (i === colIndex ? c.slice(0, -1) : c))
   const columnJustEmptied = newTableau[colIndex].length === 0
   const streakStartLength = wave.comboStreakColumnLengths[colIndex]
@@ -112,17 +114,26 @@ export function playCard(
       : streakStartLength === rows
   )
   const newColumnsEmptied = sweepQualifies ? wave.columnsEmptiedThisCombo + 1 : wave.columnsEmptiedThisCombo
+  const roleFired = [...chainResult.roleFired]
   if (sweepQualifies) {
     const sweepGain = params.scoring.columnSweepBonus * newColumnsEmptied
     base += sweepGain
     parts.push(`列一掃+${sweepGain}`)
+    roleFired.push({ name: 'columnSweep', usedWild: false })
   }
+
+  const remaining = remainingCount(newTableau)
 
   const itemEffectCtx: ItemEffectContext = {
     card,
     previousFoundation: wave.foundation,
     combo: newCombo,
     stockRemaining: wave.stock.length,
+    chain: chainIncludingThis,
+    remainingTableauCount: remaining,
+    chainBonus: { ...chainResult, roleFired },
+    isFirstPlayOfWave: !wave.firstPlayDone,
+    effectiveStairMinLen,
   }
 
   const comboMultiplierStep = params.scoring.comboMultiplierStep
@@ -133,7 +144,6 @@ export function playCard(
   parts.push(...itemResult.parts)
   const gained = Math.floor(itemResult.value)
 
-  const remaining = remainingCount(newTableau)
   const newScore = wave.score + gained
 
   const next: WaveState = {
@@ -153,6 +163,7 @@ export function playCard(
     lastGain: { points: gained, parts },
     status: 'playing',
     endReason: null,
+    firstPlayDone: true,
   }
 
   if (remaining === 0) {
