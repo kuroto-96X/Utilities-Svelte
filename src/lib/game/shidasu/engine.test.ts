@@ -1554,3 +1554,54 @@ describe('forceStockTop', () => {
     expect(next1.stock[0].id).not.toBe(next2.stock[0].id)
   })
 })
+
+describe('applyItemEffects (グループ4-a: 絵札条件系)', () => {
+  const params = DEFAULT_PARAMS
+  function ctx(overrides: Partial<ItemEffectContext> = {}): ItemEffectContext {
+    return {
+      card: card(1, '♠', 5),
+      previousFoundation: card(2, '♣', 4),
+      combo: 1,
+      stockRemaining: 0,
+      chain: [card(2, '♣', 4), card(1, '♠', 5)],
+      remainingTableauCount: 10,
+      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      isFirstPlayOfWave: false,
+      effectiveStairMinLen: params.scoring.stairMinLen,
+      ...overrides,
+    }
+  }
+
+  test('平穏: チェーンにJQKが無ければ加算、絵札が混ざれば不発動', () => {
+    const fired = applyItemEffects('gained', 100, ['calm'], ctx({ chain: [card(1, '♠', 5), card(2, '♦', 8)] }), params)
+    expect(fired.value).toBe(100 + params.talismans.calm.n)
+    const notFired = applyItemEffects('gained', 100, ['calm'], ctx({ chain: [card(1, '♠', 5), card(2, '♦', 12)] }), params)
+    expect(notFired.value).toBe(100)
+  })
+
+  test('安寧: チェーンにJQKが無ければ倍算', () => {
+    const result = applyItemEffects('gained', 100, ['serenity'], ctx({ chain: [card(1, '♠', 5), card(2, '♦', 8)] }), params)
+    expect(result.value).toBe(100 * params.talismans.serenity.x)
+  })
+
+  test('運命: チェーンがJQKのみなら加算、非絵札が混ざれば不発動', () => {
+    const fired = applyItemEffects('gained', 100, ['destiny'], ctx({ chain: [card(1, '♠', 11), card(2, '♦', 13)] }), params)
+    expect(fired.value).toBe(100 + params.talismans.destiny.n)
+    const notFired = applyItemEffects('gained', 100, ['destiny'], ctx({ chain: [card(1, '♠', 11), card(2, '♦', 5)] }), params)
+    expect(notFired.value).toBe(100)
+  })
+
+  test('宿命: チェーンがJQKのみなら倍算', () => {
+    const result = applyItemEffects('gained', 100, ['fate'], ctx({ chain: [card(1, '♠', 11), card(2, '♦', 13)] }), params)
+    expect(result.value).toBe(100 * params.talismans.fate.x)
+  })
+
+  test('安堵: 取得したカードのランクが1〜10なら加算、ワイルドなら都合よく発動、絵札なら不発動', () => {
+    const numberCard = applyItemEffects('gained', 100, ['relief'], ctx({ card: card(1, '♠', 7) }), params)
+    expect(numberCard.value).toBe(100 + params.talismans.relief.n)
+    const wildCard = applyItemEffects('gained', 100, ['relief'], ctx({ card: card(1, '★', 0, true) }), params)
+    expect(wildCard.value).toBe(100 + params.talismans.relief.n)
+    const faceCard = applyItemEffects('gained', 100, ['relief'], ctx({ card: card(1, '♠', 12) }), params)
+    expect(faceCard.value).toBe(100)
+  })
+})

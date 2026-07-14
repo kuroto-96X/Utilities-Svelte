@@ -248,6 +248,13 @@ function fmtMultiplier(n: number): string {
 
 type ItemEffect = (value: number, ctx: ItemEffectContext, params: ShidasuParams) => { value: number; part: string | null }
 
+function chainHasNoFace(chain: Card[]): boolean {
+  return chain.every(c => c.wild || !isFace(c))
+}
+function chainIsFaceOnly(chain: Card[]): boolean {
+  return chain.every(c => c.wild || isFace(c))
+}
+
 const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; effect: ItemEffect }>> = {
   patience: {
     channel: 'clearBonus',
@@ -370,6 +377,39 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
       return { value: v * factor, part: `朝霧×${fmtMultiplier(factor)}` }
     },
   },
+  calm: {
+    channel: 'gained',
+    effect: (v, ctx, p) =>
+      chainHasNoFace(ctx.chain) ? { value: v + p.talismans.calm.n, part: `平穏+${p.talismans.calm.n}` } : { value: v, part: null },
+  },
+  serenity: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (!chainHasNoFace(ctx.chain)) return { value: v, part: null }
+      const factor = p.talismans.serenity.x
+      return { value: v * factor, part: `安寧×${fmtMultiplier(factor)}` }
+    },
+  },
+  destiny: {
+    channel: 'gained',
+    effect: (v, ctx, p) =>
+      chainIsFaceOnly(ctx.chain) ? { value: v + p.talismans.destiny.n, part: `運命+${p.talismans.destiny.n}` } : { value: v, part: null },
+  },
+  fate: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (!chainIsFaceOnly(ctx.chain)) return { value: v, part: null }
+      const factor = p.talismans.fate.x
+      return { value: v * factor, part: `宿命×${fmtMultiplier(factor)}` }
+    },
+  },
+  relief: {
+    channel: 'gained',
+    effect: (v, ctx, p) =>
+      ctx.card.wild || (ctx.card.rank >= 1 && ctx.card.rank <= 10)
+        ? { value: v + p.talismans.relief.n, part: `安堵+${p.talismans.relief.n}` }
+        : { value: v, part: null },
+  },
 }
 
 export function applyItemEffects(
@@ -419,6 +459,11 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   cheerful: '快活の護符',
   conscience: '良心の護符',
   morningMist: '朝霧の護符',
+  calm: '平穏の護符',
+  serenity: '安寧の護符',
+  destiny: '運命の護符',
+  fate: '宿命の護符',
+  relief: '安堵の護符',
 }
 
 export function itemDesc(id: ItemId, params: ShidasuParams): string {
@@ -446,6 +491,11 @@ export function itemDesc(id: ItemId, params: ShidasuParams): string {
     case 'cheerful': return `コンボ数が偶数のとき、${params.talismans.cheerful.n}点加算`
     case 'conscience': return `コンボ数が奇数のとき、${params.talismans.conscience.n}点加算`
     case 'morningMist': return `コンボ数が${params.talismans.morningMist.c}未満のとき獲得点を1/${params.talismans.morningMist.x}に、${params.talismans.morningMist.c}以上のとき${params.talismans.morningMist.x}倍に`
+    case 'calm': return `コンボ内にJQKが無いとき、${params.talismans.calm.n}点加算`
+    case 'serenity': return `コンボ内にJQKが無いとき、獲得点を${params.talismans.serenity.x}倍`
+    case 'destiny': return `コンボ内がJQKのみのとき、${params.talismans.destiny.n}点加算`
+    case 'fate': return `コンボ内がJQKのみのとき、獲得点を${params.talismans.fate.x}倍`
+    case 'relief': return `取得したカード1枚のランクが1〜10のとき、${params.talismans.relief.n}点加算`
   }
 }
 
