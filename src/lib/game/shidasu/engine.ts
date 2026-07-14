@@ -1,7 +1,7 @@
 // src/lib/game/shidasu/engine.ts
 import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard } from './types'
 import type { ShidasuParams } from './params'
-import { createDeck, createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
+import { createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
 
