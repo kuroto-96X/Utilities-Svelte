@@ -1397,10 +1397,28 @@ describe('DEFAULT_PARAMS.talismans (グループ9〜16)', () => {
 })
 
 describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
-  test('59種類のアイテムが定義されている', () => {
-    expect(ITEM_POOL).toHaveLength(59)
-    expect(new Set(ITEM_POOL).size).toBe(59) // 重複なし
+  test('79種類のアイテムが定義されている', () => {
+    expect(ITEM_POOL).toHaveLength(79)
+    expect(new Set(ITEM_POOL).size).toBe(79) // 重複なし
     ITEM_POOL.forEach(id => expect(ITEM_NAMES[id]).toBeTruthy())
+  })
+
+  test('グループ9〜16の残り20個も名前と説明文を持つ', () => {
+    const newIds: ItemId[] = [
+      'gentleBreeze', 'resonance',
+      'azureSky', 'amber',
+      'composure', 'clarity', 'arrogance', 'echo', 'shootingStar',
+      'naive', 'intuition', 'sincerity',
+      'promise', 'darkClouds', 'regeneration',
+      'benevolence', 'healing',
+      'guidance',
+      'passion', 'fightingSpirit',
+    ]
+    expect(newIds).toHaveLength(20)
+    newIds.forEach(id => {
+      expect(ITEM_NAMES[id]).toBeTruthy()
+      expect(itemDesc(id, DEFAULT_PARAMS)).toBeTruthy()
+    })
   })
 
   test('itemDescはパラメータの数値を埋め込んだ説明文を返す', () => {

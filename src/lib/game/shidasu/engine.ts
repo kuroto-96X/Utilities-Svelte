@@ -1074,6 +1074,14 @@ export const ITEM_POOL: ItemId[] = [
   'prologue', 'interlude', 'morningDew',
   'drizzle',
   'eternity', 'abundance', 'silence', 'resilience',
+  'gentleBreeze', 'resonance',
+  'azureSky', 'amber',
+  'composure', 'clarity', 'arrogance', 'echo', 'shootingStar',
+  'naive', 'intuition', 'sincerity',
+  'promise', 'darkClouds', 'regeneration',
+  'benevolence', 'healing',
+  'guidance',
+  'passion', 'fightingSpirit',
 ]
 
 export const ITEM_NAMES: Record<ItemId, string> = {
