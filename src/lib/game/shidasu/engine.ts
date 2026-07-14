@@ -172,7 +172,17 @@ export function playCard(
     roleFired.push({ name: 'columnSweep', usedWild: false })
   }
 
-  const remaining = remainingCount(newTableau)
+  let healedTableau = newTableau
+  let healedDiscardPile = wave.discardPile
+  if (sweepQualifies && items.includes('healing') && wave.discardPile.length > 0) {
+    const pool = [...wave.discardPile]
+    shuffleInPlace(pool, rand)
+    const reviveCount = Math.min(rows, pool.length)
+    const revived = pool.slice(0, reviveCount)
+    healedDiscardPile = pool.slice(reviveCount)
+    healedTableau = newTableau.map((c, i) => (i === colIndex ? revived : c))
+  }
+  const remaining = remainingCount(healedTableau)
 
   const newSameColumnStreak = wave.lastPlayedColumn === colIndex ? wave.sameColumnStreak + 1 : 1
   const newMaxComboThisWave = Math.max(wave.maxComboThisWave, newCombo)
@@ -221,7 +231,8 @@ export function playCard(
 
   const next: WaveState = {
     ...wave,
-    tableau: newTableau,
+    tableau: healedTableau,
+    discardPile: healedDiscardPile,
     foundation: card,
     combo: newCombo,
     chain: [...wave.chain, card],

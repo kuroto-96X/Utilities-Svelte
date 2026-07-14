@@ -524,6 +524,50 @@ describe('playCard', () => {
     const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
     expect(next.combo).toBe(1)
   })
+
+  test('治癒: 列一掃が成立すると捨て札から最大rows枚が空いた列へ戻る', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows, 1],
+      discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3), card(13, '♦', 4), card(14, '♦', 5), card(15, '♦', 6), card(16, '♦', 7)],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['healing'], 1000000, 0, createRng(1))
+    expect(next.columnsEmptiedThisCombo).toBe(1)
+    expect(next.tableau[0]).toHaveLength(DEFAULT_PARAMS.layout.rows)
+    expect(next.discardPile.length).toBe(7 - DEFAULT_PARAMS.layout.rows)
+  })
+
+  test('治癒: 捨て札がrows未満ならあるだけ戻す', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows, 1],
+      discardPile: [card(10, '♦', 1), card(11, '♦', 2)],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['healing'], 1000000, 0, createRng(1))
+    expect(next.tableau[0]).toHaveLength(2)
+    expect(next.discardPile).toHaveLength(0)
+  })
+
+  test('治癒: 捨て札が空なら復活は起こらない', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows, 1],
+      discardPile: [],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['healing'], 1000000, 0, createRng(1))
+    expect(next.tableau[0]).toHaveLength(0)
+  })
+
+  test('治癒を持っていなければ列一掃後も列は空のまま', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows, 1],
+      discardPile: [card(10, '♦', 1), card(11, '♦', 2)],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, createRng(1))
+    expect(next.tableau[0]).toHaveLength(0)
+    expect(next.discardPile).toHaveLength(2)
+  })
 })
 
 describe('chainContinuesPattern', () => {
