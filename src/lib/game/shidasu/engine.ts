@@ -172,6 +172,9 @@ export function playCard(
     roleFired.push({ name: 'columnSweep', usedWild: false })
   }
 
+  // 治癒は再生より先に評価される。最後の列を空にする一手が列一掃と全消しを同時に
+  // 満たす場合、治癒が先にその列へカードを戻すため remaining は0にならず、
+  // 再生の全消し時復活・ウェーブ継続は発動しない(意図的な優先順位。両立はさせない)。
   let healedTableau = newTableau
   let healedDiscardPile = wave.discardPile
   let healedComboStreakColumnLengths = wave.comboStreakColumnLengths
