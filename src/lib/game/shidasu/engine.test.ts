@@ -1981,3 +1981,26 @@ describe('applyItemEffects (グループ7: コンボ内位置系)', () => {
     expect(notFired.value).toBe(100)
   })
 })
+
+describe('applyItemEffects (グループ8: 無条件固定加算)', () => {
+  const params = DEFAULT_PARAMS
+  function ctx(overrides: Partial<ItemEffectContext> = {}): ItemEffectContext {
+    return {
+      card: card(1, '♠', 5),
+      previousFoundation: card(2, '♣', 4),
+      combo: 1,
+      stockRemaining: 0,
+      chain: [card(2, '♣', 4), card(1, '♠', 5)],
+      remainingTableauCount: 10,
+      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      isFirstPlayOfWave: false,
+      effectiveStairMinLen: params.scoring.stairMinLen,
+      ...overrides,
+    }
+  }
+
+  test('小雨: 常にn点加算', () => {
+    const result = applyItemEffects('gained', 100, ['drizzle'], ctx(), params)
+    expect(result.value).toBe(100 + params.talismans.drizzle.n)
+  })
+})

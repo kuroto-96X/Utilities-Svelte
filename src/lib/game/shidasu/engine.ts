@@ -687,6 +687,10 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
     effect: (v, ctx, p) =>
       ctx.isFirstPlayOfWave ? { value: v + p.talismans.morningDew.n, part: `朝露+${p.talismans.morningDew.n}` } : { value: v, part: null },
   },
+  drizzle: {
+    channel: 'gained',
+    effect: (v, _ctx, p) => ({ value: v + p.talismans.drizzle.n, part: `小雨+${p.talismans.drizzle.n}` }),
+  },
 }
 
 export function applyItemEffects(
@@ -770,6 +774,7 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   prologue: '序章の護符',
   interlude: '幕間の護符',
   morningDew: '朝露の護符',
+  drizzle: '小雨の護符',
 }
 
 export function itemDesc(id: ItemId, params: ShidasuParams): string {
@@ -831,6 +836,7 @@ export function itemDesc(id: ItemId, params: ShidasuParams): string {
     case 'prologue': return `コンボ1枚目のとき、${params.talismans.prologue.n}点加算`
     case 'interlude': return `コンボが${params.talismans.interlude.m}枚目に達するたび、${params.talismans.interlude.n}点加算`
     case 'morningDew': return `ウェーブで最初にプレイしたカードのとき、${params.talismans.morningDew.n}点加算`
+    case 'drizzle': return `場札を取るたび、${params.talismans.drizzle.n}点加算`
   }
 }
 
