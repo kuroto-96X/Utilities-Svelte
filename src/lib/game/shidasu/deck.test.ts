@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { createDeck, createRng, shuffle } from './deck'
+import { createDeck, createRng, shuffle, standardDeckComposition } from './deck'
 
 function idGen() {
   let n = 0
@@ -74,5 +74,18 @@ describe('shuffle', () => {
     const shuffled = shuffle(deck, createRng(3))
     expect(shuffled.map(c => c.id).sort((a, b) => a - b))
       .toEqual(deck.map(c => c.id).sort((a, b) => a - b))
+  })
+})
+
+describe('standardDeckComposition', () => {
+  test('52枚、全スート×全ランクを網羅し、全て非ワイルド', () => {
+    const composition = standardDeckComposition()
+    expect(composition).toHaveLength(52)
+    expect(composition.every(c => !c.wild)).toBe(true)
+    const suits = ['♠', '♥', '♦', '♣'] as const
+    suits.forEach(suit => {
+      const ranks = composition.filter(c => c.suit === suit).map(c => c.rank).sort((a, b) => a - b)
+      expect(ranks).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
+    })
   })
 })

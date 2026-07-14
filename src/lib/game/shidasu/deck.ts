@@ -1,4 +1,4 @@
-import type { Card, Suit, Rank } from './types'
+import type { Card, Suit, Rank, DeckCard } from './types'
 
 const SUITS: Suit[] = ['♠', '♥', '♦', '♣']
 
@@ -10,6 +10,16 @@ export function createDeck(nextId: () => number): Card[] {
     }
   }
   return deck
+}
+
+export function standardDeckComposition(): DeckCard[] {
+  const composition: DeckCard[] = []
+  for (const suit of SUITS) {
+    for (let rank = 1; rank <= 13; rank++) {
+      composition.push({ suit, rank: rank as Rank, wild: false })
+    }
+  }
+  return composition
 }
 
 export function createRng(seed: number): () => number {

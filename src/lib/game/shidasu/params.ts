@@ -88,6 +88,7 @@ export interface ShidasuParams {
     interlude: { m: number; n: number }
     morningDew: { n: number }
     drizzle: { n: number }
+    resilience: { p: number }
   }
   flow: {
     wavesPerStage: number
@@ -183,6 +184,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     interlude: { m: 5, n: 1000 },
     morningDew: { n: 5000 },
     drizzle: { n: 50 },
+    resilience: { p: 30 },
   },
   flow: { wavesPerStage: 3, clearDelayMs: 450 },
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },

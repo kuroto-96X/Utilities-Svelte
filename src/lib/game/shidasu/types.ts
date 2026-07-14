@@ -16,9 +16,17 @@ export type ItemId =
   | 'blessing' | 'focus' | 'lapis' | 'jade' | 'emptyMind'
   | 'prologue' | 'interlude' | 'morningDew'
   | 'drizzle'
+  | 'eternity' | 'abundance' | 'silence' | 'resilience'
 
 export interface Card {
   id: number
+  suit: Suit
+  rank: Rank
+  wild: boolean
+}
+
+// ラン全体で持続するデッキの中身(idを持たない。ウェーブ開始のたびに新しいidを振ってCardを生成する)
+export interface DeckCard {
   suit: Suit
   rank: Rank
   wild: boolean
@@ -53,6 +61,8 @@ export interface WaveState {
   lastGain: ScoreGain | null
   // ウェーブ開始後、一度でも場札をプレイしたか(朝露の護符の判定に使用。山札めくりでは変化しない)
   firstPlayDone: boolean
+  // コンボリセット時にチェーンにあった札が送られる、ウェーブ内限定の捨て札(不屈の護符が参照する。ウェーブを跨いで持続しない)
+  discardPile: Card[]
 }
 
 export type RunPhase = 'title' | 'playing' | 'itemSelect' | 'stageClear' | 'allClear' | 'gameOver'
@@ -65,4 +75,6 @@ export interface RunState {
   offer: ItemId[]
   wave: WaveState | null
   pendingNewItem: ItemId | null
+  // ラン全体で持続するデッキの構成(永劫・豊穣・静寂によって書き換えられる)
+  deckComposition: DeckCard[]
 }

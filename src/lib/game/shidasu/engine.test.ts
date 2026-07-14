@@ -92,6 +92,7 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     endReason: null,
     lastGain: null,
     firstPlayDone: false,
+    discardPile: [],
     ...overrides,
   }
 }
@@ -974,6 +975,12 @@ describe('DEFAULT_PARAMS.talismans (グループ4〜8)', () => {
     expect(DEFAULT_PARAMS.talismans.interlude.n).toBe(1000)
     expect(DEFAULT_PARAMS.talismans.morningDew.n).toBe(5000)
     expect(DEFAULT_PARAMS.talismans.drizzle.n).toBe(50)
+  })
+})
+
+describe('DEFAULT_PARAMS.talismans.resilience', () => {
+  test('既定値が設定されている', () => {
+    expect(DEFAULT_PARAMS.talismans.resilience.p).toBe(30)
   })
 })
 
