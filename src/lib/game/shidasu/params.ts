@@ -109,6 +109,14 @@ export interface ShidasuParams {
     guidance: Record<string, never>
     passion: { x: number }
     fightingSpirit: { x: number }
+    sanctify: Record<string, never>
+    protection: { c: number }
+    earth: { c: number }
+    golden: Record<string, never>
+    morningStar: { x: number }
+    mercy: { c: number; x: number }
+    mirror: Record<string, never>
+    deadline: { n: number }
   }
   flow: {
     wavesPerStage: number
@@ -225,6 +233,14 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     guidance: {},
     passion: { x: 1.5 },
     fightingSpirit: { x: 1.3 },
+    sanctify: {},
+    protection: { c: 3 },
+    earth: { c: 2 },
+    golden: {},
+    morningStar: { x: 0.2 },
+    mercy: { c: 3, x: 1.5 },
+    mirror: {},
+    deadline: { n: 10 },
   },
   flow: { wavesPerStage: 3, clearDelayMs: 450 },
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },

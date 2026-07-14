@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
 
@@ -123,6 +123,12 @@ export function startWave(
     flushActiveThisCombo: false,
     columnSweepActiveThisWave: false,
     benevolenceUsedThisCombo: false,
+    baseComboCount: 0,
+    roleEchoUsedThisCombo: {},
+    sameRankEchoUsedThisCombo: [],
+    pendingRoleEcho: null,
+    roleOccurrenceCountThisWave: {},
+    mercyActiveNextCombo: false,
   }
 
   return { wave, deckComposition: composition }
@@ -1204,6 +1210,14 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   guidance: '導きの護符',
   passion: '情熱の護符',
   fightingSpirit: '闘志の護符',
+  sanctify: '祝福の護符',
+  protection: '庇護の護符',
+  earth: '大地の護符',
+  golden: '黄金の護符',
+  morningStar: '明星の護符',
+  mercy: '慈悲の護符',
+  mirror: '水鏡の護符',
+  deadline: '刻限の護符',
 }
 
 export function itemDesc(id: ItemId, params: ShidasuParams): string {
@@ -1290,6 +1304,14 @@ export function itemDesc(id: ItemId, params: ShidasuParams): string {
     case 'guidance': return `山札の次のカードが見えるようになる`
     case 'passion': return `このコンボ中にフラッシュが成立していれば、獲得点を${params.talismans.passion.x}倍`
     case 'fightingSpirit': return `このウェーブ中に列一掃が発生していれば、獲得点を${params.talismans.fightingSpirit.x}倍`
+    case 'sanctify': return `役を揃えるたび基礎コンボ数+1。コンボリセット時、0ではなく基礎コンボ数から再開する`
+    case 'protection': return `コンボ数(計算用)が${params.talismans.protection.c}未満のとき、${params.talismans.protection.c}として計算する`
+    case 'earth': return `コンボ数(計算用)に常に${params.talismans.earth.c}を加算する`
+    case 'golden': return `コンボが1回進むたびに、通常の+1ではなく+2進む`
+    case 'morningStar': return `役ボーナスの額を、その役のウェーブ内累積成立回数×${params.talismans.morningStar.x}分だけ倍加`
+    case 'mercy': return `コンボ数が${params.talismans.mercy.c}以下でリセットされたとき、次のコンボの間、獲得点を${params.talismans.mercy.x}倍`
+    case 'mirror': return `役が成立するたび(コンボ中1回、同ランクは枚数ごとに1回)、次のプレイで同じ役ボーナスを追加でもう一度加算する`
+    case 'deadline': return `カードを取るたび、山札の残り枚数×${params.talismans.deadline.n}点加算`
   }
 }
 
@@ -1600,8 +1622,6 @@ export function checkCompleteRun(chainBefore: Card[], chainIncludingThis: Card[]
   const distinctNow = Math.min(13, distinctRealNow + wildCountNow)
   return distinctBefore < 13 && distinctNow >= 13
 }
-
-export type RoleName = 'flush' | 'royalSet' | 'sameRank' | 'completeRun' | 'columnSweep'
 
 export interface ChainBonusResult {
   bonus: number

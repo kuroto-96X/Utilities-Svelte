@@ -104,6 +104,12 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     flushActiveThisCombo: false,
     columnSweepActiveThisWave: false,
     benevolenceUsedThisCombo: false,
+    baseComboCount: 0,
+    roleEchoUsedThisCombo: {},
+    sameRankEchoUsedThisCombo: [],
+    pendingRoleEcho: null,
+    roleOccurrenceCountThisWave: {},
+    mercyActiveNextCombo: false,
     ...overrides,
   }
 }
@@ -1454,6 +1460,17 @@ describe('DEFAULT_PARAMS.talismans (グループ9〜16)', () => {
     expect(DEFAULT_PARAMS.talismans.regeneration.p).toBe(50)
     expect(DEFAULT_PARAMS.talismans.passion.x).toBe(1.5)
     expect(DEFAULT_PARAMS.talismans.fightingSpirit.x).toBe(1.3)
+  })
+})
+
+describe('DEFAULT_PARAMS.talismans (グループ17)', () => {
+  test('既定値が正しく設定されている', () => {
+    expect(DEFAULT_PARAMS.talismans.protection.c).toBe(3)
+    expect(DEFAULT_PARAMS.talismans.earth.c).toBe(2)
+    expect(DEFAULT_PARAMS.talismans.morningStar.x).toBe(0.2)
+    expect(DEFAULT_PARAMS.talismans.mercy.c).toBe(3)
+    expect(DEFAULT_PARAMS.talismans.mercy.x).toBe(1.5)
+    expect(DEFAULT_PARAMS.talismans.deadline.n).toBe(10)
   })
 })
 

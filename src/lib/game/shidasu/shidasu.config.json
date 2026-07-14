@@ -101,7 +101,15 @@
     "healing": {},
     "guidance": {},
     "passion": { "x": 1.5 },
-    "fightingSpirit": { "x": 1.3 }
+    "fightingSpirit": { "x": 1.3 },
+    "sanctify": {},
+    "protection": { "c": 3 },
+    "earth": { "c": 2 },
+    "golden": {},
+    "morningStar": { "x": 0.2 },
+    "mercy": { "c": 3, "x": 1.5 },
+    "mirror": {},
+    "deadline": { "n": 10 }
   },
   "flow": { "wavesPerStage": 3, "clearDelayMs": 450 },
   "ui": { "comboTierThresholds": [3, 5, 8], "chainCardOffsetX": 30, "chainCardsPerRow": 10 }

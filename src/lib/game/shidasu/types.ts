@@ -2,6 +2,7 @@
 export type Suit = '♠' | '♥' | '♦' | '♣' | '★'
 export type Rank = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13
 export type StageModifier = 'none' | 'noLoop' | 'faceLock'
+export type RoleName = 'flush' | 'royalSet' | 'sameRank' | 'completeRun' | 'columnSweep'
 export type ItemId =
   | 'bridge' | 'grace'
   | 'patience' | 'purify' | 'temperance'
@@ -25,6 +26,8 @@ export type ItemId =
   | 'benevolence' | 'healing'
   | 'guidance'
   | 'passion' | 'fightingSpirit'
+  | 'sanctify' | 'protection' | 'earth' | 'golden'
+  | 'morningStar' | 'mercy' | 'mirror' | 'deadline'
 
 export interface Card {
   id: number
@@ -89,6 +92,18 @@ export interface WaveState {
   columnSweepActiveThisWave: boolean
   // 博愛用: 現在のコンボで無効化を既に使ったか
   benevolenceUsedThisCombo: boolean
+  // 祝福用: 役成立のたび+1、コンボリセット時にwave.comboの復帰先になる(ウェーブ単位)
+  baseComboCount: number
+  // 水鏡用: 役の種類ごと(sameRank以外)に、今コンボで遅延複製をスケジュール済みか
+  roleEchoUsedThisCombo: Partial<Record<RoleName, boolean>>
+  // 水鏡用: sameRankは枚数段階(sameRankCountの値)ごとに使用済みかを記録する
+  sameRankEchoUsedThisCombo: number[]
+  // 水鏡用: 次の1プレイで上乗せ予定の役ボーナス(未予約ならnull)
+  pendingRoleEcho: { name: RoleName; amount: number } | null
+  // 明星用: 役の種類ごとのウェーブ内累積成立回数(今回成立分は含まない)
+  roleOccurrenceCountThisWave: Partial<Record<RoleName, number>>
+  // 慈悲用: 次のコンボの間、倍率xを適用中か
+  mercyActiveNextCombo: boolean
 }
 
 export type RunPhase = 'title' | 'playing' | 'itemSelect' | 'stageClear' | 'allClear' | 'gameOver'
