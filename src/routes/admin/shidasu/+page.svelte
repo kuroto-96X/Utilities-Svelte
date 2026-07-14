@@ -418,6 +418,164 @@
       </section>
 
       <section class="bg-white border border-slate-200 rounded-xl p-4">
+        <h2 class="font-semibold text-slate-700 text-sm mb-3">護符パラメータ(グループ4〜8)</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="text-xs text-slate-500">
+            平穏: JQKなし加算(calm.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.calm.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            安寧: JQKなし倍率(serenity.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.serenity.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            運命: JQKのみ加算(destiny.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.destiny.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            宿命: JQKのみ倍率(fate.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.fate.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            安堵: 数札取得時加算(relief.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.relief.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            深緑: ♣専有倍率(verdantGreen.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.verdantGreen.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            宝石: ♦専有倍率(gem.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.gem.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            真剣: ♠専有倍率(resolve.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.resolve.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            聖杯: ♥専有倍率(grail.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.grail.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            月光: 黒専有倍率(moonlight.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.moonlight.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            陽光: 赤専有倍率(sunlight.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.sunlight.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            王冠: K枚数倍率(crown.x)
+            <input type="number" min="0" step="0.01" bind:value={config.talismans.crown.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            青葉: ♣枚数あたり加算(cloverLeaf.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.cloverLeaf.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            硬貨: ♦枚数あたり加算(coin.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.coin.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            武器: ♠枚数あたり加算(blade.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.blade.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            献杯: ♥枚数あたり加算(chalice.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.chalice.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            均衡: 赤黒同数加算(balance.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.balance.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            調和: 赤黒同数倍率(harmony.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.harmony.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            高潔: 同スートパターン加算(nobility.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.nobility.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            執念: 同スートパターン倍率(tenacity.x)
+            <input type="number" min="0" step="0.01" bind:value={config.talismans.tenacity.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            覚悟: 階段倍率(determination.x)
+            <input type="number" min="0" step="0.01" bind:value={config.talismans.determination.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            循環: K↔A遷移倍率(cycle.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.cycle.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            輪廻: K↔Aループ倍率(reincarnation.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.reincarnation.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            威光: 同スート全ランク階段倍率(majesty.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.majesty.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            兆し: 場札残数閾値(omen.m)
+            <input type="number" min="0" step="1" bind:value={config.talismans.omen.m} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            兆し: 倍率(omen.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.omen.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            三日月: 場札残数閾値(crescent.m)
+            <input type="number" min="0" step="1" bind:value={config.talismans.crescent.m} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            三日月: 倍率(crescent.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.crescent.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            恩寵: 役成立倍率(blessing.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.blessing.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            集中: 同ランク役倍率(focus.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.focus.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            瑠璃: 役2種類以上同時倍率(lapis.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.lapis.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            翡翠: ワイルド起因役加算(jade.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.jade.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            無心: 役・パターン無し倍率(emptyMind.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.emptyMind.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            序章: コンボ1枚目加算(prologue.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.prologue.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            幕間: 発動間隔(interlude.m)
+            <input type="number" min="1" step="1" bind:value={config.talismans.interlude.m} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            幕間: 加算量(interlude.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.interlude.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            朝露: ウェーブ最初のプレイ加算(morningDew.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.morningDew.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            小雨: 無条件加算(drizzle.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.drizzle.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+        </div>
+      </section>
+
+      <section class="bg-white border border-slate-200 rounded-xl p-4">
         <h2 class="font-semibold text-slate-700 text-sm mb-3">フロー・UI</h2>
         <div class="grid grid-cols-2 gap-3">
           <label class="text-xs text-slate-500">
