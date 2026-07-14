@@ -106,30 +106,30 @@ function stairUsesKALoop(chain: Card[]): boolean {
 
 | 護符名 | id | チャンネル | 条件・数式 | 既定値 |
 |---|---|---|---|---|
-| 平穏 | `calm` | gained加算 | チェーン内にJQKが無い `v + n` | n=150 |
-| 安寧 | `serenity` | gained倍算 | チェーン内にJQKが無い `v × x` | x=1.2 |
+| 平穏 | `calm` | gained加算 | チェーン内にJQKが無い `v + n` | n=200 |
+| 安寧 | `serenity` | gained倍算 | チェーン内にJQKが無い `v × x` | x=1.5 |
 | 運命 | `destiny` | gained加算 | チェーン内がJQKのみ `v + n` | n=300 |
-| 宿命 | `fate` | gained倍算 | チェーン内がJQKのみ `v × x` | x=1.4 |
-| 安堵 | `relief` | gained加算 | **今回プレイした1枚**のランクが1〜10 `v + n`(※チェーン全体ではなく単体カード条件。平穏との違いを明確化するための設計判断) | n=80 |
-| 深緑 | `verdantGreen` | gained倍算 | チェーンが♣専有 `v × x` | x=1.5 |
-| 宝石 | `gem` | gained倍算 | チェーンが♦専有 `v × x` | x=1.5 |
-| 真剣 | `resolve` | gained倍算 | チェーンが♠専有 `v × x` | x=1.5 |
-| 聖杯 | `grail` | gained倍算 | チェーンが♥専有 `v × x` | x=1.5 |
-| 月光 | `moonlight` | gained倍算 | チェーンが黒専有 `v × x` | x=1.3 |
-| 陽光 | `sunlight` | gained倍算 | チェーンが赤専有 `v × x` | x=1.3 |
-| 王冠 | `crown` | gained倍算 | `v × (1 + K枚数 × x)` | x=0.15 |
-| 青葉 | `cloverLeaf` | gained加算 | `v + ♣枚数 × n` | n=40 |
-| 硬貨 | `coin` | gained加算 | `v + ♦枚数 × n` | n=40 |
-| 武器 | `blade` | gained加算 | `v + ♠枚数 × n` | n=40 |
-| 献杯 | `chalice` | gained加算 | `v + ♥枚数 × n` | n=40 |
-| 均衡 | `balance` | gained加算 | 赤黒同数(ワイルド調整可) `v + n` | n=150 |
-| 調和 | `harmony` | gained倍算 | 赤黒同数(ワイルド調整可) `v × x` | x=1.2 |
-| 高潔 | `nobility` | gained加算 | 同スートパターン成立 `v + n` | n=150 |
+| 宿命 | `fate` | gained倍算 | チェーン内がJQKのみ `v × x` | x=2.0 |
+| 安堵 | `relief` | gained加算 | **今回プレイした1枚**のランクが1〜10 `v + n`(※チェーン全体ではなく単体カード条件。平穏との違いを明確化するための設計判断) | n=100 |
+| 深緑 | `verdantGreen` | gained倍算 | チェーンが♣専有 `v × x` | x=3 |
+| 宝石 | `gem` | gained倍算 | チェーンが♦専有 `v × x` | x=3 |
+| 真剣 | `resolve` | gained倍算 | チェーンが♠専有 `v × x` | x=3 |
+| 聖杯 | `grail` | gained倍算 | チェーンが♥専有 `v × x` | x=3 |
+| 月光 | `moonlight` | gained倍算 | チェーンが黒専有 `v × x` | x=1.5 |
+| 陽光 | `sunlight` | gained倍算 | チェーンが赤専有 `v × x` | x=1.5 |
+| 王冠 | `crown` | gained倍算 | `v × (1 + K枚数 × x)` | x=0.5 |
+| 青葉 | `cloverLeaf` | gained加算 | `v + ♣枚数 × n` | n=50 |
+| 硬貨 | `coin` | gained加算 | `v + ♦枚数 × n` | n=50 |
+| 武器 | `blade` | gained加算 | `v + ♠枚数 × n` | n=50 |
+| 献杯 | `chalice` | gained加算 | `v + ♥枚数 × n` | n=50 |
+| 均衡 | `balance` | gained加算 | 赤黒同数(ワイルド調整可) `v + n` | n=200 |
+| 調和 | `harmony` | gained倍算 | 赤黒同数(ワイルド調整可) `v × x` | x=1.5 |
+| 高潔 | `nobility` | gained加算 | 同スートパターン成立 `v + n` | n=200 |
 | 執念 | `tenacity` | gained倍算 | 同スートパターン成立 `v × (1 + チェーン長 × x)` | x=0.1 |
 | 覚悟 | `determination` | gained倍算 | 階段成立 `v × (1 + 階段長 × x)` | x=0.1 |
-| 循環 | `cycle` | gained倍算 | 直前→今回がK→AまたはA→K(ワイルド都合解釈) `v × x` | x=1.5 |
-| 輪廻 | `reincarnation` | gained倍算 | コンプリートラン成立 かつ 階段成立 かつ K↔Aループ越え `v × x` | x=3.0 |
-| 威光 | `majesty` | gained倍算 | コンプリートラン成立 かつ 階段成立 かつ 同スート専有 `v × x` | x=3.0 |
+| 循環 | `cycle` | gained倍算 | 直前→今回がK→AまたはA→K(ワイルド都合解釈) `v × x` | x=3 |
+| 輪廻 | `reincarnation` | gained倍算 | コンプリートラン成立 かつ 階段成立 かつ K↔Aループ越え `v × x` | x=10 |
+| 威光 | `majesty` | gained倍算 | コンプリートラン成立 かつ 階段成立 かつ 同スート専有 `v × x` | x=50 |
 
 「JQKが無い/のみ」は`chain`内の実カードのみで判定する(ワイルドはJQK/非JQKどちらとも断定できないため、実カードが1枚も矛盾しなければ成立とする=平穏・安寧・運命・宿命は「矛盾する実カードが無いか」で判定)。
 
@@ -137,8 +137,8 @@ function stairUsesKALoop(chain: Card[]): boolean {
 
 | 護符名 | id | チャンネル | 条件・数式 | 既定値 |
 |---|---|---|---|---|
-| 兆し | `omen` | gained倍算 | 場札残数≤m `v × x` | m=3, x=1.3 |
-| 三日月 | `crescent` | gained倍算 | 場札残数≤m `v × x` | m=3, x=1.3 |
+| 兆し | `omen` | gained倍算 | 場札残数≤m `v × x` | m=20, x=1.5 |
+| 三日月 | `crescent` | gained倍算 | 場札残数≤m `v × x` | m=10, x=3 |
 
 グループ2の四季風と同様、2つとも同一ロジックのテンプレート重複として実装する(パラメータのみ独立)。
 
@@ -146,25 +146,25 @@ function stairUsesKALoop(chain: Card[]): boolean {
 
 | 護符名 | id | チャンネル | 条件・数式 | 既定値 |
 |---|---|---|---|---|
-| 恩寵 | `blessing` | gained倍算 | `roleFired.length > 0` `v × x` | x=1.2 |
-| 集中 | `focus` | gained倍算 | `roleFired`に`sameRank`を含む `v × x` | x=1.3 |
-| 瑠璃 | `lapis` | gained倍算 | `roleFired.length >= 2` `v × x` | x=1.5 |
+| 恩寵 | `blessing` | gained倍算 | `roleFired.length > 0` `v × x` | x=1.5 |
+| 集中 | `focus` | gained倍算 | `roleFired`に`sameRank`を含む `v × x` | x=3 |
+| 瑠璃 | `lapis` | gained倍算 | `roleFired.length >= 2` `v × x` | x=2 |
 | 翡翠 | `jade` | gained加算 | `roleFired`のいずれかで`usedWild === true` `v + n` | n=200 |
-| 無心 | `emptyMind` | gained倍算 | `!patternFired && roleFired.length === 0` `v × x` | x=1.3 |
+| 無心 | `emptyMind` | gained倍算 | `!patternFired && roleFired.length === 0` `v × x` | x=4 |
 
 ### グループ7(3個)
 
 | 護符名 | id | チャンネル | 条件・数式 | 既定値 |
 |---|---|---|---|---|
-| 序章 | `prologue` | gained加算 | `combo === 1` `v + n` | n=100 |
-| 幕間 | `interlude` | gained加算 | `combo % m === 0` `v + n` | m=5, n=100 |
-| 朝露 | `morningDew` | gained加算 | `isFirstPlayOfWave` `v + n` | n=300 |
+| 序章 | `prologue` | gained加算 | `combo === 1` `v + n` | n=500 |
+| 幕間 | `interlude` | gained加算 | `combo % m === 0` `v + n` | m=5, n=1000 |
+| 朝露 | `morningDew` | gained加算 | `isFirstPlayOfWave` `v + n` | n=5000 |
 
 ### グループ8(1個)
 
 | 護符名 | id | チャンネル | 条件・数式 | 既定値 |
 |---|---|---|---|---|
-| 小雨 | `drizzle` | gained加算 | 無条件 `v + n` | n=30 |
+| 小雨 | `drizzle` | gained加算 | 無条件 `v + n` | n=50 |
 
 ## 4. 既存システムへの影響
 
