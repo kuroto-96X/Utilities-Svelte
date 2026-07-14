@@ -1810,6 +1810,15 @@ describe('applyItemEffects (グループ4-d: 既存フラグ再利用・KAルー
     expect(result.value).toBe(100 * (1 + 5 * params.talismans.determination.x))
   })
 
+  test('覚悟: 階段の長さがeffectiveStairMinLen未満、または階段が崩れていれば不発動', () => {
+    const tooShort = [card(1, '♠', 3), card(2, '♦', 4), card(3, '♥', 5)]
+    const tooShortResult = applyItemEffects('gained', 100, ['determination'], ctx({ chain: tooShort, effectiveStairMinLen: 5 }), params)
+    expect(tooShortResult.value).toBe(100)
+    const broken = [card(1, '♠', 3), card(2, '♦', 9), card(3, '♥', 5), card(4, '♣', 6), card(5, '♠', 7)]
+    const brokenResult = applyItemEffects('gained', 100, ['determination'], ctx({ chain: broken, effectiveStairMinLen: 5 }), params)
+    expect(brokenResult.value).toBe(100)
+  })
+
   test('循環: K→A、A→Kの遷移で倍算し、ワイルドが絡む場合も都合よく成立する', () => {
     const kToA = applyItemEffects('gained', 100, ['cycle'], ctx({ previousFoundation: card(1, '♠', 13), card: card(2, '♦', 1) }), params)
     expect(kToA.value).toBe(100 * params.talismans.cycle.x)
