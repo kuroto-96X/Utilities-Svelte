@@ -2564,3 +2564,37 @@ describe('applyItemEffects (グループ9: 列選択の連続性)', () => {
     expect(fired.value).toBe(100 * (1 + 3 * params.talismans.resonance.x))
   })
 })
+
+describe('applyItemEffects (グループ10: ウェーブ内累積state)', () => {
+  const params = DEFAULT_PARAMS
+  function ctx(overrides: Partial<ItemEffectContext> = {}): ItemEffectContext {
+    return {
+      card: card(1, '♠', 5),
+      previousFoundation: card(2, '♣', 4),
+      combo: 1,
+      stockRemaining: 0,
+      chain: [card(2, '♣', 4), card(1, '♠', 5)],
+      remainingTableauCount: 10,
+      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      isFirstPlayOfWave: false,
+      effectiveStairMinLen: params.scoring.stairMinLen,
+      sameColumnStreak: 1,
+      totalColumnsEmptiedThisWave: 0,
+      maxComboThisWave: 1,
+      flushActiveThisCombo: false,
+      columnSweepActiveThisWave: false,
+      drawContinueCountThisChain: 0,
+      ...overrides,
+    }
+  }
+
+  test('蒼穹: ウェーブ内列一掃累計回数×xで倍算', () => {
+    const result = applyItemEffects('gained', 100, ['azureSky'], ctx({ totalColumnsEmptiedThisWave: 4 }), params)
+    expect(result.value).toBe(100 * (1 + 4 * params.talismans.azureSky.x))
+  })
+
+  test('琥珀: ウェーブ内最大到達コンボ数×xで倍算', () => {
+    const result = applyItemEffects('gained', 100, ['amber'], ctx({ maxComboThisWave: 8 }), params)
+    expect(result.value).toBe(100 * (1 + 8 * params.talismans.amber.x))
+  })
+})

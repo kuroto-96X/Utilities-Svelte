@@ -847,6 +847,20 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
       return { value: v * factor, part: `共鳴×${fmtMultiplier(factor)}` }
     },
   },
+  azureSky: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      const factor = 1 + ctx.totalColumnsEmptiedThisWave * p.talismans.azureSky.x
+      return { value: v * factor, part: `蒼穹×${fmtMultiplier(factor)}` }
+    },
+  },
+  amber: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      const factor = 1 + ctx.maxComboThisWave * p.talismans.amber.x
+      return { value: v * factor, part: `琥珀×${fmtMultiplier(factor)}` }
+    },
+  },
 }
 
 export function applyItemEffects(
