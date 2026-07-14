@@ -631,6 +631,45 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
       return { value: v * factor, part: `三日月×${fmtMultiplier(factor)}` }
     },
   },
+  blessing: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (ctx.chainBonus.roleFired.length === 0) return { value: v, part: null }
+      const factor = p.talismans.blessing.x
+      return { value: v * factor, part: `恩寵×${fmtMultiplier(factor)}` }
+    },
+  },
+  focus: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (!ctx.chainBonus.roleFired.some(r => r.name === 'sameRank')) return { value: v, part: null }
+      const factor = p.talismans.focus.x
+      return { value: v * factor, part: `集中×${fmtMultiplier(factor)}` }
+    },
+  },
+  lapis: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (ctx.chainBonus.roleFired.length < 2) return { value: v, part: null }
+      const factor = p.talismans.lapis.x
+      return { value: v * factor, part: `瑠璃×${fmtMultiplier(factor)}` }
+    },
+  },
+  jade: {
+    channel: 'gained',
+    effect: (v, ctx, p) =>
+      ctx.chainBonus.roleFired.some(r => r.usedWild)
+        ? { value: v + p.talismans.jade.n, part: `翡翠+${p.talismans.jade.n}` }
+        : { value: v, part: null },
+  },
+  emptyMind: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (ctx.chainBonus.patternFired || ctx.chainBonus.roleFired.length > 0) return { value: v, part: null }
+      const factor = p.talismans.emptyMind.x
+      return { value: v * factor, part: `無心×${fmtMultiplier(factor)}` }
+    },
+  },
 }
 
 export function applyItemEffects(
@@ -706,6 +745,11 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   majesty: '威光の護符',
   omen: '兆しの護符',
   crescent: '三日月の護符',
+  blessing: '恩寵の護符',
+  focus: '集中の護符',
+  lapis: '瑠璃の護符',
+  jade: '翡翠の護符',
+  emptyMind: '無心の護符',
 }
 
 export function itemDesc(id: ItemId, params: ShidasuParams): string {
@@ -759,6 +803,11 @@ export function itemDesc(id: ItemId, params: ShidasuParams): string {
     case 'majesty': return `同スートかつ全ランク階段を達成したとき、獲得点を${params.talismans.majesty.x}倍`
     case 'omen': return `場札の残り枚数が${params.talismans.omen.m}枚以下のとき、獲得点を${params.talismans.omen.x}倍`
     case 'crescent': return `場札の残り枚数が${params.talismans.crescent.m}枚以下のとき、獲得点を${params.talismans.crescent.x}倍`
+    case 'blessing': return `役が成立したとき、獲得点を${params.talismans.blessing.x}倍`
+    case 'focus': return `同ランクの役が含まれるとき、獲得点を${params.talismans.focus.x}倍`
+    case 'lapis': return `2種類以上の役ボーナスが同時に発生したとき、獲得点を${params.talismans.lapis.x}倍`
+    case 'jade': return `役の成立にワイルドが使われたとき、${params.talismans.jade.n}点加算`
+    case 'emptyMind': return `役・パターンがどちらも無いとき、獲得点を${params.talismans.emptyMind.x}倍`
   }
 }
 

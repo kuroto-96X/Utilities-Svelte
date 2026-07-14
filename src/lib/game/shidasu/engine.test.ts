@@ -1877,3 +1877,67 @@ describe('applyItemEffects (グループ5: 場札残数系)', () => {
     expect(result.value).toBe(100 * params.talismans.crescent.x)
   })
 })
+
+describe('applyItemEffects (グループ6: 役・パターン成立状況系)', () => {
+  const params = DEFAULT_PARAMS
+  function ctx(overrides: Partial<ItemEffectContext> = {}): ItemEffectContext {
+    return {
+      card: card(1, '♠', 5),
+      previousFoundation: card(2, '♣', 4),
+      combo: 1,
+      stockRemaining: 0,
+      chain: [card(2, '♣', 4), card(1, '♠', 5)],
+      remainingTableauCount: 10,
+      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      isFirstPlayOfWave: false,
+      effectiveStairMinLen: params.scoring.stairMinLen,
+      ...overrides,
+    }
+  }
+
+  test('恩寵: いずれかの役ボーナスが成立していれば倍算', () => {
+    const chainBonus = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: false }] }
+    const fired = applyItemEffects('gained', 100, ['blessing'], ctx({ chainBonus }), params)
+    expect(fired.value).toBe(100 * params.talismans.blessing.x)
+    const notFired = applyItemEffects('gained', 100, ['blessing'], ctx(), params)
+    expect(notFired.value).toBe(100)
+  })
+
+  test('集中: 同ランクによる役が含まれていれば倍算', () => {
+    const chainBonus = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'sameRank' as const, usedWild: false }] }
+    const fired = applyItemEffects('gained', 100, ['focus'], ctx({ chainBonus }), params)
+    expect(fired.value).toBe(100 * params.talismans.focus.x)
+    const otherRole = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: false }] }
+    const notFired = applyItemEffects('gained', 100, ['focus'], ctx({ chainBonus: otherRole }), params)
+    expect(notFired.value).toBe(100)
+  })
+
+  test('瑠璃: 役ボーナスが2種類以上同時発生していれば倍算', () => {
+    const chainBonus = {
+      bonus: 0, parts: [], patternFired: false,
+      roleFired: [{ name: 'flush' as const, usedWild: false }, { name: 'sameRank' as const, usedWild: false }],
+    }
+    const fired = applyItemEffects('gained', 100, ['lapis'], ctx({ chainBonus }), params)
+    expect(fired.value).toBe(100 * params.talismans.lapis.x)
+    const singleRole = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: false }] }
+    const notFired = applyItemEffects('gained', 100, ['lapis'], ctx({ chainBonus: singleRole }), params)
+    expect(notFired.value).toBe(100)
+  })
+
+  test('翡翠: 役の成立にワイルドが使われていれば加算', () => {
+    const chainBonus = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: true }] }
+    const fired = applyItemEffects('gained', 100, ['jade'], ctx({ chainBonus }), params)
+    expect(fired.value).toBe(100 + params.talismans.jade.n)
+    const withoutWild = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: false }] }
+    const notFired = applyItemEffects('gained', 100, ['jade'], ctx({ chainBonus: withoutWild }), params)
+    expect(notFired.value).toBe(100)
+  })
+
+  test('無心: 役もパターンも無ければ倍算', () => {
+    const fired = applyItemEffects('gained', 100, ['emptyMind'], ctx(), params)
+    expect(fired.value).toBe(100 * params.talismans.emptyMind.x)
+    const withPattern = { bonus: 0, parts: [], patternFired: true, roleFired: [] }
+    const notFired = applyItemEffects('gained', 100, ['emptyMind'], ctx({ chainBonus: withPattern }), params)
+    expect(notFired.value).toBe(100)
+  })
+})
