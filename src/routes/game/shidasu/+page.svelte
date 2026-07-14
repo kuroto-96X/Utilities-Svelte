@@ -71,6 +71,7 @@
     pendingTimer = setTimeout(() => {
       pendingTimer = null
       const checked = applyStuckCheck(params, run)
+      run = checked
       if (checked.wave?.status === 'ended') {
         run = resolveWaveEnd(params, checked)
       }
