@@ -770,6 +770,17 @@ describe('playCard', () => {
     const next = playCard(DEFAULT_PARAMS, wave, 'none', ['morningStar'], 1000000, 0)
     expect(next.roleOccurrenceCountThisWave.flush).toBe(2)
   })
+
+  test('roleOccurrenceCountThisWaveは明星を持たなくても役成立のたび更新される', () => {
+    const wave = baseWave({
+      foundation: card(0, '♠', 5),
+      chain: [card(20, '♥', 3), card(21, '♦', 4), card(22, '♠', 5)],
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      roleOccurrenceCountThisWave: { flush: 1 },
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    expect(next.roleOccurrenceCountThisWave.flush).toBe(2)
+  })
 })
 
 describe('chainContinuesPattern', () => {
