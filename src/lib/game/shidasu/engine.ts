@@ -1116,6 +1116,14 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
         ? { value: v * p.talismans.mercy.x, part: `慈悲×${fmtMultiplier(p.talismans.mercy.x)}` }
         : { value: v, part: null },
   },
+  deadline: {
+    channel: 'gained',
+    effect: (v, ctx, p) => {
+      if (ctx.stockRemaining === 0) return { value: v, part: null }
+      const add = ctx.stockRemaining * p.talismans.deadline.n
+      return { value: v + add, part: `刻限+${add}` }
+    },
+  },
 }
 
 export function applyItemEffects(

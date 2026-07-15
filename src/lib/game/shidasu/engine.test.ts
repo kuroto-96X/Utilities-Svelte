@@ -3098,6 +3098,38 @@ describe('applyItemEffects (グループ12: 直感)', () => {
   })
 })
 
+describe('applyItemEffects (グループ17: 刻限)', () => {
+  const params = DEFAULT_PARAMS
+  function ctx(overrides: Partial<ItemEffectContext> = {}): ItemEffectContext {
+    return {
+      card: card(1, '♠', 5),
+      previousFoundation: card(2, '♣', 4),
+      combo: 1,
+      stockRemaining: 0,
+      chain: [card(2, '♣', 4), card(1, '♠', 5)],
+      remainingTableauCount: 10,
+      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      isFirstPlayOfWave: false,
+      effectiveStairMinLen: params.scoring.stairMinLen,
+      sameColumnStreak: 1,
+      totalColumnsEmptiedThisWave: 0,
+      maxComboThisWave: 1,
+      flushActiveThisCombo: false,
+      columnSweepActiveThisWave: false,
+      drawContinueCountThisChain: 0,
+      mercyActiveNextCombo: false,
+      ...overrides,
+    }
+  }
+
+  test('刻限: 山札残り枚数×nを加算', () => {
+    const notFired = applyItemEffects('gained', 100, ['deadline'], ctx({ stockRemaining: 0 }), params)
+    expect(notFired.value).toBe(100)
+    const fired = applyItemEffects('gained', 100, ['deadline'], ctx({ stockRemaining: 5 }), params)
+    expect(fired.value).toBe(100 + 5 * params.talismans.deadline.n)
+  })
+})
+
 describe('drawStock (素朴の得点ルール変更)', () => {
   test('素朴: パターン継続めくりが通常プレイと同じ得点計算になり、コンボ数も加算される', () => {
     const wave = makeWave({
