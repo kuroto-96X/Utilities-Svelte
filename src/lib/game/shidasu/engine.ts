@@ -339,9 +339,8 @@ export function playCard(
     colorHeld: false,
   }
   const milestoneResult = applyDirectEffects('comboMilestoneDirect', items, milestoneCtx, params)
-  gained += milestoneResult.value
 
-  const newScore = wave.score + gained
+  const newScore = wave.score + gained + milestoneResult.value
 
   const bonusGains: BonusGain[] = []
   if (milestoneResult.parts.length > 0) {

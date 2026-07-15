@@ -377,6 +377,10 @@ describe('playCard', () => {
     expect(next.lastBonusGains[0].label).toBe('護符による直接加算')
     expect(next.lastBonusGains[0].points).toBe(DEFAULT_PARAMS.talismans.shootingStar.n)
     expect(next.lastBonusGains[0].parts).toContain(`流星+${DEFAULT_PARAMS.talismans.shootingStar.n}`)
+    // 回帰防止: 流星の加算額がlastGainとlastBonusGainsの両方に二重計上されていないことを確認する。
+    // (lastGain.points + lastBonusGainsの合計) が実際のスコア増分と一致するはず。
+    const bonusTotal = next.lastBonusGains.reduce((sum, g) => sum + g.points, 0)
+    expect((next.lastGain?.points ?? 0) + bonusTotal).toBe(next.score - wave.score)
   })
 
   test('スコアが目標に達したらendReason=targetでstatus=ended', () => {
