@@ -1456,6 +1456,29 @@ describe('drawStock', () => {
     const bonusTotal = next.lastBonusGains.reduce((sum, g) => sum + g.points, 0)
     expect((next.lastGain?.points ?? 0) + bonusTotal).toBe(next.score - wave.score)
   })
+
+  test('素朴+誠実を併用してもlastGain(山札めくり得点)とlastBonusGains(誠実の直接加算)が二重計上されない', () => {
+    // Task 3で発見された二重計上バグ(直接加算の値がlastGainの元になる変数にも混入する)は、
+    // naive(素朴)による山札めくり得点計算パスを通さないと検知できない回帰テストになるため、
+    // 単体のsincerityテストとは別に、naiveを併用したケースを検証する。
+    const items: ItemId[] = ['naive', 'sincerity']
+    const wave = makeWave({
+      foundation: card(0, '♥', 3),
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      stock: [card(9, '♦', 7)],
+      chain: [card(20, '♥', 3), card(21, '♦', 9), card(22, '♥', 2)],
+      linked: true,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, standardDeckComposition(), 'none')
+    expect(next.lastDrawEffect).toBe('pattern')
+    // naiveによる山札めくり得点計算が実際に発生している(lastGainがnullでない)ことを確認した上で、
+    // 誠実の直接加算がlastBonusGainsにも別枠で入っていることを確認する。
+    expect(next.lastGain).not.toBeNull()
+    expect(next.lastGain?.points).toBeGreaterThan(0)
+    expect(next.lastBonusGains.some(g => g.label === '護符による直接加算' && g.parts.includes(`誠実+${DEFAULT_PARAMS.talismans.sincerity.n}`))).toBe(true)
+    const bonusTotal = next.lastBonusGains.reduce((sum, g) => sum + g.points, 0)
+    expect((next.lastGain?.points ?? 0) + bonusTotal).toBe(next.score - wave.score)
+  })
 })
 
 describe('isStuck', () => {
