@@ -1323,6 +1323,29 @@ describe('drawStock', () => {
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
     expect(next.combo).toBe(0)
   })
+
+  test('慈悲: コンボ数がc以下でリセットされるとmercyActiveNextComboがtrueになる', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)],
+      chain: [card(3, '♥', 5)],
+      linked: true,
+      combo: DEFAULT_PARAMS.talismans.mercy.c,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['mercy'], standardDeckComposition())
+    expect(next.mercyActiveNextCombo).toBe(true)
+  })
+
+  test('慈悲: コンボ数がcより大きい状態でリセットされるとmercyActiveNextComboはfalseになる', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)],
+      chain: [card(3, '♥', 5)],
+      linked: true,
+      combo: DEFAULT_PARAMS.talismans.mercy.c + 5,
+      mercyActiveNextCombo: true,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['mercy'], standardDeckComposition())
+    expect(next.mercyActiveNextCombo).toBe(false)
+  })
 })
 
 describe('isStuck', () => {
@@ -3032,6 +3055,13 @@ describe('applyItemEffects (グループ16: 持続効果)', () => {
     const fired = applyItemEffects('gained', 100, ['fightingSpirit'], ctx({ columnSweepActiveThisWave: true }), params)
     expect(fired.value).toBe(100 * params.talismans.fightingSpirit.x)
     const notFired = applyItemEffects('gained', 100, ['fightingSpirit'], ctx({ columnSweepActiveThisWave: false }), params)
+    expect(notFired.value).toBe(100)
+  })
+
+  test('慈悲: mercyActiveNextComboが立っていれば倍算', () => {
+    const fired = applyItemEffects('gained', 100, ['mercy'], ctx({ mercyActiveNextCombo: true }), params)
+    expect(fired.value).toBe(100 * params.talismans.mercy.x)
+    const notFired = applyItemEffects('gained', 100, ['mercy'], ctx({ mercyActiveNextCombo: false }), params)
     expect(notFired.value).toBe(100)
   })
 })

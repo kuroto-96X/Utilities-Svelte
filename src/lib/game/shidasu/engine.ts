@@ -1109,6 +1109,13 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
       return { value: v * factor, part: `直感×${fmtMultiplier(factor)}` }
     },
   },
+  mercy: {
+    channel: 'gained',
+    effect: (v, ctx, p) =>
+      ctx.mercyActiveNextCombo
+        ? { value: v * p.talismans.mercy.x, part: `慈悲×${fmtMultiplier(p.talismans.mercy.x)}` }
+        : { value: v, part: null },
+  },
 }
 
 export function applyItemEffects(
