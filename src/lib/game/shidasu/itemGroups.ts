@@ -1,5 +1,4 @@
-// src/routes/admin/shidasu-debug/itemGroups.ts
-import type { ItemId } from '$lib/game/shidasu/types'
+import type { ItemId } from './types'
 
 export interface ItemGroup {
   label: string
