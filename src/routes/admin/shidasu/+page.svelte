@@ -26,8 +26,6 @@
     if (config.layout.cols * config.layout.rows > 51) return true
     if (!Number.isFinite(config.ui.chainCardsPerRow) || config.ui.chainCardsPerRow < 1) return true
     if (!Number.isFinite(config.ui.chainCardOffsetX) || config.ui.chainCardOffsetX < 0) return true
-    if (!Number.isFinite(config.items.stairRelaxedMinLen) || config.items.stairRelaxedMinLen < 1) return true
-    if (!Number.isFinite(config.items.columnSweepRelaxCards) || config.items.columnSweepRelaxCards < 0) return true
     if (!Number.isFinite(config.items.maxItems) || config.items.maxItems < 1) return true
     if (!Number.isFinite(config.scoring.suitColorMinLen) || config.scoring.suitColorMinLen < 1) return true
     if (!Number.isFinite(config.talismans.morningMist.x) || config.talismans.morningMist.x <= 0) return true
@@ -312,14 +310,6 @@
       <section class="bg-white border border-slate-200 rounded-xl p-4">
         <h2 class="font-semibold text-slate-700 text-sm mb-3">アイテム</h2>
         <div class="grid grid-cols-2 gap-3">
-          <label class="text-xs text-slate-500">
-            架橋の護符: 階段成立に必要な枚数(stairRelaxedMinLen)
-            <input type="number" min="1" step="1" bind:value={config.items.stairRelaxedMinLen} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            寛容の護符: 列一掃緩和の猶予枚数(columnSweepRelaxCards)
-            <input type="number" min="0" step="1" bind:value={config.items.columnSweepRelaxCards} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
           <label class="text-xs text-slate-500">
             護符の所持上限枚数(maxItems)
             <input type="number" min="1" step="1" bind:value={config.items.maxItems} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />

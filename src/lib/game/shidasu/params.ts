@@ -30,8 +30,6 @@ export interface ShidasuParams {
     targets: [number, number, number]
   }>
   items: {
-    stairRelaxedMinLen: number
-    columnSweepRelaxCards: number
     maxItems: number
   }
   talismans: {
@@ -159,8 +157,6 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     { name: 'STAGE 3', modifier: 'faceLock', targets: [8000, 15000, 26000] },
   ],
   items: {
-    stairRelaxedMinLen: 3,
-    columnSweepRelaxCards: 2,
     maxItems: 5,
   },
   talismans: {

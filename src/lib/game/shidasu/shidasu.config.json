@@ -50,8 +50,6 @@
     }
   ],
   "items": {
-    "stairRelaxedMinLen": 3,
-    "columnSweepRelaxCards": 2,
     "maxItems": 5
   },
   "talismans": {
