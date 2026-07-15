@@ -1671,9 +1671,9 @@ describe('DEFAULT_PARAMS.talismans (グループ17)', () => {
 })
 
 describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
-  test('79種類のアイテムが定義されている', () => {
-    expect(ITEM_POOL).toHaveLength(79)
-    expect(new Set(ITEM_POOL).size).toBe(79) // 重複なし
+  test('87種類のアイテムが定義されている', () => {
+    expect(ITEM_POOL).toHaveLength(87)
+    expect(new Set(ITEM_POOL).size).toBe(87) // 重複なし
     ITEM_POOL.forEach(id => expect(ITEM_NAMES[id]).toBeTruthy())
   })
 
@@ -1689,6 +1689,18 @@ describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
       'passion', 'fightingSpirit',
     ]
     expect(newIds).toHaveLength(20)
+    newIds.forEach(id => {
+      expect(ITEM_NAMES[id]).toBeTruthy()
+      expect(itemDesc(id, DEFAULT_PARAMS)).toBeTruthy()
+    })
+  })
+
+  test('グループ17の8個も名前と説明文を持つ', () => {
+    const newIds: ItemId[] = [
+      'sanctify', 'protection', 'earth', 'golden',
+      'morningStar', 'mercy', 'mirror', 'deadline',
+    ]
+    expect(newIds).toHaveLength(8)
     newIds.forEach(id => {
       expect(ITEM_NAMES[id]).toBeTruthy()
       expect(itemDesc(id, DEFAULT_PARAMS)).toBeTruthy()

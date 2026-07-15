@@ -1222,6 +1222,8 @@ export const ITEM_POOL: ItemId[] = [
   'benevolence', 'healing',
   'guidance',
   'passion', 'fightingSpirit',
+  'sanctify', 'protection', 'earth', 'golden',
+  'morningStar', 'mercy', 'mirror', 'deadline',
 ]
 
 export const ITEM_NAMES: Record<ItemId, string> = {
