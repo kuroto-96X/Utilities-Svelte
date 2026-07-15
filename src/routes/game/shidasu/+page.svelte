@@ -237,11 +237,13 @@
     <div class="mt-1 h-1.5 rounded-full bg-emerald-900 overflow-hidden">
       <div class="h-full bg-gradient-to-r from-yellow-500 to-yellow-300 transition-all duration-300" style="width:{Math.min(100, (displayWave.score / target) * 100)}%"></div>
     </div>
-    {#if displayWave.lastGain}
+    {#if displayWave.lastGain || displayWave.lastBonusGains.length > 0}
+      {@const totalPoints = (displayWave.lastGain?.points ?? 0) + displayWave.lastBonusGains.reduce((sum, g) => sum + g.points, 0)}
+      {@const allParts = [...(displayWave.lastGain?.parts ?? []), ...displayWave.lastBonusGains.flatMap(g => g.parts)]}
       <div class="text-right text-sm h-5">
-        <span class="text-yellow-300 font-black">+{displayWave.lastGain.points}</span>
-        {#if displayWave.lastGain.parts.length > 0}
-          <span class="text-emerald-200 text-xs ml-2">{displayWave.lastGain.parts.join(' ')}</span>
+        <span class="text-yellow-300 font-black">+{totalPoints}</span>
+        {#if allParts.length > 0}
+          <span class="text-emerald-200 text-xs ml-2">{allParts.join(' ')}</span>
         {/if}
       </div>
     {:else}

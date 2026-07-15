@@ -1,22 +1,33 @@
 <script lang="ts">
   import { untrack } from 'svelte'
   import { analyzeSuitColor, analyzeStair, isRed, rankLabel } from '$lib/game/shidasu/engine'
-  import type { WaveState, Suit, Rank, ScoreGain } from '$lib/game/shidasu/types'
+  import type { WaveState, Suit, Rank } from '$lib/game/shidasu/types'
 
   let { wave, onForceDraw }: {
     wave: WaveState
     onForceDraw: (suit: Suit, rank: Rank, wild: boolean) => void
   } = $props()
 
-  let gainLog = $state<{ combo: number; gain: ScoreGain }[]>([])
+  interface GainLogEntry {
+    combo: number
+    label: string
+    points: number
+    parts: string[]
+  }
+
+  let gainLog = $state<GainLogEntry[]>([])
 
   $effect(() => {
     const gain = wave.lastGain
+    const bonusGains = wave.lastBonusGains
     const combo = wave.combo
+    const newEntries: GainLogEntry[] = []
+    if (gain) newEntries.push({ combo, label: '', points: gain.points, parts: gain.parts })
+    for (const b of bonusGains) newEntries.push({ combo, label: b.label, points: b.points, parts: b.parts })
     // gainLogの読み取り(スプレッド)をuntrackで囲まないと、この$effect自身が
     // gainLogの変化に依存してしまい、書き込むたびに自分自身を再実行する無限ループになる
-    if (gain) {
-      gainLog = [{ combo, gain }, ...untrack(() => gainLog)].slice(0, 20)
+    if (newEntries.length > 0) {
+      gainLog = [...newEntries, ...untrack(() => gainLog)].slice(0, 20)
     }
   })
 
@@ -67,7 +78,7 @@
     <div class="font-bold text-slate-300 mb-1">獲得点ログ(新しい順)</div>
     <div class="max-h-24 overflow-y-auto space-y-0.5">
       {#each gainLog as entry, i (i)}
-        <div class="font-mono">×{entry.combo}: +{entry.gain.points} {entry.gain.parts.join(' ')}</div>
+        <div class="font-mono">×{entry.combo}: {#if entry.label}<span class="text-fuchsia-300">[{entry.label}]</span> {/if}+{entry.points} {entry.parts.join(' ')}</div>
       {/each}
       {#if gainLog.length === 0}<div class="text-slate-500">(まだ得点なし)</div>{/if}
     </div>
