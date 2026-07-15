@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
 
@@ -343,6 +343,11 @@ export function playCard(
 
   const newScore = wave.score + gained
 
+  const bonusGains: BonusGain[] = []
+  if (milestoneResult.parts.length > 0) {
+    bonusGains.push({ label: '護符による直接加算', points: milestoneResult.value, parts: milestoneResult.parts })
+  }
+
   const next: WaveState = {
     ...wave,
     tableau: healedTableau,
@@ -374,24 +379,34 @@ export function playCard(
     pendingRoleEcho: newPendingRoleEcho,
     roleEchoUsedThisCombo: newRoleEchoUsedThisCombo,
     sameRankEchoUsedThisCombo: newSameRankEchoUsedThisCombo,
-    lastBonusGains: [],
+    lastBonusGains: bonusGains,
   }
 
   if (remainingBeforeRevival === 0) {
     const rawClearBonus = params.scoring.clearBonus + wave.stock.length * params.scoring.clearBonusPerStock
-    const clearBonus = Math.floor(applyItemEffects('clearBonus', rawClearBonus, items, itemEffectCtx, params).value)
+    const clearBonusResult = applyItemEffects('clearBonus', rawClearBonus, items, itemEffectCtx, params)
+    const clearBonus = Math.floor(clearBonusResult.value)
     const scoreAfterClear = newScore + clearBonus
-    const lastGainWithClearBonus = { points: gained + clearBonus, parts: [...parts, `全消しボーナス+${clearBonus}`] }
+    const clearBonusGain: BonusGain = {
+      label: '全消しボーナス',
+      points: clearBonus,
+      parts: [
+        `基礎+${params.scoring.clearBonus}`,
+        `山札残数+${wave.stock.length * params.scoring.clearBonusPerStock}`,
+        ...clearBonusResult.parts,
+      ],
+    }
+    const bonusGainsWithClear = [...bonusGains, clearBonusGain]
 
     if (regenerationRevivedNow) {
       // 再配布そのものは上で(治癒より先に)実行済み。ここではコスト計算とスコア反映のみ行う。
       const cost = Math.floor(scoreAfterClear * params.talismans.regeneration.p / 100)
-      return { ...next, score: scoreAfterClear - cost, lastGain: lastGainWithClearBonus, status: 'playing', endReason: null }
+      return { ...next, score: scoreAfterClear - cost, lastBonusGains: bonusGainsWithClear, status: 'playing', endReason: null }
     }
 
     if (remaining === 0) {
       // 治癒・再生いずれも介入しなかった(通常の全消し)
-      return { ...next, score: scoreAfterClear, lastGain: lastGainWithClearBonus, status: 'ended', endReason: 'fullClear' }
+      return { ...next, score: scoreAfterClear, lastBonusGains: bonusGainsWithClear, status: 'ended', endReason: 'fullClear' }
     }
     // 治癒が介入して場が復活した場合は全消しにならず、全消しボーナスも付与しない。
     // 通常のプレイ続行として下のフローへ進む。

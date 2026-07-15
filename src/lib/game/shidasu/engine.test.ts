@@ -346,7 +346,7 @@ describe('playCard', () => {
     expect(next.score).toBe(scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus)
   })
 
-  test('全消し時、lastGainに全消しボーナスの内訳が含まれる', () => {
+  test('全消し時、lastBonusGainsに全消しボーナスが別枠で入る(lastGainはプレイ得点のみ)', () => {
     const wave = baseWave({
       tableau: [[card(1, '♣', 6)]],
       stock: [card(9, '♠', 1), card(10, '♠', 2)],
@@ -354,8 +354,29 @@ describe('playCard', () => {
     })
     const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0)
     const expectedClearBonus = scoring.clearBonus + 2 * scoring.clearBonusPerStock
-    expect(next.lastGain?.parts).toContain(`全消しボーナス+${expectedClearBonus}`)
-    expect(next.lastGain?.points).toBe(scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus)
+    const expectedPlayGain = scoring.basePoint + scoring.columnSweepBonus * 1
+    expect(next.lastGain?.points).toBe(expectedPlayGain)
+    expect(next.lastGain?.parts).not.toContain(`全消しボーナス+${expectedClearBonus}`)
+    expect(next.lastBonusGains).toHaveLength(1)
+    expect(next.lastBonusGains[0].label).toBe('全消しボーナス')
+    expect(next.lastBonusGains[0].points).toBe(expectedClearBonus)
+    expect(next.lastBonusGains[0].parts).toContain(`基礎+${scoring.clearBonus}`)
+    expect(next.lastBonusGains[0].parts).toContain(`山札残数+${2 * scoring.clearBonusPerStock}`)
+    expect(next.score).toBe(expectedPlayGain + expectedClearBonus)
+  })
+
+  test('流星の護符でコンボが到達値になった瞬間、lastBonusGainsに直接加算が別枠で入る', () => {
+    const items: ItemId[] = ['shootingStar']
+    const wave = baseWave({
+      combo: DEFAULT_PARAMS.talismans.shootingStar.c - 1,
+      chain: [card(20, '♥', 3), card(21, '♦', 4)],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 100000000, 0)
+    expect(next.combo).toBe(DEFAULT_PARAMS.talismans.shootingStar.c)
+    expect(next.lastBonusGains).toHaveLength(1)
+    expect(next.lastBonusGains[0].label).toBe('護符による直接加算')
+    expect(next.lastBonusGains[0].points).toBe(DEFAULT_PARAMS.talismans.shootingStar.n)
+    expect(next.lastBonusGains[0].parts).toContain(`流星+${DEFAULT_PARAMS.talismans.shootingStar.n}`)
   })
 
   test('スコアが目標に達したらendReason=targetでstatus=ended', () => {
