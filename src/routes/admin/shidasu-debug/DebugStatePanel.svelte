@@ -1,6 +1,7 @@
 <script lang="ts">
   import DebugPanel from '../../game/shidasu/DebugPanel.svelte'
-  import { ITEM_NAMES } from '$lib/game/shidasu/engine'
+  import { itemName } from '$lib/game/shidasu/engine'
+  import { loadParams } from '$lib/game/shidasu/params'
   import type { WaveState, ItemId, Suit, Rank } from '$lib/game/shidasu/types'
 
   let { wave, items, onForceDraw }: {
@@ -8,6 +9,8 @@
     items: ItemId[]
     onForceDraw: (suit: Suit, rank: Rank, wild: boolean) => void
   } = $props()
+
+  const params = loadParams()
 </script>
 
 <div class="flex flex-wrap items-start gap-3">
@@ -20,7 +23,7 @@
     <div class="font-bold text-slate-600 mb-1">所持中の護符({items.length}種)</div>
     <div class="flex flex-wrap gap-1">
       {#each items as id (id)}
-        <span class="bg-slate-100 text-slate-700 rounded px-1.5 py-0.5">{ITEM_NAMES[id]}</span>
+        <span class="bg-slate-100 text-slate-700 rounded px-1.5 py-0.5">{itemName(id, params)}</span>
       {/each}
       {#if items.length === 0}<span class="text-slate-400">(なし)</span>{/if}
     </div>

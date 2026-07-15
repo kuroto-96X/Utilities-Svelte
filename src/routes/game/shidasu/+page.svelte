@@ -5,7 +5,7 @@
     createInitialRun, beginRun, applyPlayCard, applyDrawStock, applyStuckCheck,
     resolveWaveEnd, pickItem, confirmItemSwap, cancelItemSwap, skipItemSelect,
     advanceStage, restartRun, startWave, forceStockTop,
-    getPlayableColumns, remainingCount, rankLabel, isRed, itemDesc, ITEM_NAMES,
+    getPlayableColumns, remainingCount, rankLabel, isRed, itemDesc, itemName,
   } from '$lib/game/shidasu/engine'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
   import type { RunState, Card, ItemId, StageModifier, WaveState, Suit, Rank } from '$lib/game/shidasu/types'
@@ -314,7 +314,7 @@
       {#each [...new Set(run.items)] as id (id)}
         {@const n = run.items.filter(x => x === id).length}
         <span class="text-xs bg-emerald-900 text-yellow-200/90 border border-yellow-600/40 rounded px-1.5 py-0.5">
-          {ITEM_NAMES[id]}{n > 1 ? `×${n}` : ''}
+          {itemName(id, params)}{n > 1 ? `×${n}` : ''}
         </span>
       {/each}
     </div>
@@ -372,7 +372,7 @@
               onclick={() => handlePickItem(id)}
               class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
             >
-              <div class="font-black text-yellow-300">{ITEM_NAMES[id]}</div>
+              <div class="font-black text-yellow-300">{itemName(id, params)}</div>
               <div class="text-xs text-emerald-100/80 mt-0.5">{itemDesc(id, params)}</div>
             </button>
           {/each}
@@ -391,7 +391,7 @@
               onclick={() => handleConfirmSwap(id)}
               class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
             >
-              <div class="font-black text-yellow-300">{ITEM_NAMES[id]}</div>
+              <div class="font-black text-yellow-300">{itemName(id, params)}</div>
               <div class="text-xs text-emerald-100/80 mt-0.5">{itemDesc(id, params)}</div>
             </button>
           {/each}

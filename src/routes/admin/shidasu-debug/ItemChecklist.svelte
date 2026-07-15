@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ITEM_NAMES, itemDesc } from '$lib/game/shidasu/engine'
+  import { itemName, itemDesc } from '$lib/game/shidasu/engine'
   import { loadParams } from '$lib/game/shidasu/params'
   import type { ItemId } from '$lib/game/shidasu/types'
   import { ITEM_GROUPS } from './itemGroups'
@@ -27,7 +27,7 @@
               class="mt-0.5"
             />
             <span>
-              <span class="font-semibold text-slate-700">{ITEM_NAMES[id]}</span>
+              <span class="font-semibold text-slate-700">{itemName(id, params)}</span>
               <span class="text-slate-400 ml-1">{itemDesc(id, params)}</span>
             </span>
           </label>

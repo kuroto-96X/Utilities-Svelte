@@ -15,7 +15,7 @@ import {
   markStuck,
   rollItemOffer,
   ITEM_POOL,
-  ITEM_NAMES,
+  itemName,
   itemDesc,
   applyItemEffects,
   applyDirectEffects,
@@ -1683,11 +1683,11 @@ describe('DEFAULT_PARAMS.talismans (グループ17)', () => {
   })
 })
 
-describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
+describe('ITEM_POOL / itemName / itemDesc', () => {
   test('87種類のアイテムが定義されている', () => {
     expect(ITEM_POOL).toHaveLength(87)
     expect(new Set(ITEM_POOL).size).toBe(87) // 重複なし
-    ITEM_POOL.forEach(id => expect(ITEM_NAMES[id]).toBeTruthy())
+    ITEM_POOL.forEach(id => expect(itemName(id, DEFAULT_PARAMS)).toBeTruthy())
   })
 
   test('グループ9〜16の残り20個も名前と説明文を持つ', () => {
@@ -1703,7 +1703,7 @@ describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
     ]
     expect(newIds).toHaveLength(20)
     newIds.forEach(id => {
-      expect(ITEM_NAMES[id]).toBeTruthy()
+      expect(itemName(id, DEFAULT_PARAMS)).toBeTruthy()
       expect(itemDesc(id, DEFAULT_PARAMS)).toBeTruthy()
     })
   })
@@ -1715,7 +1715,7 @@ describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
     ]
     expect(newIds).toHaveLength(8)
     newIds.forEach(id => {
-      expect(ITEM_NAMES[id]).toBeTruthy()
+      expect(itemName(id, DEFAULT_PARAMS)).toBeTruthy()
       expect(itemDesc(id, DEFAULT_PARAMS)).toBeTruthy()
     })
   })
@@ -1735,7 +1735,7 @@ describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
       'courage', 'daybreak', 'twilight', 'cheerful', 'conscience', 'morningMist',
     ]
     newIds.forEach(id => {
-      expect(ITEM_NAMES[id]).toBeTruthy()
+      expect(itemName(id, DEFAULT_PARAMS)).toBeTruthy()
       expect(itemDesc(id, DEFAULT_PARAMS)).toBeTruthy()
     })
   })
@@ -1753,7 +1753,7 @@ describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
     ]
     expect(newIds).toHaveLength(35)
     newIds.forEach(id => {
-      expect(ITEM_NAMES[id]).toBeTruthy()
+      expect(itemName(id, DEFAULT_PARAMS)).toBeTruthy()
       expect(itemDesc(id, DEFAULT_PARAMS)).toBeTruthy()
     })
   })
@@ -1761,8 +1761,15 @@ describe('ITEM_POOL / ITEM_NAMES / itemDesc', () => {
   test('永劫・豊穣・静寂・不屈も名前と説明文を持つ', () => {
     const newIds: ItemId[] = ['eternity', 'abundance', 'silence', 'resilience']
     newIds.forEach(id => {
-      expect(ITEM_NAMES[id]).toBeTruthy()
+      expect(itemName(id, DEFAULT_PARAMS)).toBeTruthy()
       expect(itemDesc(id, DEFAULT_PARAMS)).toBeTruthy()
+    })
+  })
+
+  test('bridge・grace・eternity・abundance・silenceもtalismansにnameエントリを持つ', () => {
+    const ids: ItemId[] = ['bridge', 'grace', 'eternity', 'abundance', 'silence']
+    ids.forEach(id => {
+      expect(DEFAULT_PARAMS.talismans[id].name).toBeTruthy()
     })
   })
 })
