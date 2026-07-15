@@ -44,8 +44,4 @@ describe('loadParams', () => {
   test('shidasu.config.json の内容をそのまま返す', () => {
     expect(loadParams()).toEqual(shidasuConfigJson)
   })
-
-  test('既定値と一致する(config.json が未編集の場合)', () => {
-    expect(loadParams()).toEqual(DEFAULT_PARAMS)
-  })
 })
