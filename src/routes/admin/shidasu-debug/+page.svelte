@@ -285,15 +285,14 @@
           {/each}
         </div>
       </div>
+      <div class="mt-4">
+        <DebugStatePanel {wave} {items} onForceDraw={handleForceDraw} />
+      </div>
     </div>
     <div class="space-y-4">
       <CardPalette {cardFace} onCardPointerDown={onPaletteCardPointerDown} />
       <ItemChecklist {items} onToggle={handleToggleItem} />
     </div>
-  </div>
-
-  <div class="mt-4">
-    <DebugStatePanel {wave} {items} onForceDraw={handleForceDraw} />
   </div>
 
   {#if dragState?.isDragging}
