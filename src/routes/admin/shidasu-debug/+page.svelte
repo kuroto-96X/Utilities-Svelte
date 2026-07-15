@@ -1,9 +1,10 @@
 <script lang="ts">
   import { loadParams } from '$lib/game/shidasu/params'
-  import { startWave, playCard, drawStock, getPlayableColumns, isRed, rankLabel } from '$lib/game/shidasu/engine'
+  import { startWave, playCard, drawStock, forceStockTop, getPlayableColumns, isRed, rankLabel } from '$lib/game/shidasu/engine'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
-  import type { WaveState, Card, ItemId, DeckCard } from '$lib/game/shidasu/types'
+  import type { WaveState, Card, ItemId, DeckCard, Suit, Rank } from '$lib/game/shidasu/types'
   import ItemChecklist from './ItemChecklist.svelte'
+  import DebugStatePanel from './DebugStatePanel.svelte'
 
   const params = loadParams()
   const TARGET = Number.MAX_SAFE_INTEGER
@@ -48,6 +49,13 @@
     } else {
       items = items.filter(x => x !== id)
     }
+  }
+
+  function handleForceDraw(suit: Suit, rank: Rank, wild: boolean) {
+    wave = forceStockTop(wave, suit, rank, wild)
+    const result = drawStock(params, wave, items, deckComposition, 'none')
+    wave = result.wave
+    deckComposition = result.deckComposition
   }
 
   let playableCols = $derived(getPlayableColumns('none', wave))
@@ -156,7 +164,8 @@
     </div>
     <div class="space-y-4">
       <ItemChecklist {items} onToggle={handleToggleItem} />
-      <div class="text-xs text-slate-500">カードパレット・内部状態パネルは以降のタスクで追加します。</div>
+      <DebugStatePanel {wave} {items} onForceDraw={handleForceDraw} />
+      <div class="text-xs text-slate-500">カードパレットは次のタスクで追加します。</div>
     </div>
   </div>
 </div>
