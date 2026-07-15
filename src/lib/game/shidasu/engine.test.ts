@@ -746,6 +746,30 @@ describe('playCard', () => {
     const next = playCard(DEFAULT_PARAMS, wave, 'none', ['sanctify'], 1000000, 0)
     expect(next.baseComboCount).toBe(2)
   })
+
+  test('明星: 役の種類ごとのウェーブ内累積成立回数に応じて役ボーナスが倍加する', () => {
+    // フラッシュが成立する組み合わせ(4スート)
+    const wave = baseWave({
+      foundation: card(0, '♠', 5),
+      chain: [card(20, '♥', 3), card(21, '♦', 4), card(22, '♠', 5)],
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      roleOccurrenceCountThisWave: { flush: 3 },
+    })
+    const withMorningStar = playCard(DEFAULT_PARAMS, wave, 'none', ['morningStar'], 1000000, 0)
+    const without = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    expect(withMorningStar.score).toBeGreaterThan(without.score)
+  })
+
+  test('明星: 役が成立するとroleOccurrenceCountThisWaveが+1される(今回分は倍率計算に使わない)', () => {
+    const wave = baseWave({
+      foundation: card(0, '♠', 5),
+      chain: [card(20, '♥', 3), card(21, '♦', 4), card(22, '♠', 5)],
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      roleOccurrenceCountThisWave: { flush: 1 },
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['morningStar'], 1000000, 0)
+    expect(next.roleOccurrenceCountThisWave.flush).toBe(2)
+  })
 })
 
 describe('chainContinuesPattern', () => {

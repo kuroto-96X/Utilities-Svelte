@@ -155,7 +155,13 @@ export function playCard(
   const parts = [`基礎点+${base}`]
 
   const effectiveStairMinLen = items.includes('bridge') ? params.items.stairRelaxedMinLen : params.scoring.stairMinLen
-  const chainResult = evaluateChainBonus(params.scoring, wave.chain, card, effectiveStairMinLen)
+  // 明星: 役の種類ごとのウェーブ内累積成立回数(今回成立分は含まない)に応じて役ボーナス額を倍率適用する
+  const roleBonusMultiplier = (name: RoleName): number => {
+    if (!items.includes('morningStar')) return 1
+    const count = wave.roleOccurrenceCountThisWave[name] ?? 0
+    return 1 + count * params.talismans.morningStar.x
+  }
+  const chainResult = evaluateChainBonus(params.scoring, wave.chain, card, effectiveStairMinLen, roleBonusMultiplier)
   base += chainResult.bonus
   parts.push(...chainResult.parts)
 
@@ -173,10 +179,10 @@ export function playCard(
   const newColumnsEmptied = sweepQualifies ? wave.columnsEmptiedThisCombo + 1 : wave.columnsEmptiedThisCombo
   const roleFired = [...chainResult.roleFired]
   if (sweepQualifies) {
-    const sweepGain = params.scoring.columnSweepBonus * newColumnsEmptied
+    const sweepGain = Math.floor(params.scoring.columnSweepBonus * newColumnsEmptied * roleBonusMultiplier('columnSweep'))
     base += sweepGain
     parts.push(`列一掃+${sweepGain}`)
-    roleFired.push({ name: 'columnSweep', usedWild: false })
+    roleFired.push({ name: 'columnSweep', usedWild: false, amount: sweepGain })
   }
 
   // 護符は所持順(itemsの並び順)で解決するのが大原則。治癒(復活対象=一掃した列)と
@@ -257,6 +263,15 @@ export function playCard(
   }
   const newBaseComboCount = items.includes('sanctify') && roleFired.length > 0 ? wave.baseComboCount + 1 : wave.baseComboCount
 
+  // 明星: 今回成立した役の種類ごとに、ウェーブ内累積成立回数を+1する(今回分は次回以降に反映)
+  let newRoleOccurrenceCountThisWave = wave.roleOccurrenceCountThisWave
+  if (roleFired.length > 0) {
+    newRoleOccurrenceCountThisWave = { ...wave.roleOccurrenceCountThisWave }
+    for (const fired of roleFired) {
+      newRoleOccurrenceCountThisWave[fired.name] = (newRoleOccurrenceCountThisWave[fired.name] ?? 0) + 1
+    }
+  }
+
   const itemEffectCtx: ItemEffectContext = {
     card,
     previousFoundation: wave.foundation,
@@ -322,6 +337,7 @@ export function playCard(
     flushActiveThisCombo: newFlushActiveThisCombo,
     columnSweepActiveThisWave: newColumnSweepActiveThisWave,
     baseComboCount: newBaseComboCount,
+    roleOccurrenceCountThisWave: newRoleOccurrenceCountThisWave,
   }
 
   if (remainingBeforeRevival === 0) {
