@@ -3,6 +3,7 @@
   import { startWave, playCard, drawStock, getPlayableColumns, isRed, rankLabel } from '$lib/game/shidasu/engine'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
   import type { WaveState, Card, ItemId, DeckCard } from '$lib/game/shidasu/types'
+  import ItemChecklist from './ItemChecklist.svelte'
 
   const params = loadParams()
   const TARGET = Number.MAX_SAFE_INTEGER
@@ -39,6 +40,14 @@
     const result = drawStock(params, wave, items, deckComposition, 'none')
     wave = result.wave
     deckComposition = result.deckComposition
+  }
+
+  function handleToggleItem(id: ItemId, checked: boolean) {
+    if (checked) {
+      if (!items.includes(id)) items = [...items, id]
+    } else {
+      items = items.filter(x => x !== id)
+    }
   }
 
   let playableCols = $derived(getPlayableColumns('none', wave))
@@ -146,7 +155,8 @@
       </div>
     </div>
     <div class="space-y-4">
-      <div class="text-xs text-slate-500">護符チェックリスト・カードパレット・内部状態パネルは以降のタスクで追加します。</div>
+      <ItemChecklist {items} onToggle={handleToggleItem} />
+      <div class="text-xs text-slate-500">カードパレット・内部状態パネルは以降のタスクで追加します。</div>
     </div>
   </div>
 </div>
