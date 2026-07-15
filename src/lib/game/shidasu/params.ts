@@ -35,7 +35,7 @@ export interface ShidasuParams {
     maxItems: number
   }
   talismans: {
-    bridge: { name: string }
+    bridge: { name: string; m: number }
     grace: { name: string }
     patience: { name: string; x: number }
     purify: { name: string; n: number }
@@ -164,7 +164,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     maxItems: 5,
   },
   talismans: {
-    bridge: { name: '架橋' },
+    bridge: { name: '架橋', m: 2 },
     grace: { name: '寛容' },
     patience: { name: '忍耐', x: 500 },
     purify: { name: '浄化', n: 10000 },

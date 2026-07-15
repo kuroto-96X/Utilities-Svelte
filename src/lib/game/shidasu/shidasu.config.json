@@ -56,7 +56,8 @@
   },
   "talismans": {
     "bridge": {
-      "name": "架橋"
+      "name": "架橋",
+      "m": 2
     },
     "grace": {
       "name": "寛容"

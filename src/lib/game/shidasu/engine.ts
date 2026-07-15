@@ -93,8 +93,10 @@ export function startWave(
     tableau.push(deck.splice(0, rows))
   }
   const foundation = deck.pop() as Card
+  const effectiveStairMinLenAtDeal = items.includes('bridge') ? params.scoring.stairMinLen - params.talismans.bridge.m : params.scoring.stairMinLen
+  const effectiveSuitColorMinLenAtDeal = items.includes('bridge') ? params.scoring.suitColorMinLen - params.talismans.bridge.m : params.scoring.suitColorMinLen
   const stockAfterDeal = items.includes('promise')
-    ? arrangeNextCardForContinuation(params.scoring, deck, [foundation], params.scoring.stairMinLen)
+    ? arrangeNextCardForContinuation(params.scoring, deck, [foundation], effectiveStairMinLenAtDeal, effectiveSuitColorMinLenAtDeal)
     : deck
 
   const wave: WaveState = {
@@ -161,15 +163,15 @@ export function playCard(
     parts.push(`水鏡(${wave.pendingRoleEcho.name})+${wave.pendingRoleEcho.amount}`)
   }
 
-  const effectiveStairMinLen = items.includes('bridge') ? params.items.stairRelaxedMinLen : params.scoring.stairMinLen
-  const effectiveSuitColorMinLen = params.scoring.suitColorMinLen
+  const effectiveStairMinLen = items.includes('bridge') ? params.scoring.stairMinLen - params.talismans.bridge.m : params.scoring.stairMinLen
+  const effectiveSuitColorMinLen = items.includes('bridge') ? params.scoring.suitColorMinLen - params.talismans.bridge.m : params.scoring.suitColorMinLen
   // 明星: 役の種類ごとのウェーブ内累積成立回数(今回成立分は含まない)に応じて役ボーナス額を倍率適用する
   const roleBonusMultiplier = (name: RoleName): number => {
     if (!items.includes('morningStar')) return 1
     const count = wave.roleOccurrenceCountThisWave[name] ?? 0
     return 1 + count * params.talismans.morningStar.x
   }
-  const chainResult = evaluateChainBonus(params.scoring, wave.chain, card, effectiveStairMinLen, roleBonusMultiplier)
+  const chainResult = evaluateChainBonus(params.scoring, wave.chain, card, effectiveStairMinLen, roleBonusMultiplier, effectiveSuitColorMinLen)
   base += chainResult.bonus
   parts.push(...chainResult.parts)
 
@@ -434,8 +436,9 @@ export function drawStock(
   const newStock = [...wave.stock]
   const drawnCard = newStock.pop() as Card
 
-  const effectiveStairMinLen = items.includes('bridge') ? params.items.stairRelaxedMinLen : params.scoring.stairMinLen
-  const wouldContinue = wave.linked && chainContinuesPattern(params.scoring, wave.chain, drawnCard, effectiveStairMinLen)
+  const effectiveStairMinLen = items.includes('bridge') ? params.scoring.stairMinLen - params.talismans.bridge.m : params.scoring.stairMinLen
+  const effectiveSuitColorMinLen = items.includes('bridge') ? params.scoring.suitColorMinLen - params.talismans.bridge.m : params.scoring.suitColorMinLen
+  const wouldContinue = wave.linked && chainContinuesPattern(params.scoring, wave.chain, drawnCard, effectiveStairMinLen, effectiveSuitColorMinLen)
   const benevolenceFires = !wouldContinue && items.includes('benevolence') && !wave.benevolenceUsedThisCombo
   const patternContinues = wouldContinue || benevolenceFires
 
@@ -482,7 +485,7 @@ export function drawStock(
       const newCombo = wave.combo + (items.includes('golden') ? 2 : 1)
       let base = params.scoring.basePoint
       const parts = [`基礎点+${base}`]
-      const chainResult = evaluateChainBonus(params.scoring, wave.chain, drawnCard, effectiveStairMinLen)
+      const chainResult = evaluateChainBonus(params.scoring, wave.chain, drawnCard, effectiveStairMinLen, undefined, effectiveSuitColorMinLen)
       base += chainResult.bonus
       parts.push(...chainResult.parts)
       naiveRoleFiredThisChain = wave.roleFiredThisChain || chainResult.roleFired.length > 0
@@ -506,7 +509,7 @@ export function drawStock(
         chainBonus: chainResult,
         isFirstPlayOfWave: !wave.firstPlayDone,
         effectiveStairMinLen,
-        effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
+        effectiveSuitColorMinLen,
         sameColumnStreak: wave.sameColumnStreak,
         totalColumnsEmptiedThisWave: wave.totalColumnsEmptiedThisWave,
         maxComboThisWave: Math.max(wave.maxComboThisWave, newCombo),
@@ -537,7 +540,7 @@ export function drawStock(
     return {
       wave: {
         ...wave,
-        stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [...wave.chain, drawnCard], effectiveStairMinLen) : newStock,
+        stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [...wave.chain, drawnCard], effectiveStairMinLen, effectiveSuitColorMinLen) : newStock,
         foundation: drawnCard,
         combo: naiveCombo,
         chain: [...wave.chain, drawnCard],
@@ -586,7 +589,7 @@ export function drawStock(
   return {
     wave: {
       ...wave,
-      stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [card], effectiveStairMinLen) : newStock,
+      stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [card], effectiveStairMinLen, effectiveSuitColorMinLen) : newStock,
       foundation: card,
       combo: items.includes('sanctify') ? wave.baseComboCount : 0,
       chain: [card],
@@ -1285,7 +1288,7 @@ export function itemName(id: ItemId, params: ShidasuParams): string {
 
 export function itemDesc(id: ItemId, params: ShidasuParams): string {
   switch (id) {
-    case 'bridge': return `階段成立に必要な最小連続枚数を${params.scoring.stairMinLen}→${params.items.stairRelaxedMinLen}枚に緩和`
+    case 'bridge': return `階段・同スート・同色の成立に必要な枚数を${params.talismans.bridge.m}枚緩和(階段${params.scoring.stairMinLen}→${params.scoring.stairMinLen - params.talismans.bridge.m}枚、同スート・同色${params.scoring.suitColorMinLen}→${params.scoring.suitColorMinLen - params.talismans.bridge.m}枚)`
     case 'grace': {
       const relaxed = params.layout.rows - params.items.columnSweepRelaxCards
       return `列一掃ボーナスの条件を「列の全${params.layout.rows}枚を1コンボで空に」→「残り${relaxed}枚から1コンボで空に」に緩和`

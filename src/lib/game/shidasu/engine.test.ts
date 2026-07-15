@@ -455,6 +455,34 @@ describe('playCard', () => {
     expect(next.lastGain?.parts).toContain(`階段3 +${scoring.stairBonus}`)
   })
 
+  test('架橋の護符: 階段成立に必要な枚数がm枚緩和される(既定m=2で5→3)', () => {
+    const items: ItemId[] = ['bridge']
+    // チェーン[3,4]に5を継ぎ足して3枚の階段(3,4,5)にする。foundationをrank6にすることで
+    // rank5のカード(foundationとの差1)が取得可能になる。既定のstairMinLen(5)では
+    // 3枚では不成立だが、架橋によりm=2緩和され3枚で成立するはず。
+    const wave = baseWave({
+      foundation: card(0, '♠', 6),
+      chain: [card(20, '♣', 3), card(21, '♦', 4)],
+      tableau: [[card(1, '♥', 5)], [card(2, '♦', 2)]],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0)
+    expect(next.lastGain?.parts.some(p => p.startsWith('階段'))).toBe(true)
+  })
+
+  test('架橋の護符: 同スート成立に必要な枚数もm枚緩和される(既定m=2で3→1)', () => {
+    const items: ItemId[] = ['bridge']
+    // evaluateChainBonusはchainBefore(プレイ前のチェーン)が空だと即bonus=0を返すため、
+    // チェーンには既に1枚(基準カードと同スート)を入れておく。このプレイでchainIncludingThis
+    // が2枚になり、effectiveSuitColorMinLen(3-2=1)なら2>=1で成立、既定値(3)なら2>=3で不成立。
+    const wave = baseWave({
+      foundation: card(0, '♠', 5),
+      chain: [card(0, '♠', 5)],
+      tableau: [[card(1, '♠', 6)], [card(2, '♦', 2)]],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0)
+    expect(next.lastGain?.parts).toContain(`同スート+${DEFAULT_PARAMS.scoring.suitBonus}`)
+  })
+
   test('gainedチャンネルの護符(springBreeze)は♣を取った時、得点に加算される', () => {
     const wave = baseWave({
       foundation: card(0, '♠', 5),
