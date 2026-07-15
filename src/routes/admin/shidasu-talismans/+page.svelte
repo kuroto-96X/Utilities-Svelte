@@ -28,7 +28,11 @@
 
   let hasValidationError = $derived.by(() => {
     if (!config) return false
-    return ITEM_GROUPS.some(group => group.ids.some(id => !talismanEntry(id).name.trim()))
+    return ITEM_GROUPS.some(group => group.ids.some(id => {
+      const entry = talismanEntry(id)
+      if (!entry.name.trim()) return true
+      return talismanParamKeys(id).some(key => !Number.isFinite(entry[key]))
+    }))
   })
 
   async function loadConfig(toast = false) {
@@ -79,7 +83,7 @@
         リロード
       </button>
       {#if hasValidationError}
-        <p class="text-xs text-red-600 self-center">護符名が空の項目があります</p>
+        <p class="text-xs text-red-600 self-center">護符名またはパラメータが空(未入力)の項目があります</p>
       {/if}
       <button
         onclick={save}
