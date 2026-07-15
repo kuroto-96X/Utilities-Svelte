@@ -112,6 +112,7 @@ export function startWave(
     status: 'playing',
     endReason: null as WaveEndReason,
     lastGain: null,
+    lastBonusGains: [],
     firstPlayDone: false,
     discardPile: [],
     lastPlayedColumn: null,
@@ -372,6 +373,7 @@ export function playCard(
     pendingRoleEcho: newPendingRoleEcho,
     roleEchoUsedThisCombo: newRoleEchoUsedThisCombo,
     sameRankEchoUsedThisCombo: newSameRankEchoUsedThisCombo,
+    lastBonusGains: [],
   }
 
   if (remainingBeforeRevival === 0) {
@@ -518,6 +520,7 @@ export function drawStock(
         maxComboThisWave: Math.max(wave.maxComboThisWave, naiveCombo),
         roleFiredThisChain: naiveRoleFiredThisChain,
         flushActiveThisCombo: naiveFlushActiveThisCombo,
+        lastBonusGains: [],
       },
       deckComposition,
     }
@@ -565,6 +568,7 @@ export function drawStock(
       sameRankEchoUsedThisCombo: [],
       pendingRoleEcho: null,
       mercyActiveNextCombo: wave.combo <= params.talismans.mercy.c,
+      lastBonusGains: [],
     },
     deckComposition: newDeckComposition,
   }

@@ -48,6 +48,14 @@ export interface ScoreGain {
   parts: string[]
 }
 
+// 全消しボーナス・護符による直接加算など、通常のプレイ得点(ScoreGain/lastGain)とは
+// 別枠でログ表示する得点イベント。labelでイベント種別を表す。
+export interface BonusGain {
+  label: string
+  points: number
+  parts: string[]
+}
+
 export type WaveStatus = 'playing' | 'ended'
 export type WaveEndReason = 'target' | 'fullClear' | 'stuck' | null
 export type DrawEffect = 'wild' | 'pattern' | null
@@ -70,6 +78,9 @@ export interface WaveState {
   status: WaveStatus
   endReason: WaveEndReason
   lastGain: ScoreGain | null
+  // このアクションで発生した、lastGainとは別枠の得点(全消しボーナス・護符の直接加算)。
+  // 何も発生しなければ空配列。
+  lastBonusGains: BonusGain[]
   // ウェーブ開始後、一度でも場札をプレイしたか(朝露の護符の判定に使用。山札めくりでは変化しない)
   firstPlayDone: boolean
   // コンボリセット時にチェーンにあった札が送られる、ウェーブ内限定の捨て札(不屈の護符が参照する。ウェーブを跨いで持続しない)

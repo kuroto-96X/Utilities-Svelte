@@ -93,6 +93,7 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     status: 'playing',
     endReason: null,
     lastGain: null,
+    lastBonusGains: [],
     firstPlayDone: false,
     discardPile: [],
     lastPlayedColumn: null,
