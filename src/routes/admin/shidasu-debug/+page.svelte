@@ -1,10 +1,12 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
   import { loadParams } from '$lib/game/shidasu/params'
   import { startWave, playCard, drawStock, forceStockTop, getPlayableColumns, isRed, rankLabel } from '$lib/game/shidasu/engine'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
   import type { WaveState, Card, ItemId, DeckCard, Suit, Rank } from '$lib/game/shidasu/types'
   import ItemChecklist from './ItemChecklist.svelte'
   import DebugStatePanel from './DebugStatePanel.svelte'
+  import CardPalette from './CardPalette.svelte'
 
   const params = loadParams()
   const TARGET = Number.MAX_SAFE_INTEGER
@@ -12,6 +14,19 @@
   let items = $state<ItemId[]>([])
   let deckComposition = $state<DeckCard[]>(standardDeckComposition())
   let wave = $state<WaveState>(startWave(params, 0, 0, items, deckComposition).wave)
+  let lastSwap = $state<{ location: { col: number; row: number } | 'stockTop'; previousCard: Card } | null>(null)
+
+  interface DragState {
+    source: { suit: Suit; rank: Rank; wild: boolean }
+    startX: number
+    startY: number
+    currentX: number
+    currentY: number
+    isDragging: boolean
+    pointerId: number
+  }
+  let dragState = $state<DragState | null>(null)
+  let dropTarget = $state<{ col: number; row: number } | 'stockTop' | null>(null)
 
   const PIP_LAYOUTS: Record<number, [number, number, boolean][]> = {
     1:  [[50, 50, false]],
@@ -31,16 +46,19 @@
     const result = startWave(params, 0, 0, items, deckComposition)
     wave = result.wave
     deckComposition = result.deckComposition
+    lastSwap = null
   }
 
   function handlePlayCard(colIndex: number) {
     wave = playCard(params, wave, 'none', items, TARGET, colIndex)
+    lastSwap = null
   }
 
   function handleDraw() {
     const result = drawStock(params, wave, items, deckComposition, 'none')
     wave = result.wave
     deckComposition = result.deckComposition
+    lastSwap = null
   }
 
   function handleToggleItem(id: ItemId, checked: boolean) {
@@ -49,6 +67,7 @@
     } else {
       items = items.filter(x => x !== id)
     }
+    lastSwap = null
   }
 
   function handleForceDraw(suit: Suit, rank: Rank, wild: boolean) {
@@ -56,9 +75,103 @@
     const result = drawStock(params, wave, items, deckComposition, 'none')
     wave = result.wave
     deckComposition = result.deckComposition
+    lastSwap = null
   }
 
   let playableCols = $derived(getPlayableColumns('none', wave))
+
+  function onPaletteCardPointerDown(source: { suit: Suit; rank: Rank; wild: boolean }, e: PointerEvent) {
+    e.preventDefault()
+    dragState = {
+      source,
+      startX: e.clientX,
+      startY: e.clientY,
+      currentX: e.clientX,
+      currentY: e.clientY,
+      isDragging: false,
+      pointerId: e.pointerId,
+    }
+  }
+
+  function updateDropTarget(x: number, y: number) {
+    const els = document.elementsFromPoint(x, y)
+    for (const el of els) {
+      const colEl = (el as HTMLElement).closest?.('[data-drop-col]') as HTMLElement | null
+      if (colEl) {
+        dropTarget = { col: Number(colEl.dataset.dropCol), row: Number(colEl.dataset.dropRow) }
+        return
+      }
+      const stockEl = (el as HTMLElement).closest?.('[data-drop-stock]') as HTMLElement | null
+      if (stockEl) {
+        dropTarget = 'stockTop'
+        return
+      }
+    }
+    dropTarget = null
+  }
+
+  function applySwap(target: { col: number; row: number } | 'stockTop', source: { suit: Suit; rank: Rank; wild: boolean }) {
+    if (target === 'stockTop') {
+      if (wave.stock.length === 0) return
+      const idx = wave.stock.length - 1
+      const previousCard = wave.stock[idx]
+      const newCard: Card = { id: previousCard.id, suit: source.suit, rank: source.rank, wild: source.wild }
+      wave = { ...wave, stock: wave.stock.map((c, i) => (i === idx ? newCard : c)) }
+      lastSwap = { location: 'stockTop', previousCard }
+    } else {
+      const { col, row } = target
+      const column = wave.tableau[col]
+      if (!column?.[row]) return
+      const previousCard = column[row]
+      const newCard: Card = { id: previousCard.id, suit: source.suit, rank: source.rank, wild: source.wild }
+      wave = {
+        ...wave,
+        tableau: wave.tableau.map((c, ci) => (ci === col ? c.map((cc, ri) => (ri === row ? newCard : cc)) : c)),
+      }
+      lastSwap = { location: { col, row }, previousCard }
+    }
+  }
+
+  function handleUndo() {
+    if (!lastSwap) return
+    const swap = lastSwap
+    if (swap.location === 'stockTop') {
+      const idx = wave.stock.length - 1
+      wave = { ...wave, stock: wave.stock.map((c, i) => (i === idx ? swap.previousCard : c)) }
+    } else {
+      const { col, row } = swap.location
+      wave = {
+        ...wave,
+        tableau: wave.tableau.map((c, ci) => (ci === col ? c.map((cc, ri) => (ri === row ? swap.previousCard : cc)) : c)),
+      }
+    }
+    lastSwap = null
+  }
+
+  onMount(() => {
+    function onPointerMove(e: PointerEvent) {
+      if (!dragState || e.pointerId !== dragState.pointerId) return
+      const dx = e.clientX - dragState.startX
+      const dy = e.clientY - dragState.startY
+      const isDragging = dragState.isDragging || Math.sqrt(dx * dx + dy * dy) > 5
+      dragState = { ...dragState, currentX: e.clientX, currentY: e.clientY, isDragging }
+      if (isDragging) updateDropTarget(e.clientX, e.clientY)
+    }
+    function onPointerUp(e: PointerEvent) {
+      if (!dragState || e.pointerId !== dragState.pointerId) return
+      if (dragState.isDragging && dropTarget) {
+        applySwap(dropTarget, dragState.source)
+      }
+      dragState = null
+      dropTarget = null
+    }
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerup', onPointerUp)
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerup', onPointerUp)
+    }
+  })
 </script>
 
 <svelte:head>
@@ -120,7 +233,10 @@
 <div class="min-h-screen bg-slate-50 px-4 py-4">
   <div class="flex items-center justify-between mb-3">
     <h1 class="text-lg font-bold text-slate-800">Shidasu デバッグサンドボックス</h1>
-    <button type="button" onclick={newWave} class="px-3 py-1.5 rounded bg-teal-600 text-white text-sm font-bold">新しいウェーブ</button>
+    <div class="flex items-center gap-2">
+      <button type="button" onclick={handleUndo} disabled={!lastSwap} class="px-3 py-1.5 rounded text-sm font-bold {lastSwap ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-400'}">元に戻す</button>
+      <button type="button" onclick={newWave} class="px-3 py-1.5 rounded bg-teal-600 text-white text-sm font-bold">新しいウェーブ</button>
+    </div>
   </div>
 
   <div class="grid gap-4 items-start" style="grid-template-columns: 1fr 360px;">
@@ -131,7 +247,12 @@
           <div class="relative" style="min-height: 12rem;">
             {#each col as card, ri (card.id)}
               {@const isTop = ri === col.length - 1}
-              <div class="absolute left-0 right-0" style="top:{ri * 18}px; z-index:{ri}; width:64px;">
+              <div
+                class="absolute left-0 right-0 {dropTarget !== 'stockTop' && dropTarget?.col === ci && dropTarget?.row === ri ? 'ring-4 ring-sky-400 rounded-lg' : ''}"
+                style="top:{ri * 18}px; z-index:{ri}; width:64px;"
+                data-drop-col={ci}
+                data-drop-row={ri}
+              >
                 {#if isTop}
                   <button type="button" onclick={() => handlePlayCard(ci)} class="w-full text-left {playableCols.has(ci) ? 'ring-2 ring-yellow-300' : ''}">
                     {@render cardFace(card, false)}
@@ -149,8 +270,9 @@
           type="button"
           onclick={handleDraw}
           disabled={wave.stock.length === 0}
+          data-drop-stock
           style="aspect-ratio: 2/3; width:64px;"
-          class="rounded-lg border-2 flex flex-col items-center justify-center font-black {wave.stock.length > 0 ? 'bg-emerald-700 border-emerald-500 text-amber-50' : 'bg-emerald-900 border-emerald-800 text-emerald-700'}"
+          class="rounded-lg border-2 flex flex-col items-center justify-center font-black {dropTarget === 'stockTop' ? 'ring-4 ring-sky-400' : ''} {wave.stock.length > 0 ? 'bg-emerald-700 border-emerald-500 text-amber-50' : 'bg-emerald-900 border-emerald-800 text-emerald-700'}"
         >
           <div class="text-xs">山札</div>
           <div class="text-lg tabular-nums">{wave.stock.length}</div>
@@ -163,9 +285,15 @@
       </div>
     </div>
     <div class="space-y-4">
+      <CardPalette {cardFace} onCardPointerDown={onPaletteCardPointerDown} />
       <ItemChecklist {items} onToggle={handleToggleItem} />
       <DebugStatePanel {wave} {items} onForceDraw={handleForceDraw} />
-      <div class="text-xs text-slate-500">カードパレットは次のタスクで追加します。</div>
     </div>
   </div>
+
+  {#if dragState?.isDragging}
+    <div class="fixed pointer-events-none z-50" style="left:{dragState.currentX - 32}px; top:{dragState.currentY - 48}px; width:64px;">
+      {@render cardFace({ id: -1, suit: dragState.source.suit, rank: dragState.source.rank, wild: dragState.source.wild }, false)}
+    </div>
+  {/if}
 </div>
