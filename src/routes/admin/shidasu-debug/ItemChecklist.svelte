@@ -4,16 +4,23 @@
   import type { ItemId } from '$lib/game/shidasu/types'
   import { ITEM_GROUPS } from '$lib/game/shidasu/itemGroups'
 
-  let { items, onToggle }: {
+  let { items, onToggle, onSetAll }: {
     items: ItemId[]
     onToggle: (id: ItemId, checked: boolean) => void
+    onSetAll: (checked: boolean) => void
   } = $props()
 
   const params = loadParams()
 </script>
 
 <div class="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
-  <h2 class="text-sm font-bold text-slate-700 sticky top-0 bg-slate-50">護符({items.length}/87)</h2>
+  <div class="sticky top-0 bg-slate-50 space-y-1">
+    <h2 class="text-sm font-bold text-slate-700">護符({items.length}/87)</h2>
+    <div class="flex gap-2">
+      <button type="button" onclick={() => onSetAll(true)} class="text-xs px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-100">全てチェック</button>
+      <button type="button" onclick={() => onSetAll(false)} class="text-xs px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-100">全て解除</button>
+    </div>
+  </div>
   {#each ITEM_GROUPS as group (group.label)}
     <div>
       <div class="text-xs font-bold text-slate-500 mb-1">{group.label}</div>

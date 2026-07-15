@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { loadParams } from '$lib/game/shidasu/params'
-  import { startWave, playCard, drawStock, forceStockTop, getPlayableColumns, isRed, rankLabel } from '$lib/game/shidasu/engine'
+  import { startWave, playCard, drawStock, forceStockTop, getPlayableColumns, isRed, rankLabel, ITEM_POOL } from '$lib/game/shidasu/engine'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
   import type { WaveState, Card, ItemId, DeckCard, Suit, Rank } from '$lib/game/shidasu/types'
   import ItemChecklist from './ItemChecklist.svelte'
@@ -67,6 +67,11 @@
     } else {
       items = items.filter(x => x !== id)
     }
+    lastSwap = null
+  }
+
+  function handleSetAllItems(checked: boolean) {
+    items = checked ? [...ITEM_POOL] : []
     lastSwap = null
   }
 
@@ -326,7 +331,7 @@
     </div>
     <div class="space-y-4">
       <CardPalette {cardFace} onCardPointerDown={onPaletteCardPointerDown} onUnifySuit={unifySuit} />
-      <ItemChecklist {items} onToggle={handleToggleItem} />
+      <ItemChecklist {items} onToggle={handleToggleItem} onSetAll={handleSetAllItems} />
     </div>
   </div>
 
