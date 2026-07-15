@@ -925,6 +925,12 @@ describe('chainContinuesPattern', () => {
     const chain = [card(1, '♠', 5), card(2, '★', 0, true)]
     expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '♦', 7), 3)).toBe(true)
   })
+
+  test('suitColorMinLenを指定すると、その枚数で同スート継続と判定される', () => {
+    const chain = [card(20, '♠', 3)]
+    expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(21, '♠', 4), DEFAULT_PARAMS.scoring.stairMinLen, 2)).toBe(true)
+    expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(21, '♠', 4), DEFAULT_PARAMS.scoring.stairMinLen, 3)).toBe(false)
+  })
 })
 
 describe('stairUsesKALoop', () => {
@@ -2527,6 +2533,13 @@ describe('evaluateChainBonus', () => {
     const withoutMultiplier = evaluateChainBonus(DEFAULT_PARAMS.scoring, chainBefore, card(3, '♣', 5))
     const withIdentityMultiplier = evaluateChainBonus(DEFAULT_PARAMS.scoring, chainBefore, card(3, '♣', 5), DEFAULT_PARAMS.scoring.stairMinLen, () => 1)
     expect(withoutMultiplier).toEqual(withIdentityMultiplier)
+  })
+
+  test('suitColorMinLenを指定すると、その枚数で同スートボーナスが成立する', () => {
+    // 実カード2枚(同スート)のみ。既定のsuitColorMinLen(3)では不成立だが、2を渡すと成立する。
+    const chainBefore = [card(20, '♠', 3)]
+    const result = evaluateChainBonus(DEFAULT_PARAMS.scoring, chainBefore, card(21, '♠', 4), undefined, undefined, 2)
+    expect(result.parts).toContain(`同スート+${DEFAULT_PARAMS.scoring.suitBonus}`)
   })
 })
 

@@ -51,11 +51,11 @@ function convertRandomCardToWild(composition: DeckCard[], rand: () => number): D
 
 // 山札(末尾が次にめくられる位置)の中から、今のチェーンが継続できる最初のカードを探し、末尾と交換する。
 // 候補が無ければ何もしない(元の配列をそのまま返す)。
-function arrangeNextCardForContinuation(scoring: ShidasuParams['scoring'], stock: Card[], chain: Card[], stairMinLen: number): Card[] {
+function arrangeNextCardForContinuation(scoring: ShidasuParams['scoring'], stock: Card[], chain: Card[], stairMinLen: number, suitColorMinLen: number = scoring.suitColorMinLen): Card[] {
   if (stock.length === 0) return stock
   const lastIndex = stock.length - 1
   for (let i = 0; i <= lastIndex; i++) {
-    if (chainContinuesPattern(scoring, chain, stock[i], stairMinLen)) {
+    if (chainContinuesPattern(scoring, chain, stock[i], stairMinLen, suitColorMinLen)) {
       if (i === lastIndex) return stock
       const arranged = [...stock]
       ;[arranged[i], arranged[lastIndex]] = [arranged[lastIndex], arranged[i]]
@@ -1700,7 +1700,8 @@ export function evaluateChainBonus(
   chainBefore: Card[],
   card: Card,
   stairMinLen: number = scoring.stairMinLen,
-  roleBonusMultiplier: (name: RoleName) => number = () => 1
+  roleBonusMultiplier: (name: RoleName) => number = () => 1,
+  suitColorMinLen: number = scoring.suitColorMinLen
 ): ChainBonusResult {
   if (chainBefore.length === 0) {
     return { bonus: 0, parts: [], patternFired: false, roleFired: [] }
@@ -1714,7 +1715,7 @@ export function evaluateChainBonus(
   const chainIncludingThis = [...chainBefore, card]
 
   const { suitHeld, colorHeld } = analyzeSuitColor(chainIncludingThis)
-  if (chainIncludingThis.length >= scoring.suitColorMinLen) {
+  if (chainIncludingThis.length >= suitColorMinLen) {
     if (suitHeld) {
       bonus += scoring.suitBonus
       parts.push(`同スート+${scoring.suitBonus}`)
@@ -1789,12 +1790,13 @@ export function chainContinuesPattern(
   scoring: ShidasuParams['scoring'],
   chain: Card[],
   card: Card,
-  stairMinLen: number = scoring.stairMinLen
+  stairMinLen: number = scoring.stairMinLen,
+  suitColorMinLen: number = scoring.suitColorMinLen
 ): boolean {
   const chainIncludingThis = [...chain, card]
 
   const { suitHeld, colorHeld } = analyzeSuitColor(chainIncludingThis)
-  if (chainIncludingThis.length >= scoring.suitColorMinLen && (suitHeld || colorHeld)) return true
+  if (chainIncludingThis.length >= suitColorMinLen && (suitHeld || colorHeld)) return true
 
   const stairInfo = analyzeStair(chainIncludingThis)
   if (stairInfo.held && stairInfo.dir !== 0 && stairInfo.len >= stairMinLen) return true
