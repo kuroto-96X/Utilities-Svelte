@@ -6,16 +6,7 @@ const config = {
     adapter: adapter({
       pages: 'dist',
       assets: 'dist'
-    }),
-    prerender: {
-      handleHttpError: ({ status, path }) => {
-        // Suppress 404 errors for routes that are still in development
-        if (status === 404 && path.startsWith('/admin/shidasu-debug')) {
-          return;
-        }
-        throw new Error(`Prerender error: ${status} ${path}`);
-      }
-    }
+    })
   }
 };
 
