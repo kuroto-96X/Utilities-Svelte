@@ -9,7 +9,7 @@
     "colorBonus": 50,
     "suitColorMinLen": 3,
     "stairBonus": 150,
-    "stairMinLen": 5,
+    "stairMinLen": 3,
     "clearBonus": 2000,
     "clearBonusPerStock": 50,
     "comboMultiplierStep": 0.1,
@@ -55,11 +55,11 @@
   "talismans": {
     "bridge": {
       "name": "架橋",
-      "m": 2
+      "m": 1
     },
     "grace": {
       "name": "寛容",
-      "m": 2
+      "m": 1
     },
     "patience": {
       "name": "忍耐",
