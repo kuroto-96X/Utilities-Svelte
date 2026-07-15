@@ -1397,6 +1397,65 @@ describe('drawStock', () => {
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['mercy'], standardDeckComposition())
     expect(next.mercyActiveNextCombo).toBe(false)
   })
+
+  test('慢心の護符: 山札が尽きた瞬間、lastBonusGainsに直接加算が別枠で入る', () => {
+    const items: ItemId[] = ['arrogance']
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      stock: [card(9, '♠', 9)],
+      chain: [card(0, '♠', 5)],
+      linked: false,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, standardDeckComposition(), 'none')
+    const remainingTableau = 2
+    const expected = remainingTableau * DEFAULT_PARAMS.talismans.arrogance.x
+    expect(next.lastBonusGains.some(g => g.label === '護符による直接加算' && g.parts.includes(`慢心+${expected}`))).toBe(true)
+    // 回帰防止: lastGainとlastBonusGainsの合計が実際のスコア増分と一致することを確認する(二重計上防止)。
+    const bonusTotal = next.lastBonusGains.reduce((sum, g) => sum + g.points, 0)
+    expect((next.lastGain?.points ?? 0) + bonusTotal).toBe(next.score - wave.score)
+  })
+
+  test('沈着・冷静の護符: コンボリセット時、lastBonusGainsに直接加算がまとめて別枠で入る', () => {
+    const items: ItemId[] = ['composure', 'clarity']
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      // 新しいfoundationになるdrawnCard(rank9)との差が1でも12でもないため、
+      // drawStockのリセット分岐でhasPlayableColumns=falseになる(沈着の発火条件)
+      tableau: [[card(1, '♣', 6)]],
+      stock: [card(9, '♠', 9)],
+      chain: [card(0, '♠', 5)],
+      linked: false,
+      roleFiredThisChain: false,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, standardDeckComposition(), 'none')
+    const entry = next.lastBonusGains.find(g => g.label === '護符による直接加算')
+    expect(entry).toBeDefined()
+    expect(entry?.parts).toContain(`沈着+${DEFAULT_PARAMS.talismans.composure.n}`)
+    expect(entry?.parts).toContain(`冷静+${DEFAULT_PARAMS.talismans.clarity.n}`)
+    // 回帰防止: lastGainとlastBonusGainsの合計が実際のスコア増分と一致することを確認する(二重計上防止)。
+    const bonusTotal = next.lastBonusGains.reduce((sum, g) => sum + g.points, 0)
+    expect((next.lastGain?.points ?? 0) + bonusTotal).toBe(next.score - wave.score)
+  })
+
+  test('誠実の護符: 山札めくりで同色(同スートではない)パターン継続した時、lastBonusGainsに直接加算が別枠で入る', () => {
+    const items: ItemId[] = ['sincerity']
+    // sincerityはctx.colorHeld(=colorHeld && !suitHeld、つまり「同色だが同スートではない」)でのみ
+    // 発火する。チェーンを赤2スート(♥・♦)混在にして、同スートは崩しつつ同色は保つ。
+    const wave = makeWave({
+      foundation: card(0, '♥', 3),
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      stock: [card(9, '♦', 7)],
+      chain: [card(20, '♥', 3), card(21, '♦', 9), card(22, '♥', 2)],
+      linked: true,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, standardDeckComposition(), 'none')
+    expect(next.lastDrawEffect).toBe('pattern')
+    expect(next.lastBonusGains.some(g => g.label === '護符による直接加算' && g.parts.includes(`誠実+${DEFAULT_PARAMS.talismans.sincerity.n}`))).toBe(true)
+    // 回帰防止: lastGainとlastBonusGainsの合計が実際のスコア増分と一致することを確認する(二重計上防止)。
+    const bonusTotal = next.lastBonusGains.reduce((sum, g) => sum + g.points, 0)
+    expect((next.lastGain?.points ?? 0) + bonusTotal).toBe(next.score - wave.score)
+  })
 })
 
 describe('isStuck', () => {

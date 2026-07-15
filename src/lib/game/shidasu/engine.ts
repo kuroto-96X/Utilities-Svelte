@@ -523,6 +523,14 @@ export function drawStock(
       naiveCombo = newCombo
     }
 
+    const patternContinueBonusGains: BonusGain[] = []
+    if (stockEmptyResult.parts.length > 0) {
+      patternContinueBonusGains.push({ label: '護符による直接加算', points: stockEmptyResult.value, parts: stockEmptyResult.parts })
+    }
+    if (drawContinueResult.parts.length > 0) {
+      patternContinueBonusGains.push({ label: '護符による直接加算', points: drawContinueResult.value, parts: drawContinueResult.parts })
+    }
+
     return {
       wave: {
         ...wave,
@@ -540,7 +548,7 @@ export function drawStock(
         maxComboThisWave: Math.max(wave.maxComboThisWave, naiveCombo),
         roleFiredThisChain: naiveRoleFiredThisChain,
         flushActiveThisCombo: naiveFlushActiveThisCombo,
-        lastBonusGains: [],
+        lastBonusGains: patternContinueBonusGains,
       },
       deckComposition,
     }
@@ -563,6 +571,14 @@ export function drawStock(
   }
   const resetResult = applyDirectEffects('resetDirect', items, resetCtx, params)
   const resetDirectGain = resetResult.value
+
+  const resetBonusGains: BonusGain[] = []
+  if (stockEmptyResult.parts.length > 0) {
+    resetBonusGains.push({ label: '護符による直接加算', points: stockEmptyResult.value, parts: stockEmptyResult.parts })
+  }
+  if (resetResult.parts.length > 0) {
+    resetBonusGains.push({ label: '護符による直接加算', points: resetDirectGain, parts: resetResult.parts })
+  }
 
   return {
     wave: {
@@ -589,7 +605,7 @@ export function drawStock(
       sameRankEchoUsedThisCombo: [],
       pendingRoleEcho: null,
       mercyActiveNextCombo: wave.combo <= params.talismans.mercy.c,
-      lastBonusGains: [],
+      lastBonusGains: resetBonusGains,
     },
     deckComposition: newDeckComposition,
   }
