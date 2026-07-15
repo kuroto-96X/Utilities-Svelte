@@ -3003,6 +3003,21 @@ describe('drawStock (素朴の得点ルール変更)', () => {
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['naive', 'golden'], standardDeckComposition())
     expect(next.combo).toBe(4)
   })
+
+  test('庇護・大地: 素朴パスでも所持順で一時comboに適用される', () => {
+    const wave = makeWave({
+      stock: [card(1, '♠', 9)],
+      combo: 0,
+      chain: [card(2, '♠', 4), card(3, '♠', 5)],
+      linked: true,
+      score: 0,
+    })
+    // combo=0で継続めくり: newCombo=1。大地(c=2)が先なら一時combo=3(庇護c=3未満は満たさず不発化)。
+    // 庇護が先なら一時combo=3に底上げ後、大地で+2して5になり、より高スコアになるはず。
+    const earthThenProtection = drawStock(DEFAULT_PARAMS, wave, ['naive', 'earth', 'protection'], standardDeckComposition())
+    const protectionThenEarth = drawStock(DEFAULT_PARAMS, wave, ['naive', 'protection', 'earth'], standardDeckComposition())
+    expect(protectionThenEarth.wave.score).toBeGreaterThan(earthThenProtection.wave.score)
+  })
 })
 
 describe('約束・暗雲', () => {
