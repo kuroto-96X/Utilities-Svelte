@@ -656,6 +656,36 @@
       </section>
 
       <section class="bg-white border border-slate-200 rounded-xl p-4">
+        <h2 class="font-semibold text-slate-700 text-sm mb-3">護符パラメータ(グループ17)</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="text-xs text-slate-500">
+            庇護: コンボ数(計算用)の下駄(protection.c)
+            <input type="number" min="1" step="1" bind:value={config.talismans.protection.c} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            大地: コンボ数(計算用)への常時加算(earth.c)
+            <input type="number" min="0" step="1" bind:value={config.talismans.earth.c} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            明星: 役成立回数あたり倍率(morningStar.x)
+            <input type="number" min="0" step="0.05" bind:value={config.talismans.morningStar.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            慈悲: 救済対象のコンボ数上限(mercy.c)
+            <input type="number" min="0" step="1" bind:value={config.talismans.mercy.c} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            慈悲: 次のコンボの倍率(mercy.x)
+            <input type="number" min="0" step="0.1" bind:value={config.talismans.mercy.x} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            刻限: 山札残数あたり加算(deadline.n)
+            <input type="number" min="0" step="1" bind:value={config.talismans.deadline.n} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+        </div>
+      </section>
+
+      <section class="bg-white border border-slate-200 rounded-xl p-4">
         <h2 class="font-semibold text-slate-700 text-sm mb-3">フロー・UI</h2>
         <div class="grid grid-cols-2 gap-3">
           <label class="text-xs text-slate-500">
