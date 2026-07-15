@@ -162,6 +162,7 @@ export function playCard(
   }
 
   const effectiveStairMinLen = items.includes('bridge') ? params.items.stairRelaxedMinLen : params.scoring.stairMinLen
+  const effectiveSuitColorMinLen = params.scoring.suitColorMinLen
   // 明星: 役の種類ごとのウェーブ内累積成立回数(今回成立分は含まない)に応じて役ボーナス額を倍率適用する
   const roleBonusMultiplier = (name: RoleName): number => {
     if (!items.includes('morningStar')) return 1
@@ -313,6 +314,7 @@ export function playCard(
     chainBonus: { ...chainResult, roleFired },
     isFirstPlayOfWave: !wave.firstPlayDone,
     effectiveStairMinLen,
+    effectiveSuitColorMinLen,
     sameColumnStreak: newSameColumnStreak,
     totalColumnsEmptiedThisWave: newTotalColumnsEmptiedThisWave,
     maxComboThisWave: newMaxComboThisWave,
@@ -504,6 +506,7 @@ export function drawStock(
         chainBonus: chainResult,
         isFirstPlayOfWave: !wave.firstPlayDone,
         effectiveStairMinLen,
+        effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
         sameColumnStreak: wave.sameColumnStreak,
         totalColumnsEmptiedThisWave: wave.totalColumnsEmptiedThisWave,
         maxComboThisWave: Math.max(wave.maxComboThisWave, newCombo),
@@ -638,6 +641,8 @@ export interface ItemEffectContext {
   isFirstPlayOfWave: boolean
   // 護符(架橋等)による緩和を反映した、現在有効な階段成立の最小連続枚数
   effectiveStairMinLen: number
+  // 護符(架橋等)による緩和を反映した、現在有効な同スート・同色成立の最小枚数
+  effectiveSuitColorMinLen: number
   // 微風・共鳴用: このプレイ後の同一列連続回数
   sameColumnStreak: number
   // 蒼穹用: このプレイ後のウェーブ内列一掃累計回数
@@ -969,7 +974,7 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
     channel: 'gained',
     effect: (v, ctx, p) => {
       const { suitHeld } = analyzeSuitColor(ctx.chain)
-      if (ctx.chain.length < p.scoring.suitColorMinLen || !suitHeld) return { value: v, part: null }
+      if (ctx.chain.length < ctx.effectiveSuitColorMinLen || !suitHeld) return { value: v, part: null }
       return { value: v + p.talismans.nobility.n, part: `高潔+${p.talismans.nobility.n}` }
     },
   },
@@ -977,7 +982,7 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
     channel: 'gained',
     effect: (v, ctx, p) => {
       const { suitHeld } = analyzeSuitColor(ctx.chain)
-      if (ctx.chain.length < p.scoring.suitColorMinLen || !suitHeld) return { value: v, part: null }
+      if (ctx.chain.length < ctx.effectiveSuitColorMinLen || !suitHeld) return { value: v, part: null }
       const factor = 1 + ctx.chain.length * p.talismans.tenacity.x
       return { value: v * factor, part: `執念×${fmtMultiplier(factor)}` }
     },

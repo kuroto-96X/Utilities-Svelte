@@ -879,6 +879,18 @@ describe('playCard', () => {
     const without = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
     expect(withMercy.score).toBeGreaterThan(without.score)
   })
+
+  test('高潔の護符: effectiveSuitColorMinLen経由で同スート判定される(将来架橋対応の土台)', () => {
+    // ctx.effectiveSuitColorMinLenが正しく渡っていることを、既定値(3枚)でのみ確認する回帰テスト。
+    const items: ItemId[] = ['nobility']
+    const wave = baseWave({
+      foundation: card(0, '♠', 5),
+      chain: [card(20, '♠', 3), card(21, '♠', 4)],
+      tableau: [[card(1, '♠', 6)], [card(2, '♦', 2)]],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0)
+    expect(next.lastGain?.parts).toContain(`高潔+${DEFAULT_PARAMS.talismans.nobility.n}`)
+  })
 })
 
 describe('chainContinuesPattern', () => {
@@ -1549,6 +1561,7 @@ describe('applyItemEffects', () => {
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
       totalColumnsEmptiedThisWave: 0,
       maxComboThisWave: 1,
@@ -2591,6 +2604,7 @@ describe('applyItemEffects (グループ4-a: 絵札条件系)', () => {
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
       totalColumnsEmptiedThisWave: 0,
       maxComboThisWave: 1,
@@ -2649,6 +2663,7 @@ describe('applyItemEffects (グループ4-b: スート/色専有系)', () => {
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
       totalColumnsEmptiedThisWave: 0,
       maxComboThisWave: 1,
@@ -2710,6 +2725,7 @@ describe('applyItemEffects (グループ4-c: 枚数カウント系)', () => {
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
       totalColumnsEmptiedThisWave: 0,
       maxComboThisWave: 1,
@@ -2788,6 +2804,7 @@ describe('applyItemEffects (グループ4-d: 既存フラグ再利用・KAルー
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
       totalColumnsEmptiedThisWave: 0,
       maxComboThisWave: 1,
@@ -2870,6 +2887,7 @@ describe('applyItemEffects (グループ5: 場札残数系)', () => {
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
       totalColumnsEmptiedThisWave: 0,
       maxComboThisWave: 1,
@@ -2907,6 +2925,7 @@ describe('applyItemEffects (グループ6: 役・パターン成立状況系)', 
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
       totalColumnsEmptiedThisWave: 0,
       maxComboThisWave: 1,
@@ -2978,6 +2997,7 @@ describe('applyItemEffects (グループ7: コンボ内位置系)', () => {
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
       totalColumnsEmptiedThisWave: 0,
       maxComboThisWave: 1,
@@ -3025,6 +3045,7 @@ describe('applyItemEffects (グループ8: 無条件固定加算)', () => {
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
       totalColumnsEmptiedThisWave: 0,
       maxComboThisWave: 1,
@@ -3124,6 +3145,7 @@ describe('applyItemEffects (グループ9: 列選択の連続性)', () => {
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
       totalColumnsEmptiedThisWave: 0,
       maxComboThisWave: 1,
@@ -3163,6 +3185,7 @@ describe('applyItemEffects (グループ10: ウェーブ内累積state)', () => 
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
       totalColumnsEmptiedThisWave: 0,
       maxComboThisWave: 1,
@@ -3198,6 +3221,7 @@ describe('applyItemEffects (グループ16: 持続効果)', () => {
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
       totalColumnsEmptiedThisWave: 0,
       maxComboThisWave: 1,
@@ -3244,6 +3268,7 @@ describe('applyItemEffects (グループ12: 直感)', () => {
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
       totalColumnsEmptiedThisWave: 0,
       maxComboThisWave: 1,
@@ -3276,6 +3301,7 @@ describe('applyItemEffects (グループ17: 刻限)', () => {
       chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
+      effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
       totalColumnsEmptiedThisWave: 0,
       maxComboThisWave: 1,
