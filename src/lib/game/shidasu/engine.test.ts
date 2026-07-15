@@ -730,6 +730,12 @@ describe('playCard', () => {
     })
     const next = playCard(DEFAULT_PARAMS, wave, 'none', ['sanctify'], 1000000, 0)
     expect(next.baseComboCount).toBe(1)
+    // 一時comboにも+1が反映されていることを、祝福あり/なしのスコア差で確認する
+    // (庇護・大地のテストと同じ手法。baseComboCountの検証だけではeffectiveComboへの
+    // 反映漏れを検知できないため)。
+    const withSanctify = playCard(DEFAULT_PARAMS, wave, 'none', ['sanctify'], 1000000, 0)
+    const without = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    expect(withSanctify.score).toBeGreaterThan(without.score)
   })
 
   test('祝福: 役が成立しなければbaseComboCountは変化しない', () => {

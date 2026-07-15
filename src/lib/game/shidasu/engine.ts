@@ -244,7 +244,7 @@ export function playCard(
   const newRoleFiredThisChain = wave.roleFiredThisChain || roleFired.length > 0
   const newFlushActiveThisCombo = wave.flushActiveThisCombo || roleFired.some(r => r.name === 'flush')
 
-  // 庇護・大地: 所持順(itemsの並び順)で一時comboに順に適用する。wave.combo(実コンボ)自体は変化しない。
+  // 庇護・大地・祝福: 所持順(itemsの並び順)で一時comboに順に適用する。wave.combo(実コンボ)自体は変化しない。
   let effectiveCombo = newCombo
   for (const id of items) {
     if (id === 'protection' && effectiveCombo < params.talismans.protection.c) {
