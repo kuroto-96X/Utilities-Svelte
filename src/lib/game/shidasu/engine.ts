@@ -251,8 +251,11 @@ export function playCard(
       effectiveCombo = params.talismans.protection.c
     } else if (id === 'earth') {
       effectiveCombo += params.talismans.earth.c
+    } else if (id === 'sanctify' && roleFired.length > 0) {
+      effectiveCombo += 1
     }
   }
+  const newBaseComboCount = items.includes('sanctify') && roleFired.length > 0 ? wave.baseComboCount + 1 : wave.baseComboCount
 
   const itemEffectCtx: ItemEffectContext = {
     card,
@@ -318,6 +321,7 @@ export function playCard(
     roleFiredThisChain: newRoleFiredThisChain,
     flushActiveThisCombo: newFlushActiveThisCombo,
     columnSweepActiveThisWave: newColumnSweepActiveThisWave,
+    baseComboCount: newBaseComboCount,
   }
 
   if (remainingBeforeRevival === 0) {
@@ -489,7 +493,7 @@ export function drawStock(
       ...wave,
       stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [card], effectiveStairMinLen) : newStock,
       foundation: card,
-      combo: 0,
+      combo: items.includes('sanctify') ? wave.baseComboCount : 0,
       chain: [card],
       chainOrigin: ['draw'],
       linked: false,
@@ -505,6 +509,10 @@ export function drawStock(
       sameColumnStreak: 0,
       lastPlayedColumn: null,
       benevolenceUsedThisCombo: false,
+      roleEchoUsedThisCombo: {},
+      sameRankEchoUsedThisCombo: [],
+      pendingRoleEcho: null,
+      mercyActiveNextCombo: wave.combo <= params.talismans.mercy.c,
     },
     deckComposition: newDeckComposition,
   }

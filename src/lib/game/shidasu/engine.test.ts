@@ -719,6 +719,27 @@ describe('playCard', () => {
     const protectionThenEarth = playCard(DEFAULT_PARAMS, wave, 'none', ['protection', 'earth'], 1000000, 0)
     expect(protectionThenEarth.score).toBeGreaterThan(earthThenProtection.score)
   })
+
+  test('祝福: 役が成立するとbaseComboCountが+1され、一時comboにも反映される', () => {
+    // フラッシュ成立(4スート)する組み合わせでプレイする
+    const wave = baseWave({
+      foundation: card(0, '♠', 5),
+      chain: [card(20, '♥', 3), card(21, '♦', 4), card(22, '♠', 5)],
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      baseComboCount: 0,
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['sanctify'], 1000000, 0)
+    expect(next.baseComboCount).toBe(1)
+  })
+
+  test('祝福: 役が成立しなければbaseComboCountは変化しない', () => {
+    const wave = baseWave({
+      tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
+      baseComboCount: 2,
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['sanctify'], 1000000, 0)
+    expect(next.baseComboCount).toBe(2)
+  })
 })
 
 describe('chainContinuesPattern', () => {
@@ -1188,6 +1209,30 @@ describe('drawStock', () => {
       benevolenceUsedThisCombo: true,
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['benevolence'], standardDeckComposition())
+    expect(next.combo).toBe(0)
+  })
+
+  test('祝福: コンボリセット時、wave.comboは0ではなくbaseComboCountになる', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)],
+      tableau: [[card(2, '♣', 8)]],
+      chain: [card(3, '♥', 5)],
+      linked: true,
+      baseComboCount: 4,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['sanctify'], standardDeckComposition())
+    expect(next.combo).toBe(4)
+  })
+
+  test('祝福を持たなければコンボリセット時は通常通り0になる', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)],
+      tableau: [[card(2, '♣', 8)]],
+      chain: [card(3, '♥', 5)],
+      linked: true,
+      baseComboCount: 4,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
     expect(next.combo).toBe(0)
   })
 })
