@@ -34,5 +34,12 @@
       </div>
       <span class="text-slate-300 group-hover:text-teal-600 transition-colors">→</span>
     </a>
+    <a href="/admin/shidasu-talismans" class="flex items-center gap-3 px-4 py-4 hover:bg-slate-50 transition-colors group">
+      <div class="flex-1">
+        <p class="text-sm font-semibold text-slate-700 group-hover:text-teal-700">星詠みソリティア -Shidasu- 護符パラメータ設定</p>
+        <p class="text-xs text-slate-400 mt-0.5">護符ごとの名前・数値パラメータ・効果説明文プレビューを1行ずつ編集</p>
+      </div>
+      <span class="text-slate-300 group-hover:text-teal-600 transition-colors">→</span>
+    </a>
   </div>
 </div>
