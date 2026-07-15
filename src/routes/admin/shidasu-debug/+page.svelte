@@ -116,7 +116,7 @@
       const idx = wave.stock.length - 1
       const previousCard = wave.stock[idx]
       const newCard: Card = { id: previousCard.id, suit: source.suit, rank: source.rank, wild: source.wild }
-      wave = { ...wave, stock: wave.stock.map((c, i) => (i === idx ? newCard : c)) }
+      wave = { ...wave, stock: wave.stock.map((c, i) => (i === idx ? newCard : c)), lastGain: null }
       lastSwap = { location: 'stockTop', previousCard }
     } else {
       const { col, row } = target
@@ -127,6 +127,7 @@
       wave = {
         ...wave,
         tableau: wave.tableau.map((c, ci) => (ci === col ? c.map((cc, ri) => (ri === row ? newCard : cc)) : c)),
+        lastGain: null,
       }
       lastSwap = { location: { col, row }, previousCard }
     }
@@ -137,12 +138,13 @@
     const swap = lastSwap
     if (swap.location === 'stockTop') {
       const idx = wave.stock.length - 1
-      wave = { ...wave, stock: wave.stock.map((c, i) => (i === idx ? swap.previousCard : c)) }
+      wave = { ...wave, stock: wave.stock.map((c, i) => (i === idx ? swap.previousCard : c)), lastGain: null }
     } else {
       const { col, row } = swap.location
       wave = {
         ...wave,
         tableau: wave.tableau.map((c, ci) => (ci === col ? c.map((cc, ri) => (ri === row ? swap.previousCard : cc)) : c)),
+        lastGain: null,
       }
     }
     lastSwap = null
