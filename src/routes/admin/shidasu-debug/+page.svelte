@@ -144,6 +144,28 @@
     lastSwap = null
   }
 
+  function stairifyTableau() {
+    if (wave.tableau.length === 0 || wave.tableau[0].length === 0) return
+    // 列優先: 列0を手前(末尾)→奥(先頭)、次に列1を手前→奥…の順に走査する
+    const order: { ci: number; ri: number }[] = []
+    wave.tableau.forEach((col, ci) => {
+      for (let ri = col.length - 1; ri >= 0; ri--) order.push({ ci, ri })
+    })
+    const baseRank = wave.tableau[0][wave.tableau[0].length - 1].rank
+    const newRanks = new Map<string, Rank>()
+    order.forEach(({ ci, ri }, i) => {
+      const rank = (((baseRank - 1 + i) % 13) + 1) as Rank
+      newRanks.set(`${ci}-${ri}`, rank)
+    })
+    wave = {
+      ...wave,
+      tableau: wave.tableau.map((col, ci) => col.map((c, ri) => ({ ...c, rank: newRanks.get(`${ci}-${ri}`) as Rank }))),
+      lastGain: null,
+      lastBonusGains: [],
+    }
+    lastSwap = null
+  }
+
   function handleUndo() {
     if (!lastSwap) return
     const swap = lastSwap
@@ -248,6 +270,7 @@
   <div class="flex items-center justify-between mb-3">
     <h1 class="text-lg font-bold text-slate-800">Shidasu デバッグサンドボックス</h1>
     <div class="flex items-center gap-2">
+      <button type="button" onclick={stairifyTableau} class="px-3 py-1.5 rounded bg-indigo-600 text-white text-sm font-bold">場札を階段にする</button>
       <button type="button" onclick={handleUndo} disabled={!lastSwap} class="px-3 py-1.5 rounded text-sm font-bold {lastSwap ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-400'}">元に戻す</button>
       <button type="button" onclick={newWave} class="px-3 py-1.5 rounded bg-teal-600 text-white text-sm font-bold">新しいウェーブ</button>
     </div>
