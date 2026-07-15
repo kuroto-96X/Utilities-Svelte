@@ -183,7 +183,7 @@ export function playCard(
   const rows = params.layout.rows
   const sweepQualifies = columnJustEmptied && (
     items.includes('grace')
-      ? streakStartLength <= rows - params.items.columnSweepRelaxCards
+      ? streakStartLength <= rows - params.talismans.grace.m
       : streakStartLength === rows
   )
   const newColumnsEmptied = sweepQualifies ? wave.columnsEmptiedThisCombo + 1 : wave.columnsEmptiedThisCombo
@@ -1290,8 +1290,8 @@ export function itemDesc(id: ItemId, params: ShidasuParams): string {
   switch (id) {
     case 'bridge': return `階段・同スート・同色の成立に必要な枚数を${params.talismans.bridge.m}枚緩和(階段${params.scoring.stairMinLen}→${params.scoring.stairMinLen - params.talismans.bridge.m}枚、同スート・同色${params.scoring.suitColorMinLen}→${params.scoring.suitColorMinLen - params.talismans.bridge.m}枚)`
     case 'grace': {
-      const relaxed = params.layout.rows - params.items.columnSweepRelaxCards
-      return `列一掃ボーナスの条件を「列の全${params.layout.rows}枚を1コンボで空に」→「残り${relaxed}枚から1コンボで空に」に緩和`
+      const relaxed = params.layout.rows - params.talismans.grace.m
+      return `列一掃ボーナスに必要な枚数を${params.talismans.grace.m}枚緩和(列の全${params.layout.rows}枚を1コンボで空に→残り${relaxed}枚から1コンボで空に)`
     }
     case 'patience': return `全消しボーナスに残り山札枚数×${params.talismans.patience.x}点を加算`
     case 'purify': return `全消しボーナスに${params.talismans.purify.n}点を加算`

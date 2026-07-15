@@ -310,14 +310,26 @@ describe('playCard', () => {
     expect(next.lastGain?.parts.some(p => p.startsWith('列一掃'))).toBe(false)
   })
 
-  test('寛容の護符所持時: 列一掃の条件が「残りrows-columnSweepRelaxCards枚以下から1コンボで空に」に緩和される', () => {
+  test('寛容の護符所持時: 列一掃の条件が「残りrows-talismans.grace.m枚以下から1コンボで空に」に緩和される', () => {
     const wave = baseWave({
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
-      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows - DEFAULT_PARAMS.items.columnSweepRelaxCards, 1],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows - DEFAULT_PARAMS.talismans.grace.m, 1],
     })
     const next = playCard(DEFAULT_PARAMS, wave, 'none', ['grace'], 1000000, 0)
     expect(next.columnsEmptiedThisCombo).toBe(1)
     expect(next.lastGain?.parts).toContain(`列一掃+${scoring.columnSweepBonus}`)
+  })
+
+  test('寛容の護符: 列一掃ボーナスに必要な枚数がtalismans.grace.m枚緩和される', () => {
+    const items: ItemId[] = ['grace']
+    const relaxedLen = DEFAULT_PARAMS.layout.rows - DEFAULT_PARAMS.talismans.grace.m
+    const wave = baseWave({
+      foundation: card(0, '♠', 6),
+      tableau: [[card(1, '♣', 7)]],
+      comboStreakColumnLengths: [relaxedLen],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0)
+    expect(next.lastGain?.parts.some(p => p.startsWith('列一掃'))).toBe(true)
   })
 
   test('同じコンボ内で2列目を空にすると列一掃ボーナスが列数倍になる', () => {
@@ -1891,7 +1903,7 @@ describe('ITEM_POOL / itemName / itemDesc', () => {
     expect(itemDesc('bridge', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.scoring.stairMinLen))
     expect(itemDesc('bridge', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.items.stairRelaxedMinLen))
     expect(itemDesc('grace', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.layout.rows))
-    expect(itemDesc('grace', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.layout.rows - DEFAULT_PARAMS.items.columnSweepRelaxCards))
+    expect(itemDesc('grace', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.layout.rows - DEFAULT_PARAMS.talismans.grace.m))
   })
 
   test('新規追加した18個の護符も名前と説明文を持つ', () => {
