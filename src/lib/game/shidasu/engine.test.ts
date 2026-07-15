@@ -828,6 +828,19 @@ describe('playCard', () => {
     expect(next.pendingRoleEcho?.name).toBe('sameRank')
     expect(next.sameRankEchoUsedThisCombo).toContain(2)
   })
+
+  test('慈悲: playCardを通した実際のプレイでもmercyActiveNextComboの倍率が適用される', () => {
+    // applyItemEffectsを直接呼ぶ単体テストだけでなく、playCardのitemEffectCtx構築を経由する
+    // 統合経路でも慈悲が発動することを確認する(itemEffectCtxオブジェクトリテラルへの
+    // フィールド追加漏れは単体テストでは検知できないため)。
+    const wave = baseWave({
+      tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
+      mercyActiveNextCombo: true,
+    })
+    const withMercy = playCard(DEFAULT_PARAMS, wave, 'none', ['mercy'], 1000000, 0)
+    const without = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    expect(withMercy.score).toBeGreaterThan(without.score)
+  })
 })
 
 describe('chainContinuesPattern', () => {

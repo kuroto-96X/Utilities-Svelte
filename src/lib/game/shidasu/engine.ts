@@ -318,6 +318,7 @@ export function playCard(
     flushActiveThisCombo: newFlushActiveThisCombo,
     columnSweepActiveThisWave: newColumnSweepActiveThisWave,
     drawContinueCountThisChain: wave.drawContinueCountThisChain,
+    mercyActiveNextCombo: wave.mercyActiveNextCombo,
   }
 
   const comboMultiplierStep = params.scoring.comboMultiplierStep
@@ -486,6 +487,7 @@ export function drawStock(
         flushActiveThisCombo: naiveFlushActiveThisCombo,
         columnSweepActiveThisWave: wave.columnSweepActiveThisWave,
         drawContinueCountThisChain: newDrawContinueCount,
+        mercyActiveNextCombo: wave.mercyActiveNextCombo,
       }
       const comboMultiplierStep = params.scoring.comboMultiplierStep
       const multiplier = 1 + (effectiveCombo - 1) * comboMultiplierStep
