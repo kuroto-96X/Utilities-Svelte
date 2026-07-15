@@ -154,6 +154,12 @@ export function playCard(
   let base = params.scoring.basePoint
   const parts = [`基礎点+${base}`]
 
+  // 水鏡: 前のプレイで予約された役ボーナスの遅延複製を無条件で上乗せする
+  if (items.includes('mirror') && wave.pendingRoleEcho) {
+    base += wave.pendingRoleEcho.amount
+    parts.push(`水鏡(${wave.pendingRoleEcho.name})+${wave.pendingRoleEcho.amount}`)
+  }
+
   const effectiveStairMinLen = items.includes('bridge') ? params.items.stairRelaxedMinLen : params.scoring.stairMinLen
   // 明星: 役の種類ごとのウェーブ内累積成立回数(今回成立分は含まない)に応じて役ボーナス額を倍率適用する
   const roleBonusMultiplier = (name: RoleName): number => {
@@ -183,6 +189,30 @@ export function playCard(
     base += sweepGain
     parts.push(`列一掃+${sweepGain}`)
     roleFired.push({ name: 'columnSweep', usedWild: false, amount: sweepGain })
+  }
+
+  // 水鏡: 今回成立した役のうち、まだ今コンボで遅延複製を予約していないものを1つだけ、次のプレイへ予約する。
+  // 優先順位はroleFiredの出現順(flush→royalSet→sameRank→completeRun→columnSweepの判定順)。
+  let newPendingRoleEcho: WaveState['pendingRoleEcho'] = null
+  let newRoleEchoUsedThisCombo = wave.roleEchoUsedThisCombo
+  let newSameRankEchoUsedThisCombo = wave.sameRankEchoUsedThisCombo
+  if (items.includes('mirror')) {
+    for (const fired of roleFired) {
+      if (fired.name === 'sameRank') {
+        // sameRankは枚数段階(sameRankCount)ごとに個別カウントする必要があるため、
+        // evaluateChainBonus内部と同じ関数で再計算する(既存のエクスポート済みヘルパーを再利用)。
+        const sameRankCount = card.wild ? countSameRankForWildPlay(wave.chain) : countSameRankBefore(wave.chain, card.rank)
+        if (!wave.sameRankEchoUsedThisCombo.includes(sameRankCount)) {
+          newPendingRoleEcho = { name: 'sameRank', amount: fired.amount }
+          newSameRankEchoUsedThisCombo = [...wave.sameRankEchoUsedThisCombo, sameRankCount]
+          break
+        }
+      } else if (!wave.roleEchoUsedThisCombo[fired.name]) {
+        newPendingRoleEcho = { name: fired.name, amount: fired.amount }
+        newRoleEchoUsedThisCombo = { ...wave.roleEchoUsedThisCombo, [fired.name]: true }
+        break
+      }
+    }
   }
 
   // 護符は所持順(itemsの並び順)で解決するのが大原則。治癒(復活対象=一掃した列)と
@@ -338,6 +368,9 @@ export function playCard(
     columnSweepActiveThisWave: newColumnSweepActiveThisWave,
     baseComboCount: newBaseComboCount,
     roleOccurrenceCountThisWave: newRoleOccurrenceCountThisWave,
+    pendingRoleEcho: newPendingRoleEcho,
+    roleEchoUsedThisCombo: newRoleEchoUsedThisCombo,
+    sameRankEchoUsedThisCombo: newSameRankEchoUsedThisCombo,
   }
 
   if (remainingBeforeRevival === 0) {

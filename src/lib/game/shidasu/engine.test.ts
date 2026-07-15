@@ -781,6 +781,39 @@ describe('playCard', () => {
     const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
     expect(next.roleOccurrenceCountThisWave.flush).toBe(2)
   })
+
+  test('水鏡: 役が成立すると次のプレイへ同じ役ボーナスの複製が予約される', () => {
+    const wave = baseWave({
+      foundation: card(0, '♠', 5),
+      chain: [card(20, '♥', 3), card(21, '♦', 4), card(22, '♠', 5)],
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], 1000000, 0)
+    expect(next.pendingRoleEcho).not.toBeNull()
+    expect(next.pendingRoleEcho?.name).toBe('flush')
+    expect(next.roleEchoUsedThisCombo.flush).toBe(true)
+  })
+
+  test('水鏡: 予約された複製は次のプレイで無条件に上乗せされる', () => {
+    const wave = baseWave({
+      tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
+      pendingRoleEcho: { name: 'flush', amount: 999 },
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], 1000000, 0)
+    expect(next.score).toBeGreaterThanOrEqual(999)
+    expect(next.pendingRoleEcho).toBeNull()
+  })
+
+  test('水鏡: 同じ役はコンボ中1回しか予約されない', () => {
+    const wave = baseWave({
+      foundation: card(0, '♠', 5),
+      chain: [card(20, '♥', 3), card(21, '♦', 4), card(22, '♠', 5)],
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      roleEchoUsedThisCombo: { flush: true },
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], 1000000, 0)
+    expect(next.pendingRoleEcho).toBeNull()
+  })
 })
 
 describe('chainContinuesPattern', () => {
