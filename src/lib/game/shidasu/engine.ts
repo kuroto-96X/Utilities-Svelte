@@ -378,16 +378,17 @@ export function playCard(
     const rawClearBonus = params.scoring.clearBonus + wave.stock.length * params.scoring.clearBonusPerStock
     const clearBonus = Math.floor(applyItemEffects('clearBonus', rawClearBonus, items, itemEffectCtx, params).value)
     const scoreAfterClear = newScore + clearBonus
+    const lastGainWithClearBonus = { points: gained + clearBonus, parts: [...parts, `全消しボーナス+${clearBonus}`] }
 
     if (regenerationRevivedNow) {
       // 再配布そのものは上で(治癒より先に)実行済み。ここではコスト計算とスコア反映のみ行う。
       const cost = Math.floor(scoreAfterClear * params.talismans.regeneration.p / 100)
-      return { ...next, score: scoreAfterClear - cost, status: 'playing', endReason: null }
+      return { ...next, score: scoreAfterClear - cost, lastGain: lastGainWithClearBonus, status: 'playing', endReason: null }
     }
 
     if (remaining === 0) {
       // 治癒・再生いずれも介入しなかった(通常の全消し)
-      return { ...next, score: scoreAfterClear, status: 'ended', endReason: 'fullClear' }
+      return { ...next, score: scoreAfterClear, lastGain: lastGainWithClearBonus, status: 'ended', endReason: 'fullClear' }
     }
     // 治癒が介入して場が復活した場合は全消しにならず、全消しボーナスも付与しない。
     // 通常のプレイ続行として下のフローへ進む。

@@ -345,6 +345,18 @@ describe('playCard', () => {
     expect(next.score).toBe(scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus)
   })
 
+  test('全消し時、lastGainに全消しボーナスの内訳が含まれる', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)]],
+      stock: [card(9, '♠', 1), card(10, '♠', 2)],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0)
+    const expectedClearBonus = scoring.clearBonus + 2 * scoring.clearBonusPerStock
+    expect(next.lastGain?.parts).toContain(`全消しボーナス+${expectedClearBonus}`)
+    expect(next.lastGain?.points).toBe(scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus)
+  })
+
   test('スコアが目標に達したらendReason=targetでstatus=ended', () => {
     const wave = baseWave()
     const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 5, 0) // basePoint(100) >= target(5)
