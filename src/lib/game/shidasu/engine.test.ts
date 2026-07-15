@@ -814,6 +814,20 @@ describe('playCard', () => {
     const next = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], 1000000, 0)
     expect(next.pendingRoleEcho).toBeNull()
   })
+
+  test('水鏡: 同ランクは枚数段階(sameRankCount)ごとに個別予約できる(段階1使用済みでも段階2は予約可能)', () => {
+    const wave = baseWave({
+      foundation: card(0, '♠', 6),
+      chain: [card(10, '♠', 7), card(11, '♣', 7)], // 同ランク(7)が既に2枚チェーンに存在
+      tableau: [[card(1, '♦', 7)], [card(2, '♦', 2)]],
+      sameRankEchoUsedThisCombo: [1], // 段階1(sameRankCount=1)は既に使用済み
+    })
+    // 今回のプレイでsameRankCount=2が成立する(段階1とは別枠なので予約可能なはず)
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], 1000000, 0)
+    expect(next.pendingRoleEcho).not.toBeNull()
+    expect(next.pendingRoleEcho?.name).toBe('sameRank')
+    expect(next.sameRankEchoUsedThisCombo).toContain(2)
+  })
 })
 
 describe('chainContinuesPattern', () => {
