@@ -338,7 +338,8 @@ export function playCard(
     combo: newCombo,
     colorHeld: false,
   }
-  gained += applyDirectEffects('comboMilestoneDirect', items, milestoneCtx, params)
+  const milestoneResult = applyDirectEffects('comboMilestoneDirect', items, milestoneCtx, params)
+  gained += milestoneResult.value
 
   const newScore = wave.score + gained
 
@@ -423,6 +424,7 @@ export function drawStock(
   const patternContinues = wouldContinue || benevolenceFires
 
   let scoreAfterStockEmpty = wave.score
+  let stockEmptyResult: { value: number; parts: string[] } = { value: 0, parts: [] }
   if (newStock.length === 0) {
     const stockEmptyCtx: DirectEffectContext = {
       comboBeforeReset: 0,
@@ -432,7 +434,8 @@ export function drawStock(
       combo: wave.combo,
       colorHeld: false,
     }
-    scoreAfterStockEmpty += applyDirectEffects('stockEmptyDirect', items, stockEmptyCtx, params)
+    stockEmptyResult = applyDirectEffects('stockEmptyDirect', items, stockEmptyCtx, params)
+    scoreAfterStockEmpty += stockEmptyResult.value
   }
 
   if (patternContinues) {
@@ -448,7 +451,10 @@ export function drawStock(
     // 誠実(drawContinueDirect)はwouldContinue(実際のパターン継続)でのみ発火する。
     // benevolenceFiresによる継続扱いは「本来リセットするところの救済」であり、
     // パターン継続そのものの報酬である誠実の対象にはしない。
-    const directGain = wouldContinue ? applyDirectEffects('drawContinueDirect', items, drawContinueCtx, params) : 0
+    const drawContinueResult = wouldContinue
+      ? applyDirectEffects('drawContinueDirect', items, drawContinueCtx, params)
+      : { value: 0, parts: [] }
+    const directGain = drawContinueResult.value
     const newDrawContinueCount = wouldContinue ? wave.drawContinueCountThisChain + 1 : wave.drawContinueCountThisChain
 
     let naiveGained = 0
@@ -541,7 +547,8 @@ export function drawStock(
     combo: wave.combo,
     colorHeld: false,
   }
-  const resetDirectGain = applyDirectEffects('resetDirect', items, resetCtx, params)
+  const resetResult = applyDirectEffects('resetDirect', items, resetCtx, params)
+  const resetDirectGain = resetResult.value
 
   return {
     wave: {
@@ -1196,12 +1203,16 @@ export function applyDirectEffects(
   items: ItemId[],
   ctx: DirectEffectContext,
   params: ShidasuParams
-): number {
-  return items.reduce((total, id) => {
+): { value: number; parts: string[] } {
+  const parts: string[] = []
+  const value = items.reduce((total, id) => {
     const entry = DIRECT_EFFECTS[id]
     if (!entry || entry.channel !== channel) return total
-    return total + entry.effect(ctx, params)
+    const amount = entry.effect(ctx, params)
+    if (amount !== 0) parts.push(`${itemName(id, params)}+${amount}`)
+    return total + amount
   }, 0)
+  return { value, parts }
 }
 
 // rollItemOfferは重み付けなしの完全均等抽選(レアリティによる出現率差は未実装)。
