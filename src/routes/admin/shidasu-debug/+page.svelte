@@ -134,6 +134,16 @@
     }
   }
 
+  function unifySuit(suit: Suit) {
+    wave = {
+      ...wave,
+      tableau: wave.tableau.map(col => col.map(c => (c.wild ? c : { ...c, suit }))),
+      lastGain: null,
+      lastBonusGains: [],
+    }
+    lastSwap = null
+  }
+
   function handleUndo() {
     if (!lastSwap) return
     const swap = lastSwap
@@ -292,7 +302,7 @@
       </div>
     </div>
     <div class="space-y-4">
-      <CardPalette {cardFace} onCardPointerDown={onPaletteCardPointerDown} />
+      <CardPalette {cardFace} onCardPointerDown={onPaletteCardPointerDown} onUnifySuit={unifySuit} />
       <ItemChecklist {items} onToggle={handleToggleItem} />
     </div>
   </div>
