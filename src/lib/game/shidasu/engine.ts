@@ -315,6 +315,8 @@ export function playCard(
     remainingTableauCount: remaining,
     chainBonus: { ...chainResult, roleFired },
     isFirstPlayOfWave: !wave.firstPlayDone,
+    isPlayAction: true,
+    playCountInChain: wave.chainOrigin.filter(o => o === 'play').length + 1,
     effectiveStairMinLen,
     effectiveSuitColorMinLen,
     sameColumnStreak: newSameColumnStreak,
@@ -516,6 +518,8 @@ export function drawStock(
         remainingTableauCount: remainingCount(wave.tableau),
         chainBonus: chainResult,
         isFirstPlayOfWave: !wave.firstPlayDone,
+        isPlayAction: false,
+        playCountInChain: wave.chainOrigin.filter(o => o === 'play').length,
         effectiveStairMinLen,
         effectiveSuitColorMinLen,
         sameColumnStreak: wave.sameColumnStreak,
@@ -652,6 +656,10 @@ export interface ItemEffectContext {
   chainBonus: ChainBonusResult
   // このプレイがウェーブ開始後の最初のプレイかどうか(山札めくりでは変化しない)
   isFirstPlayOfWave: boolean
+  // 序章・幕間用: このスコアリングがプレイによるものか(true)、山札めくり(素朴)によるものか(false)
+  isPlayAction: boolean
+  // 序章・幕間用: このプレイを含めて、現在のチェーン内で何回目のプレイか
+  playCountInChain: number
   // 護符(架橋等)による緩和を反映した、現在有効な階段成立の最小連続枚数
   effectiveStairMinLen: number
   // 護符(架橋等)による緩和を反映した、現在有効な同スート・同色成立の最小枚数

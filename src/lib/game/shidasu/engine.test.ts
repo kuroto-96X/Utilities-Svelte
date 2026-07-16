@@ -961,6 +961,15 @@ describe('playCard', () => {
     const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0)
     expect(next.lastGain?.parts).toContain(`高潔+${DEFAULT_PARAMS.talismans.nobility.n}`)
   })
+
+  test('itemEffectCtxのplayCountInChainは、このプレイを含めたチェーン内のプレイ回数になる', () => {
+    // baseWave()の既定はchainOrigin未指定(空配列相当のmakeWave既定)。プレイ前は0回、
+    // このプレイで1回目になるはず。序章(プレイ1枚目でn点加算)を使って間接的に確認する。
+    const items: ItemId[] = ['prologue']
+    const wave = baseWave()
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0)
+    expect(next.lastGain?.parts).toContain(`序章+${DEFAULT_PARAMS.talismans.prologue.n}`)
+  })
 })
 
 describe('chainContinuesPattern', () => {
@@ -1630,6 +1639,8 @@ describe('applyItemEffects', () => {
       remainingTableauCount: 10,
       chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
+      isPlayAction: true,
+      playCountInChain: 1,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
@@ -2689,6 +2700,8 @@ describe('applyItemEffects (グループ4-a: 絵札条件系)', () => {
       remainingTableauCount: 10,
       chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
+      isPlayAction: true,
+      playCountInChain: 1,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
@@ -2748,6 +2761,8 @@ describe('applyItemEffects (グループ4-b: スート/色専有系)', () => {
       remainingTableauCount: 10,
       chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
+      isPlayAction: true,
+      playCountInChain: 1,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
@@ -2810,6 +2825,8 @@ describe('applyItemEffects (グループ4-c: 枚数カウント系)', () => {
       remainingTableauCount: 10,
       chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
+      isPlayAction: true,
+      playCountInChain: 1,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
@@ -2889,6 +2906,8 @@ describe('applyItemEffects (グループ4-d: 既存フラグ再利用・KAルー
       remainingTableauCount: 10,
       chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
+      isPlayAction: true,
+      playCountInChain: 1,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
@@ -2972,6 +2991,8 @@ describe('applyItemEffects (グループ5: 場札残数系)', () => {
       remainingTableauCount: 10,
       chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
+      isPlayAction: true,
+      playCountInChain: 1,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
@@ -3010,6 +3031,8 @@ describe('applyItemEffects (グループ6: 役・パターン成立状況系)', 
       remainingTableauCount: 10,
       chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
+      isPlayAction: true,
+      playCountInChain: 1,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
@@ -3106,6 +3129,8 @@ describe('applyItemEffects (グループ7: コンボ内位置系)', () => {
       remainingTableauCount: 10,
       chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
+      isPlayAction: true,
+      playCountInChain: 1,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
@@ -3124,6 +3149,15 @@ describe('applyItemEffects (グループ7: コンボ内位置系)', () => {
     expect(fired.value).toBe(100 + params.talismans.prologue.n)
     const notFired = applyItemEffects('gained', 100, ['prologue'], ctx({ combo: 2 }), params)
     expect(notFired.value).toBe(100)
+  })
+
+  test('ctxはisPlayAction・playCountInChainを受け付ける(型の確認)', () => {
+    const playCtx = ctx({ isPlayAction: true, playCountInChain: 3 })
+    expect(playCtx.isPlayAction).toBe(true)
+    expect(playCtx.playCountInChain).toBe(3)
+    const drawCtx = ctx({ isPlayAction: false, playCountInChain: 0 })
+    expect(drawCtx.isPlayAction).toBe(false)
+    expect(drawCtx.playCountInChain).toBe(0)
   })
 
   test('幕間: コンボがm枚目に達するたび加算', () => {
@@ -3154,6 +3188,8 @@ describe('applyItemEffects (グループ8: 無条件固定加算)', () => {
       remainingTableauCount: 10,
       chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
+      isPlayAction: true,
+      playCountInChain: 1,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
@@ -3282,6 +3318,8 @@ describe('applyItemEffects (グループ9: 列選択の連続性)', () => {
       remainingTableauCount: 10,
       chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
+      isPlayAction: true,
+      playCountInChain: 1,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
@@ -3322,6 +3360,8 @@ describe('applyItemEffects (グループ10: ウェーブ内累積state)', () => 
       remainingTableauCount: 10,
       chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
+      isPlayAction: true,
+      playCountInChain: 1,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
@@ -3358,6 +3398,8 @@ describe('applyItemEffects (グループ16: 持続効果)', () => {
       remainingTableauCount: 10,
       chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
+      isPlayAction: true,
+      playCountInChain: 1,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
@@ -3405,6 +3447,8 @@ describe('applyItemEffects (グループ12: 直感)', () => {
       remainingTableauCount: 10,
       chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
+      isPlayAction: true,
+      playCountInChain: 1,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
@@ -3438,6 +3482,8 @@ describe('applyItemEffects (グループ17: 刻限)', () => {
       remainingTableauCount: 10,
       chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
+      isPlayAction: true,
+      playCountInChain: 1,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
       sameColumnStreak: 1,
