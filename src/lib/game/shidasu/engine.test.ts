@@ -3026,15 +3026,39 @@ describe('applyItemEffects (グループ6: 役・パターン成立状況系)', 
     expect(notFired.value).toBe(100)
   })
 
-  test('瑠璃: 役ボーナスが2種類以上同時発生していれば倍算', () => {
+  test('瑠璃: 役ボーナス2種類以上の同時発生でも倍算(従来の役のみパターンでも成立)', () => {
     const chainBonus = {
       bonus: 0, parts: [], patternFired: false, patternFiredCount: 0,
       roleFired: [{ name: 'flush' as const, usedWild: false, amount: 0 }, { name: 'sameRank' as const, usedWild: false, amount: 0 }],
     }
     const fired = applyItemEffects('gained', 100, ['lapis'], ctx({ chainBonus }), params)
     expect(fired.value).toBe(100 * params.talismans.lapis.x)
+  })
+
+  test('瑠璃: 役ボーナス1種類のみでは発動しない', () => {
     const singleRole = { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [{ name: 'flush' as const, usedWild: false, amount: 0 }] }
     const notFired = applyItemEffects('gained', 100, ['lapis'], ctx({ chainBonus: singleRole }), params)
+    expect(notFired.value).toBe(100)
+  })
+
+  test('瑠璃: 役ボーナス1種類+パターンボーナス1種類の組み合わせでも倍算', () => {
+    const roleAndPattern = {
+      bonus: 0, parts: [], patternFired: true, patternFiredCount: 1,
+      roleFired: [{ name: 'flush' as const, usedWild: false, amount: 0 }],
+    }
+    const fired = applyItemEffects('gained', 100, ['lapis'], ctx({ chainBonus: roleAndPattern }), params)
+    expect(fired.value).toBe(100 * params.talismans.lapis.x)
+  })
+
+  test('瑠璃: パターンボーナス2種類(同スート+階段)の組み合わせのみでも倍算', () => {
+    const bothPatterns = { bonus: 0, parts: [], patternFired: true, patternFiredCount: 2, roleFired: [] }
+    const fired = applyItemEffects('gained', 100, ['lapis'], ctx({ chainBonus: bothPatterns }), params)
+    expect(fired.value).toBe(100 * params.talismans.lapis.x)
+  })
+
+  test('瑠璃: パターンボーナス1種類のみでは発動しない', () => {
+    const singlePattern = { bonus: 0, parts: [], patternFired: true, patternFiredCount: 1, roleFired: [] }
+    const notFired = applyItemEffects('gained', 100, ['lapis'], ctx({ chainBonus: singlePattern }), params)
     expect(notFired.value).toBe(100)
   })
 

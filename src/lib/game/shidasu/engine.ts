@@ -1066,7 +1066,8 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
   lapis: {
     channel: 'gained',
     effect: (v, ctx, p) => {
-      if (ctx.chainBonus.roleFired.length < 2) return { value: v, part: null }
+      const total = ctx.chainBonus.roleFired.length + ctx.chainBonus.patternFiredCount
+      if (total < 2) return { value: v, part: null }
       const factor = p.talismans.lapis.x
       return { value: v * factor, part: `瑠璃×${fmtMultiplier(factor)}` }
     },
@@ -1339,7 +1340,7 @@ export function itemDesc(id: ItemId, params: ShidasuParams): string {
     case 'crescent': return `場札の残り枚数が${params.talismans.crescent.m}枚以下のとき、獲得点を${params.talismans.crescent.x}倍`
     case 'blessing': return `役が成立したとき、獲得点を${params.talismans.blessing.x}倍`
     case 'focus': return `同ランクの役が含まれるとき、獲得点を${params.talismans.focus.x}倍`
-    case 'lapis': return `2種類以上の役ボーナスが同時に発生したとき、獲得点を${params.talismans.lapis.x}倍`
+    case 'lapis': return `役ボーナス・パターンボーナス(同スート/同色・階段)をあわせて2種類以上成立したとき、獲得点を${params.talismans.lapis.x}倍`
     case 'jade': return `役の成立にワイルドが使われたとき、${params.talismans.jade.n}点加算`
     case 'emptyMind': return `役・パターンがどちらも無いとき、獲得点を${params.talismans.emptyMind.x}倍`
     case 'prologue': return `コンボ1枚目のとき、${params.talismans.prologue.n}点加算`
