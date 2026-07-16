@@ -1108,7 +1108,9 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
   prologue: {
     channel: 'gained',
     effect: (v, ctx, p) =>
-      ctx.combo === 1 ? { value: v + p.talismans.prologue.n, part: `序章+${p.talismans.prologue.n}` } : { value: v, part: null },
+      ctx.isPlayAction && ctx.playCountInChain === 1
+        ? { value: v + p.talismans.prologue.n, part: `序章+${p.talismans.prologue.n}` }
+        : { value: v, part: null },
   },
   interlude: {
     channel: 'gained',
@@ -1369,7 +1371,7 @@ export function itemDesc(id: ItemId, params: ShidasuParams): string {
     case 'lapis': return `役ボーナス・パターンボーナス(同スート/同色・階段)をあわせて2種類以上成立したとき、獲得点を${params.talismans.lapis.x}倍`
     case 'jade': return `役の成立にワイルドが使われたとき、${params.talismans.jade.n}点加算`
     case 'emptyMind': return `役・パターンがどちらも無いとき、獲得点を${params.talismans.emptyMind.x}倍`
-    case 'prologue': return `コンボ1枚目のとき、${params.talismans.prologue.n}点加算`
+    case 'prologue': return `チェーン内でプレイ1枚目のとき、${params.talismans.prologue.n}点加算`
     case 'interlude': return `コンボが${params.talismans.interlude.m}枚目に達するたび、${params.talismans.interlude.n}点加算`
     case 'morningDew': return `ウェーブで最初にプレイしたカードのとき、${params.talismans.morningDew.n}点加算`
     case 'drizzle': return `場札を取るたび、${params.talismans.drizzle.n}点加算`

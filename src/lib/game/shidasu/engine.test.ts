@@ -3143,10 +3143,15 @@ describe('applyItemEffects (グループ7: コンボ内位置系)', () => {
     }
   }
 
-  test('序章: コンボ1枚目のみ加算', () => {
-    const fired = applyItemEffects('gained', 100, ['prologue'], ctx({ combo: 1 }), params)
+  test('序章: プレイでチェーン内1枚目の時のみ加算', () => {
+    const fired = applyItemEffects('gained', 100, ['prologue'], ctx({ playCountInChain: 1 }), params)
     expect(fired.value).toBe(100 + params.talismans.prologue.n)
-    const notFired = applyItemEffects('gained', 100, ['prologue'], ctx({ combo: 2 }), params)
+    const notFired = applyItemEffects('gained', 100, ['prologue'], ctx({ playCountInChain: 2 }), params)
+    expect(notFired.value).toBe(100)
+  })
+
+  test('序章: プレイでなければ(山札めくり)チェーン内1枚目相当でも加算しない', () => {
+    const notFired = applyItemEffects('gained', 100, ['prologue'], ctx({ isPlayAction: false, playCountInChain: 1 }), params)
     expect(notFired.value).toBe(100)
   })
 
@@ -3608,6 +3613,28 @@ describe('drawStock (素朴の得点ルール変更)', () => {
     const base = DEFAULT_PARAMS.scoring.basePoint + DEFAULT_PARAMS.scoring.suitBonus
     const expectedGained = Math.floor((base + DEFAULT_PARAMS.talismans.springBreeze.n) * multiplier)
     expect(next.lastGain?.points).toBe(expectedGained)
+  })
+
+  test('序章は山札めくり(素朴)の獲得点計算では発動しない(isPlayActionガード)', () => {
+    // combo:0にすることで、naive分岐が見るnaiveCtx.combo(=effectiveCombo=newCombo)が
+    // ちょうど1になる状況を作る。これは旧実装(ctx.combo===1で発動)なら誤って発動して
+    // しまう値である。また、chainOriginを['play', 'draw']にすることでplayCountInChain
+    // (=wave.chainOriginのうち'play'の数)もちょうど1にしている。つまりこの状況は
+    // 「プレイなら序章の発動条件をどちらの基準で見ても満たす」状況だが、実際には
+    // 山札めくり(素朴)でありisPlayAction===falseであるため、そのガードにより
+    // 発動しないことを確認する。
+    const items: ItemId[] = ['prologue', 'naive']
+    const wave = makeWave({
+      stock: [card(1, '♠', 9)], // 同スート継続(捲った後で実カード3枚)
+      combo: 0,
+      chain: [card(2, '♠', 4), card(3, '♠', 5)],
+      chainOrigin: ['play', 'draw'],
+      linked: true,
+      score: 0,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, standardDeckComposition())
+    expect(next.lastDrawEffect).toBe('pattern')
+    expect(next.lastGain?.parts.some(p => p.startsWith('序章'))).toBe(false)
   })
 })
 
