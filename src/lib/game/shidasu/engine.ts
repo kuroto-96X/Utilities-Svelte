@@ -518,13 +518,13 @@ export function drawStock(
         drawContinueCountThisChain: newDrawContinueCount,
         mercyActiveNextCombo: wave.mercyActiveNextCombo,
       }
+      const itemResult = applyItemEffects('gained', base, items, naiveCtx, params)
+      parts.push(...itemResult.parts)
+
       const comboMultiplierStep = params.scoring.comboMultiplierStep
       const multiplier = 1 + (effectiveCombo - 1) * comboMultiplierStep
       if (multiplier !== 1) parts.push(`コンボ倍率×${fmtMultiplier(multiplier)}`)
-      const rawGained = Math.floor(base * multiplier)
-      const itemResult = applyItemEffects('gained', rawGained, items, naiveCtx, params)
-      parts.push(...itemResult.parts)
-      naiveGained = Math.floor(itemResult.value)
+      naiveGained = Math.floor(itemResult.value * multiplier)
       naiveParts = parts
       naiveCombo = newCombo
     }

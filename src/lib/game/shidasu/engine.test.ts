@@ -3476,6 +3476,28 @@ describe('drawStock (素朴の得点ルール変更)', () => {
     const protectionThenEarth = drawStock(DEFAULT_PARAMS, wave, ['naive', 'protection', 'earth'], standardDeckComposition())
     expect(protectionThenEarth.wave.score).toBeGreaterThan(earthThenProtection.wave.score)
   })
+
+  test('素朴(naive)のスコアリングでも、コンボ倍率は護符のgained加算効果に最後に適用される', () => {
+    // 春風(springBreeze)は♣を取ったときn点の固定加算。同スート継続(♣×3、suitColorMinLen=3)でめくり、
+    // コンボ2→3(倍率1+2*step)の状態で発火させ、固定加算分にもコンボ倍率がかかっていることを
+    // 確認する(先にコンボ倍率だけ適用して後から加算する旧実装ではNG)。
+    // 同スート継続によりevaluateChainBonusのsuitBonus(+100)も基礎点に乗るため、
+    // 期待値はbasePoint+suitBonusを基準に計算する。
+    const items: ItemId[] = ['naive', 'springBreeze']
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)], // 同スート継続(捲った後で実カード3枚、♣)
+      combo: 2,
+      chain: [card(2, '♣', 4), card(3, '♣', 5)],
+      linked: true,
+      score: 0,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, standardDeckComposition())
+    expect(next.combo).toBe(3)
+    const multiplier = 1 + (3 - 1) * DEFAULT_PARAMS.scoring.comboMultiplierStep
+    const base = DEFAULT_PARAMS.scoring.basePoint + DEFAULT_PARAMS.scoring.suitBonus
+    const expectedGained = Math.floor((base + DEFAULT_PARAMS.talismans.springBreeze.n) * multiplier)
+    expect(next.lastGain?.points).toBe(expectedGained)
+  })
 })
 
 describe('約束・暗雲', () => {
