@@ -120,21 +120,21 @@
     },
     "twilight": {
       "name": "黄昏",
-      "c": 8,
-      "x": 2
+      "c": 10,
+      "x": 5
     },
     "cheerful": {
       "name": "快活",
-      "n": 50
+      "n": 100
     },
     "conscience": {
       "name": "良心",
-      "n": 50
+      "n": 100
     },
     "morningMist": {
       "name": "朝霧",
-      "c": 5,
-      "x": 3
+      "c": 6,
+      "x": 4
     },
     "calm": {
       "name": "平穏",
@@ -146,7 +146,7 @@
     },
     "destiny": {
       "name": "運命",
-      "n": 300
+      "n": 400
     },
     "fate": {
       "name": "宿命",
@@ -240,7 +240,7 @@
     "crescent": {
       "name": "三日月",
       "m": 10,
-      "x": 3
+      "x": 4
     },
     "blessing": {
       "name": "恩寵",
@@ -294,15 +294,15 @@
     },
     "gentleBreeze": {
       "name": "微風",
-      "n": 100
+      "n": 300
     },
     "resonance": {
       "name": "共鳴",
-      "x": 0.3
+      "x": 1
     },
     "azureSky": {
       "name": "蒼穹",
-      "x": 0.3
+      "x": 0.5
     },
     "amber": {
       "name": "琥珀",
@@ -389,7 +389,7 @@
     "mercy": {
       "name": "慈悲",
       "c": 3,
-      "x": 1.5
+      "x": 2
     },
     "mirror": {
       "name": "水鏡"
