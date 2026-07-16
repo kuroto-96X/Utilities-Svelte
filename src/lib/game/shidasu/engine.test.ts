@@ -3170,6 +3170,8 @@ describe('applyDirectEffects', () => {
       remainingTableauCount: 10,
       combo: 1,
       colorHeld: false,
+      previousCombo: 0,
+      scoreAfterGained: 0,
       ...overrides,
     }
   }
@@ -3225,6 +3227,12 @@ describe('applyDirectEffects', () => {
   test('gainedチャンネルの護符はdirectチャンネルには影響しない', () => {
     const result = applyDirectEffects('resetDirect', ['courage'], directCtx(), params)
     expect(result.value).toBe(0)
+  })
+
+  test('directCtxはpreviousCombo・scoreAfterGainedを受け付ける(型の確認)', () => {
+    const c = directCtx({ previousCombo: 5, scoreAfterGained: 1000 })
+    expect(c.previousCombo).toBe(5)
+    expect(c.scoreAfterGained).toBe(1000)
   })
 })
 
@@ -3601,6 +3609,8 @@ describe('applyDirectEffects', () => {
       remainingTableauCount: 0,
       combo: 0,
       colorHeld: false,
+      previousCombo: 0,
+      scoreAfterGained: 0,
     }
     const result = applyDirectEffects('resetDirect', ['composure'], ctx, DEFAULT_PARAMS)
     expect(result.value).toBe(DEFAULT_PARAMS.talismans.composure.n)
@@ -3615,6 +3625,8 @@ describe('applyDirectEffects', () => {
       remainingTableauCount: 0,
       combo: 0,
       colorHeld: false,
+      previousCombo: 0,
+      scoreAfterGained: 0,
     }
     const result = applyDirectEffects('resetDirect', ['composure', 'clarity'], ctx, DEFAULT_PARAMS)
     expect(result.value).toBe(0)
@@ -3629,6 +3641,8 @@ describe('applyDirectEffects', () => {
       remainingTableauCount: 0,
       combo: 0,
       colorHeld: false,
+      previousCombo: 0,
+      scoreAfterGained: 0,
     }
     const result = applyDirectEffects('resetDirect', ['composure', 'clarity'], ctx, DEFAULT_PARAMS)
     expect(result.value).toBe(DEFAULT_PARAMS.talismans.composure.n + DEFAULT_PARAMS.talismans.clarity.n)

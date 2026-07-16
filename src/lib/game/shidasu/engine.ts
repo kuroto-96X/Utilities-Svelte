@@ -334,6 +334,8 @@ export function playCard(
   if (multiplier !== 1) parts.push(`コンボ倍率×${fmtMultiplier(multiplier)}`)
   let gained = Math.floor(itemResult.value * multiplier)
 
+  const scoreAfterGained = wave.score + gained
+
   const milestoneCtx: DirectEffectContext = {
     comboBeforeReset: 0,
     hasPlayableColumns: true,
@@ -341,10 +343,12 @@ export function playCard(
     remainingTableauCount: remaining,
     combo: newCombo,
     colorHeld: false,
+    previousCombo: wave.combo,
+    scoreAfterGained,
   }
   const milestoneResult = applyDirectEffects('comboMilestoneDirect', items, milestoneCtx, params)
 
-  const newScore = wave.score + gained + milestoneResult.value
+  const newScore = scoreAfterGained + milestoneResult.value
 
   const bonusGains: BonusGain[] = []
   if (milestoneResult.parts.length > 0) {
@@ -452,6 +456,8 @@ export function drawStock(
       remainingTableauCount: remainingCount(wave.tableau),
       combo: wave.combo,
       colorHeld: false,
+      previousCombo: wave.combo,
+      scoreAfterGained: wave.score,
     }
     stockEmptyResult = applyDirectEffects('stockEmptyDirect', items, stockEmptyCtx, params)
     scoreAfterStockEmpty += stockEmptyResult.value
@@ -466,6 +472,8 @@ export function drawStock(
       remainingTableauCount: remainingCount(wave.tableau),
       combo: wave.combo,
       colorHeld: colorHeld && !suitHeld,
+      previousCombo: wave.combo,
+      scoreAfterGained: wave.score,
     }
     // 誠実(drawContinueDirect)はwouldContinue(実際のパターン継続)でのみ発火する。
     // benevolenceFiresによる継続扱いは「本来リセットするところの救済」であり、
@@ -574,6 +582,8 @@ export function drawStock(
     remainingTableauCount: remainingCount(wave.tableau),
     combo: wave.combo,
     colorHeld: false,
+    previousCombo: wave.combo,
+    scoreAfterGained: wave.score,
   }
   const resetResult = applyDirectEffects('resetDirect', items, resetCtx, params)
   const resetDirectGain = resetResult.value
@@ -1206,6 +1216,10 @@ export interface DirectEffectContext {
   remainingTableauCount: number
   combo: number
   colorHeld: boolean
+  // 流星用: このアクション直前のコンボ数(閾値をまたいで通過したかの判定に使う)
+  previousCombo: number
+  // 流星用: このアクションの通常獲得点(gained)を加算した後のスコア
+  scoreAfterGained: number
 }
 
 type DirectEffect = (ctx: DirectEffectContext, params: ShidasuParams) => number
