@@ -100,7 +100,7 @@ export interface ShidasuParams {
     clarity: { name: string; n: number }
     arrogance: { name: string; x: number }
     echo: { name: string; n: number }
-    shootingStar: { name: string; c: number; n: number }
+    shootingStar: { name: string; c: number; p: number }
     naive: { name: string }
     intuition: { name: string; x: number }
     sincerity: { name: string; n: number }
@@ -227,7 +227,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     clarity: { name: '冷静', n: 500 },
     arrogance: { name: '慢心', x: 50 },
     echo: { name: '残響', n: 200 },
-    shootingStar: { name: '流星', c: 10, n: 1000 },
+    shootingStar: { name: '流星', c: 10, p: 10 },
     naive: { name: '素朴' },
     intuition: { name: '直感', x: 0.3 },
     sincerity: { name: '誠実', n: 300 },

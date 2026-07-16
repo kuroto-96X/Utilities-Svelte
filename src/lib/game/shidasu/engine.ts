@@ -1243,7 +1243,11 @@ const DIRECT_EFFECTS: Partial<Record<ItemId, { channel: DirectChannel; effect: D
   },
   shootingStar: {
     channel: 'comboMilestoneDirect',
-    effect: (ctx, p) => (ctx.combo === p.talismans.shootingStar.c ? p.talismans.shootingStar.n : 0),
+    effect: (ctx, p) => {
+      const c = p.talismans.shootingStar.c
+      if (ctx.previousCombo >= c || ctx.combo < c) return 0
+      return Math.floor(ctx.scoreAfterGained * p.talismans.shootingStar.p / 100)
+    },
   },
   sincerity: {
     channel: 'drawContinueDirect',
@@ -1373,7 +1377,7 @@ export function itemDesc(id: ItemId, params: ShidasuParams): string {
     case 'clarity': return `コンボリセット時、そのチェーンで役が一つも成立していなければ直接${params.talismans.clarity.n}点加算`
     case 'arrogance': return `山札が無くなった時、場札の残り枚数×${params.talismans.arrogance.x}点を直接加算`
     case 'echo': return `コンボがリセットされる瞬間、リセット前のコンボ数×${params.talismans.echo.n}点を直接加算`
-    case 'shootingStar': return `コンボ数が${params.talismans.shootingStar.c}に到達した瞬間、直接${params.talismans.shootingStar.n}点加算`
+    case 'shootingStar': return `コンボ数が${params.talismans.shootingStar.c}に到達した瞬間、獲得点を加算した後の現在スコアの${params.talismans.shootingStar.p}%を直接加算`
     case 'naive': return `山札めくりがパターン継続だった場合、通常のプレイと同様に得点計算する(コンボ数も加算)`
     case 'intuition': return `(素朴と組み合わせて機能)現在のチェーン中に山札めくりでコンボ継続した回数×${params.talismans.intuition.x}分、獲得点を倍加`
     case 'sincerity': return `山札めくりで同色パターンによりコンボ継続した時、直接${params.talismans.sincerity.n}点加算`

@@ -377,22 +377,50 @@ describe('playCard', () => {
     expect(next.score).toBe(expectedPlayGain + expectedClearBonus)
   })
 
-  test('流星の護符でコンボが到達値になった瞬間、lastBonusGainsに直接加算が別枠で入る', () => {
+  test('流星の護符: コンボが閾値に到達した瞬間、獲得点加算後のスコアのp%がlastBonusGainsに別枠で入る', () => {
     const items: ItemId[] = ['shootingStar']
     const wave = baseWave({
+      score: 5000,
       combo: DEFAULT_PARAMS.talismans.shootingStar.c - 1,
       chain: [card(20, '♥', 3), card(21, '♦', 4)],
     })
     const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 100000000, 0)
     expect(next.combo).toBe(DEFAULT_PARAMS.talismans.shootingStar.c)
+    const scoreAfterGained = wave.score + (next.lastGain?.points ?? 0)
+    const expectedBonus = Math.floor(scoreAfterGained * DEFAULT_PARAMS.talismans.shootingStar.p / 100)
     expect(next.lastBonusGains).toHaveLength(1)
     expect(next.lastBonusGains[0].label).toBe('護符による直接加算')
-    expect(next.lastBonusGains[0].points).toBe(DEFAULT_PARAMS.talismans.shootingStar.n)
-    expect(next.lastBonusGains[0].parts).toContain(`流星+${DEFAULT_PARAMS.talismans.shootingStar.n}`)
+    expect(next.lastBonusGains[0].points).toBe(expectedBonus)
+    expect(next.lastBonusGains[0].parts).toContain(`流星+${expectedBonus}`)
     // 回帰防止: 流星の加算額がlastGainとlastBonusGainsの両方に二重計上されていないことを確認する。
-    // (lastGain.points + lastBonusGainsの合計) が実際のスコア増分と一致するはず。
     const bonusTotal = next.lastBonusGains.reduce((sum, g) => sum + g.points, 0)
     expect((next.lastGain?.points ?? 0) + bonusTotal).toBe(next.score - wave.score)
+  })
+
+  test('流星の護符: 黄金と併用しコンボが閾値をまたいでジャンプしても発動する', () => {
+    const items: ItemId[] = ['shootingStar', 'golden']
+    const c = DEFAULT_PARAMS.talismans.shootingStar.c
+    const wave = baseWave({
+      score: 5000,
+      combo: c - 1, // 黄金の+2適用でc+1へジャンプし、cをちょうど踏まない
+      chain: [card(20, '♥', 3), card(21, '♦', 4)],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 100000000, 0)
+    expect(next.combo).toBe(c + 1)
+    expect(next.lastBonusGains.some(g => g.parts.some(p => p.startsWith('流星')))).toBe(true)
+  })
+
+  test('流星の護符: 既に閾値以上の状態が続いている間は再発動しない', () => {
+    const items: ItemId[] = ['shootingStar']
+    const c = DEFAULT_PARAMS.talismans.shootingStar.c
+    const wave = baseWave({
+      score: 5000,
+      combo: c, // 既に閾値以上
+      chain: [card(20, '♥', 3), card(21, '♦', 4)],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 100000000, 0)
+    expect(next.combo).toBe(c + 1)
+    expect(next.lastBonusGains.some(g => g.parts.some(p => p.startsWith('流星')))).toBe(false)
   })
 
   test('スコアが目標に達したらendReason=targetでstatus=ended', () => {
@@ -603,20 +631,6 @@ describe('playCard', () => {
     })
     const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
     expect(next.roleFiredThisChain).toBe(true)
-  })
-
-  test('流星: コンボ数がcに到達した瞬間、直接点が加算される', () => {
-    const c = DEFAULT_PARAMS.talismans.shootingStar.c
-    const wave = baseWave({
-      combo: c - 1,
-      tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
-    })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['shootingStar'], 1000000, 0)
-    expect(next.combo).toBe(c)
-    // コンボ倍率(comboMultiplierStep)込みの通常獲得点 + 流星の直接加算点
-    const multiplier = 1 + (c - 1) * scoring.comboMultiplierStep
-    const expectedGained = Math.floor(scoring.basePoint * multiplier) + DEFAULT_PARAMS.talismans.shootingStar.n
-    expect(next.score).toBe(expectedGained)
   })
 
   test('playCardはrand引数を省略してもデフォルト(Math.random)で動作する(既存呼び出しの後方互換性)', () => {
@@ -1857,7 +1871,7 @@ describe('DEFAULT_PARAMS.talismans (グループ9〜16)', () => {
     expect(DEFAULT_PARAMS.talismans.arrogance.x).toBe(50)
     expect(DEFAULT_PARAMS.talismans.echo.n).toBe(200)
     expect(DEFAULT_PARAMS.talismans.shootingStar.c).toBe(10)
-    expect(DEFAULT_PARAMS.talismans.shootingStar.n).toBe(1000)
+    expect(DEFAULT_PARAMS.talismans.shootingStar.p).toBe(10)
     expect(DEFAULT_PARAMS.talismans.intuition.x).toBe(0.3)
     expect(DEFAULT_PARAMS.talismans.sincerity.n).toBe(300)
     expect(DEFAULT_PARAMS.talismans.darkClouds.r).toBe(1)
@@ -3210,11 +3224,31 @@ describe('applyDirectEffects', () => {
     expect(result.value).toBe(7 * params.talismans.arrogance.x)
   })
 
-  test('流星: comboMilestoneDirectでコンボ数がちょうどcの時のみ加算', () => {
-    const fired = applyDirectEffects('comboMilestoneDirect', ['shootingStar'], directCtx({ combo: params.talismans.shootingStar.c }), params)
-    expect(fired.value).toBe(params.talismans.shootingStar.n)
-    const notFired = applyDirectEffects('comboMilestoneDirect', ['shootingStar'], directCtx({ combo: params.talismans.shootingStar.c + 1 }), params)
-    expect(notFired.value).toBe(0)
+  test('流星: comboMilestoneDirectで閾値未満→以上に到達した時のみ、scoreAfterGainedのp%を加算', () => {
+    const c = params.talismans.shootingStar.c
+    const fired = applyDirectEffects(
+      'comboMilestoneDirect',
+      ['shootingStar'],
+      directCtx({ previousCombo: c - 1, combo: c, scoreAfterGained: 2000 }),
+      params
+    )
+    expect(fired.value).toBe(Math.floor(2000 * params.talismans.shootingStar.p / 100))
+    // 既に閾値以上だった場合は再発動しない
+    const notFiredAlreadyPast = applyDirectEffects(
+      'comboMilestoneDirect',
+      ['shootingStar'],
+      directCtx({ previousCombo: c, combo: c + 1, scoreAfterGained: 2000 }),
+      params
+    )
+    expect(notFiredAlreadyPast.value).toBe(0)
+    // まだ閾値未満の場合は発動しない
+    const notFiredBelow = applyDirectEffects(
+      'comboMilestoneDirect',
+      ['shootingStar'],
+      directCtx({ previousCombo: c - 2, combo: c - 1, scoreAfterGained: 2000 }),
+      params
+    )
+    expect(notFiredBelow.value).toBe(0)
   })
 
   test('誠実: drawContinueDirectで同色パターン継続の時のみ加算', () => {

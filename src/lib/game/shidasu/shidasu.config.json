@@ -327,7 +327,7 @@
     "shootingStar": {
       "name": "流星",
       "c": 10,
-      "n": 1000
+      "p": 10
     },
     "naive": {
       "name": "素朴"
