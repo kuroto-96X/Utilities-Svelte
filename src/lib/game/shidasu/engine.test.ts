@@ -1598,7 +1598,7 @@ describe('applyItemEffects', () => {
       stockRemaining: 0,
       chain: [card(2, '♣', 4), card(1, '♠', 5)],
       remainingTableauCount: 10,
-      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
@@ -2450,7 +2450,7 @@ describe('evaluateChainBonus', () => {
 
   test('コンボ1枚目(chainBefore空)はボーナス0', () => {
     const result = evaluateChainBonus(scoring, [], card(1, '♠', 5))
-    expect(result).toEqual({ bonus: 0, parts: [], patternFired: false, roleFired: [] })
+    expect(result).toEqual({ bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] })
   })
 
   test('実カード2枚(3枚未満)ではまだ同スートボーナスは付かない', () => {
@@ -2594,6 +2594,22 @@ describe('evaluateChainBonus', () => {
     const result = evaluateChainBonus(DEFAULT_PARAMS.scoring, chainBefore, card(21, '♠', 4), undefined, undefined, 2)
     expect(result.parts).toContain(`同スート+${DEFAULT_PARAMS.scoring.suitBonus}`)
   })
+
+  test('同スート・階段が同時成立すると、patternFiredCountが2になる', () => {
+    // 実カード3枚を同スート(♠)かつ連続ランク(3,4,5)にして、同スートと階段の両方を成立させる。
+    // stairMinLenを3に指定して3枚でも階段ボーナスが成立するようにする。
+    const chainBefore = [card(20, '♠', 3), card(21, '♠', 4)]
+    const result = evaluateChainBonus(DEFAULT_PARAMS.scoring, chainBefore, card(22, '♠', 5), 3)
+    expect(result.parts).toContain(`同スート+${DEFAULT_PARAMS.scoring.suitBonus}`)
+    expect(result.parts.some(p => p.startsWith('階段'))).toBe(true)
+    expect(result.patternFiredCount).toBe(2)
+  })
+
+  test('パターンボーナスが1種類も成立しなければpatternFiredCountは0', () => {
+    const chainBefore = [card(20, '♠', 3)]
+    const result = evaluateChainBonus(DEFAULT_PARAMS.scoring, chainBefore, card(21, '♦', 9))
+    expect(result.patternFiredCount).toBe(0)
+  })
 })
 
 describe('forceStockTop', () => {
@@ -2641,7 +2657,7 @@ describe('applyItemEffects (グループ4-a: 絵札条件系)', () => {
       stockRemaining: 0,
       chain: [card(2, '♣', 4), card(1, '♠', 5)],
       remainingTableauCount: 10,
-      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
@@ -2700,7 +2716,7 @@ describe('applyItemEffects (グループ4-b: スート/色専有系)', () => {
       stockRemaining: 0,
       chain: [card(2, '♣', 4), card(1, '♠', 5)],
       remainingTableauCount: 10,
-      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
@@ -2762,7 +2778,7 @@ describe('applyItemEffects (グループ4-c: 枚数カウント系)', () => {
       stockRemaining: 0,
       chain: [card(2, '♣', 4), card(1, '♠', 5)],
       remainingTableauCount: 10,
-      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
@@ -2841,7 +2857,7 @@ describe('applyItemEffects (グループ4-d: 既存フラグ再利用・KAルー
       stockRemaining: 0,
       chain: [card(2, '♣', 4), card(1, '♠', 5)],
       remainingTableauCount: 10,
-      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
@@ -2895,7 +2911,7 @@ describe('applyItemEffects (グループ4-d: 既存フラグ再利用・KAルー
   })
 
   const kaLoopChain: Card[] = [8, 9, 10, 11, 12, 13, 1, 2, 3, 4, 5, 6, 7].map((r, i) => card(i + 1, '♠', r as Card['rank']))
-  const completeRunRoleFired = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'completeRun' as const, usedWild: false, amount: 0 }] }
+  const completeRunRoleFired = { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [{ name: 'completeRun' as const, usedWild: false, amount: 0 }] }
 
   test('輪廻: コンプリートラン成立かつ階段成立かつK↔Aループを跨ぐ場合に倍算', () => {
     const fired = applyItemEffects('gained', 100, ['reincarnation'], ctx({ chain: kaLoopChain, chainBonus: completeRunRoleFired }), params)
@@ -2924,7 +2940,7 @@ describe('applyItemEffects (グループ5: 場札残数系)', () => {
       stockRemaining: 0,
       chain: [card(2, '♣', 4), card(1, '♠', 5)],
       remainingTableauCount: 10,
-      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
@@ -2962,7 +2978,7 @@ describe('applyItemEffects (グループ6: 役・パターン成立状況系)', 
       stockRemaining: 0,
       chain: [card(2, '♣', 4), card(1, '♠', 5)],
       remainingTableauCount: 10,
-      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
@@ -2978,7 +2994,7 @@ describe('applyItemEffects (グループ6: 役・パターン成立状況系)', 
   }
 
   test('恩寵: いずれかの役ボーナスが成立していれば倍算', () => {
-    const chainBonus = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: false, amount: 0 }] }
+    const chainBonus = { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [{ name: 'flush' as const, usedWild: false, amount: 0 }] }
     const fired = applyItemEffects('gained', 100, ['blessing'], ctx({ chainBonus }), params)
     expect(fired.value).toBe(100 * params.talismans.blessing.x)
     const notFired = applyItemEffects('gained', 100, ['blessing'], ctx(), params)
@@ -2986,31 +3002,31 @@ describe('applyItemEffects (グループ6: 役・パターン成立状況系)', 
   })
 
   test('集中: 同ランクによる役が含まれていれば倍算', () => {
-    const chainBonus = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'sameRank' as const, usedWild: false, amount: 0 }] }
+    const chainBonus = { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [{ name: 'sameRank' as const, usedWild: false, amount: 0 }] }
     const fired = applyItemEffects('gained', 100, ['focus'], ctx({ chainBonus }), params)
     expect(fired.value).toBe(100 * params.talismans.focus.x)
-    const otherRole = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: false, amount: 0 }] }
+    const otherRole = { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [{ name: 'flush' as const, usedWild: false, amount: 0 }] }
     const notFired = applyItemEffects('gained', 100, ['focus'], ctx({ chainBonus: otherRole }), params)
     expect(notFired.value).toBe(100)
   })
 
   test('瑠璃: 役ボーナスが2種類以上同時発生していれば倍算', () => {
     const chainBonus = {
-      bonus: 0, parts: [], patternFired: false,
+      bonus: 0, parts: [], patternFired: false, patternFiredCount: 0,
       roleFired: [{ name: 'flush' as const, usedWild: false, amount: 0 }, { name: 'sameRank' as const, usedWild: false, amount: 0 }],
     }
     const fired = applyItemEffects('gained', 100, ['lapis'], ctx({ chainBonus }), params)
     expect(fired.value).toBe(100 * params.talismans.lapis.x)
-    const singleRole = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: false, amount: 0 }] }
+    const singleRole = { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [{ name: 'flush' as const, usedWild: false, amount: 0 }] }
     const notFired = applyItemEffects('gained', 100, ['lapis'], ctx({ chainBonus: singleRole }), params)
     expect(notFired.value).toBe(100)
   })
 
   test('翡翠: 役の成立にワイルドが使われていれば加算', () => {
-    const chainBonus = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: true, amount: 0 }] }
+    const chainBonus = { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [{ name: 'flush' as const, usedWild: true, amount: 0 }] }
     const fired = applyItemEffects('gained', 100, ['jade'], ctx({ chainBonus }), params)
     expect(fired.value).toBe(100 + params.talismans.jade.n)
-    const withoutWild = { bonus: 0, parts: [], patternFired: false, roleFired: [{ name: 'flush' as const, usedWild: false, amount: 0 }] }
+    const withoutWild = { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [{ name: 'flush' as const, usedWild: false, amount: 0 }] }
     const notFired = applyItemEffects('gained', 100, ['jade'], ctx({ chainBonus: withoutWild }), params)
     expect(notFired.value).toBe(100)
   })
@@ -3018,7 +3034,7 @@ describe('applyItemEffects (グループ6: 役・パターン成立状況系)', 
   test('無心: 役もパターンも無ければ倍算', () => {
     const fired = applyItemEffects('gained', 100, ['emptyMind'], ctx(), params)
     expect(fired.value).toBe(100 * params.talismans.emptyMind.x)
-    const withPattern = { bonus: 0, parts: [], patternFired: true, roleFired: [] }
+    const withPattern = { bonus: 0, parts: [], patternFired: true, patternFiredCount: 1, roleFired: [] }
     const notFired = applyItemEffects('gained', 100, ['emptyMind'], ctx({ chainBonus: withPattern }), params)
     expect(notFired.value).toBe(100)
   })
@@ -3034,7 +3050,7 @@ describe('applyItemEffects (グループ7: コンボ内位置系)', () => {
       stockRemaining: 0,
       chain: [card(2, '♣', 4), card(1, '♠', 5)],
       remainingTableauCount: 10,
-      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
@@ -3082,7 +3098,7 @@ describe('applyItemEffects (グループ8: 無条件固定加算)', () => {
       stockRemaining: 0,
       chain: [card(2, '♣', 4), card(1, '♠', 5)],
       remainingTableauCount: 10,
-      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
@@ -3182,7 +3198,7 @@ describe('applyItemEffects (グループ9: 列選択の連続性)', () => {
       stockRemaining: 0,
       chain: [card(2, '♣', 4), card(1, '♠', 5)],
       remainingTableauCount: 10,
-      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
@@ -3222,7 +3238,7 @@ describe('applyItemEffects (グループ10: ウェーブ内累積state)', () => 
       stockRemaining: 0,
       chain: [card(2, '♣', 4), card(1, '♠', 5)],
       remainingTableauCount: 10,
-      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
@@ -3258,7 +3274,7 @@ describe('applyItemEffects (グループ16: 持続効果)', () => {
       stockRemaining: 0,
       chain: [card(2, '♣', 4), card(1, '♠', 5)],
       remainingTableauCount: 10,
-      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
@@ -3305,7 +3321,7 @@ describe('applyItemEffects (グループ12: 直感)', () => {
       stockRemaining: 0,
       chain: [card(2, '♣', 4), card(1, '♠', 5)],
       remainingTableauCount: 10,
-      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,
@@ -3338,7 +3354,7 @@ describe('applyItemEffects (グループ17: 刻限)', () => {
       stockRemaining: 0,
       chain: [card(2, '♣', 4), card(1, '♠', 5)],
       remainingTableauCount: 10,
-      chainBonus: { bonus: 0, parts: [], patternFired: false, roleFired: [] },
+      chainBonus: { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] },
       isFirstPlayOfWave: false,
       effectiveStairMinLen: params.scoring.stairMinLen,
       effectiveSuitColorMinLen: params.scoring.suitColorMinLen,

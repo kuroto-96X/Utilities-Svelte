@@ -1694,6 +1694,8 @@ export interface ChainBonusResult {
   parts: string[]
   // 同スート/同色/階段のいずれかの「パターンボーナス」が成立したか
   patternFired: boolean
+  // 成立したパターンボーナスの種類数(同スート/同色のいずれかで+1、階段でさらに+1。最大2)。瑠璃が参照する。
+  patternFiredCount: number
   // 成立した「役ボーナス」の一覧。usedWildの意味はrole名によって異なる:
   // flush/royalSet/completeRunは「実カードだけでは成立せずワイルドの穴埋めが必須だったか」(必要性ベース)。
   // sameRankは同ランクボーナスの加点量自体がワイルド枚数を無条件に含むため、
@@ -1712,12 +1714,13 @@ export function evaluateChainBonus(
   suitColorMinLen: number = scoring.suitColorMinLen
 ): ChainBonusResult {
   if (chainBefore.length === 0) {
-    return { bonus: 0, parts: [], patternFired: false, roleFired: [] }
+    return { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] }
   }
 
   let bonus = 0
   const parts: string[] = []
   let patternFired = false
+  let patternFiredCount = 0
   const roleFired: { name: RoleName; usedWild: boolean; amount: number }[] = []
 
   const chainIncludingThis = [...chainBefore, card]
@@ -1728,10 +1731,12 @@ export function evaluateChainBonus(
       bonus += scoring.suitBonus
       parts.push(`同スート+${scoring.suitBonus}`)
       patternFired = true
+      patternFiredCount += 1
     } else if (colorHeld) {
       bonus += scoring.colorBonus
       parts.push(`同色+${scoring.colorBonus}`)
       patternFired = true
+      patternFiredCount += 1
     }
   }
 
@@ -1740,6 +1745,7 @@ export function evaluateChainBonus(
     bonus += scoring.stairBonus
     parts.push(`階段${stairInfo.len} +${scoring.stairBonus}`)
     patternFired = true
+    patternFiredCount += 1
   }
 
   if (checkFlush(chainIncludingThis)) {
@@ -1791,7 +1797,7 @@ export function evaluateChainBonus(
     roleFired.push({ name: 'completeRun', usedWild: completeRunUsedWild, amount: completeRunTotalGain })
   }
 
-  return { bonus, parts, patternFired, roleFired }
+  return { bonus, parts, patternFired, patternFiredCount, roleFired }
 }
 
 export function chainContinuesPattern(
