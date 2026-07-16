@@ -1115,7 +1115,7 @@ const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; e
   interlude: {
     channel: 'gained',
     effect: (v, ctx, p) =>
-      ctx.combo % p.talismans.interlude.m === 0
+      ctx.isPlayAction && ctx.playCountInChain === p.talismans.interlude.m
         ? { value: v + p.talismans.interlude.n, part: `幕間+${p.talismans.interlude.n}` }
         : { value: v, part: null },
   },
@@ -1372,7 +1372,7 @@ export function itemDesc(id: ItemId, params: ShidasuParams): string {
     case 'jade': return `役の成立にワイルドが使われたとき、${params.talismans.jade.n}点加算`
     case 'emptyMind': return `役・パターンがどちらも無いとき、獲得点を${params.talismans.emptyMind.x}倍`
     case 'prologue': return `チェーン内でプレイ1枚目のとき、${params.talismans.prologue.n}点加算`
-    case 'interlude': return `コンボが${params.talismans.interlude.m}枚目に達するたび、${params.talismans.interlude.n}点加算`
+    case 'interlude': return `チェーン内でプレイちょうど${params.talismans.interlude.m}枚目のとき、${params.talismans.interlude.n}点加算`
     case 'morningDew': return `ウェーブで最初にプレイしたカードのとき、${params.talismans.morningDew.n}点加算`
     case 'drizzle': return `場札を取るたび、${params.talismans.drizzle.n}点加算`
     case 'eternity': return `ウェーブ開始時、山札にワイルドを1枚追加(以後のウェーブにも引き継がれる)`

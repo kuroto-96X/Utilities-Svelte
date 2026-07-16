@@ -3164,11 +3164,17 @@ describe('applyItemEffects (グループ7: コンボ内位置系)', () => {
     expect(drawCtx.playCountInChain).toBe(0)
   })
 
-  test('幕間: コンボがm枚目に達するたび加算', () => {
+  test('幕間: プレイでチェーン内ちょうどm枚目の時のみ加算', () => {
     const m = params.talismans.interlude.m
-    const fired = applyItemEffects('gained', 100, ['interlude'], ctx({ combo: m * 2 }), params)
+    const fired = applyItemEffects('gained', 100, ['interlude'], ctx({ playCountInChain: m }), params)
     expect(fired.value).toBe(100 + params.talismans.interlude.n)
-    const notFired = applyItemEffects('gained', 100, ['interlude'], ctx({ combo: m + 1 }), params)
+    const notFired = applyItemEffects('gained', 100, ['interlude'], ctx({ playCountInChain: m * 2 }), params)
+    expect(notFired.value).toBe(100)
+  })
+
+  test('幕間: プレイでなければ(山札めくり)m枚目相当でも加算しない', () => {
+    const m = params.talismans.interlude.m
+    const notFired = applyItemEffects('gained', 100, ['interlude'], ctx({ isPlayAction: false, playCountInChain: m }), params)
     expect(notFired.value).toBe(100)
   })
 
@@ -3635,6 +3641,25 @@ describe('drawStock (素朴の得点ルール変更)', () => {
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, standardDeckComposition())
     expect(next.lastDrawEffect).toBe('pattern')
     expect(next.lastGain?.parts.some(p => p.startsWith('序章'))).toBe(false)
+  })
+
+  test('幕間は山札めくり(素朴)の獲得点計算では発動しない(isPlayActionガード)', () => {
+    // combo:m-1にすることで、naive分岐が見るnaiveCtx.combo(=effectiveCombo=newCombo)が
+    // ちょうどmになる状況を作る。これは旧実装(ctx.combo % m === 0で発動)なら誤って発動して
+    // しまう値である。実際には山札めくり(素朴)でありisPlayAction===falseであるため、
+    // 新実装のガードにより発動しないことを確認する。
+    const m = DEFAULT_PARAMS.talismans.interlude.m
+    const items: ItemId[] = ['interlude', 'naive']
+    const wave = makeWave({
+      stock: [card(1, '♠', 9)], // 同スート継続(捲った後で実カード3枚)
+      combo: m - 1,
+      chain: [card(2, '♠', 4), card(3, '♠', 5)],
+      linked: true,
+      score: 0,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, standardDeckComposition())
+    expect(next.lastDrawEffect).toBe('pattern')
+    expect(next.lastGain?.parts.some(p => p.startsWith('幕間'))).toBe(false)
   })
 })
 
