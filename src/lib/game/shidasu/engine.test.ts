@@ -3644,16 +3644,20 @@ describe('drawStock (素朴の得点ルール変更)', () => {
   })
 
   test('幕間は山札めくり(素朴)の獲得点計算では発動しない(isPlayActionガード)', () => {
-    // combo:m-1にすることで、naive分岐が見るnaiveCtx.combo(=effectiveCombo=newCombo)が
-    // ちょうどmになる状況を作る。これは旧実装(ctx.combo % m === 0で発動)なら誤って発動して
-    // しまう値である。実際には山札めくり(素朴)でありisPlayAction===falseであるため、
-    // 新実装のガードにより発動しないことを確認する。
+    // chainOriginに'play'をm個並べておくことで、naive分岐が見るnaiveCtx.playCountInChain
+    // (=wave.chainOriginのうち'play'の数、素朴では+1されない)がちょうどmになる状況を作る。
+    // これは新実装の判定式(ctx.isPlayAction && ctx.playCountInChain === m)のうち、
+    // playCountInChain === mの側だけを見れば誤って発動してしまう境界値である。
+    // 実際には山札めくり(素朴)でありisPlayAction===falseであるため、
+    // isPlayActionガードのみがここでの不発火を防いでいることを確認する
+    // (ガードを外すとこのテストはFAILすることを確認済み)。
     const m = DEFAULT_PARAMS.talismans.interlude.m
     const items: ItemId[] = ['interlude', 'naive']
     const wave = makeWave({
       stock: [card(1, '♠', 9)], // 同スート継続(捲った後で実カード3枚)
-      combo: m - 1,
+      combo: 0,
       chain: [card(2, '♠', 4), card(3, '♠', 5)],
+      chainOrigin: [...Array(m).fill('play' as const), 'draw'],
       linked: true,
       score: 0,
     })
