@@ -962,14 +962,13 @@ describe('playCard', () => {
     expect(next.lastGain?.parts).toContain(`高潔+${DEFAULT_PARAMS.talismans.nobility.n}`)
   })
 
-  test('itemEffectCtxのplayCountInChainは、このプレイを含めたチェーン内のプレイ回数になる', () => {
-    // baseWave()の既定はchainOrigin未指定(空配列相当のmakeWave既定)。プレイ前は0回、
-    // このプレイで1回目になるはず。序章(プレイ1枚目でn点加算)を使って間接的に確認する。
-    const items: ItemId[] = ['prologue']
-    const wave = baseWave()
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0)
-    expect(next.lastGain?.parts).toContain(`序章+${DEFAULT_PARAMS.talismans.prologue.n}`)
-  })
+  // playCard/drawStockのitemEffectCtx.playCountInChain計算式そのものを外部から観測して
+  // 検証するテストは、現時点(このタスクの範囲)では書けない。消費側の護符(序章・幕間)が
+  // まだctx.comboのみを見ておりisPlayAction/playCountInChainを読んでいないため、計算式が
+  // 正しくても壊れていてもlastGain等の出力は変化しない。フィールドの型・配線の確認は
+  // 上のdescribe('applyItemEffects (グループ7: コンボ内位置系)')内のctx()往復テストで行う。
+  // 計算式自体の実質的な検証は、Task 8/9で序章・幕間がこれらのフィールドを消費するように
+  // なった時点で、その挙動テストが担うことになる。
 })
 
 describe('chainContinuesPattern', () => {
