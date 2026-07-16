@@ -326,13 +326,13 @@ export function playCard(
     mercyActiveNextCombo: wave.mercyActiveNextCombo,
   }
 
+  const itemResult = applyItemEffects('gained', base, items, itemEffectCtx, params)
+  parts.push(...itemResult.parts)
+
   const comboMultiplierStep = params.scoring.comboMultiplierStep
   const multiplier = 1 + (effectiveCombo - 1) * comboMultiplierStep
   if (multiplier !== 1) parts.push(`コンボ倍率×${fmtMultiplier(multiplier)}`)
-  const rawGained = Math.floor(base * multiplier)
-  const itemResult = applyItemEffects('gained', rawGained, items, itemEffectCtx, params)
-  parts.push(...itemResult.parts)
-  let gained = Math.floor(itemResult.value)
+  let gained = Math.floor(itemResult.value * multiplier)
 
   const milestoneCtx: DirectEffectContext = {
     comboBeforeReset: 0,

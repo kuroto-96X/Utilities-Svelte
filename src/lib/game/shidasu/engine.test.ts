@@ -504,6 +504,22 @@ describe('playCard', () => {
     expect(next.score).toBe(scoring.basePoint + DEFAULT_PARAMS.talismans.springBreeze.n)
   })
 
+  test('コンボ倍率は護符のgained加算効果にも適用される(最後に一括適用)', () => {
+    // 春風(springBreeze)は♣を取ったときn点の固定加算。コンボ2→3(倍率1+2*step)の状態でプレイし、
+    // 固定加算分にもコンボ倍率がかかっていることを確認する(先にコンボ倍率だけ適用して後から加算する旧実装ではNG)。
+    const items: ItemId[] = ['springBreeze']
+    const wave = baseWave({
+      foundation: card(0, '♠', 5),
+      combo: 2,
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+    })
+    const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0)
+    expect(next.combo).toBe(3)
+    const multiplier = 1 + (3 - 1) * scoring.comboMultiplierStep
+    const expectedGained = Math.floor((scoring.basePoint + DEFAULT_PARAMS.talismans.springBreeze.n) * multiplier)
+    expect(next.lastGain?.points).toBe(expectedGained)
+  })
+
   test('clearBonusチャンネルの護符(purify)は全消し時のみclearBonusに加算される', () => {
     const wave = baseWave({
       tableau: [[card(1, '♣', 6)]],
