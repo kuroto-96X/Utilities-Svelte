@@ -1,9 +1,8 @@
 <script lang="ts">
-  import type { Snippet } from 'svelte'
-  import type { Card, Suit, Rank } from '$lib/game/shidasu/types'
+  import type { Suit, Rank } from '$lib/game/shidasu/types'
+  import CardFace from '../../game/shidasu/CardFace.svelte'
 
-  let { cardFace, onCardPointerDown, onUnifySuit }: {
-    cardFace: Snippet<[card: Card, covered: boolean]>
+  let { onCardPointerDown, onUnifySuit }: {
     onCardPointerDown: (source: { suit: Suit; rank: Rank; wild: boolean }, e: PointerEvent) => void
     onUnifySuit: (suit: Suit) => void
   } = $props()
@@ -34,7 +33,7 @@
           onpointerdown={(e) => onCardPointerDown({ suit, rank, wild: false }, e)}
           class="cursor-grab active:cursor-grabbing touch-none"
         >
-          {@render cardFace({ id: -1, suit, rank, wild: false }, false)}
+          <CardFace card={{ id: -1, suit, rank, wild: false }} covered={false} />
         </div>
       {/each}
     {/each}
@@ -44,7 +43,7 @@
       onpointerdown={(e) => onCardPointerDown({ suit: '★', rank: 0, wild: true }, e)}
       class="cursor-grab active:cursor-grabbing touch-none"
     >
-      {@render cardFace({ id: -1, suit: '★', rank: 0, wild: true }, false)}
+      <CardFace card={{ id: -1, suit: '★', rank: 0, wild: true }} covered={false} />
     </div>
   </div>
 </div>

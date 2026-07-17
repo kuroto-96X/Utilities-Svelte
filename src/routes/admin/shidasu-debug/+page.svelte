@@ -330,7 +330,7 @@
       </div>
     </div>
     <div class="space-y-4">
-      <CardPalette {cardFace} onCardPointerDown={onPaletteCardPointerDown} onUnifySuit={unifySuit} />
+      <CardPalette onCardPointerDown={onPaletteCardPointerDown} onUnifySuit={unifySuit} />
       <ItemChecklist {items} onToggle={handleToggleItem} onSetAll={handleSetAllItems} />
     </div>
   </div>
