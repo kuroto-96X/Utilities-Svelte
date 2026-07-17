@@ -12,8 +12,20 @@
 
   const params = loadParams()
   const TARGET = Number.MAX_SAFE_INTEGER
+  const ITEMS_STORAGE_KEY = 'shidasu-debug-items'
 
-  let items = $state<ItemId[]>([])
+  function loadSavedItems(): ItemId[] {
+    try {
+      const saved = localStorage.getItem(ITEMS_STORAGE_KEY)
+      if (!saved) return []
+      const parsed = JSON.parse(saved)
+      return Array.isArray(parsed) ? (parsed as ItemId[]) : []
+    } catch {
+      return []
+    }
+  }
+
+  let items = $state<ItemId[]>(loadSavedItems())
   let deckComposition = $state<DeckCard[]>(standardDeckComposition())
   let wave = $state<WaveState>(startWave(params, 0, 0, items, deckComposition).wave)
   let lastSnapshot = $state<{ tableau: Card[][]; stock: Card[] } | null>(null)
@@ -164,6 +176,10 @@
     wave = { ...wave, tableau: lastSnapshot.tableau, stock: lastSnapshot.stock, lastGain: null, lastBonusGains: [] }
     lastSnapshot = null
   }
+
+  $effect(() => {
+    try { localStorage.setItem(ITEMS_STORAGE_KEY, JSON.stringify(items)) } catch {}
+  })
 
   onMount(() => {
     function onPointerMove(e: PointerEvent) {
