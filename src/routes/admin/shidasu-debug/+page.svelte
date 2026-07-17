@@ -37,6 +37,10 @@
     lastSnapshot = null
   }
 
+  function resetDeck() {
+    deckComposition = standardDeckComposition()
+  }
+
   function handlePlayCard(colIndex: number) {
     wave = playCard(params, wave, 'none', items, TARGET, colIndex)
     lastSnapshot = null
@@ -198,6 +202,7 @@
       <button type="button" onclick={stairifyTableau} class="px-3 py-1.5 rounded bg-indigo-600 text-white text-sm font-bold">場札を階段にする</button>
       <button type="button" onclick={handleUndo} disabled={!lastSnapshot} class="px-3 py-1.5 rounded text-sm font-bold {lastSnapshot ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-400'}">元に戻す</button>
       <button type="button" onclick={newWave} class="px-3 py-1.5 rounded bg-teal-600 text-white text-sm font-bold">新しいウェーブ</button>
+      <button type="button" onclick={resetDeck} class="px-3 py-1.5 rounded bg-rose-600 text-white text-sm font-bold">デッキリセット</button>
     </div>
   </div>
 
