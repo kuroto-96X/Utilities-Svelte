@@ -75,7 +75,10 @@
   </section>
 
   <section>
-    <div class="font-bold text-slate-300 mb-1">獲得点ログ(新しい順)</div>
+    <div class="flex items-center justify-between mb-1">
+      <div class="font-bold text-slate-300">獲得点ログ(新しい順)</div>
+      <button type="button" onclick={() => (gainLog = [])} class="text-[10px] px-1.5 py-0.5 rounded border border-slate-600 text-slate-300 hover:bg-slate-800">リセット</button>
+    </div>
     <div class="max-h-24 overflow-y-auto space-y-0.5">
       {#each gainLog as entry, i (i)}
         <div class="font-mono">×{entry.combo}: {#if entry.label}<span class="text-fuchsia-300">[{entry.label}]</span> {/if}+{entry.points} {entry.parts.join(' ')}</div>
