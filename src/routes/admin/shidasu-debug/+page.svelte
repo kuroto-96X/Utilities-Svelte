@@ -16,7 +16,7 @@
   let items = $state<ItemId[]>([])
   let deckComposition = $state<DeckCard[]>(standardDeckComposition())
   let wave = $state<WaveState>(startWave(params, 0, 0, items, deckComposition).wave)
-  let lastSwap = $state<{ location: { col: number; row: number } | 'stockTop'; previousCard: Card } | null>(null)
+  let lastSnapshot = $state<{ tableau: Card[][]; stock: Card[] } | null>(null)
 
   interface DragState {
     source: { suit: Suit; rank: Rank; wild: boolean }
@@ -34,19 +34,19 @@
     const result = startWave(params, 0, 0, items, deckComposition)
     wave = result.wave
     deckComposition = result.deckComposition
-    lastSwap = null
+    lastSnapshot = null
   }
 
   function handlePlayCard(colIndex: number) {
     wave = playCard(params, wave, 'none', items, TARGET, colIndex)
-    lastSwap = null
+    lastSnapshot = null
   }
 
   function handleDraw() {
     const result = drawStock(params, wave, items, deckComposition, 'none')
     wave = result.wave
     deckComposition = result.deckComposition
-    lastSwap = null
+    lastSnapshot = null
   }
 
   function handleToggleItem(id: ItemId, checked: boolean) {
@@ -55,12 +55,12 @@
     } else {
       items = items.filter(x => x !== id)
     }
-    lastSwap = null
+    lastSnapshot = null
   }
 
   function handleSetAllItems(checked: boolean) {
     items = checked ? [...ITEM_POOL] : []
-    lastSwap = null
+    lastSnapshot = null
   }
 
   function handleForceDraw(suit: Suit, rank: Rank, wild: boolean) {
@@ -68,7 +68,7 @@
     const result = drawStock(params, wave, items, deckComposition, 'none')
     wave = result.wave
     deckComposition = result.deckComposition
-    lastSwap = null
+    lastSnapshot = null
   }
 
   function onPaletteCardPointerDown(source: { suit: Suit; rank: Rank; wild: boolean }, e: PointerEvent) {
@@ -105,34 +105,32 @@
     if (target === 'stockTop') {
       if (wave.stock.length === 0) return
       const idx = wave.stock.length - 1
-      const previousCard = wave.stock[idx]
-      const newCard: Card = { id: previousCard.id, suit: source.suit, rank: source.rank, wild: source.wild }
+      const newCard: Card = { id: wave.stock[idx].id, suit: source.suit, rank: source.rank, wild: source.wild }
+      lastSnapshot = { tableau: wave.tableau, stock: wave.stock }
       wave = { ...wave, stock: wave.stock.map((c, i) => (i === idx ? newCard : c)), lastGain: null, lastBonusGains: [] }
-      lastSwap = { location: 'stockTop', previousCard }
     } else {
       const { col, row } = target
       const column = wave.tableau[col]
       if (!column?.[row]) return
-      const previousCard = column[row]
-      const newCard: Card = { id: previousCard.id, suit: source.suit, rank: source.rank, wild: source.wild }
+      const newCard: Card = { id: column[row].id, suit: source.suit, rank: source.rank, wild: source.wild }
+      lastSnapshot = { tableau: wave.tableau, stock: wave.stock }
       wave = {
         ...wave,
         tableau: wave.tableau.map((c, ci) => (ci === col ? c.map((cc, ri) => (ri === row ? newCard : cc)) : c)),
         lastGain: null,
         lastBonusGains: [],
       }
-      lastSwap = { location: { col, row }, previousCard }
     }
   }
 
   function unifySuit(suit: Suit) {
+    lastSnapshot = { tableau: wave.tableau, stock: wave.stock }
     wave = {
       ...wave,
       tableau: wave.tableau.map(col => col.map(c => (c.wild ? c : { ...c, suit }))),
       lastGain: null,
       lastBonusGains: [],
     }
-    lastSwap = null
   }
 
   function stairifyTableau() {
@@ -148,31 +146,19 @@
       const rank = (((baseRank - 1 + i) % 13) + 1) as Rank
       newRanks.set(`${ci}-${ri}`, rank)
     })
+    lastSnapshot = { tableau: wave.tableau, stock: wave.stock }
     wave = {
       ...wave,
       tableau: wave.tableau.map((col, ci) => col.map((c, ri) => ({ ...c, rank: newRanks.get(`${ci}-${ri}`) as Rank }))),
       lastGain: null,
       lastBonusGains: [],
     }
-    lastSwap = null
   }
 
   function handleUndo() {
-    if (!lastSwap) return
-    const swap = lastSwap
-    if (swap.location === 'stockTop') {
-      const idx = wave.stock.length - 1
-      wave = { ...wave, stock: wave.stock.map((c, i) => (i === idx ? swap.previousCard : c)), lastGain: null, lastBonusGains: [] }
-    } else {
-      const { col, row } = swap.location
-      wave = {
-        ...wave,
-        tableau: wave.tableau.map((c, ci) => (ci === col ? c.map((cc, ri) => (ri === row ? swap.previousCard : cc)) : c)),
-        lastGain: null,
-        lastBonusGains: [],
-      }
-    }
-    lastSwap = null
+    if (!lastSnapshot) return
+    wave = { ...wave, tableau: lastSnapshot.tableau, stock: lastSnapshot.stock, lastGain: null, lastBonusGains: [] }
+    lastSnapshot = null
   }
 
   onMount(() => {
@@ -210,7 +196,7 @@
     <h1 class="text-lg font-bold text-slate-800">Shidasu デバッグサンドボックス</h1>
     <div class="flex items-center gap-2">
       <button type="button" onclick={stairifyTableau} class="px-3 py-1.5 rounded bg-indigo-600 text-white text-sm font-bold">場札を階段にする</button>
-      <button type="button" onclick={handleUndo} disabled={!lastSwap} class="px-3 py-1.5 rounded text-sm font-bold {lastSwap ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-400'}">元に戻す</button>
+      <button type="button" onclick={handleUndo} disabled={!lastSnapshot} class="px-3 py-1.5 rounded text-sm font-bold {lastSnapshot ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-400'}">元に戻す</button>
       <button type="button" onclick={newWave} class="px-3 py-1.5 rounded bg-teal-600 text-white text-sm font-bold">新しいウェーブ</button>
     </div>
   </div>
