@@ -5,36 +5,14 @@
     createInitialRun, beginRun, applyPlayCard, applyDrawStock, applyStuckCheck,
     resolveWaveEnd, pickItem, confirmItemSwap, cancelItemSwap, skipItemSelect,
     advanceStage, restartRun, startWave, forceStockTop,
-    getPlayableColumns, remainingCount, rankLabel, isRed, itemDesc, itemName,
+    itemDesc, itemName,
   } from '$lib/game/shidasu/engine'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
-  import type { RunState, Card, ItemId, StageModifier, WaveState, Suit, Rank } from '$lib/game/shidasu/types'
+  import type { RunState, ItemId, StageModifier, Suit, Rank } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
+  import PlayArea from './PlayArea.svelte'
 
   const params = loadParams()
-
-  // ソリティアと同じカードデザイン(角丸・白背景・中央ピップ/面札記号)用の定数
-  const PIP_LAYOUTS: Record<number, [number, number, boolean][]> = {
-    1:  [[50, 50, false]],
-    2:  [[50, 18, false], [50, 82, true]],
-    3:  [[50, 14, false], [50, 50, false], [50, 86, true]],
-    4:  [[25, 18, false], [75, 18, false], [25, 82, true], [75, 82, true]],
-    5:  [[25, 18, false], [75, 18, false], [50, 50, false], [25, 82, true], [75, 82, true]],
-    6:  [[25, 15, false], [75, 15, false], [25, 50, false], [75, 50, false], [25, 85, true], [75, 85, true]],
-    7:  [[25, 13, false], [75, 13, false], [50, 30, false], [25, 52, false], [75, 52, false], [25, 85, true], [75, 85, true]],
-    8:  [[25, 11, false], [75, 11, false], [50, 28, false], [25, 50, false], [75, 50, false], [50, 72, true], [25, 89, true], [75, 89, true]],
-    9:  [[25, 9, false], [75, 9, false], [25, 35, false], [75, 35, false], [50, 50, false], [25, 65, true], [75, 65, true], [25, 91, true], [75, 91, true]],
-    10: [[25, 9, false], [75, 9, false], [50, 26, false], [25, 37, false], [75, 37, false], [25, 63, true], [75, 63, true], [50, 74, true], [25, 91, true], [75, 91, true]],
-  }
-  const FACE_CHAR: Record<number, string> = { 11: '♞', 12: '♛', 13: '♚' }
-
-  function chunk<T>(arr: T[], size: number): T[][] {
-    const result: T[][] = []
-    for (let i = 0; i < arr.length; i += size) {
-      result.push(arr.slice(i, i + size))
-    }
-    return result
-  }
 
   // タイトル画面の高さをプレイ画面に揃えるための計測専用ダミーウェーブ(実際のゲームには使わない)
   const measurementWave = startWave(params, 0, 0, [], standardDeckComposition(), 1).wave
@@ -56,9 +34,6 @@
   let stage = $derived(params.stages[run.stageIndex])
   let target = $derived(stage.targets[run.waveIndex])
   let wave = $derived(run.wave)
-
-  const comboColor = ['text-emerald-100', 'text-yellow-300', 'text-orange-400', 'text-rose-400']
-  const comboScale = ['scale-100', 'scale-105', 'scale-110', 'scale-125']
 
   function modifierLabel(modifier: StageModifier): string {
     if (modifier === 'noLoop') return 'A-Kループ禁止'
@@ -148,178 +123,28 @@
   }
 </script>
 
-{#snippet cardFace(card: Card, covered: boolean)}
-  {#if card.wild}
-    <div
-      class="relative w-full rounded-lg border p-1 flex flex-col items-start overflow-hidden select-none"
-      style="aspect-ratio: 2 / 3; background:#EDE4FF; border-color:#A78BFA; color:#6D28D9;"
-    >
-      <div class="flex items-center gap-0.5 leading-none">
-        <span class="text-sm font-bold leading-none">{rankLabel(card)}</span>
-      </div>
-      {#if !covered}
-        <div class="w-full flex-1 flex items-center justify-center">
-          <span class="leading-none" style="font-size:26px;">{rankLabel(card)}</span>
-        </div>
-        <div class="rotate-180 self-end flex items-center gap-0.5 leading-none">
-          <span class="text-sm font-bold leading-none">{rankLabel(card)}</span>
-        </div>
-      {/if}
+{#snippet stageRow()}
+  <div class="flex items-center justify-between text-xs">
+    <div class="flex items-center gap-2">
+      <span class="font-black text-amber-50">{stage.name}</span>
+      <span class="flex gap-1">
+        {#each [0, 1, 2] as w (w)}
+          <span class="w-2 h-2 rounded-full {w < run.waveIndex ? 'bg-yellow-400' : w === run.waveIndex ? 'bg-yellow-400 animate-pulse' : 'bg-emerald-800'}"></span>
+        {/each}
+      </span>
     </div>
-  {:else}
-    {@const colorClass = isRed(card) ? 'text-red-600' : 'text-slate-900'}
-    <div
-      class="relative w-full rounded-lg border border-indigo-500/50 p-1 flex flex-col items-start overflow-hidden bg-white select-none"
-      style="aspect-ratio: 2 / 3;"
-    >
-      <div class="flex items-center gap-0.5 leading-none {colorClass}">
-        <span class="text-sm font-bold leading-none">{rankLabel(card)}</span>
-        <span class="text-xs leading-none">{card.suit}</span>
-      </div>
-      {#if !covered}
-        {#if card.rank <= 10}
-          <div class="w-full flex-1 relative {colorClass}">
-            {#each (PIP_LAYOUTS[card.rank] ?? []) as [x, y, rot], i (i)}
-              <span
-                class="absolute leading-none select-none"
-                style="left:{x}%; top:{y}%; transform:translate(-50%,-50%){rot ? ' rotate(180deg)' : ''}; font-size:{card.rank === 1 ? 18 : card.rank <= 4 ? 11 : card.rank <= 7 ? 10 : 9}px;"
-              >{card.suit}</span>
-            {/each}
-          </div>
-        {:else}
-          <div class="w-full flex-1 flex items-center justify-center {colorClass}">
-            <span class="leading-none" style="font-size:26px;">{FACE_CHAR[card.rank]}</span>
-          </div>
-        {/if}
-        <div class="rotate-180 self-end flex items-center gap-0.5 leading-none {colorClass}">
-          <span class="text-sm font-bold leading-none">{rankLabel(card)}</span>
-          <span class="text-xs leading-none">{card.suit}</span>
-        </div>
-      {/if}
-    </div>
-  {/if}
+    <span class="text-emerald-300/80">{modifierLabel(stage.modifier)}</span>
+  </div>
 {/snippet}
 
-{#snippet playArea(displayWave: WaveState)}
-  {@const playableCols = getPlayableColumns(stage.modifier, displayWave)}
-  {@const remainingCards = remainingCount(displayWave.tableau)}
-  {@const displayComboTier = (() => {
-    const [t1, t2, t3] = params.ui.comboTierThresholds
-    return displayWave.combo >= t3 ? 3 : displayWave.combo >= t2 ? 2 : displayWave.combo >= t1 ? 1 : 0
-  })()}
-  {@const chainEntries = displayWave.chain.map((c, i) => ({ card: c, origin: displayWave.chainOrigin[i] }))}
-  {@const chainRows = chunk(chainEntries, params.ui.chainCardsPerRow)}
-  <div class="px-4 pt-3">
-    <div class="flex items-center justify-between text-xs">
-      <div class="flex items-center gap-2">
-        <span class="font-black text-amber-50">{stage.name}</span>
-        <span class="flex gap-1">
-          {#each [0, 1, 2] as w (w)}
-            <span class="w-2 h-2 rounded-full {w < run.waveIndex ? 'bg-yellow-400' : w === run.waveIndex ? 'bg-yellow-400 animate-pulse' : 'bg-emerald-800'}"></span>
-          {/each}
-        </span>
-      </div>
-      <span class="text-emerald-300/80">{modifierLabel(stage.modifier)}</span>
-    </div>
-
-    <div class="mt-2 flex items-end justify-between">
-      <div>
-        <div class="text-xs text-emerald-300/70 tracking-widest">SCORE / TARGET</div>
-        <div class="text-xl font-black text-amber-50 tabular-nums">
-          {displayWave.score} <span class="text-sm text-emerald-300/70">/ {target}</span>
-        </div>
-      </div>
-      <div class="text-right transition-transform origin-bottom-right {comboScale[displayComboTier]}">
-        <div class="text-xs text-emerald-300/70 tracking-widest">COMBO</div>
-        <div class="text-3xl font-black italic tabular-nums leading-none {comboColor[displayComboTier]}">×{displayWave.combo}</div>
-      </div>
-    </div>
-    <div class="mt-1 h-1.5 rounded-full bg-emerald-900 overflow-hidden">
-      <div class="h-full bg-gradient-to-r from-yellow-500 to-yellow-300 transition-all duration-300" style="width:{Math.min(100, (displayWave.score / target) * 100)}%"></div>
-    </div>
-    {#if displayWave.lastGain || displayWave.lastBonusGains.length > 0}
-      {@const totalPoints = (displayWave.lastGain?.points ?? 0) + displayWave.lastBonusGains.reduce((sum, g) => sum + g.points, 0)}
-      {@const allParts = [...(displayWave.lastGain?.parts ?? []), ...displayWave.lastBonusGains.flatMap(g => g.parts)]}
-      <div class="text-right text-sm h-5">
-        <span class="text-yellow-300 font-black">+{totalPoints}</span>
-        {#if allParts.length > 0}
-          <span class="text-emerald-200 text-xs ml-2">{allParts.join(' ')}</span>
-        {/if}
-      </div>
-    {:else}
-      <div class="h-5"></div>
-    {/if}
-  </div>
-
-  <div class="px-3 pt-1">
-    <div class="grid gap-1" style="grid-template-columns: repeat({params.layout.cols}, minmax(0, 1fr));">
-      {#each displayWave.tableau as col, ci (ci)}
-        <div class="relative" style="min-height: 10.5rem;">
-          {#each col as card, ri (card.id)}
-            {@const isTop = ri === col.length - 1}
-            <div class="absolute left-0 right-0" style="top:{ri * 18}px; z-index:{ri};">
-              {#if isTop}
-                <button
-                  type="button"
-                  onclick={() => handlePlayCard(ci)}
-                  class="w-full text-left {playableCols.has(ci) ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : ''} transition-transform"
-                >
-                  {@render cardFace(card, false)}
-                </button>
-              {:else}
-                {@render cardFace(card, true)}
-              {/if}
-            </div>
-          {/each}
-        </div>
-      {/each}
-    </div>
-    <div
-      class="text-center text-emerald-300/80 text-xs mt-16 animate-pulse {playableCols.size === 0 && displayWave.stock.length > 0 && remainingCards > 0 ? '' : 'invisible'}"
-    >取れる札がない → 山札をめくろう</div>
-  </div>
-
-  <div class="px-4 text-center text-yellow-300 text-xs font-black animate-pulse mb-1 {displayWave.lastDrawEffect === 'pattern' ? '' : 'invisible'}">✦ パターン継続! ✦</div>
-
-  <div class="px-4 pb-5 pt-2 flex items-start gap-4">
-    <button
-      onclick={handleDraw}
-      disabled={displayWave.stock.length === 0}
-      style="aspect-ratio: 2 / 3; margin-top:20px;"
-      class="w-16 shrink-0 rounded-lg border-2 flex flex-col items-center justify-center font-black active:scale-95 transition-transform {displayWave.stock.length > 0 ? 'bg-emerald-700 border-emerald-500 text-amber-50' : 'bg-emerald-900 border-emerald-800 text-emerald-700'}"
-    >
-      <div class="text-xs">山札</div>
-      <div class="text-lg tabular-nums">{displayWave.stock.length}</div>
-    </button>
-    {#if run.items.includes('guidance') && displayWave.stock.length > 0}
-      {@const nextCard = displayWave.stock[displayWave.stock.length - 1]}
-      <div class="flex flex-col items-center justify-center" style="margin-top:20px;">
-        <div class="text-[10px] text-emerald-300/70 mb-1">次の札</div>
-        {@render cardFace(nextCard, false)}
-      </div>
-    {/if}
-    <div class="overflow-x-auto min-w-0">
-      {#each chainRows as row, ri (ri)}
-        <div class="relative" style="height:116px; width:{64 + (row.length - 1) * params.ui.chainCardOffsetX}px;">
-          {#each row as entry, j (entry.card.id)}
-            <div
-              class="absolute"
-              style="left:{j * params.ui.chainCardOffsetX}px; top:{entry.origin === 'draw' ? 20 : 0}px; z-index:{j + 1}; width:64px;"
-            >
-              {@render cardFace(entry.card, false)}
-            </div>
-          {/each}
-        </div>
-      {/each}
-    </div>
-    <div class="flex-1 flex flex-wrap gap-1 justify-end">
-      {#each [...new Set(run.items)] as id (id)}
-        {@const n = run.items.filter(x => x === id).length}
-        <span class="text-xs bg-emerald-900 text-yellow-200/90 border border-yellow-600/40 rounded px-1.5 py-0.5">
-          {itemName(id, params)}{n > 1 ? `×${n}` : ''}
-        </span>
-      {/each}
-    </div>
+{#snippet itemBadges()}
+  <div class="flex-1 flex flex-wrap gap-1 justify-end">
+    {#each [...new Set(run.items)] as id (id)}
+      {@const n = run.items.filter(x => x === id).length}
+      <span class="text-xs bg-emerald-900 text-yellow-200/90 border border-yellow-600/40 rounded px-1.5 py-0.5">
+        {itemName(id, params)}{n > 1 ? `×${n}` : ''}
+      </span>
+    {/each}
   </div>
 {/snippet}
 
@@ -335,7 +160,7 @@
     aria-hidden="true"
     bind:offsetHeight={measuredPlayHeight}
   >
-    {@render playArea(measurementWave)}
+    <PlayArea wave={measurementWave} {params} modifier={stage.modifier} {target} items={run.items} onPlayCard={handlePlayCard} onDraw={handleDraw} headerExtra={stageRow} extraFooter={itemBadges} />
   </div>
   <div class="flex flex-col items-center justify-center gap-6 text-center px-6" style="min-height:{measuredPlayHeight}px;">
     <div>
@@ -358,7 +183,7 @@
   </div>
 
 {:else if wave}
-  {@render playArea(wave)}
+  <PlayArea {wave} {params} modifier={stage.modifier} {target} items={run.items} onPlayCard={handlePlayCard} onDraw={handleDraw} headerExtra={stageRow} extraFooter={itemBadges} />
 {/if}
 
 {#if run.phase === 'itemSelect'}
