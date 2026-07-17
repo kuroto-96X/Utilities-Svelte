@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/params.ts
 import shidasuConfigJson from './shidasu.config.json'
-import type { StageModifier } from './types'
+import type { StageModifier, Rarity } from './types'
 
 export interface ShidasuParams {
   layout: {
@@ -33,93 +33,93 @@ export interface ShidasuParams {
     maxItems: number
   }
   talismans: {
-    bridge: { name: string; m: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    grace: { name: string; m: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    patience: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    purify: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    temperance: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    springBreeze: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    summerBreeze: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    autumnBreeze: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    winterBreeze: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    kinship: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    thaw: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    dusk: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    dawn: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    wit: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    courage: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    daybreak: { name: string; c: number; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    twilight: { name: string; c: number; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    cheerful: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    conscience: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    morningMist: { name: string; c: number; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    calm: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    serenity: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    destiny: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    fate: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    relief: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    verdantGreen: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    gem: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    resolve: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    grail: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    moonlight: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    sunlight: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    crown: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    cloverLeaf: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    coin: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    blade: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    chalice: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    balance: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    harmony: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    nobility: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    tenacity: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    determination: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    cycle: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    reincarnation: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    majesty: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    omen: { name: string; m: number; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    crescent: { name: string; m: number; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    blessing: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    focus: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    lapis: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    jade: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    emptyMind: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    prologue: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    interlude: { name: string; m: number; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    morningDew: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    drizzle: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    eternity: { name: string; rarity: 'C' | 'U' | 'R'; desc: string }
-    abundance: { name: string; rarity: 'C' | 'U' | 'R'; desc: string }
-    silence: { name: string; rarity: 'C' | 'U' | 'R'; desc: string }
-    resilience: { name: string; p: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    gentleBreeze: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    resonance: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    azureSky: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    amber: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    composure: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    clarity: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    arrogance: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    echo: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    shootingStar: { name: string; c: number; p: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    naive: { name: string; rarity: 'C' | 'U' | 'R'; desc: string }
-    intuition: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    sincerity: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    promise: { name: string; rarity: 'C' | 'U' | 'R'; desc: string }
-    darkClouds: { name: string; r: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    regeneration: { name: string; p: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    benevolence: { name: string; rarity: 'C' | 'U' | 'R'; desc: string }
-    healing: { name: string; rarity: 'C' | 'U' | 'R'; desc: string }
-    guidance: { name: string; rarity: 'C' | 'U' | 'R'; desc: string }
-    passion: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    fightingSpirit: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    sanctify: { name: string; rarity: 'C' | 'U' | 'R'; desc: string }
-    protection: { name: string; c: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    earth: { name: string; c: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    golden: { name: string; rarity: 'C' | 'U' | 'R'; desc: string }
-    morningStar: { name: string; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    mercy: { name: string; c: number; x: number; rarity: 'C' | 'U' | 'R'; desc: string }
-    mirror: { name: string; rarity: 'C' | 'U' | 'R'; desc: string }
-    deadline: { name: string; n: number; rarity: 'C' | 'U' | 'R'; desc: string }
+    bridge: { name: string; m: number; rarity: Rarity; desc: string }
+    grace: { name: string; m: number; rarity: Rarity; desc: string }
+    patience: { name: string; x: number; rarity: Rarity; desc: string }
+    purify: { name: string; n: number; rarity: Rarity; desc: string }
+    temperance: { name: string; x: number; rarity: Rarity; desc: string }
+    springBreeze: { name: string; n: number; rarity: Rarity; desc: string }
+    summerBreeze: { name: string; n: number; rarity: Rarity; desc: string }
+    autumnBreeze: { name: string; n: number; rarity: Rarity; desc: string }
+    winterBreeze: { name: string; n: number; rarity: Rarity; desc: string }
+    kinship: { name: string; n: number; rarity: Rarity; desc: string }
+    thaw: { name: string; n: number; rarity: Rarity; desc: string }
+    dusk: { name: string; n: number; rarity: Rarity; desc: string }
+    dawn: { name: string; n: number; rarity: Rarity; desc: string }
+    wit: { name: string; n: number; rarity: Rarity; desc: string }
+    courage: { name: string; x: number; rarity: Rarity; desc: string }
+    daybreak: { name: string; c: number; x: number; rarity: Rarity; desc: string }
+    twilight: { name: string; c: number; x: number; rarity: Rarity; desc: string }
+    cheerful: { name: string; n: number; rarity: Rarity; desc: string }
+    conscience: { name: string; n: number; rarity: Rarity; desc: string }
+    morningMist: { name: string; c: number; x: number; rarity: Rarity; desc: string }
+    calm: { name: string; n: number; rarity: Rarity; desc: string }
+    serenity: { name: string; x: number; rarity: Rarity; desc: string }
+    destiny: { name: string; n: number; rarity: Rarity; desc: string }
+    fate: { name: string; x: number; rarity: Rarity; desc: string }
+    relief: { name: string; n: number; rarity: Rarity; desc: string }
+    verdantGreen: { name: string; x: number; rarity: Rarity; desc: string }
+    gem: { name: string; x: number; rarity: Rarity; desc: string }
+    resolve: { name: string; x: number; rarity: Rarity; desc: string }
+    grail: { name: string; x: number; rarity: Rarity; desc: string }
+    moonlight: { name: string; x: number; rarity: Rarity; desc: string }
+    sunlight: { name: string; x: number; rarity: Rarity; desc: string }
+    crown: { name: string; x: number; rarity: Rarity; desc: string }
+    cloverLeaf: { name: string; n: number; rarity: Rarity; desc: string }
+    coin: { name: string; n: number; rarity: Rarity; desc: string }
+    blade: { name: string; n: number; rarity: Rarity; desc: string }
+    chalice: { name: string; n: number; rarity: Rarity; desc: string }
+    balance: { name: string; n: number; rarity: Rarity; desc: string }
+    harmony: { name: string; x: number; rarity: Rarity; desc: string }
+    nobility: { name: string; n: number; rarity: Rarity; desc: string }
+    tenacity: { name: string; x: number; rarity: Rarity; desc: string }
+    determination: { name: string; x: number; rarity: Rarity; desc: string }
+    cycle: { name: string; x: number; rarity: Rarity; desc: string }
+    reincarnation: { name: string; x: number; rarity: Rarity; desc: string }
+    majesty: { name: string; x: number; rarity: Rarity; desc: string }
+    omen: { name: string; m: number; x: number; rarity: Rarity; desc: string }
+    crescent: { name: string; m: number; x: number; rarity: Rarity; desc: string }
+    blessing: { name: string; x: number; rarity: Rarity; desc: string }
+    focus: { name: string; x: number; rarity: Rarity; desc: string }
+    lapis: { name: string; x: number; rarity: Rarity; desc: string }
+    jade: { name: string; n: number; rarity: Rarity; desc: string }
+    emptyMind: { name: string; x: number; rarity: Rarity; desc: string }
+    prologue: { name: string; n: number; rarity: Rarity; desc: string }
+    interlude: { name: string; m: number; n: number; rarity: Rarity; desc: string }
+    morningDew: { name: string; n: number; rarity: Rarity; desc: string }
+    drizzle: { name: string; n: number; rarity: Rarity; desc: string }
+    eternity: { name: string; rarity: Rarity; desc: string }
+    abundance: { name: string; rarity: Rarity; desc: string }
+    silence: { name: string; rarity: Rarity; desc: string }
+    resilience: { name: string; p: number; rarity: Rarity; desc: string }
+    gentleBreeze: { name: string; n: number; rarity: Rarity; desc: string }
+    resonance: { name: string; x: number; rarity: Rarity; desc: string }
+    azureSky: { name: string; x: number; rarity: Rarity; desc: string }
+    amber: { name: string; x: number; rarity: Rarity; desc: string }
+    composure: { name: string; n: number; rarity: Rarity; desc: string }
+    clarity: { name: string; n: number; rarity: Rarity; desc: string }
+    arrogance: { name: string; x: number; rarity: Rarity; desc: string }
+    echo: { name: string; n: number; rarity: Rarity; desc: string }
+    shootingStar: { name: string; c: number; p: number; rarity: Rarity; desc: string }
+    naive: { name: string; rarity: Rarity; desc: string }
+    intuition: { name: string; x: number; rarity: Rarity; desc: string }
+    sincerity: { name: string; n: number; rarity: Rarity; desc: string }
+    promise: { name: string; rarity: Rarity; desc: string }
+    darkClouds: { name: string; r: number; rarity: Rarity; desc: string }
+    regeneration: { name: string; p: number; rarity: Rarity; desc: string }
+    benevolence: { name: string; rarity: Rarity; desc: string }
+    healing: { name: string; rarity: Rarity; desc: string }
+    guidance: { name: string; rarity: Rarity; desc: string }
+    passion: { name: string; x: number; rarity: Rarity; desc: string }
+    fightingSpirit: { name: string; x: number; rarity: Rarity; desc: string }
+    sanctify: { name: string; rarity: Rarity; desc: string }
+    protection: { name: string; c: number; rarity: Rarity; desc: string }
+    earth: { name: string; c: number; rarity: Rarity; desc: string }
+    golden: { name: string; rarity: Rarity; desc: string }
+    morningStar: { name: string; x: number; rarity: Rarity; desc: string }
+    mercy: { name: string; c: number; x: number; rarity: Rarity; desc: string }
+    mirror: { name: string; rarity: Rarity; desc: string }
+    deadline: { name: string; n: number; rarity: Rarity; desc: string }
   }
   flow: {
     wavesPerStage: number
