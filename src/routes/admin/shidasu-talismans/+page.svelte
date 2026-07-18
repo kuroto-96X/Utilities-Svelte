@@ -146,8 +146,8 @@
                     <td class="px-2 py-1.5 align-top">
                       <textarea
                         bind:value={entry.desc}
-                        rows="2"
-                        class="w-full border border-slate-200 rounded px-1.5 py-0.5 font-mono text-[11px]"
+                        rows="3"
+                        class="w-full border border-slate-200 rounded px-1.5 py-0.5 font-mono text-[11px] resize-y"
                       ></textarea>
                     </td>
                     <td class="px-2 py-1.5 align-top text-slate-500">{itemDesc(id, config)}</td>
