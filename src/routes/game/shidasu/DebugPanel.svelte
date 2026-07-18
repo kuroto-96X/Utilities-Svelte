@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte'
-  import { analyzeSuitColor, analyzeStair, isRed, rankLabel } from '$lib/game/shidasu/engine'
+  import { analyzeSuitColor, analyzeStair, isRed } from '$lib/game/shidasu/patterns'
+  import { rankLabel } from '$lib/game/shidasu/engine'
   import type { WaveState, Suit, Rank } from '$lib/game/shidasu/types'
 
   let { wave, onForceDraw }: {

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { rankLabel, isRed } from '$lib/game/shidasu/engine'
+  import { rankLabel } from '$lib/game/shidasu/engine'
+  import { isRed } from '$lib/game/shidasu/patterns'
   import type { Card } from '$lib/game/shidasu/types'
 
   let { card, covered }: { card: Card; covered: boolean } = $props()
