@@ -805,12 +805,6 @@ export function restartRun(params: ShidasuParams, seed?: number): RunState {
   return beginRun(params, seed)
 }
 
-// runがプレイ中でwaveを持つ場合のみfnを適用し、そうでなければrunをそのまま返す
-function withActiveWave(run: RunState, fn: (wave: WaveState) => WaveState): RunState {
-  if (run.phase !== 'playing' || !run.wave) return run
-  return { ...run, wave: fn(run.wave) }
-}
-
 export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: number, rand: () => number = Math.random): RunState {
   if (run.phase !== 'playing' || !run.wave) return run
   const stage = params.stages[run.stageIndex]
@@ -826,34 +820,43 @@ export function applyDrawStock(params: ShidasuParams, run: RunState, rand: () =>
   return { ...run, wave, deckComposition }
 }
 
-// 不屈の護符: 捨て札があれば約半数をランダムに山札へ戻しスコアを消費する。
-// 発動条件を満たさない場合は元のwaveと同一の参照をそのまま返す(呼び出し元のapplyStuckCheckが
-// この参照の同一性を「発動したかどうか」の判定に使っているため、契約として維持すること)。
-function tryResilienceRevive(params: ShidasuParams, wave: WaveState, items: ItemId[], rand: () => number): WaveState {
-  if (wave.status !== 'playing' || !items.includes('resilience') || wave.discardPile.length === 0) return wave
-  const pool = [...wave.discardPile]
-  shuffleInPlace(pool, rand)
-  const reviveCount = Math.max(1, Math.ceil(pool.length / 2))
-  const revived = pool.slice(0, reviveCount)
-  const remaining = pool.slice(reviveCount)
-  const cost = Math.floor(wave.score * params.talismans.resilience.p / 100)
-  return {
-    ...wave,
-    score: wave.score - cost,
-    stock: [...wave.stock, ...revived],
-    discardPile: remaining,
-  }
-}
-
+// 手詰まり判定と、手詰まり時の護符(治癒・不屈)による救済処理を行う。
+// 不屈: コンボリセットしチェーンのカードを捨て札へ送った上で、スコアの一定割合を消費して
+// 捨て札の約半数を山札へ戻す。その後、山札を1枚捲って(drawStockと同じロジック)手詰まりを回避する。
+// ウェーブ中1回のみ発動する。発動条件を満たさなければ通常通り手詰まり終了とする。
 export function applyStuckCheck(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
-  return withActiveWave(run, wave => {
-    const modifier = params.stages[run.stageIndex].modifier
-    if (!isStuck(modifier, wave)) return wave
-    const revived = tryResilienceRevive(params, wave, run.items, rand)
-    // 復活が発動した場合、stockに最低1枚は戻っているため手詰まりは解消済み(isStuckの再判定は不要)
-    if (revived !== wave) return revived
-    return markStuck(wave)
-  })
+  if (run.phase !== 'playing' || !run.wave) return run
+  const modifier = params.stages[run.stageIndex].modifier
+  const wave = run.wave
+  if (!isStuck(modifier, wave)) return run
+
+  let resetWave = resetComboFields(wave, params, run.items)
+
+  for (const id of run.items) {
+    if (id === 'healing') {
+      resetWave = resolveHealingRestoration(resetWave, wave.sweptColumnsThisCombo, rand)
+    } else if (id === 'resilience' && resetWave.discardPile.length > 0 && !resetWave.resilienceUsedThisWave) {
+      const pool = [...resetWave.discardPile]
+      shuffleInPlace(pool, rand)
+      const reviveCount = Math.max(1, Math.ceil(pool.length / 2))
+      const revived = pool.slice(0, reviveCount)
+      const cost = Math.floor(resetWave.score * params.talismans.resilience.p / 100)
+      resetWave = {
+        ...resetWave,
+        score: resetWave.score - cost,
+        stock: [...resetWave.stock, ...revived],
+        discardPile: pool.slice(reviveCount),
+        resilienceUsedThisWave: true,
+      }
+    }
+  }
+
+  if (resetWave.stock.length > 0) {
+    const drawResult = drawStock(params, resetWave, run.items, run.deckComposition, modifier, rand)
+    return { ...run, wave: drawResult.wave, deckComposition: drawResult.deckComposition }
+  }
+
+  return { ...run, wave: markStuck(resetWave) }
 }
 
 let debugCardIdSeq = 900000

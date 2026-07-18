@@ -1726,11 +1726,12 @@ describe('applyPlayCard / applyDrawStock / applyStuckCheck', () => {
 })
 
 describe('applyStuckCheck (不屈の護符)', () => {
-  test('不屈を持ち捨て札があれば、手詰まり時にスコア消費して山札へ約半数戻し手詰まりを回避する', () => {
+  test('不屈を持ち捨て札があれば、手詰まり時にスコア消費して山札へ約半数戻し、その後山札を1枚捲って手詰まりを回避する', () => {
     const wave = makeWave({
       tableau: [[card(1, '♠', 5)]],
       stock: [],
       foundation: card(0, '♣', 1), // 差が4で取れない
+      chain: [card(0, '♣', 1)],
       score: 1000,
       discardPile: [card(10, '♦', 2), card(11, '♦', 3), card(12, '♦', 4), card(13, '♦', 5)],
     })
@@ -1741,8 +1742,12 @@ describe('applyStuckCheck (不屈の護符)', () => {
     const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
     expect(next.wave!.status).toBe('playing') // 手詰まりが解消されている
     expect(next.wave!.score).toBe(700) // 1000 - 30%
-    expect(next.wave!.stock).toHaveLength(2) // 4枚の半数
-    expect(next.wave!.discardPile).toHaveLength(2)
+    expect(next.wave!.resilienceUsedThisWave).toBe(true)
+    // 4枚の半数=2枚が山札へ、そのうち1枚は自動でめくられるため最終的なstockは1枚
+    expect(next.wave!.stock).toHaveLength(1)
+    // 捨て札4枚のうち2枚を山札へ戻した残り2枚に、自動めくりでパターン継続せずリセットされた
+    // 直前のfoundation(1枚)が捨て札へ加わり、計3枚になる
+    expect(next.wave!.discardPile).toHaveLength(3)
   })
 
   test('不屈を持っていても捨て札が無ければ通常通り手詰まりになる', () => {
@@ -1777,6 +1782,42 @@ describe('applyStuckCheck (不屈の護符)', () => {
     const next = applyStuckCheck(DEFAULT_PARAMS, run)
     expect(next.wave!.status).toBe('ended')
     expect(next.wave!.endReason).toBe('stuck')
+  })
+
+  test('不屈: ウェーブ中2回目は発動しない(resilienceUsedThisWaveがtrueなら通常通り手詰まりになる)', () => {
+    const wave = makeWave({
+      tableau: [[card(1, '♠', 5)]],
+      stock: [],
+      foundation: card(0, '♣', 1),
+      score: 1000,
+      discardPile: [card(10, '♦', 2), card(11, '♦', 3)],
+      resilienceUsedThisWave: true,
+    })
+    const run: RunState = {
+      phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['resilience'], offer: [],
+      wave, pendingNewItem: null, deckComposition: standardDeckComposition(),
+    }
+    const next = applyStuckCheck(DEFAULT_PARAMS, run)
+    expect(next.wave!.status).toBe('ended')
+    expect(next.wave!.endReason).toBe('stuck')
+  })
+
+  test('治癒と不屈を同時所持: 手詰まり直前に列一掃していた列も、不屈による復活と合わせて処理される', () => {
+    const wave = makeWave({
+      tableau: [[card(1, '♠', 5)], []],
+      stock: [],
+      foundation: card(0, '♣', 1),
+      chain: [card(0, '♣', 1)],
+      score: 1000,
+      sweptColumnsThisCombo: [{ colIndex: 1, startLength: 2 }],
+      discardPile: [card(10, '♦', 2), card(11, '♦', 3), card(12, '♦', 4), card(13, '♦', 5)],
+    })
+    const run: RunState = {
+      phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['healing', 'resilience'], offer: [],
+      wave, pendingNewItem: null, deckComposition: standardDeckComposition(),
+    }
+    const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
+    expect(next.wave!.tableau[1].length).toBeGreaterThan(0) // 治癒によって列1が復活している
   })
 })
 
