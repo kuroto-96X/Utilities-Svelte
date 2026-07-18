@@ -1316,98 +1316,12 @@ export function itemName(id: ItemId, params: ShidasuParams): string {
 }
 
 export function itemDesc(id: ItemId, params: ShidasuParams): string {
-  switch (id) {
-    case 'bridge': return `階段・同スート・同色の成立に必要な枚数を${params.talismans.bridge.m}枚緩和(階段${params.scoring.stairMinLen}→${params.scoring.stairMinLen - params.talismans.bridge.m}枚、同スート・同色${params.scoring.suitColorMinLen}→${params.scoring.suitColorMinLen - params.talismans.bridge.m}枚)`
-    case 'grace': {
-      const relaxed = params.layout.rows - params.talismans.grace.m
-      return `列一掃ボーナスに必要な枚数を${params.talismans.grace.m}枚緩和(列の全${params.layout.rows}枚を1コンボで空に→残り${relaxed}枚から1コンボで空に)`
-    }
-    case 'patience': return `全消しボーナスに残り山札枚数×${params.talismans.patience.x}点を加算`
-    case 'purify': return `全消しボーナスに${params.talismans.purify.n}点を加算`
-    case 'temperance': return `全消しボーナスを残り山札枚数×${params.talismans.temperance.x}分だけ倍加`
-    case 'springBreeze': return `クラブ(♣)を取ったとき、${params.talismans.springBreeze.n}点加算`
-    case 'summerBreeze': return `ダイヤ(♦)を取ったとき、${params.talismans.summerBreeze.n}点加算`
-    case 'autumnBreeze': return `ハート(♥)を取ったとき、${params.talismans.autumnBreeze.n}点加算`
-    case 'winterBreeze': return `スペード(♠)を取ったとき、${params.talismans.winterBreeze.n}点加算`
-    case 'kinship': return `他のスートからハート(♥)を取ったとき、${params.talismans.kinship.n}点加算`
-    case 'thaw': return `スペード(♠)から別のスートを取ったとき、${params.talismans.thaw.n}点加算`
-    case 'dusk': return `赤から黒に変わったとき、${params.talismans.dusk.n}点加算`
-    case 'dawn': return `黒から赤に変わったとき、${params.talismans.dawn.n}点加算`
-    case 'wit': return `ワイルドを取ったとき、${params.talismans.wit.n}点加算`
-    case 'courage': return `コンボ数×${params.talismans.courage.x}分、獲得点を倍加`
-    case 'daybreak': return `コンボ数が${params.talismans.daybreak.c}以下のとき、獲得点を${params.talismans.daybreak.x}倍`
-    case 'twilight': return `コンボ数が${params.talismans.twilight.c}以上のとき、獲得点を${params.talismans.twilight.x}倍`
-    case 'cheerful': return `コンボ数が偶数のとき、${params.talismans.cheerful.n}点加算`
-    case 'conscience': return `コンボ数が奇数のとき、${params.talismans.conscience.n}点加算`
-    case 'morningMist': return `コンボ数が${params.talismans.morningMist.c}未満のとき獲得点を1/${params.talismans.morningMist.x}に、${params.talismans.morningMist.c}以上のとき${params.talismans.morningMist.x}倍に`
-    case 'calm': return `コンボ内にJQKが無いとき、${params.talismans.calm.n}点加算`
-    case 'serenity': return `コンボ内にJQKが無いとき、獲得点を${params.talismans.serenity.x}倍`
-    case 'destiny': return `コンボ内がJQKのみのとき、${params.talismans.destiny.n}点加算`
-    case 'fate': return `コンボ内がJQKのみのとき、獲得点を${params.talismans.fate.x}倍`
-    case 'relief': return `取得したカード1枚のランクが1〜10のとき、${params.talismans.relief.n}点加算`
-    case 'verdantGreen': return `コンボがクラブ(♣)専有のとき、獲得点を${params.talismans.verdantGreen.x}倍`
-    case 'gem': return `コンボがダイヤ(♦)専有のとき、獲得点を${params.talismans.gem.x}倍`
-    case 'resolve': return `コンボがスペード(♠)専有のとき、獲得点を${params.talismans.resolve.x}倍`
-    case 'grail': return `コンボがハート(♥)専有のとき、獲得点を${params.talismans.grail.x}倍`
-    case 'moonlight': return `コンボが黒専有のとき、獲得点を${params.talismans.moonlight.x}倍`
-    case 'sunlight': return `コンボが赤専有のとき、獲得点を${params.talismans.sunlight.x}倍`
-    case 'crown': return `コンボ内のK枚数×${params.talismans.crown.x}分、獲得点を倍加`
-    case 'cloverLeaf': return `コンボ内のクラブ(♣)枚数×${params.talismans.cloverLeaf.n}点を加算`
-    case 'coin': return `コンボ内のダイヤ(♦)枚数×${params.talismans.coin.n}点を加算`
-    case 'blade': return `コンボ内のスペード(♠)枚数×${params.talismans.blade.n}点を加算`
-    case 'chalice': return `コンボ内のハート(♥)枚数×${params.talismans.chalice.n}点を加算`
-    case 'balance': return `コンボ内の赤黒枚数が同数のとき、${params.talismans.balance.n}点加算`
-    case 'harmony': return `コンボ内の赤黒枚数が同数のとき、獲得点を${params.talismans.harmony.x}倍`
-    case 'nobility': return `同スートパターン成立時、${params.talismans.nobility.n}点加算`
-    case 'tenacity': return `同スートパターン成立時、コンボ内枚数×${params.talismans.tenacity.x}分、獲得点を倍加`
-    case 'determination': return `階段成立時、階段の長さ×${params.talismans.determination.x}分、獲得点を倍加`
-    case 'cycle': return `KからA、またはAからKを取ったとき、獲得点を${params.talismans.cycle.x}倍`
-    case 'reincarnation': return `コンプリートラン(全ランク階段)にK↔Aループが含まれるとき、獲得点を${params.talismans.reincarnation.x}倍`
-    case 'majesty': return `同スートかつ全ランク階段を達成したとき、獲得点を${params.talismans.majesty.x}倍`
-    case 'omen': return `場札の残り枚数が${params.talismans.omen.m}枚以下のとき、獲得点を${params.talismans.omen.x}倍`
-    case 'crescent': return `場札の残り枚数が${params.talismans.crescent.m}枚以下のとき、獲得点を${params.talismans.crescent.x}倍`
-    case 'blessing': return `役が成立したとき、獲得点を${params.talismans.blessing.x}倍`
-    case 'focus': return `同ランクの役が含まれるとき、獲得点を${params.talismans.focus.x}倍`
-    case 'lapis': return `役ボーナス・パターンボーナス(同スート/同色・階段)をあわせて2種類以上成立したとき、獲得点を${params.talismans.lapis.x}倍`
-    case 'jade': return `役の成立にワイルドが使われたとき、${params.talismans.jade.n}点加算`
-    case 'emptyMind': return `役・パターンがどちらも無いとき、獲得点を${params.talismans.emptyMind.x}倍`
-    case 'prologue': return `チェーン内でプレイ1枚目のとき、${params.talismans.prologue.n}点加算`
-    case 'interlude': return `チェーン内でプレイちょうど${params.talismans.interlude.m}枚目のとき、${params.talismans.interlude.n}点加算`
-    case 'morningDew': return `ウェーブで最初にプレイしたカードのとき、${params.talismans.morningDew.n}点加算`
-    case 'drizzle': return `場札を取るたび、${params.talismans.drizzle.n}点加算`
-    case 'eternity': return `ウェーブ開始時、山札にワイルドを1枚追加(以後のウェーブにも引き継がれる)`
-    case 'abundance': return `ウェーブ開始時、デッキ内の1枚がランダムにワイルドへ変換される(以後のウェーブにも引き継がれる)`
-    case 'silence': return `山札めくりで取れる場札が無いままコンボがリセットされた時、めくった札をワイルドに変換する(デッキにも永続的に反映)`
-    case 'resilience': return `山札が無く場札も取れない手詰まり時、スコアの${params.talismans.resilience.p}%を消費して捨て札の半数を山札に戻す`
-    case 'gentleBreeze': return `同じ列を連続でプレイしたとき(2回目以降)、連続回数×${params.talismans.gentleBreeze.n}点加算`
-    case 'resonance': return `同じ列を連続でプレイしたとき(2回目以降)、連続回数×${params.talismans.resonance.x}分獲得点を倍加`
-    case 'azureSky': return `ウェーブ内で列一掃した累計回数×${params.talismans.azureSky.x}分、獲得点を倍加`
-    case 'amber': return `ウェーブ内の最大到達コンボ数×${params.talismans.amber.x}分、獲得点を倍加`
-    case 'composure': return `山札めくりでコンボリセットされた時、取れる場札が無ければ直接${params.talismans.composure.n}点加算`
-    case 'clarity': return `コンボリセット時、そのチェーンで役が一つも成立していなければ直接${params.talismans.clarity.n}点加算`
-    case 'arrogance': return `山札が無くなった時、場札の残り枚数×${params.talismans.arrogance.x}点を直接加算`
-    case 'echo': return `コンボがリセットされる瞬間、リセット前のコンボ数×${params.talismans.echo.n}点を直接加算`
-    case 'shootingStar': return `コンボ数が${params.talismans.shootingStar.c}に到達した瞬間、獲得点を加算した後の現在スコアの${params.talismans.shootingStar.p}%を直接加算`
-    case 'naive': return `山札めくりがパターン継続だった場合、通常のプレイと同様に得点計算する(コンボ数も加算)`
-    case 'intuition': return `(素朴と組み合わせて機能)現在のチェーン中に山札めくりでコンボ継続した回数×${params.talismans.intuition.x}分、獲得点を倍加`
-    case 'sincerity': return `山札めくりで同色パターンによりコンボ継続した時、直接${params.talismans.sincerity.n}点加算`
-    case 'promise': return `山札の次のカードが、今のコンボが継続できるカードになる`
-    case 'darkClouds': return `ウェーブ開始時、場札が${params.talismans.darkClouds.r}行多く配られる`
-    case 'regeneration': return `全消し時、スコアの${params.talismans.regeneration.p}%を消費して捨て札から場札を復活させる(復活すればウェーブ継続)`
-    case 'benevolence': return `コンボごとに1回、コンボリセットを無効化する`
-    case 'healing': return `列一掃時、捨て札から最大${params.layout.rows}枚を空いた列へ戻す`
-    case 'guidance': return `山札の次のカードが見えるようになる`
-    case 'passion': return `このコンボ中にフラッシュが成立していれば、獲得点を${params.talismans.passion.x}倍`
-    case 'fightingSpirit': return `このウェーブ中に列一掃が発生していれば、獲得点を${params.talismans.fightingSpirit.x}倍`
-    case 'sanctify': return `役を揃えるたび基礎コンボ数+1。コンボリセット時、0ではなく基礎コンボ数から再開する`
-    case 'protection': return `コンボ数(計算用)が${params.talismans.protection.c}未満のとき、${params.talismans.protection.c}として計算する`
-    case 'earth': return `コンボ数(計算用)に常に${params.talismans.earth.c}を加算する`
-    case 'golden': return `コンボが1回進むたびに、通常の+1ではなく+2進む`
-    case 'morningStar': return `役ボーナスの額を、その役のウェーブ内累積成立回数×${params.talismans.morningStar.x}分だけ倍加`
-    case 'mercy': return `コンボ数が${params.talismans.mercy.c}以下でリセットされたとき、次のコンボの間、獲得点を${params.talismans.mercy.x}倍`
-    case 'mirror': return `役が成立するたび(コンボ中1回、同ランクは枚数ごとに1回)、次のプレイで同じ役ボーナスを追加でもう一度加算する`
-    case 'deadline': return `カードを取るたび、山札の残り枚数×${params.talismans.deadline.n}点加算`
+  const entry = params.talismans[id] as unknown as Record<string, unknown> & { desc: string }
+  const context: Record<string, number> = { rows: params.layout.rows }
+  for (const [key, value] of Object.entries(entry)) {
+    if (typeof value === 'number') context[key] = value
   }
+  return entry.desc.replace(/\{(\w+)\}/g, (match, key) => (key in context ? String(context[key]) : match))
 }
 
 function shuffleItems(list: ItemId[], rand: () => number): ItemId[] {

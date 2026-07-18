@@ -1940,10 +1940,16 @@ describe('ITEM_POOL / itemName / itemDesc', () => {
   })
 
   test('itemDescはパラメータの数値を埋め込んだ説明文を返す', () => {
-    expect(itemDesc('bridge', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.scoring.stairMinLen))
-    expect(itemDesc('bridge', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.scoring.stairMinLen - DEFAULT_PARAMS.talismans.bridge.m))
-    expect(itemDesc('grace', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.layout.rows))
-    expect(itemDesc('grace', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.layout.rows - DEFAULT_PARAMS.talismans.grace.m))
+    expect(itemDesc('bridge', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.talismans.bridge.m))
+    expect(itemDesc('grace', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.talismans.grace.m))
+    expect(itemDesc('daybreak', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.talismans.daybreak.c))
+    expect(itemDesc('daybreak', DEFAULT_PARAMS)).toContain(String(DEFAULT_PARAMS.talismans.daybreak.x))
+  })
+
+  test('itemDescは未知のプレースホルダーがあってもクラッシュせずそのまま残す', () => {
+    const params = JSON.parse(JSON.stringify(DEFAULT_PARAMS)) as typeof DEFAULT_PARAMS
+    params.talismans.purify.desc = '全消しボーナスに{n}点を加算({typo}は置換されない)'
+    expect(itemDesc('purify', params)).toBe(`全消しボーナスに${DEFAULT_PARAMS.talismans.purify.n}点を加算({typo}は置換されない)`)
   })
 
   test('新規追加した18個の護符も名前と説明文を持つ', () => {
