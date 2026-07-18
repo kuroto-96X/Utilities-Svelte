@@ -3,7 +3,7 @@
   import { DEFAULT_PARAMS, type ShidasuParams } from '$lib/game/shidasu/params'
   import { itemDesc } from '$lib/game/shidasu/engine'
   import { ITEM_GROUPS } from '$lib/game/shidasu/itemGroups'
-  import type { ItemId } from '$lib/game/shidasu/types'
+  import type { ItemId, Rarity } from '$lib/game/shidasu/types'
 
   let config = $state<ShidasuParams | null>(null)
   let error = $state<string | null>(null)
@@ -16,14 +16,14 @@
     flashTimer = setTimeout(() => { flash = null }, 2000)
   }
 
-  type TalismanEntry = { name: string } & Record<string, number>
+  type TalismanEntry = { name: string; rarity: Rarity; desc: string } & Record<string, number | string>
 
   function talismanEntry(id: ItemId): TalismanEntry {
     return config!.talismans[id] as unknown as TalismanEntry
   }
 
   function talismanParamKeys(id: ItemId): string[] {
-    return Object.keys(talismanEntry(id)).filter(key => key !== 'name')
+    return Object.keys(talismanEntry(id)).filter(key => key !== 'name' && key !== 'rarity' && key !== 'desc')
   }
 
   let hasValidationError = $derived.by(() => {
@@ -31,7 +31,8 @@
     return ITEM_GROUPS.some(group => group.ids.some(id => {
       const entry = talismanEntry(id)
       if (!entry.name.trim()) return true
-      return talismanParamKeys(id).some(key => !Number.isFinite(entry[key]))
+      if (!entry.desc.trim()) return true
+      return talismanParamKeys(id).some(key => !Number.isFinite(entry[key] as number))
     }))
   })
 
@@ -83,7 +84,7 @@
         リロード
       </button>
       {#if hasValidationError}
-        <p class="text-xs text-red-600 self-center">護符名またはパラメータが空(未入力)の項目があります</p>
+        <p class="text-xs text-red-600 self-center">護符名・説明文テンプレートが空、またはパラメータが未入力の項目があります</p>
       {/if}
       <button
         onclick={save}
@@ -109,6 +110,7 @@
               <thead>
                 <tr class="bg-slate-50 text-slate-500">
                   <th class="px-2 py-1.5 text-left" style="width:9rem;">護符名</th>
+                  <th class="px-2 py-1.5 text-left" style="width:4rem;">レア度</th>
                   <th class="px-2 py-1.5 text-left" style="width:11rem;">パラメータ</th>
                   <th class="px-2 py-1.5 text-left">説明文プレビュー</th>
                 </tr>
@@ -119,6 +121,13 @@
                   <tr>
                     <td class="px-2 py-1.5 align-top">
                       <input type="text" bind:value={entry.name} class="w-full border border-slate-200 rounded px-1.5 py-0.5" />
+                    </td>
+                    <td class="px-2 py-1.5 align-top">
+                      <select bind:value={entry.rarity} class="w-full border border-slate-200 rounded px-1 py-0.5">
+                        <option value="C">C</option>
+                        <option value="U">U</option>
+                        <option value="R">R</option>
+                      </select>
                     </td>
                     <td class="px-2 py-1.5 align-top">
                       <div class="flex flex-wrap gap-1.5">
