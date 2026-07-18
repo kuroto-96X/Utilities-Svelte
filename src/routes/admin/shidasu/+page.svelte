@@ -3,6 +3,7 @@
   import { DEFAULT_PARAMS, type ShidasuParams } from '$lib/game/shidasu/params'
   import LayoutSection from './LayoutSection.svelte'
   import ItemsSection from './ItemsSection.svelte'
+  import ScoringSection from './ScoringSection.svelte'
 
   let config = $state<ShidasuParams | null>(null)
   let error = $state<string | null>(null)
@@ -180,47 +181,7 @@
     <div class="space-y-6">
       <LayoutSection {config} />
 
-      <section class="bg-white border border-slate-200 rounded-xl p-4">
-        <h2 class="font-semibold text-slate-700 text-sm mb-3">スコアリング</h2>
-        <div class="grid grid-cols-2 gap-3">
-          <label class="text-xs text-slate-500">
-            基礎点(basePoint)
-            {@render scaledNumberInput(config.scoring.basePoint, v => setScoring('basePoint', v))}
-          </label>
-          <label class="text-xs text-slate-500">
-            同スートボーナス(suitBonus)
-            {@render scaledNumberInput(config.scoring.suitBonus, v => setScoring('suitBonus', v))}
-          </label>
-          <label class="text-xs text-slate-500">
-            同色ボーナス(colorBonus)
-            {@render scaledNumberInput(config.scoring.colorBonus, v => setScoring('colorBonus', v))}
-          </label>
-          <label class="text-xs text-slate-500">
-            同スート/同色の成立に必要な実カード枚数(suitColorMinLen)
-            <input type="number" min="1" step="1" bind:value={config.scoring.suitColorMinLen} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            階段ボーナス(stairBonus)
-            {@render scaledNumberInput(config.scoring.stairBonus, v => setScoring('stairBonus', v))}
-          </label>
-          <label class="text-xs text-slate-500">
-            階段成立枚数(stairMinLen)
-            <input type="number" min="2" step="1" bind:value={config.scoring.stairMinLen} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            全消しボーナス(clearBonus)
-            {@render scaledNumberInput(config.scoring.clearBonus, v => setScoring('clearBonus', v))}
-          </label>
-          <label class="text-xs text-slate-500">
-            全消し・残り山札1枚あたり(clearBonusPerStock)
-            {@render scaledNumberInput(config.scoring.clearBonusPerStock, v => setScoring('clearBonusPerStock', v))}
-          </label>
-          <label class="text-xs text-slate-500">
-            コンボ倍率のstep幅(comboMultiplierStep)
-            <input type="number" min="0" step="0.1" bind:value={config.scoring.comboMultiplierStep} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-        </div>
-      </section>
+      <ScoringSection {config} />
 
       <section class="bg-white border border-slate-200 rounded-xl p-4">
         <h2 class="font-semibold text-slate-700 text-sm mb-3">役ボーナス</h2>
