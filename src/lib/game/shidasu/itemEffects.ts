@@ -1,7 +1,7 @@
 // src/lib/game/shidasu/itemEffects.ts
 import type { Card, ItemId, Suit } from './types'
 import type { ShidasuParams } from './params'
-import { isRed, isFace, analyzeSuitColor, analyzeStair, stairUsesKALoop, type ChainBonusResult } from './patterns'
+import { isRed, isFace, analyzeSuitColor, analyzeStair, stairUsesKALoop, fmtMultiplier, type ChainBonusResult } from './patterns'
 
 export interface ItemEffectContext {
   card: Card
@@ -40,12 +40,7 @@ export interface ItemEffectContext {
   mercyActiveNextCombo: boolean
 }
 
-// 護符の内訳表示用に倍率を丸めて整形する(浮動小数の誤差で末尾が長くなるのを防ぐ)
-export function fmtMultiplier(n: number): string {
-  return String(Math.round(n * 100) / 100)
-}
-
-type ItemEffect = (value: number, ctx: ItemEffectContext, params: ShidasuParams) => { value: number; part: string | null }
+export type ItemEffect = (value: number, ctx: ItemEffectContext, params: ShidasuParams) => { value: number; part: string | null }
 
 function chainHasNoFace(chain: Card[]): boolean {
   return chain.every(c => c.wild || !isFace(c))

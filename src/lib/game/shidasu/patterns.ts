@@ -271,3 +271,8 @@ export function chainContinuesPattern(
 
   return false
 }
+
+// 護符の内訳表示用に倍率を丸めて整形する(浮動小数の誤差で末尾が長くなるのを防ぐ)
+export function fmtMultiplier(n: number): string {
+  return String(Math.round(n * 100) / 100)
+}
