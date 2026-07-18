@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte'
   import { DEFAULT_PARAMS, type ShidasuParams } from '$lib/game/shidasu/params'
   import LayoutSection from './LayoutSection.svelte'
+  import ItemsSection from './ItemsSection.svelte'
 
   let config = $state<ShidasuParams | null>(null)
   let error = $state<string | null>(null)
@@ -296,15 +297,7 @@
         </div>
       </section>
 
-      <section class="bg-white border border-slate-200 rounded-xl p-4">
-        <h2 class="font-semibold text-slate-700 text-sm mb-3">アイテム</h2>
-        <div class="grid grid-cols-2 gap-3">
-          <label class="text-xs text-slate-500">
-            護符の所持上限枚数(maxItems)
-            <input type="number" min="1" step="1" bind:value={config.items.maxItems} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-        </div>
-      </section>
+      <ItemsSection {config} />
 
       <p class="text-xs text-slate-400 px-1">
         護符ごとの名前・パラメータ・説明文は
