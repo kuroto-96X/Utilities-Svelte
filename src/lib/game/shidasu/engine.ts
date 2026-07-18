@@ -147,13 +147,11 @@ function resetComboFields(
   newFoundation: Card = wave.foundation,
   newOrigin: ChainCardOrigin = wave.chainOrigin[wave.chainOrigin.length - 1]
 ): WaveState {
-  // 全消し・手詰まりのリセットではnewFoundationを省略し、現在のfoundation(=chain末尾のカード)を
-  // そのまま次のchainの起点として再利用する。この場合、chain末尾のカードは新chain([newFoundation])に
-  // 引き継がれるため、捨て札へは末尾を除いたチェーンを送る(重複防止)。
-  // 通常のdrawStockリセットではnewFoundationが新規に引いたカードでchainには含まれないため、
-  // chain全体をそのまま捨て札へ送る。
-  const isRecycledFoundation = newFoundation.id === wave.foundation.id
-  const chainToDiscard = isRecycledFoundation ? wave.chain.slice(0, -1) : wave.chain
+  // 新chainに引き継がれるカード(newFoundation)は捨て札へ重複して送らない。chain内の位置ではなく
+  // IDの一致で除外するため、chain末尾が必ずfoundationと一致するという不変条件に依存しない。
+  // 通常のdrawStockリセットではnewFoundationが新規に引いたカードでchainに含まれないため何も除去されず、
+  // 全消し・手詰まりのリサイクル時のみ該当カードが除外される。
+  const chainToDiscard = wave.chain.filter(c => c.id !== newFoundation.id)
   return {
     ...wave,
     foundation: newFoundation,

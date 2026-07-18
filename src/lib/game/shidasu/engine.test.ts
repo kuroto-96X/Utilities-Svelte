@@ -750,22 +750,23 @@ describe('playCard', () => {
     expect(result.wave.regenerationUsedThisWave).toBe(true)
   })
 
-  test('全消し後に治癒・再生で復活する際、最後にプレイしたカードが場札と捨て札に重複しない', () => {
+  test('全消し後に治癒・再生で復活する際、最後にプレイしたカードが場札と捨て札に重複・消失しない', () => {
     const wave = baseWave({
       tableau: [[card(1, '♣', 6)]],
       stock: [card(20, '♠', 9)],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
       discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3)],
     })
+    const initialCardCount = wave.tableau.reduce((n, c) => n + c.length, 0) + wave.stock.length + wave.discardPile.length
     const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], 100000000, 0, standardDeckComposition(), createRng(1))
     const allCardIds = [
       ...result.wave.tableau.flat().map(c => c.id),
       ...result.wave.discardPile.map(c => c.id),
       ...result.wave.stock.map(c => c.id),
-      ...(result.wave.chain.length > 0 && !result.wave.tableau.flat().some(c => c.id === result.wave.chain[0].id) ? [result.wave.chain[0].id] : []),
+      ...(result.wave.tableau.flat().some(c => c.id === result.wave.chain[0]?.id) ? [] : [result.wave.chain[0].id]),
     ]
-    const uniqueIds = new Set(allCardIds)
-    expect(uniqueIds.size).toBe(allCardIds.length) // 重複が無いこと
+    expect(allCardIds.length).toBe(initialCardCount) // 消失していないこと
+    expect(new Set(allCardIds).size).toBe(allCardIds.length) // 重複していないこと
   })
 
   test('黄金: コンボが+1ではなく+2進む', () => {
