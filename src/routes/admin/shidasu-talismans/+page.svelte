@@ -112,7 +112,8 @@
                   <th class="px-2 py-1.5 text-left" style="width:9rem;">護符名</th>
                   <th class="px-2 py-1.5 text-left" style="width:4rem;">レア度</th>
                   <th class="px-2 py-1.5 text-left" style="width:11rem;">パラメータ</th>
-                  <th class="px-2 py-1.5 text-left">説明文プレビュー</th>
+                  <th class="px-2 py-1.5 text-left" style="width:16rem;">説明文テンプレート</th>
+                  <th class="px-2 py-1.5 text-left">プレビュー</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100">
@@ -141,6 +142,13 @@
                           <span class="text-slate-300">-</span>
                         {/if}
                       </div>
+                    </td>
+                    <td class="px-2 py-1.5 align-top">
+                      <textarea
+                        bind:value={entry.desc}
+                        rows="2"
+                        class="w-full border border-slate-200 rounded px-1.5 py-0.5 font-mono text-[11px]"
+                      ></textarea>
                     </td>
                     <td class="px-2 py-1.5 align-top text-slate-500">{itemDesc(id, config)}</td>
                   </tr>
