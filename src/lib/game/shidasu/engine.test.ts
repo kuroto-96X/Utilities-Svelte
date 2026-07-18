@@ -1,7 +1,6 @@
 // src/lib/game/shidasu/engine.test.ts
 import { describe, test, expect } from 'vitest'
 import {
-  isFace,
   rankLabel,
   isPlayable,
   getPlayableColumns,
@@ -33,7 +32,7 @@ import {
   type ItemEffectContext,
   type DirectEffectContext,
 } from './engine'
-import { chainContinuesPattern } from './patterns'
+import { isFace, chainContinuesPattern } from './patterns'
 import type { Card, WaveState, RunState, ItemId } from './types'
 import { DEFAULT_PARAMS } from './params'
 import { createRng, standardDeckComposition } from './deck'
@@ -42,7 +41,7 @@ function card(id: number, suit: Card['suit'], rank: Card['rank'], wild = false):
   return { id, suit, rank, wild }
 }
 
-describe('isRed / isFace / rankLabel', () => {
+describe('isFace / rankLabel', () => {
   test('J/Q/Kはisface、それ以外はfalse', () => {
     expect(isFace(card(1, '♠', 11))).toBe(true)
     expect(isFace(card(2, '♠', 12))).toBe(true)

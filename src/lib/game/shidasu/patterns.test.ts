@@ -8,7 +8,7 @@ function card(id: number, suit: Card['suit'], rank: Card['rank'], wild = false):
   return { id, suit, rank, wild }
 }
 
-describe('isRed / isFace / rankLabel', () => {
+describe('isRed', () => {
   test('♥♦は赤、♠♣は黒', () => {
     expect(isRed(card(1, '♥', 5))).toBe(true)
     expect(isRed(card(2, '♦', 5))).toBe(true)

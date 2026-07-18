@@ -4,9 +4,6 @@ import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
 import { isRed, isFace, chainContinuesPattern, evaluateChainBonus, analyzeSuitColor, analyzeStair, stairUsesKALoop, countSameRankBefore, countSameRankForWildPlay, type ChainBonusResult } from './patterns'
 
-// isFaceはengine.test.tsが引き続き './engine' からimportしているため、既存の公開APIとの互換性のために再エクスポートする
-export { isFace }
-
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
 
 export function rankLabel(card: Card): string {
