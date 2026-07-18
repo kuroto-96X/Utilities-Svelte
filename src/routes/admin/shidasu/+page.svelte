@@ -119,6 +119,7 @@
     }
   }
 
+  // 役ボーナス・ステージセクション分離(後続タスク)まで一時的に残す
   function setScoring<K extends keyof ShidasuParams['scoring']>(key: K, value: number) {
     if (!config) return
     config.scoring[key] = value as ShidasuParams['scoring'][K]
@@ -136,6 +137,7 @@
 </script>
 
 {#snippet scaledNumberInput(value: number, onChange: (v: number) => void)}
+  <!-- 役ボーナス・ステージセクション分離(後続タスク)まで一時的に残す。ScaledNumberInput.svelteと同一ロジック -->
   <div class="mt-1 flex items-center gap-1">
     <input
       type="number"
