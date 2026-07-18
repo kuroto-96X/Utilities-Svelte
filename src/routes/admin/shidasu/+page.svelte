@@ -4,6 +4,7 @@
   import LayoutSection from './LayoutSection.svelte'
   import ItemsSection from './ItemsSection.svelte'
   import ScoringSection from './ScoringSection.svelte'
+  import RoleBonusSection from './RoleBonusSection.svelte'
 
   let config = $state<ShidasuParams | null>(null)
   let error = $state<string | null>(null)
@@ -119,12 +120,6 @@
     }
   }
 
-  // 役ボーナス・ステージセクション分離(後続タスク)まで一時的に残す
-  function setScoring<K extends keyof ShidasuParams['scoring']>(key: K, value: number) {
-    if (!config) return
-    config.scoring[key] = value as ShidasuParams['scoring'][K]
-  }
-
   function setTarget(stageIndex: number, targetIndex: 0 | 1 | 2, value: number) {
     if (!config) return
     config.stages[stageIndex].targets[targetIndex] = value
@@ -185,35 +180,7 @@
 
       <ScoringSection {config} />
 
-      <section class="bg-white border border-slate-200 rounded-xl p-4">
-        <h2 class="font-semibold text-slate-700 text-sm mb-3">役ボーナス</h2>
-        <div class="grid grid-cols-2 gap-3">
-          <label class="text-xs text-slate-500">
-            スートコンプリート(flushBonus)
-            {@render scaledNumberInput(config.scoring.flushBonus, v => setScoring('flushBonus', v))}
-          </label>
-          <label class="text-xs text-slate-500">
-            ロイヤルセット(royalSetBonus)
-            {@render scaledNumberInput(config.scoring.royalSetBonus, v => setScoring('royalSetBonus', v))}
-          </label>
-          <label class="text-xs text-slate-500">
-            同ランク単位(sameRankBonusUnit)
-            {@render scaledNumberInput(config.scoring.sameRankBonusUnit, v => setScoring('sameRankBonusUnit', v))}
-          </label>
-          <label class="text-xs text-slate-500">
-            コンプリートラン(completeRunBonus)
-            {@render scaledNumberInput(config.scoring.completeRunBonus, v => setScoring('completeRunBonus', v))}
-          </label>
-          <label class="text-xs text-slate-500">
-            コンプリートラン・同スート加点(completeRunSuitBonus)
-            {@render scaledNumberInput(config.scoring.completeRunSuitBonus, v => setScoring('completeRunSuitBonus', v))}
-          </label>
-          <label class="text-xs text-slate-500">
-            列一掃(columnSweepBonus)
-            {@render scaledNumberInput(config.scoring.columnSweepBonus, v => setScoring('columnSweepBonus', v))}
-          </label>
-        </div>
-      </section>
+      <RoleBonusSection {config} />
 
       <section class="bg-white border border-slate-200 rounded-xl p-4">
         <div class="flex items-center justify-between mb-3">
