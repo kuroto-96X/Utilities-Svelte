@@ -1819,6 +1819,26 @@ describe('applyStuckCheck (不屈の護符)', () => {
     const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
     expect(next.wave!.tableau[1].length).toBeGreaterThan(0) // 治癒によって列1が復活している
   })
+
+  test('治癒のみ所持(不屈なし): 手詰まり直前に列一掃していた列は復活するが、山札には戻らないため手詰まりのまま終了する', () => {
+    const wave = makeWave({
+      tableau: [[card(1, '♠', 5)], []],
+      stock: [],
+      foundation: card(0, '♣', 1),
+      chain: [card(0, '♣', 1)],
+      score: 1000,
+      sweptColumnsThisCombo: [{ colIndex: 1, startLength: 2 }],
+      discardPile: [card(10, '♦', 2), card(11, '♦', 3), card(12, '♦', 4), card(13, '♦', 5)],
+    })
+    const run: RunState = {
+      phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['healing'], offer: [],
+      wave, pendingNewItem: null, deckComposition: standardDeckComposition(),
+    }
+    const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
+    expect(next.wave!.tableau[1].length).toBeGreaterThan(0) // 治癒によって列1は復活している
+    expect(next.wave!.status).toBe('ended') // しかし山札には戻っていないため手詰まりのまま終了
+    expect(next.wave!.endReason).toBe('stuck')
+  })
 })
 
 describe('forceStockTop', () => {
