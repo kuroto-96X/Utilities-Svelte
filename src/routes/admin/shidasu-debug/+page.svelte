@@ -61,7 +61,9 @@
   }
 
   function handlePlayCard(colIndex: number) {
-    wave = playCard(params, wave, 'none', items, TARGET, colIndex)
+    const result = playCard(params, wave, 'none', items, TARGET, colIndex, deckComposition)
+    wave = result.wave
+    deckComposition = result.deckComposition
     lastSnapshot = null
   }
 

@@ -219,14 +219,14 @@ describe('playCard', () => {
 
   test('取れない列を指定した場合は何も変わらない', () => {
     const wave = baseWave()
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 1) // 列1(2)は取れない
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 1, standardDeckComposition()) // 列1(2)は取れない
     expect(next).toBe(wave)
   })
 
   test('コンボ1(倍率1.0)で基礎点そのまま加点される', () => {
     // 列一掃ボーナスが混ざらないよう、played対象の下にダミー札を積んで列が空にならないようにする
     const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.combo).toBe(1)
     expect(next.score).toBe(scoring.basePoint)
     expect(next.foundation).toEqual(card(1, '♣', 6))
@@ -236,7 +236,7 @@ describe('playCard', () => {
 
   test('lastGain.partsの先頭に基礎点の内訳が入り、コンボ1(倍率1.0)ではコンボ倍率の内訳は表示されない', () => {
     const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.lastGain?.parts[0]).toBe(`基礎点+${scoring.basePoint}`)
     expect(next.lastGain?.parts.some(p => p.startsWith('コンボ倍率'))).toBe(false)
   })
@@ -250,14 +250,14 @@ describe('playCard', () => {
         [card(10, '♠', 2), card(2, '♦', 9)],
       ],
     })
-    const afterFirst = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: afterFirst } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     // 2列目のfoundation差分を6→9にするため、一旦foundationを差し替えたウェーブで2枚目を取る
     const wave2 = {
       ...afterFirst,
       foundation: card(1, '♣', 6),
       tableau: [[card(9, '♠', 1)], [card(10, '♠', 2), card(2, '♦', 7)]],
     }
-    const next = playCard(DEFAULT_PARAMS, wave2, 'none', [], 1000000, 1)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave2, 'none', [], 1000000, 1, standardDeckComposition())
     expect(next.combo).toBe(2)
     // 6→7は階段方向+1・長さ2(既定stairMinLen=5未満でボーナスなし)、スート♣→♦で色も違う→パターンボーナス0
     expect(next.score).toBe(afterFirst.score + Math.floor(scoring.basePoint * 1.1))
@@ -269,7 +269,7 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows, 1],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.columnsEmptiedThisCombo).toBe(1)
     expect(next.score).toBe(scoring.basePoint + scoring.columnSweepBonus * 1)
     expect(next.lastGain?.parts).toContain(`列一掃+${scoring.columnSweepBonus}`)
@@ -280,7 +280,7 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
       comboStreakColumnLengths: [2, 1], // 列0はコンボ開始時点で2枚残っていた(rows=5と一致しないため、全カードを1コンボで消化したことにはならない)
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.columnsEmptiedThisCombo).toBe(0)
     expect(next.lastGain?.parts.some(p => p.startsWith('列一掃'))).toBe(false)
   })
@@ -290,7 +290,7 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows - DEFAULT_PARAMS.talismans.grace.m, 1],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['grace'], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['grace'], 1000000, 0, standardDeckComposition())
     expect(next.columnsEmptiedThisCombo).toBe(1)
     expect(next.lastGain?.parts).toContain(`列一掃+${scoring.columnSweepBonus}`)
   })
@@ -303,7 +303,7 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 7)]],
       comboStreakColumnLengths: [relaxedLen],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
     expect(next.lastGain?.parts.some(p => p.startsWith('列一掃'))).toBe(true)
   })
 
@@ -314,7 +314,7 @@ describe('playCard', () => {
       columnsEmptiedThisCombo: 1,
       comboStreakColumnLengths: [1, DEFAULT_PARAMS.layout.rows],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 1)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 1, standardDeckComposition())
     expect(next.columnsEmptiedThisCombo).toBe(2)
     expect(next.lastGain?.parts).toContain(`列一掃+${scoring.columnSweepBonus * 2}`)
   })
@@ -325,7 +325,7 @@ describe('playCard', () => {
       stock: [card(9, '♠', 1), card(10, '♠', 2)],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0, standardDeckComposition())
     expect(next.tableau.reduce((n, c) => n + c.length, 0)).toBe(0)
     expect(next.status).toBe('ended')
     expect(next.endReason).toBe('fullClear')
@@ -339,7 +339,7 @@ describe('playCard', () => {
       stock: [card(9, '♠', 1), card(10, '♠', 2)],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0, standardDeckComposition())
     const expectedClearBonus = scoring.clearBonus + 2 * scoring.clearBonusPerStock
     const expectedPlayGain = scoring.basePoint + scoring.columnSweepBonus * 1
     expect(next.lastGain?.points).toBe(expectedPlayGain)
@@ -359,7 +359,7 @@ describe('playCard', () => {
       combo: DEFAULT_PARAMS.talismans.shootingStar.c - 1,
       chain: [card(20, '♥', 3), card(21, '♦', 4)],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 100000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 100000000, 0, standardDeckComposition())
     expect(next.combo).toBe(DEFAULT_PARAMS.talismans.shootingStar.c)
     const scoreAfterGained = wave.score + (next.lastGain?.points ?? 0)
     const expectedBonus = Math.floor(scoreAfterGained * DEFAULT_PARAMS.talismans.shootingStar.p / 100)
@@ -380,7 +380,7 @@ describe('playCard', () => {
       combo: c - 1, // 黄金の+2適用でc+1へジャンプし、cをちょうど踏まない
       chain: [card(20, '♥', 3), card(21, '♦', 4)],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 100000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 100000000, 0, standardDeckComposition())
     expect(next.combo).toBe(c + 1)
     expect(next.lastBonusGains.some(g => g.parts.some(p => p.startsWith('流星')))).toBe(true)
   })
@@ -393,21 +393,21 @@ describe('playCard', () => {
       combo: c, // 既に閾値以上
       chain: [card(20, '♥', 3), card(21, '♦', 4)],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 100000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 100000000, 0, standardDeckComposition())
     expect(next.combo).toBe(c + 1)
     expect(next.lastBonusGains.some(g => g.parts.some(p => p.startsWith('流星')))).toBe(false)
   })
 
   test('スコアが目標に達したらendReason=targetでstatus=ended', () => {
     const wave = baseWave()
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 5, 0) // basePoint(100) >= target(5)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 5, 0, standardDeckComposition()) // basePoint(100) >= target(5)
     expect(next.status).toBe('ended')
     expect(next.endReason).toBe('target')
   })
 
   test('status が playing でない場合は何もしない', () => {
     const wave = baseWave({ status: 'ended', endReason: 'target' })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next).toBe(wave)
   })
 
@@ -424,29 +424,29 @@ describe('playCard', () => {
       ],
     })
     // コンボ1: 倍率1+(1-1)*0.25=1.0 → 15*1.0=15 (割り切れる、floorの効果を見るには2枚目が必要)
-    const afterFirst = playCard(oddParams, wave, 'none', [], 1000000, 0)
+    const { wave: afterFirst } = playCard(oddParams, wave, 'none', [], 1000000, 0, standardDeckComposition())
     const wave2 = { ...afterFirst, tableau: [[card(9, '♠', 1)], [card(10, '♠', 2), card(2, '♦', 7)]] }
-    const next = playCard(oddParams, wave2, 'none', [], 1000000, 1)
+    const { wave: next } = playCard(oddParams, wave2, 'none', [], 1000000, 1, standardDeckComposition())
     // コンボ2: 倍率1+(2-1)*0.25=1.25 → 15*1.25=18.75 → floor=18
     expect(next.score).toBe(afterFirst.score + 18)
   })
 
   test('カードを取るとlastDrawEffectがクリアされる', () => {
     const wave = baseWave({ lastDrawEffect: 'pattern' })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.lastDrawEffect).toBeNull()
   })
 
   test('プレイするとfirstPlayDoneがtrueになる(ウェーブ開始直後はfalse)', () => {
     const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
     expect(wave.firstPlayDone).toBe(false)
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.firstPlayDone).toBe(true)
   })
 
   test('chainOriginにplayが追記される', () => {
     const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.chainOrigin).toEqual(['play'])
   })
 
@@ -456,7 +456,7 @@ describe('playCard', () => {
       chain: [card(20, '♠', 4), card(0, '♣', 5)],
       tableau: [[card(9, '♠', 1), card(1, '♦', 6)], [card(2, '♥', 2)]],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.lastGain?.parts.some(p => p.startsWith('階段'))).toBe(false)
   })
 
@@ -466,7 +466,7 @@ describe('playCard', () => {
       chain: [card(20, '♠', 4), card(0, '♣', 5)],
       tableau: [[card(9, '♠', 1), card(1, '♦', 6)], [card(2, '♥', 2)]],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['bridge'], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['bridge'], 1000000, 0, standardDeckComposition())
     expect(next.lastGain?.parts).toContain(`階段3 +${scoring.stairBonus}`)
   })
 
@@ -480,7 +480,7 @@ describe('playCard', () => {
       chain: [card(20, '♣', 3), card(21, '♦', 4)],
       tableau: [[card(1, '♥', 5)], [card(2, '♦', 2)]],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
     expect(next.lastGain?.parts.some(p => p.startsWith('階段'))).toBe(true)
   })
 
@@ -494,7 +494,7 @@ describe('playCard', () => {
       chain: [card(0, '♠', 5)],
       tableau: [[card(1, '♠', 6)], [card(2, '♦', 2)]],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
     expect(next.lastGain?.parts).toContain(`同スート+${DEFAULT_PARAMS.scoring.suitBonus}`)
   })
 
@@ -503,7 +503,7 @@ describe('playCard', () => {
       foundation: card(0, '♠', 5),
       tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['springBreeze'], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['springBreeze'], 1000000, 0, standardDeckComposition())
     expect(next.score).toBe(scoring.basePoint + DEFAULT_PARAMS.talismans.springBreeze.n)
   })
 
@@ -516,7 +516,7 @@ describe('playCard', () => {
       combo: 2,
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
     expect(next.combo).toBe(3)
     const multiplier = 1 + (3 - 1) * scoring.comboMultiplierStep
     const expectedGained = Math.floor((scoring.basePoint + DEFAULT_PARAMS.talismans.springBreeze.n) * multiplier)
@@ -529,7 +529,7 @@ describe('playCard', () => {
       stock: [card(9, '♠', 1), card(10, '♠', 2)],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['purify'], 100000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['purify'], 100000000, 0, standardDeckComposition())
     expect(next.endReason).toBe('fullClear')
     const expectedClearBonus = scoring.clearBonus + 2 * scoring.clearBonusPerStock + DEFAULT_PARAMS.talismans.purify.n
     expect(next.score).toBe(scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus)
@@ -541,15 +541,15 @@ describe('playCard', () => {
       stock: [card(9, '♠', 1), card(10, '♠', 2)],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
     })
-    const order1 = playCard(DEFAULT_PARAMS, wave, 'none', ['purify', 'temperance'], 100000000, 0)
-    const order2 = playCard(DEFAULT_PARAMS, wave, 'none', ['temperance', 'purify'], 100000000, 0)
+    const { wave: order1 } = playCard(DEFAULT_PARAMS, wave, 'none', ['purify', 'temperance'], 100000000, 0, standardDeckComposition())
+    const { wave: order2 } = playCard(DEFAULT_PARAMS, wave, 'none', ['temperance', 'purify'], 100000000, 0, standardDeckComposition())
     expect(order1.score).not.toBe(order2.score)
   })
 
   test('複数のgained護符も所持順に適用される(conscience→courageとcourage→conscienceで結果が異なる)', () => {
     const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const order1 = playCard(DEFAULT_PARAMS, wave, 'none', ['conscience', 'courage'], 1000000, 0)
-    const order2 = playCard(DEFAULT_PARAMS, wave, 'none', ['courage', 'conscience'], 1000000, 0)
+    const { wave: order1 } = playCard(DEFAULT_PARAMS, wave, 'none', ['conscience', 'courage'], 1000000, 0, standardDeckComposition())
+    const { wave: order2 } = playCard(DEFAULT_PARAMS, wave, 'none', ['courage', 'conscience'], 1000000, 0, standardDeckComposition())
     expect(order1.score).not.toBe(order2.score)
     expect(order1.score).toBe(Math.floor((scoring.basePoint + DEFAULT_PARAMS.talismans.conscience.n) * (1 + 1 * DEFAULT_PARAMS.talismans.courage.x)))
     expect(order2.score).toBe(Math.floor(scoring.basePoint * (1 + 1 * DEFAULT_PARAMS.talismans.courage.x) + DEFAULT_PARAMS.talismans.conscience.n))
@@ -560,28 +560,28 @@ describe('playCard', () => {
     const wave = baseWave({
       tableau: [[card(9, '♠', 7), card(1, '♣', 6)], [card(10, '♠', 2), card(2, '♦', 7)]],
     })
-    const first = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: first } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(first.sameColumnStreak).toBe(1)
     expect(first.lastPlayedColumn).toBe(0)
-    const second = playCard(DEFAULT_PARAMS, first, 'none', [], 1000000, 0)
+    const { wave: second } = playCard(DEFAULT_PARAMS, first, 'none', [], 1000000, 0, standardDeckComposition())
     expect(second.sameColumnStreak).toBe(2)
     // 列1: 1回目で列0の6を取ったあと、列1の7が(上書き後の)foundation(6)と隣接するようにする
     const wave2 = baseWave({
       tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(10, '♠', 2), card(11, '♦', 7)]],
     })
-    const thirdSetup = playCard(DEFAULT_PARAMS, wave2, 'none', [], 1000000, 0)
-    const differentColumn = playCard(DEFAULT_PARAMS, { ...thirdSetup, foundation: card(1, '♣', 6) }, 'none', [], 1000000, 1)
+    const { wave: thirdSetup } = playCard(DEFAULT_PARAMS, wave2, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: differentColumn } = playCard(DEFAULT_PARAMS, { ...thirdSetup, foundation: card(1, '♣', 6) }, 'none', [], 1000000, 1, standardDeckComposition())
     expect(differentColumn.sameColumnStreak).toBe(1)
     expect(differentColumn.lastPlayedColumn).toBe(1)
   })
 
   test('maxComboThisWaveはこれまでの最大コンボ数を保持する', () => {
     const wave = baseWave({ combo: 5, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]], maxComboThisWave: 5 })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.combo).toBe(6)
     expect(next.maxComboThisWave).toBe(6)
     const wave2 = baseWave({ combo: 2, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]], maxComboThisWave: 10 })
-    const next2 = playCard(DEFAULT_PARAMS, wave2, 'none', [], 1000000, 0)
+    const { wave: next2 } = playCard(DEFAULT_PARAMS, wave2, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next2.maxComboThisWave).toBe(10) // 既存の最大値の方が大きければ維持
   })
 
@@ -592,7 +592,7 @@ describe('playCard', () => {
       totalColumnsEmptiedThisWave: 3,
       columnSweepActiveThisWave: false,
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.totalColumnsEmptiedThisWave).toBe(4)
     expect(next.columnSweepActiveThisWave).toBe(true)
   })
@@ -604,190 +604,175 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 13)], [card(2, '♦', 2)]],
       roleFiredThisChain: false,
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.roleFiredThisChain).toBe(true)
   })
 
   test('playCardはrand引数を省略してもデフォルト(Math.random)で動作する(既存呼び出しの後方互換性)', () => {
     const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.combo).toBe(1)
   })
 
-  test('治癒: 列一掃が成立すると捨て札から最大rows枚が空いた列へ戻る', () => {
+  test('治癒: 列一掃した列は、そのコンボが継続している間はまだ復活しない(コンボリセット時に初めて効く)', () => {
     const wave = baseWave({
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows, 1],
-      discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3), card(13, '♦', 4), card(14, '♦', 5), card(15, '♦', 6), card(16, '♦', 7)],
+      discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3)],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['healing'], 1000000, 0, createRng(1))
-    expect(next.columnsEmptiedThisCombo).toBe(1)
-    expect(next.tableau[0]).toHaveLength(DEFAULT_PARAMS.layout.rows)
-    expect(next.discardPile.length).toBe(7 - DEFAULT_PARAMS.layout.rows)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['healing'], 1000000, 0, standardDeckComposition(), createRng(1))
+    expect(next.tableau[0]).toHaveLength(0) // まだ復活しない
+    expect(next.sweptColumnsThisCombo).toEqual([{ colIndex: 0, startLength: DEFAULT_PARAMS.layout.rows }])
   })
 
-  test('治癒: 捨て札がrows未満ならあるだけ戻す', () => {
-    const wave = baseWave({
-      tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
-      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows, 1],
-      discardPile: [card(10, '♦', 1), card(11, '♦', 2)],
-    })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['healing'], 1000000, 0, createRng(1))
-    expect(next.tableau[0]).toHaveLength(2)
-    expect(next.discardPile).toHaveLength(0)
-  })
-
-  test('治癒: 復活後の列はcomboStreakColumnLengthsが実際の復活枚数に更新される(部分復活が誤って満列扱いされるのを防ぐ)', () => {
-    const wave = baseWave({
-      tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
-      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows, 1],
-      discardPile: [card(10, '♦', 1), card(11, '♦', 2)], // rows未満しかない → 部分復活
-    })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['healing'], 1000000, 0, createRng(1))
-    expect(next.comboStreakColumnLengths[0]).toBe(2) // rows(古い基準)ではなく実際の復活枚数
-    expect(next.comboStreakColumnLengths[1]).toBe(1) // 治癒が発動しなかった列は据え置きのまま
-  })
-
-  test('治癒: 捨て札が空なら復活は起こらない', () => {
-    const wave = baseWave({
-      tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
-      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows, 1],
+  test('治癒: 通常のコンボリセット(drawStockでパターン不継続)時に、列一掃した列がコンボ開始時の枚数を上限に復活する', () => {
+    const afterSweep = makeWave({
+      foundation: card(1, '♣', 6),
+      tableau: [[], [card(2, '♦', 9)]],
+      stock: [card(20, '♦', 1)], // 赤札で色継続もせず、差5でパターン不継続
+      chain: [card(0, '♠', 5), card(1, '♣', 6)],
+      linked: true,
+      sweptColumnsThisCombo: [{ colIndex: 0, startLength: DEFAULT_PARAMS.layout.rows }],
       discardPile: [],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['healing'], 1000000, 0, createRng(1))
-    expect(next.tableau[0]).toHaveLength(0)
+    const result = drawStock(DEFAULT_PARAMS, afterSweep, ['healing'], standardDeckComposition())
+    // discardPileにはコンボリセットでチェーンの2枚が加わってから復活に使われる
+    expect(result.wave.tableau[0].length).toBe(Math.min(2, DEFAULT_PARAMS.layout.rows))
+    expect(result.wave.sweptColumnsThisCombo).toEqual([])
   })
 
-  test('治癒を持っていなければ列一掃後も列は空のまま', () => {
-    const wave = baseWave({
-      tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
-      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows, 1],
-      discardPile: [card(10, '♦', 1), card(11, '♦', 2)],
+  test('治癒: コンボ開始時の枚数を上限に復活し、それ以上は復活しない', () => {
+    const afterSweep = makeWave({
+      foundation: card(1, '♣', 6),
+      tableau: [[], [card(2, '♦', 9)]],
+      stock: [card(20, '♠', 1)],
+      chain: [card(1, '♣', 6)],
+      linked: true,
+      sweptColumnsThisCombo: [{ colIndex: 0, startLength: 2 }],
+      discardPile: [card(30, '♦', 1), card(31, '♦', 2), card(32, '♦', 3), card(33, '♦', 4)],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, createRng(1))
-    expect(next.tableau[0]).toHaveLength(0)
-    expect(next.discardPile).toHaveLength(2)
+    const result = drawStock(DEFAULT_PARAMS, afterSweep, ['healing'], standardDeckComposition())
+    expect(result.wave.tableau[0]).toHaveLength(2) // startLength=2が上限
+    expect(result.wave.discardPile).toHaveLength(4 + 1 - 2) // 元4枚+チェーン1枚 - 復活2枚
   })
 
-  test('再生: 全消し時に捨て札があれば、スコアp%を消費して場札を復活させウェーブを継続する', () => {
+  test('治癒を持っていなければ、コンボリセット時も列は空のまま', () => {
+    const afterSweep = makeWave({
+      foundation: card(1, '♣', 6),
+      tableau: [[], [card(2, '♦', 9)]],
+      stock: [card(20, '♠', 1)],
+      chain: [card(1, '♣', 6)],
+      linked: true,
+      sweptColumnsThisCombo: [{ colIndex: 0, startLength: 2 }],
+      discardPile: [card(30, '♦', 1)],
+    })
+    const result = drawStock(DEFAULT_PARAMS, afterSweep, [], standardDeckComposition())
+    expect(result.wave.tableau[0]).toHaveLength(0)
+  })
+
+  test('再生: 全消し時に山札が残っていれば、スコアp%消費して場札を復活させ、その後山札を1枚捲る', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)]],
+      stock: [card(20, '♠', 9)], // 差3、継続しない(パターン不成立)想定
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
+      discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3)],
+    })
+    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], 100000000, 0, standardDeckComposition(), createRng(1))
+    expect(result.wave.status).toBe('playing')
+    expect(result.wave.endReason).toBeNull()
+    expect(result.wave.regenerationUsedThisWave).toBe(true)
+    // 山札を1枚捲った後なのでstockは0枚(元々1枚だけだった)
+    expect(result.wave.stock).toHaveLength(0)
+  })
+
+  test('再生: 山札が0枚の全消しでは発動しない(通常の全消し終了になる)', () => {
     const wave = baseWave({
       tableau: [[card(1, '♣', 6)]],
       stock: [],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
       discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3)],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], 100000000, 0, createRng(1))
-    expect(next.status).toBe('playing') // 全消し終了せず継続
-    expect(next.endReason).toBeNull()
-    const revivedCount = next.tableau.reduce((n, c) => n + c.length, 0)
-    expect(revivedCount).toBe(3)
-    expect(next.discardPile).toHaveLength(0)
-    // 単一列・単一カードでも comboStreakColumnLengths=[rows] により列一掃ボーナスも同時発火する
-    // (328行目の全消しテストと同じフィクスチャパターン。scoreBeforeCostにcolumnSweepBonusを含める必要がある)
-    const expectedClearBonus = DEFAULT_PARAMS.scoring.clearBonus + 0 * DEFAULT_PARAMS.scoring.clearBonusPerStock
-    const scoreBeforeCost = scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus
-    const expectedCost = Math.floor(scoreBeforeCost * DEFAULT_PARAMS.talismans.regeneration.p / 100)
-    expect(next.score).toBe(scoreBeforeCost - expectedCost)
+    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], 100000000, 0, standardDeckComposition(), createRng(1))
+    expect(result.wave.status).toBe('ended')
+    expect(result.wave.endReason).toBe('fullClear')
+    expect(result.wave.regenerationUsedThisWave).toBe(false)
   })
 
-  test('再生: 捨て札が無ければ通常通り全消し終了になる', () => {
+  test('再生: 開始時の捨て札が空でも、全消し直前のプレイでチェーンに積まれた札がリセットで捨て札へ移り、それを使って復活する', () => {
+    // 新仕様では全消し時に必ずコンボリセットが走り、直前まで場にあったチェーン札が捨て札へ移る。
+    // そのため開始時discardPileが空でも、再生は移ってきた札を使って場札を復活させウェーブを継続する。
     const wave = baseWave({
       tableau: [[card(1, '♣', 6)]],
-      stock: [],
+      stock: [card(20, '♠', 9)],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
       discardPile: [],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], 100000000, 0, createRng(1))
-    expect(next.status).toBe('ended')
-    expect(next.endReason).toBe('fullClear')
+    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], 100000000, 0, standardDeckComposition(), createRng(1))
+    expect(result.wave.status).toBe('playing')
+    expect(result.wave.regenerationUsedThisWave).toBe(true)
   })
 
-  test('再生を持っていなければ通常通り全消し終了になる', () => {
+  test('再生: ウェーブ中2回目は発動しない(regenerationUsedThisWaveがtrueなら通常の全消し終了)', () => {
     const wave = baseWave({
       tableau: [[card(1, '♣', 6)]],
-      stock: [],
+      stock: [card(20, '♠', 9)],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
       discardPile: [card(10, '♦', 1)],
+      regenerationUsedThisWave: true,
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0, createRng(1))
-    expect(next.status).toBe('ended')
-    expect(next.endReason).toBe('fullClear')
+    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], 100000000, 0, standardDeckComposition(), createRng(1))
+    expect(result.wave.status).toBe('ended')
+    expect(result.wave.endReason).toBe('fullClear')
   })
 
-  test('治癒と再生を同時所持し発動条件が重なる場合、所持順で治癒が先なら治癒が優先され再生は発動しない', () => {
+  test('治癒と再生を同時所持し、所持順で治癒が先なら治癒が優先され再生は発動しない', () => {
     const wave = baseWave({
       tableau: [[card(1, '♣', 6)]],
-      stock: [],
+      stock: [card(20, '♠', 9)],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
       discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3)],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['healing', 'regeneration'], 100000000, 0, createRng(1))
-    // 治癒が先に列を復活させるため場札が空にならず、再生の全消し継続は発動しない
-    expect(next.status).toBe('playing')
-    expect(next.endReason).toBeNull()
-    expect(next.tableau[0].length).toBeGreaterThan(0) // 治癒による復活
-    expect(next.discardPile).toHaveLength(0) // 3枚とも治癒が使い切る(rows未満のため全部)
+    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['healing', 'regeneration'], 100000000, 0, standardDeckComposition(), createRng(1))
+    expect(result.wave.status).toBe('playing')
+    expect(result.wave.regenerationUsedThisWave).toBe(false) // 治癒が先に場札を埋めたため再生は不発動
   })
 
-  test('治癒と再生を同時所持し発動条件が重なる場合、所持順で再生が先なら再生が優先され場札全体が復活する', () => {
+  test('治癒と再生を同時所持し、所持順で再生が先なら再生が優先され場札全体が復活する', () => {
     const wave = baseWave({
       tableau: [[card(1, '♣', 6)]],
-      stock: [],
+      stock: [card(20, '♠', 9)],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
       discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3)],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration', 'healing'], 100000000, 0, createRng(1))
-    expect(next.status).toBe('playing')
-    expect(next.endReason).toBeNull()
-    // 再生の再配布は列0(=colIndex)から順に埋めるため、治癒の対象列も再生によって
-    // 既に埋められ、治癒は追加発動しない(捨て札が使い切られていることで確認)
-    expect(next.discardPile).toHaveLength(0)
-    const revivedCount = next.tableau.reduce((n, c) => n + c.length, 0)
-    expect(revivedCount).toBe(3)
-    const expectedClearBonus = DEFAULT_PARAMS.scoring.clearBonus + 0 * DEFAULT_PARAMS.scoring.clearBonusPerStock
-    const scoreBeforeCost = scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus
-    const expectedCost = Math.floor(scoreBeforeCost * DEFAULT_PARAMS.talismans.regeneration.p / 100)
-    expect(next.score).toBe(scoreBeforeCost - expectedCost) // 再生のコスト計算式で消費されている(治癒は不発火)
-  })
-
-  test('治癒・再生の発動条件が重ならない通常の全消し(列一掃を伴わない)では、所持順に関係なく再生が発動する', () => {
-    const wave = baseWave({
-      tableau: [[card(1, '♣', 6)]],
-      stock: [],
-      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows + 1], // 列一掃条件(===rows)を満たさない
-      discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3)],
-    })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['healing', 'regeneration'], 100000000, 0, createRng(1))
-    expect(next.status).toBe('playing')
-    expect(next.endReason).toBeNull()
-    const revivedCount = next.tableau.reduce((n, c) => n + c.length, 0)
-    expect(revivedCount).toBe(3) // 列一掃が不成立のため治癒は無関係、再生のみが発動する
+    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration', 'healing'], 100000000, 0, standardDeckComposition(), createRng(1))
+    expect(result.wave.status).toBe('playing')
+    expect(result.wave.regenerationUsedThisWave).toBe(true)
   })
 
   test('黄金: コンボが+1ではなく+2進む', () => {
     const wave = baseWave({ combo: 3, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['golden'], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['golden'], 1000000, 0, standardDeckComposition())
     expect(next.combo).toBe(5)
   })
 
   test('黄金を持たなければ通常通りコンボは+1', () => {
     const wave = baseWave({ combo: 3, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.combo).toBe(4)
   })
 
   test('庇護: コンボ数(計算用)がc未満ならcとして計算される', () => {
     const wave = baseWave({ combo: 0, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
     // combo=0でプレイするとnewCombo=1。庇護c=3未満なので一時comboは3として計算される。
-    const withProtection = playCard(DEFAULT_PARAMS, wave, 'none', ['protection'], 1000000, 0)
-    const without = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: withProtection } = playCard(DEFAULT_PARAMS, wave, 'none', ['protection'], 1000000, 0, standardDeckComposition())
+    const { wave: without } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(withProtection.score).toBeGreaterThan(without.score)
   })
 
   test('大地: コンボ数(計算用)に常にcが加算される', () => {
     const wave = baseWave({ combo: 5, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const withEarth = playCard(DEFAULT_PARAMS, wave, 'none', ['earth'], 1000000, 0)
-    const without = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: withEarth } = playCard(DEFAULT_PARAMS, wave, 'none', ['earth'], 1000000, 0, standardDeckComposition())
+    const { wave: without } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(withEarth.score).toBeGreaterThan(without.score)
     // wave.combo自体(実コンボ)は一時comboの影響を受けない
     expect(withEarth.combo).toBe(without.combo)
@@ -797,9 +782,9 @@ describe('playCard', () => {
     // combo=0でプレイ: newCombo=1。大地(c=2)が先に+2して一時combo=3。
     // 庇護(c=3)は「3 < 3」が偽なので不発化(3のまま)。
     const wave = baseWave({ combo: 0, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const earthThenProtection = playCard(DEFAULT_PARAMS, wave, 'none', ['earth', 'protection'], 1000000, 0)
+    const { wave: earthThenProtection } = playCard(DEFAULT_PARAMS, wave, 'none', ['earth', 'protection'], 1000000, 0, standardDeckComposition())
     // 庇護→大地の順なら: newCombo=1→庇護でc=3に底上げ→大地で+2して5になる。より高スコアになるはず。
-    const protectionThenEarth = playCard(DEFAULT_PARAMS, wave, 'none', ['protection', 'earth'], 1000000, 0)
+    const { wave: protectionThenEarth } = playCard(DEFAULT_PARAMS, wave, 'none', ['protection', 'earth'], 1000000, 0, standardDeckComposition())
     expect(protectionThenEarth.score).toBeGreaterThan(earthThenProtection.score)
   })
 
@@ -811,13 +796,13 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
       baseComboCount: 0,
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['sanctify'], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['sanctify'], 1000000, 0, standardDeckComposition())
     expect(next.baseComboCount).toBe(1)
     // 一時comboにも+1が反映されていることを、祝福あり/なしのスコア差で確認する
     // (庇護・大地のテストと同じ手法。baseComboCountの検証だけではeffectiveComboへの
     // 反映漏れを検知できないため)。
-    const withSanctify = playCard(DEFAULT_PARAMS, wave, 'none', ['sanctify'], 1000000, 0)
-    const without = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: withSanctify } = playCard(DEFAULT_PARAMS, wave, 'none', ['sanctify'], 1000000, 0, standardDeckComposition())
+    const { wave: without } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(withSanctify.score).toBeGreaterThan(without.score)
   })
 
@@ -826,7 +811,7 @@ describe('playCard', () => {
       tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
       baseComboCount: 2,
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['sanctify'], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['sanctify'], 1000000, 0, standardDeckComposition())
     expect(next.baseComboCount).toBe(2)
   })
 
@@ -838,8 +823,8 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
       roleOccurrenceCountThisWave: { flush: 3 },
     })
-    const withMorningStar = playCard(DEFAULT_PARAMS, wave, 'none', ['morningStar'], 1000000, 0)
-    const without = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: withMorningStar } = playCard(DEFAULT_PARAMS, wave, 'none', ['morningStar'], 1000000, 0, standardDeckComposition())
+    const { wave: without } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(withMorningStar.score).toBeGreaterThan(without.score)
   })
 
@@ -850,7 +835,7 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
       roleOccurrenceCountThisWave: { flush: 1 },
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['morningStar'], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['morningStar'], 1000000, 0, standardDeckComposition())
     expect(next.roleOccurrenceCountThisWave.flush).toBe(2)
   })
 
@@ -861,7 +846,7 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
       roleOccurrenceCountThisWave: { flush: 1 },
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.roleOccurrenceCountThisWave.flush).toBe(2)
   })
 
@@ -871,7 +856,7 @@ describe('playCard', () => {
       chain: [card(20, '♥', 3), card(21, '♦', 4), card(22, '♠', 5)],
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], 1000000, 0, standardDeckComposition())
     expect(next.pendingRoleEcho).not.toBeNull()
     expect(next.pendingRoleEcho?.name).toBe('flush')
     expect(next.roleEchoUsedThisCombo.flush).toBe(true)
@@ -882,7 +867,7 @@ describe('playCard', () => {
       tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
       pendingRoleEcho: { name: 'flush', amount: 999 },
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], 1000000, 0, standardDeckComposition())
     expect(next.score).toBeGreaterThanOrEqual(999)
     expect(next.pendingRoleEcho).toBeNull()
   })
@@ -894,7 +879,7 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
       roleEchoUsedThisCombo: { flush: true },
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], 1000000, 0, standardDeckComposition())
     expect(next.pendingRoleEcho).toBeNull()
   })
 
@@ -906,7 +891,7 @@ describe('playCard', () => {
       sameRankEchoUsedThisCombo: [1], // 段階1(sameRankCount=1)は既に使用済み
     })
     // 今回のプレイでsameRankCount=2が成立する(段階1とは別枠なので予約可能なはず)
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], 1000000, 0, standardDeckComposition())
     expect(next.pendingRoleEcho).not.toBeNull()
     expect(next.pendingRoleEcho?.name).toBe('sameRank')
     expect(next.sameRankEchoUsedThisCombo).toContain(2)
@@ -920,8 +905,8 @@ describe('playCard', () => {
       tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
       mercyActiveNextCombo: true,
     })
-    const withMercy = playCard(DEFAULT_PARAMS, wave, 'none', ['mercy'], 1000000, 0)
-    const without = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0)
+    const { wave: withMercy } = playCard(DEFAULT_PARAMS, wave, 'none', ['mercy'], 1000000, 0, standardDeckComposition())
+    const { wave: without } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(withMercy.score).toBeGreaterThan(without.score)
   })
 
@@ -933,7 +918,7 @@ describe('playCard', () => {
       chain: [card(20, '♠', 3), card(21, '♠', 4)],
       tableau: [[card(1, '♠', 6)], [card(2, '♦', 2)]],
     })
-    const next = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
     expect(next.lastGain?.parts).toContain(`高潔+${DEFAULT_PARAMS.talismans.nobility.n}`)
   })
 

@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
 import { isFace, chainContinuesPattern, evaluateChainBonus, analyzeSuitColor, countSameRankBefore, countSameRankForWildPlay, fmtMultiplier } from './patterns'
@@ -136,6 +136,76 @@ export function startWave(
   return { wave, deckComposition: composition }
 }
 
+// コンボリセット時に共通で初期化するフィールドをまとめて返す(治癒・再生・不屈の解決は含まない)。
+// newFoundation/newOriginを省略した場合はfoundationを変更せず、chainは[wave.foundation]・
+// chainOriginは現在の末尾要素のみを残す(全消し・手詰まり時に使う。まだ新しいカードを引いていないため)。
+// 通常のdrawStockリセットでは、新しく引いたカードとその起源('draw')を明示的に渡す。
+function resetComboFields(
+  wave: WaveState,
+  params: ShidasuParams,
+  items: ItemId[],
+  newFoundation: Card = wave.foundation,
+  newOrigin: ChainCardOrigin = wave.chainOrigin[wave.chainOrigin.length - 1]
+): WaveState {
+  return {
+    ...wave,
+    foundation: newFoundation,
+    combo: items.includes('sanctify') ? wave.baseComboCount : 0,
+    chain: [newFoundation],
+    chainOrigin: [newOrigin],
+    linked: false,
+    columnsEmptiedThisCombo: 0,
+    comboStreakColumnLengths: wave.tableau.map(col => col.length),
+    discardPile: [...wave.discardPile, ...wave.chain],
+    drawContinueCountThisChain: 0,
+    flushActiveThisCombo: false,
+    sameColumnStreak: 0,
+    lastPlayedColumn: null,
+    benevolenceUsedThisCombo: false,
+    roleEchoUsedThisCombo: {},
+    sameRankEchoUsedThisCombo: [],
+    pendingRoleEcho: null,
+    mercyActiveNextCombo: wave.combo <= params.talismans.mercy.c,
+    sweptColumnsThisCombo: [],
+    roleFiredThisChain: false,
+  }
+}
+
+// 治癒: コンボリセット直前に列一掃していた列を、コンボ開始時点の枚数を上限に捨て札から復活させる。
+// resetWaveはresetComboFields適用後(discardPileにチェーンの札が加わった後)の状態を渡すこと。
+// sweptColumnsはリセット直前(resetComboFields呼び出し前)のwave.sweptColumnsThisComboを渡す。
+// 捨て札は1回だけシャッフルし、列一掃した順(sweptColumnsの並び順)に在庫が尽きるまで割り振る。
+function resolveHealingRestoration(
+  resetWave: WaveState,
+  sweptColumns: { colIndex: number; startLength: number }[],
+  rand: () => number
+): WaveState {
+  if (sweptColumns.length === 0 || resetWave.discardPile.length === 0) return resetWave
+
+  const pool = [...resetWave.discardPile]
+  shuffleInPlace(pool, rand)
+  let cursor = 0
+  const tableau = resetWave.tableau.map(col => [...col])
+  const comboStreakColumnLengths = [...resetWave.comboStreakColumnLengths]
+
+  for (const { colIndex, startLength } of sweptColumns) {
+    if (tableau[colIndex].length !== 0) continue
+    const available = pool.length - cursor
+    if (available <= 0) break
+    const take = Math.min(startLength, available)
+    tableau[colIndex] = pool.slice(cursor, cursor + take)
+    comboStreakColumnLengths[colIndex] = take
+    cursor += take
+  }
+
+  return {
+    ...resetWave,
+    tableau,
+    discardPile: pool.slice(cursor),
+    comboStreakColumnLengths,
+  }
+}
+
 export function playCard(
   params: ShidasuParams,
   wave: WaveState,
@@ -143,13 +213,14 @@ export function playCard(
   items: ItemId[],
   target: number,
   colIndex: number,
+  deckComposition: DeckCard[],
   rand: () => number = Math.random
-): WaveState {
-  if (wave.status !== 'playing') return wave
+): { wave: WaveState; deckComposition: DeckCard[] } {
+  if (wave.status !== 'playing') return { wave, deckComposition }
   const col = wave.tableau[colIndex]
   const card = col?.[col.length - 1]
-  if (!card) return wave
-  if (!isPlayable(modifier, wave, card)) return wave
+  if (!card) return { wave, deckComposition }
+  if (!isPlayable(modifier, wave, card)) return { wave, deckComposition }
 
   // 黄金: 通常のコンボ加算処理そのものを+1ではなく+2にする(他の護符には無干渉)
   const newCombo = wave.combo + (items.includes('golden') ? 2 : 1)
@@ -186,6 +257,9 @@ export function playCard(
       : streakStartLength === rows
   )
   const newColumnsEmptied = sweepQualifies ? wave.columnsEmptiedThisCombo + 1 : wave.columnsEmptiedThisCombo
+  const newSweptColumnsThisCombo = sweepQualifies
+    ? [...wave.sweptColumnsThisCombo, { colIndex, startLength: streakStartLength }]
+    : wave.sweptColumnsThisCombo
   const roleFired = [...chainResult.roleFired]
   if (sweepQualifies) {
     const sweepGain = Math.floor(params.scoring.columnSweepBonus * newColumnsEmptied * roleBonusMultiplier('columnSweep'))
@@ -218,63 +292,11 @@ export function playCard(
     }
   }
 
-  // 護符は所持順(itemsの並び順)で解決するのが大原則。治癒(復活対象=一掃した列)と
-  // 再生(復活対象=場札全体)は、解決時に自分の復活対象が既に空でなければ発動しない。
-  // 通常は独立して発動するが、最後の列を空にする一手が列一掃と全消しを同時に満たす場合のみ
-  // 両者の対象が重なるため、所持順で先にある方から順に解決する。
+  // 治癒・再生の解決はコンボリセット時(全消し・手詰まり・drawStockのパターン不継続)に
+  // 共通処理として行う。プレイ時点では場札の除去のみを反映し、ここでは復活処理を行わない。
+  // remainingBeforeRevivalは全消し判定に、remainingは各護符コンテキストの残枚数に使う。
   const remainingBeforeRevival = remainingCount(newTableau)
-  const healingIndex = items.indexOf('healing')
-  const regenerationIndex = items.indexOf('regeneration')
-  const overlapWithHealingFirst = sweepQualifies && remainingBeforeRevival === 0
-    && items.includes('healing') && items.includes('regeneration')
-    && healingIndex !== -1 && regenerationIndex !== -1 && healingIndex < regenerationIndex
-
-  // workingXxx: 再生の解決を経た状態(再生が発動しなければnewTableau等のまま)。
-  let workingTableau = newTableau
-  let workingDiscardPile = wave.discardPile
-  let workingComboStreakColumnLengths = wave.comboStreakColumnLengths
-  let regenerationRevivedNow = false
-
-  // 再生: 重複時に治癒が所持順で先でない限り、全消し(復活対象=場札全体が空)なら先に解決する。
-  const regenerationShouldAttempt = remainingBeforeRevival === 0 && items.includes('regeneration') && !overlapWithHealingFirst
-  if (regenerationShouldAttempt && workingDiscardPile.length > 0) {
-    const pool = [...workingDiscardPile]
-    shuffleInPlace(pool, rand)
-    const reviveTotal = Math.min(params.layout.cols * rows, pool.length)
-    let cursor = 0
-    const revivedTableau: Card[][] = []
-    for (let c = 0; c < params.layout.cols; c++) {
-      const take = Math.min(rows, reviveTotal - cursor)
-      revivedTableau.push(take > 0 ? pool.slice(cursor, cursor + take) : [])
-      cursor += Math.max(take, 0)
-    }
-    workingTableau = revivedTableau
-    workingDiscardPile = pool.slice(reviveTotal)
-    workingComboStreakColumnLengths = revivedTableau.map(col => col.length)
-    regenerationRevivedNow = true
-  }
-
-  // 治癒: 復活対象(一掃した列)が、再生の再配布後も含めてまだ空であれば発動する。
-  // (現在の再配布ループは「捨て札を使い切るか、全列をrows枚まで満たすか」のいずれかで
-  // 終わるため、対象列だけ空のまま捨て札が残るケースは実際には発生しない。将来、再配布の
-  // アルゴリズムが変わった場合に備えた安全側のチェックとして残している。)
-  // healedXxx: 治癒の解決まで経た最終状態。next(戻り値)はこれを使う。
-  let healedTableau = workingTableau
-  let healedDiscardPile = workingDiscardPile
-  let healedComboStreakColumnLengths = workingComboStreakColumnLengths
-  if (sweepQualifies && items.includes('healing') && workingTableau[colIndex].length === 0 && workingDiscardPile.length > 0) {
-    const pool = [...workingDiscardPile]
-    shuffleInPlace(pool, rand)
-    const reviveCount = Math.min(rows, pool.length)
-    const revived = pool.slice(0, reviveCount)
-    healedDiscardPile = pool.slice(reviveCount)
-    healedTableau = workingTableau.map((c, i) => (i === colIndex ? revived : c))
-    // 復活後の列は実際の枚数(revived.length)を新たな基準長として記録する。
-    // 据え置いたままだと、山札切れ前の基準(rows)と比較され続け、
-    // 一部しか復活しなかった列でも列一掃条件を満たしてしまう。
-    healedComboStreakColumnLengths = workingComboStreakColumnLengths.map((len, i) => (i === colIndex ? revived.length : len))
-  }
-  const remaining = remainingCount(healedTableau)
+  const remaining = remainingBeforeRevival
 
   const newSameColumnStreak = wave.lastPlayedColumn === colIndex ? wave.sameColumnStreak + 1 : 1
   const newMaxComboThisWave = Math.max(wave.maxComboThisWave, newCombo)
@@ -358,8 +380,8 @@ export function playCard(
 
   const next: WaveState = {
     ...wave,
-    tableau: healedTableau,
-    discardPile: healedDiscardPile,
+    tableau: newTableau,
+    discardPile: wave.discardPile,
     foundation: card,
     combo: newCombo,
     chain: [...wave.chain, card],
@@ -367,8 +389,8 @@ export function playCard(
     linked: true,
     columnsEmptiedThisCombo: newColumnsEmptied,
     // コンボが継続する間はこのスナップショットを維持する。列の残り枚数が変化しても、
-    // 次にdrawStockでコンボがリセットされるまでは更新しない(治癒で復活した列のみ例外)。
-    comboStreakColumnLengths: healedComboStreakColumnLengths,
+    // 次にdrawStockでコンボがリセットされるまでは更新しない。
+    comboStreakColumnLengths: wave.comboStreakColumnLengths,
     lastDrawEffect: null,
     score: newScore,
     lastGain: { points: gained, parts },
@@ -388,6 +410,7 @@ export function playCard(
     roleEchoUsedThisCombo: newRoleEchoUsedThisCombo,
     sameRankEchoUsedThisCombo: newSameRankEchoUsedThisCombo,
     lastBonusGains: bonusGains,
+    sweptColumnsThisCombo: newSweptColumnsThisCombo,
   }
 
   if (remainingBeforeRevival === 0) {
@@ -405,26 +428,60 @@ export function playCard(
       ],
     }
     const bonusGainsWithClear = [...bonusGains, clearBonusGain]
+    const waveAfterClearBonus: WaveState = { ...next, score: scoreAfterClear, lastBonusGains: bonusGainsWithClear }
 
-    if (regenerationRevivedNow) {
-      // 再配布そのものは上で(治癒より先に)実行済み。ここではコスト計算とスコア反映のみ行う。
-      const cost = Math.floor(scoreAfterClear * params.talismans.regeneration.p / 100)
-      return { ...next, score: scoreAfterClear - cost, lastBonusGains: bonusGainsWithClear, status: 'playing', endReason: null }
+    if (scoreAfterClear >= target) {
+      return { wave: { ...waveAfterClearBonus, status: 'ended', endReason: 'target' }, deckComposition }
     }
 
-    if (remaining === 0) {
-      // 治癒・再生いずれも介入しなかった(通常の全消し)
-      return { ...next, score: scoreAfterClear, lastBonusGains: bonusGainsWithClear, status: 'ended', endReason: 'fullClear' }
+    let resetWave = resetComboFields(waveAfterClearBonus, params, items)
+
+    for (const id of items) {
+      if (id === 'healing') {
+        resetWave = resolveHealingRestoration(resetWave, waveAfterClearBonus.sweptColumnsThisCombo, rand)
+      } else if (
+        id === 'regeneration' &&
+        remainingCount(resetWave.tableau) === 0 &&
+        !resetWave.regenerationUsedThisWave &&
+        resetWave.stock.length > 0
+      ) {
+        const cost = Math.floor(resetWave.score * params.talismans.regeneration.p / 100)
+        const pool = [...resetWave.discardPile]
+        shuffleInPlace(pool, rand)
+        const reviveTotal = Math.min(params.layout.cols * rows, pool.length)
+        let cursor = 0
+        const revivedTableau: Card[][] = []
+        for (let c = 0; c < params.layout.cols; c++) {
+          const take = Math.min(rows, reviveTotal - cursor)
+          revivedTableau.push(take > 0 ? pool.slice(cursor, cursor + take) : [])
+          cursor += Math.max(take, 0)
+        }
+        resetWave = {
+          ...resetWave,
+          tableau: revivedTableau,
+          discardPile: pool.slice(reviveTotal),
+          comboStreakColumnLengths: revivedTableau.map(col => col.length),
+          score: resetWave.score - cost,
+          regenerationUsedThisWave: true,
+        }
+      }
     }
-    // 治癒が介入して場が復活した場合は全消しにならず、全消しボーナスも付与しない。
-    // 通常のプレイ続行として下のフローへ進む。
+
+    if (remainingCount(resetWave.tableau) > 0) {
+      if (resetWave.stock.length > 0) {
+        return drawStock(params, resetWave, items, deckComposition, modifier, rand)
+      }
+      return { wave: resetWave, deckComposition }
+    }
+
+    return { wave: { ...resetWave, status: 'ended', endReason: 'fullClear' }, deckComposition }
   }
 
   if (newScore >= target) {
-    return { ...next, status: 'ended', endReason: 'target' }
+    return { wave: { ...next, status: 'ended', endReason: 'target' }, deckComposition }
   }
 
-  return next
+  return { wave: next, deckComposition }
 }
 
 export function drawStock(
@@ -599,33 +656,21 @@ export function drawStock(
     resetBonusGains.push({ label: '護符による直接加算', points: resetDirectGain, parts: resetResult.parts })
   }
 
+  let resetWave: WaveState = {
+    ...resetComboFields(wave, params, items, card, 'draw'),
+    stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [card], effectiveStairMinLen, effectiveSuitColorMinLen) : newStock,
+    lastDrawEffect: null,
+    lastGain: null,
+    score: scoreAfterStockEmpty + resetDirectGain,
+    lastBonusGains: resetBonusGains,
+  }
+
+  if (items.includes('healing')) {
+    resetWave = resolveHealingRestoration(resetWave, wave.sweptColumnsThisCombo, rand)
+  }
+
   return {
-    wave: {
-      ...wave,
-      stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [card], effectiveStairMinLen, effectiveSuitColorMinLen) : newStock,
-      foundation: card,
-      combo: items.includes('sanctify') ? wave.baseComboCount : 0,
-      chain: [card],
-      chainOrigin: ['draw'],
-      linked: false,
-      columnsEmptiedThisCombo: 0,
-      comboStreakColumnLengths: wave.tableau.map(col => col.length),
-      lastDrawEffect: null,
-      lastGain: null,
-      discardPile: [...wave.discardPile, ...wave.chain],
-      score: scoreAfterStockEmpty + resetDirectGain,
-      roleFiredThisChain: false,
-      drawContinueCountThisChain: 0,
-      flushActiveThisCombo: false,
-      sameColumnStreak: 0,
-      lastPlayedColumn: null,
-      benevolenceUsedThisCombo: false,
-      roleEchoUsedThisCombo: {},
-      sameRankEchoUsedThisCombo: [],
-      pendingRoleEcho: null,
-      mercyActiveNextCombo: wave.combo <= params.talismans.mercy.c,
-      lastBonusGains: resetBonusGains,
-    },
+    wave: resetWave,
     deckComposition: newDeckComposition,
   }
 }
@@ -762,11 +807,11 @@ function withActiveWave(run: RunState, fn: (wave: WaveState) => WaveState): RunS
 }
 
 export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: number, rand: () => number = Math.random): RunState {
-  return withActiveWave(run, wave => {
-    const stage = params.stages[run.stageIndex]
-    const target = stage.targets[run.waveIndex]
-    return playCard(params, wave, stage.modifier, run.items, target, colIndex, rand)
-  })
+  if (run.phase !== 'playing' || !run.wave) return run
+  const stage = params.stages[run.stageIndex]
+  const target = stage.targets[run.waveIndex]
+  const { wave, deckComposition } = playCard(params, run.wave, stage.modifier, run.items, target, colIndex, run.deckComposition, rand)
+  return { ...run, wave, deckComposition }
 }
 
 export function applyDrawStock(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
