@@ -3,10 +3,7 @@ import { describe, test, expect } from 'vitest'
 import { isRed, analyzeSuitColor, analyzeStair, checkFlush, checkRoyalSet, countSameRankBefore, countSameRankForWildPlay, checkCompleteRun, evaluateChainBonus, stairUsesKALoop, chainContinuesPattern } from './patterns'
 import type { Card, RoleName } from './types'
 import { DEFAULT_PARAMS } from './params'
-
-function card(id: number, suit: Card['suit'], rank: Card['rank'], wild = false): Card {
-  return { id, suit, rank, wild }
-}
+import { card } from './testHelpers'
 
 describe('isRed', () => {
   test('♥♦は赤、♠♣は黒', () => {

@@ -31,10 +31,7 @@ import { isFace, chainContinuesPattern } from './patterns'
 import type { Card, WaveState, RunState, ItemId } from './types'
 import { DEFAULT_PARAMS } from './params'
 import { createRng, standardDeckComposition } from './deck'
-
-function card(id: number, suit: Card['suit'], rank: Card['rank'], wild = false): Card {
-  return { id, suit, rank, wild }
-}
+import { card } from './testHelpers'
 
 describe('isFace / rankLabel', () => {
   test('J/Q/Kはisface、それ以外はfalse', () => {
