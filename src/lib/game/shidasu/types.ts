@@ -116,6 +116,12 @@ export interface WaveState {
   roleOccurrenceCountThisWave: Partial<Record<RoleName, number>>
   // 慈悲用: 次のコンボの間、倍率xを適用中か
   mercyActiveNextCombo: boolean
+  // 治癒用: 現在のコンボ中に列一掃を達成した列のインデックスと、その列のコンボ開始時点の枚数
+  sweptColumnsThisCombo: { colIndex: number; startLength: number }[]
+  // 再生用: ウェーブ中に再生が既に発動したか(ウェーブ中1回のみ)
+  regenerationUsedThisWave: boolean
+  // 不屈用: ウェーブ中に不屈が既に発動したか(ウェーブ中1回のみ)
+  resilienceUsedThisWave: boolean
 }
 
 export type RunPhase = 'title' | 'playing' | 'itemSelect' | 'stageClear' | 'allClear' | 'gameOver'

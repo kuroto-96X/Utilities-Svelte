@@ -83,6 +83,9 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     pendingRoleEcho: null,
     roleOccurrenceCountThisWave: {},
     mercyActiveNextCombo: false,
+    sweptColumnsThisCombo: [],
+    regenerationUsedThisWave: false,
+    resilienceUsedThisWave: false,
     ...overrides,
   }
 }

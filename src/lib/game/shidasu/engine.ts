@@ -128,6 +128,9 @@ export function startWave(
     pendingRoleEcho: null,
     roleOccurrenceCountThisWave: {},
     mercyActiveNextCombo: false,
+    sweptColumnsThisCombo: [],
+    regenerationUsedThisWave: false,
+    resilienceUsedThisWave: false,
   }
 
   return { wave, deckComposition: composition }
