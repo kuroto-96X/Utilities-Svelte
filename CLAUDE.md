@@ -34,6 +34,20 @@ git branch --show-current
 
 superpowersのスキル(subagent-driven-development・executing-plansなど)による一連の作業が完了し、上記「3」を選んだ場合は、`git push origin feat`(作業ブランチ名がそのまま`feat`でない場合は該当のブランチ名)でリモートへのpushまで自動で行ってよい。ただし`master`へのpush・マージは引き続き対象外(ユーザーが手動で行う)。
 
+### デバッグ用worktreeへの同期
+
+`feat`のpushが完了したら、デバッグ用worktree(`../Utilities-Svelte-debug`、ブランチ`debug-snapshot`)が存在する場合は、そちらにも最新の`feat`を自動でマージしてよい。
+
+```bash
+git -C ../Utilities-Svelte-debug merge feat
+```
+
+`package.json`に変更が含まれていた場合は、続けて依存関係も更新する。
+
+```bash
+cd ../Utilities-Svelte-debug && npm install
+```
+
 ### 実装実行方式の選択
 
 `superpowers:writing-plans` でプラン作成後に実行方式を選ぶ場面では、常に **「1. サブエージェント方式（Subagent-Driven）」** を選ぶ。Claude が自動的に選択してよい。
