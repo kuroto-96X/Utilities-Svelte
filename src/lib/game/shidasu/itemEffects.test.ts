@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/itemEffects.test.ts
 import { describe, test, expect } from 'vitest'
-import { applyItemEffects, type ItemEffectContext } from './itemEffects'
+import { applyItemEffects } from './itemEffects'
 import { DEFAULT_PARAMS } from './params'
 import { card, ctx } from './testHelpers'
 import type { Card } from './types'
