@@ -2,6 +2,7 @@
 import type { Card, ItemId, Suit } from './types'
 import type { ShidasuParams } from './params'
 import { isRed, isFace, analyzeSuitColor, analyzeStair, stairUsesKALoop, fmtMultiplier, type ChainBonusResult } from './patterns'
+import { CLEAR_BONUS_EFFECTS } from './clearBonusEffects'
 
 export interface ItemEffectContext {
   card: Card
@@ -86,24 +87,7 @@ function redBlackBalanced(chain: Card[]): boolean {
 }
 
 const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; effect: ItemEffect }>> = {
-  patience: {
-    channel: 'clearBonus',
-    effect: (v, ctx, p) => {
-      const add = ctx.stockRemaining * p.talismans.patience.x
-      return { value: v + add, part: `忍耐+${add}` }
-    },
-  },
-  purify: {
-    channel: 'clearBonus',
-    effect: (v, _ctx, p) => ({ value: v + p.talismans.purify.n, part: `浄化+${p.talismans.purify.n}` }),
-  },
-  temperance: {
-    channel: 'clearBonus',
-    effect: (v, ctx, p) => {
-      const factor = 1 + ctx.stockRemaining * p.talismans.temperance.x
-      return { value: v * factor, part: `節制×${fmtMultiplier(factor)}` }
-    },
-  },
+  ...CLEAR_BONUS_EFFECTS,
   springBreeze: {
     channel: 'gained',
     effect: (v, ctx, p) =>
