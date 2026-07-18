@@ -1,6 +1,6 @@
 <script lang="ts">
   import DebugPanel from '../../game/shidasu/DebugPanel.svelte'
-  import { itemName } from '$lib/game/shidasu/engine'
+  import { itemName } from '$lib/game/shidasu/items'
   import { loadParams } from '$lib/game/shidasu/params'
   import type { WaveState, ItemId, Suit, Rank } from '$lib/game/shidasu/types'
 

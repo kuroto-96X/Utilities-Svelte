@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { ITEM_GROUPS } from './itemGroups'
-import { ITEM_POOL } from './engine'
+import { ITEM_POOL } from './items'
 
 describe('ITEM_GROUPS', () => {
   it('ITEM_POOLの全種類を過不足なく分類している', () => {

@@ -5,8 +5,8 @@
     createInitialRun, beginRun, applyPlayCard, applyDrawStock, applyStuckCheck,
     resolveWaveEnd, pickItem, confirmItemSwap, cancelItemSwap, skipItemSelect,
     advanceStage, restartRun, startWave, forceStockTop,
-    itemDesc, itemName,
   } from '$lib/game/shidasu/engine'
+  import { itemDesc, itemName } from '$lib/game/shidasu/items'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
   import type { RunState, ItemId, StageModifier, Suit, Rank } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'

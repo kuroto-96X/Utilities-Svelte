@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { loadParams } from '$lib/game/shidasu/params'
-  import { startWave, playCard, drawStock, forceStockTop, ITEM_POOL } from '$lib/game/shidasu/engine'
+  import { startWave, playCard, drawStock, forceStockTop } from '$lib/game/shidasu/engine'
+  import { ITEM_POOL } from '$lib/game/shidasu/items'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
   import type { WaveState, Card, ItemId, DeckCard, Suit, Rank } from '$lib/game/shidasu/types'
   import ItemChecklist from './ItemChecklist.svelte'

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { itemName, itemDesc } from '$lib/game/shidasu/engine'
+  import { itemName, itemDesc } from '$lib/game/shidasu/items'
   import { loadParams } from '$lib/game/shidasu/params'
   import type { ItemId } from '$lib/game/shidasu/types'
   import { ITEM_GROUPS } from '$lib/game/shidasu/itemGroups'

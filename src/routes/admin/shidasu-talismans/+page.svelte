@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte'
   import { DEFAULT_PARAMS, type ShidasuParams } from '$lib/game/shidasu/params'
-  import { itemDesc } from '$lib/game/shidasu/engine'
+  import { itemDesc } from '$lib/game/shidasu/items'
   import { ITEM_GROUPS } from '$lib/game/shidasu/itemGroups'
   import type { ItemId, Rarity } from '$lib/game/shidasu/types'
 
