@@ -698,9 +698,10 @@ describe('playCard', () => {
     expect(result.wave.regenerationUsedThisWave).toBe(false)
   })
 
-  test('再生: 開始時の捨て札が空でも、全消し直前のプレイでチェーンに積まれた札がリセットで捨て札へ移り、それを使って復活する', () => {
-    // 新仕様では全消し時に必ずコンボリセットが走り、直前まで場にあったチェーン札が捨て札へ移る。
-    // そのため開始時discardPileが空でも、再生は移ってきた札を使って場札を復活させウェーブを継続する。
+  test('再生: 捨て札が無ければ通常通り全消し終了になる', () => {
+    // 全消し時に走るコンボリセットでは、直前にプレイした札(chain末尾=foundation)は
+    // 新chainへ引き継がれ捨て札へは移らない(重複防止)。よって開始時discardPileが空なら
+    // 復活対象が無く、再生は場札を復活できずそのまま全消し終了になる。
     const wave = baseWave({
       tableau: [[card(1, '♣', 6)]],
       stock: [card(20, '♠', 9)],
@@ -708,8 +709,8 @@ describe('playCard', () => {
       discardPile: [],
     })
     const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], 100000000, 0, standardDeckComposition(), createRng(1))
-    expect(result.wave.status).toBe('playing')
-    expect(result.wave.regenerationUsedThisWave).toBe(true)
+    expect(result.wave.status).toBe('ended')
+    expect(result.wave.endReason).toBe('fullClear')
   })
 
   test('再生: ウェーブ中2回目は発動しない(regenerationUsedThisWaveがtrueなら通常の全消し終了)', () => {
@@ -747,6 +748,24 @@ describe('playCard', () => {
     const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration', 'healing'], 100000000, 0, standardDeckComposition(), createRng(1))
     expect(result.wave.status).toBe('playing')
     expect(result.wave.regenerationUsedThisWave).toBe(true)
+  })
+
+  test('全消し後に治癒・再生で復活する際、最後にプレイしたカードが場札と捨て札に重複しない', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)]],
+      stock: [card(20, '♠', 9)],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
+      discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3)],
+    })
+    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], 100000000, 0, standardDeckComposition(), createRng(1))
+    const allCardIds = [
+      ...result.wave.tableau.flat().map(c => c.id),
+      ...result.wave.discardPile.map(c => c.id),
+      ...result.wave.stock.map(c => c.id),
+      ...(result.wave.chain.length > 0 && !result.wave.tableau.flat().some(c => c.id === result.wave.chain[0].id) ? [result.wave.chain[0].id] : []),
+    ]
+    const uniqueIds = new Set(allCardIds)
+    expect(uniqueIds.size).toBe(allCardIds.length) // 重複が無いこと
   })
 
   test('黄金: コンボが+1ではなく+2進む', () => {
