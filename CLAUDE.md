@@ -32,6 +32,8 @@ git branch --show-current
 
 `superpowers:finishing-a-development-branch` の選択肢では、常に **「3. ブランチをそのままにする」** を選ぶ。Claude が自動的に選択してよい。マージ・PR・破棄はユーザーが手動で行う。
 
+superpowersのスキル(subagent-driven-development・executing-plansなど)による一連の作業が完了し、上記「3」を選んだ場合は、`git push origin feat`(作業ブランチ名がそのまま`feat`でない場合は該当のブランチ名)でリモートへのpushまで自動で行ってよい。ただし`master`へのpush・マージは引き続き対象外(ユーザーが手動で行う)。
+
 ### 実装実行方式の選択
 
 `superpowers:writing-plans` でプラン作成後に実行方式を選ぶ場面では、常に **「1. サブエージェント方式（Subagent-Driven）」** を選ぶ。Claude が自動的に選択してよい。
