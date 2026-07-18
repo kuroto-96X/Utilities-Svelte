@@ -1,8 +1,7 @@
 // src/lib/game/shidasu/clearBonusEffects.ts
 import type { ItemId } from './types'
-import type { ShidasuParams } from './params'
 import { fmtMultiplier } from './patterns'
-import type { ItemEffectContext, ItemEffect } from './itemEffects'
+import type { ItemEffect } from './itemEffects'
 
 export const CLEAR_BONUS_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; effect: ItemEffect }>> = {
   patience: {
