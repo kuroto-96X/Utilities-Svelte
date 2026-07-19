@@ -1,0 +1,287 @@
+# Shidasu 護符管理画面「実際の効果(監査用)」ラベル追加 Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** `/admin/shidasu-talismans`に、各護符の実装済みロジックを開発者向けに要約した「実際の効果(監査用)」列を追加し、説明文(desc)と実装の乖離を目視で照合できるようにする。
+
+**Architecture:** 新規ファイル`src/lib/game/shidasu/itemActualEffects.ts`に、全87護符ぶんの`ITEM_ACTUAL_EFFECTS: Record<ItemId, string>`を静的定数として定義する。`src/routes/admin/shidasu-talismans/+page.svelte`の既存テーブルに、この定数を読み取り専用で表示する列を追加する。configやAPI経由の保存フローとは無関係。
+
+**Tech Stack:** TypeScript, Svelte 5
+
+**事前調査について:** この対応表の内容(各護符の実際の効果テキスト)は、計画作成時に`clearBonusEffects.ts`・`cardComboEffects.ts`・`chainAttributeEffects.ts`・`stateAndPatternEffects.ts`・`directEffects.ts`・`engine.ts`・`patterns.ts`を実際に調査した結果に基づく。実装(if条件・計算式)を正とし、既存の説明文テンプレート(desc)とズレがある場合も実装の挙動をそのまま記述している。
+
+---
+
+## 事前準備: 対象ファイルの現状
+
+- `src/lib/game/shidasu/types.ts`: `ItemId`型(87種の護符IDのunion型、7〜31行目)
+- `src/lib/game/shidasu/itemGroups.ts`: `ITEM_GROUPS`(18グループに分類された87護符のID一覧)
+- `src/routes/admin/shidasu-talismans/+page.svelte`: 護符パラメータ設定ページ(名前・レア度・パラメータ・説明文テンプレート・プレビューの5列テーブル)
+
+---
+
+### Task 1: `itemActualEffects.ts`の作成(全87護符ぶん)
+
+**Files:**
+- Create: `src/lib/game/shidasu/itemActualEffects.ts`
+
+- [ ] **Step 1: 対応表ファイルを作成する**
+
+`src/lib/game/shidasu/itemActualEffects.ts`を以下の内容で新規作成する。
+
+```ts
+import type { ItemId } from './types'
+
+// 各護符の実際の実装ロジックを、開発者向けに要約したもの(監査用)。
+// 説明文テンプレート(items.ts の desc)とは独立して管理し、実装(if条件・計算式)を正として記述する。
+// パラメータは実際の数値ではなく、paramsのキー名(x, c, n, m, p など)のまま一般化して書く。
+export const ITEM_ACTUAL_EFFECTS: Record<ItemId, string> = {
+  // 初期実装
+  bridge: '常時、階段・同スート/同色パターンの成立に必要な枚数をm枚少なくする(effectiveStairMinLen/effectiveSuitColorMinLenをm引き下げ)',
+  grace: '列がちょうど空になった瞬間、その列のコンボ開始時枚数がrows-m以下でも列一掃(columnSweep)として扱う',
+
+  // グループ1: 全消しボーナス
+  patience: '全消しボーナスに、山札残り枚数×xを加算する',
+  purify: '全消しボーナスにnを加算する',
+  temperance: '全消しボーナスを(1+山札残り枚数×x)倍にする',
+
+  // グループ2: カード単体の属性
+  springBreeze: '取得したカードが♣のとき、獲得点にnを加算する',
+  summerBreeze: '取得したカードが♦のとき、獲得点にnを加算する',
+  autumnBreeze: '取得したカードが♥のとき、獲得点にnを加算する',
+  winterBreeze: '取得したカードが♠のとき、獲得点にnを加算する',
+  kinship: '直前の場札が♥以外から今回♥に変わった瞬間、獲得点にnを加算する',
+  thaw: '直前の場札が♠から今回♠以外に変わった瞬間、獲得点にnを加算する',
+  dusk: '直前の場札が赤(♥/♦)から今回黒(♠/♣)に変わった瞬間、獲得点にnを加算する',
+  dawn: '直前の場札が黒(♠/♣)から今回赤(♥/♦)に変わった瞬間、獲得点にnを加算する',
+  wit: '取得したカードがワイルドのとき、獲得点にnを加算する',
+
+  // グループ3: 現在のコンボ数判定
+  courage: '獲得点を(1+コンボ数×x)倍にする(常時)',
+  daybreak: 'コンボ数がc以下のとき、獲得点をx倍にする',
+  twilight: 'コンボ数がc以上のとき、獲得点をx倍にする',
+  cheerful: 'コンボ数が偶数のとき、獲得点にnを加算する',
+  conscience: 'コンボ数が奇数のとき、獲得点にnを加算する',
+  morningMist: 'コンボ数がc未満なら獲得点を1/xに、c以上ならx倍にする(常時)',
+
+  // グループ4: チェーン全体の属性
+  calm: 'チェーン全体にJ/Q/K(絵札)の実カードが1枚も無ければ、獲得点にnを加算する',
+  serenity: 'チェーン全体にJ/Q/Kが無ければ、獲得点をx倍にする',
+  destiny: 'チェーン全体の実カードが全て絵札(J/Q/K)なら、獲得点にnを加算する',
+  fate: 'チェーン全体が絵札のみなら、獲得点をx倍にする',
+  relief: '今回プレイした1枚がワイルド、またはランク1〜10なら、獲得点にnを加算する',
+  verdantGreen: 'チェーン全体の実カードが♣専有なら、獲得点をx倍にする',
+  gem: 'チェーン全体の実カードが♦専有なら、獲得点をx倍にする',
+  resolve: 'チェーン全体の実カードが♠専有なら、獲得点をx倍にする',
+  grail: 'チェーン全体の実カードが♥専有なら、獲得点をx倍にする',
+  moonlight: 'チェーン全体の実カードが黒(♠/♣)専有なら、獲得点をx倍にする',
+  sunlight: 'チェーン全体の実カードが赤(♥/♦)専有なら、獲得点をx倍にする',
+  crown: 'チェーン内のK実枚数+ワイルド枚数の合計count(>0)に対し、獲得点を(1+count×x)倍にする',
+  cloverLeaf: 'チェーン内の♣実枚数+ワイルド枚数の合計count(>0)に、count×nを加算する',
+  coin: 'チェーン内の♦実枚数+ワイルド枚数の合計count(>0)に、count×nを加算する',
+  blade: 'チェーン内の♠実枚数+ワイルド枚数の合計count(>0)に、count×nを加算する',
+  chalice: 'チェーン内の♥実枚数+ワイルド枚数の合計count(>0)に、count×nを加算する',
+  balance: 'チェーン内の赤黒差がワイルドで埋めて同数にできるとき、獲得点にnを加算する',
+  harmony: 'balanceと同一条件(赤黒同数化可能)のとき、獲得点をx倍にする',
+  nobility: 'チェーン全体が同一スート専有、かつチェーン長がeffectiveSuitColorMinLen以上のとき、獲得点にnを加算する',
+  tenacity: 'nobilityと同一条件のとき、獲得点を(1+チェーン長×x)倍にする',
+  determination: 'チェーン全体が方向の定まった階段(長さeffectiveStairMinLen以上)のとき、獲得点を(1+階段長×x)倍にする',
+  cycle: '直前の場札と今回のカードの組がK→AまたはA→K(ワイルドは万能扱い)のとき、獲得点をx倍にする',
+  reincarnation: 'このプレイでコンプリートラン成立、かつ階段がK→A/A→Kの境界を跨いでいるとき、獲得点をx倍にする',
+  majesty: 'このプレイでコンプリートラン成立、かつ階段成立、かつチェーン全体が同一スート専有のとき、獲得点をx倍にする',
+
+  // グループ5: 場札・山札の残り枚数
+  omen: 'このプレイ後の場札残り枚数がm以下のとき、獲得点をx倍にする',
+  crescent: 'omenと同一条件(場札残りm以下)のとき、獲得点をx倍にする(omenとは独立に多重適用される)',
+
+  // グループ6: 役・パターン成立状況
+  blessing: 'このプレイで役ボーナス(列一掃含む)が1つでも成立したとき、獲得点をx倍にする',
+  focus: 'このプレイで同ランクの役が成立したとき、獲得点をx倍にする',
+  lapis: 'このプレイで成立した役ボーナス数+パターンボーナス数の合計が2以上のとき、獲得点をx倍にする',
+  jade: 'このプレイで成立した役のいずれかがワイルド使用によるものだったとき、獲得点にnを加算する',
+  emptyMind: 'このプレイで役もパターンボーナスも一切成立しなかったとき、獲得点をx倍にする',
+
+  // グループ7: コンボ内の位置
+  prologue: '通常プレイでチェーン内1枚目のプレイのとき、獲得点にnを加算する',
+  interlude: '通常プレイでチェーン内ちょうどm枚目のプレイのとき、獲得点にnを加算する',
+  morningDew: 'ウェーブ開始後まだ一度もプレイしていない状態での最初のプレイのとき、獲得点にnを加算する',
+
+  // グループ8: 無条件固定加算
+  drizzle: '常に無条件で獲得点にnを加算する',
+
+  // 永続デッキ・捨て札系
+  eternity: 'ウェーブ開始時、デッキ構成の末尾にワイルドカードを1枚追加する(以降のウェーブにも引き継がれる)',
+  abundance: 'ウェーブ開始時、デッキ構成の非ワイルドカードを1枚ランダムにワイルドへ変換する(以降のウェーブにも引き継がれる)',
+  silence: '山札からめくったカードでプレイ可能な列が無いとき、そのカードをワイルドにして使用し、さらにデッキ構成の別の1枚もランダムにワイルドへ変換する',
+  resilience: '手詰まり時、コンボリセット後に捨て札が1枚以上ありウェーブ中未使用なら、スコアのp%を消費して捨て札の半数を山札へ戻し、その後山札を1枚めくる(ウェーブ中1回のみ)',
+
+  // グループ9: 列選択の連続性
+  gentleBreeze: '同じ列を連続でプレイした回数(sameColumnStreak)が2回目以降のとき、獲得点にsameColumnStreak×nを加算する',
+  resonance: 'gentleBreezeと同一条件のとき、獲得点を(1+sameColumnStreak×x)倍にする',
+
+  // グループ10: ウェーブ内累積state
+  azureSky: 'ウェーブ内の列一掃累計回数が1回以上のとき、獲得点を(1+累計回数×x)倍にする',
+  amber: 'ウェーブ内最大到達コンボ数が1以上のとき、獲得点を(1+最大コンボ数×x)倍にする',
+
+  // グループ11: イベント発生時の直接点
+  composure: 'drawStockの通常コンボリセット時、リセット後にプレイ可能な列が無ければ、直接nを加算する',
+  clarity: 'drawStockの通常コンボリセット時、そのチェーン中に役が一度も成立していなければ、直接nを加算する',
+  arrogance: '山札を引いた結果、山札が0枚になった瞬間、場札残り枚数×xを直接加算する',
+  echo: 'drawStockの通常コンボリセット時、リセット前のコンボ数×nを直接加算する(全消し・手詰まりによるリセットは対象外)',
+  shootingStar: '獲得点加算後のコンボ数が初めてc以上に達した瞬間、その時点のスコア×p%を直接加算する',
+
+  // グループ12: 山札めくり関連
+  naive: '山札めくりでパターンが実際に継続する場合、通常プレイとほぼ同じ得点計算(基礎点・チェーンボーナス・コンボ加算・護符効果)を実行する(未所持時は継続してもスコア計算されない)',
+  intuition: '現在のチェーン中に山札めくりでパターン継続した回数(drawContinueCountThisChain)に応じ、獲得点を(1+回数×x)倍にする(素朴とは独立に発動条件を持つ)',
+  sincerity: '山札めくりでパターンが継続し、かつ同色だが同スートではない場合、直接nを加算する(博愛による救済継続では発動しない)',
+
+  // グループ13: 資源操作(残り)
+  promise: '山札の中から、次にめくった際にパターン継続できる最初のカードを探し、めくり位置(末尾)へ入れ替える(ウェーブ開始時・パターン継続直後・コンボリセット直後の3箇所で実行)',
+  darkClouds: 'ウェーブ開始時、場札の配布行数をrows+rにする(列数は不変)',
+  regeneration: '全消し時、コンボリセット後に山札が1枚以上ありウェーブ中未使用なら、スコアのp%を消費して捨て札から場札を全復活させ、その後山札を1枚めくる(ウェーブ中1回のみ)',
+
+  // グループ14: 保護・救済
+  benevolence: '山札めくりでパターンが継続しない場合、このコンボ中まだ未使用なら、コンボリセットを行わずチェーン・コンボ状態を維持したまま継続扱いにする(コンボごとに1回のみ)',
+  healing: 'コンボリセット時(通常・全消し・手詰まりいずれも)、そのコンボ中に列一掃した列を、コンボ開始時点の枚数を上限に捨て札から復活させる',
+
+  // グループ15: 情報表示
+  guidance: '山札が1枚以上あるとき、次にめくられるカードを画面に表示する(スコア・挙動への影響はない情報表示のみ)',
+
+  // グループ16: 持続効果
+  passion: '現在のコンボ中に一度でもフラッシュが成立していれば、獲得点をx倍にする',
+  fightingSpirit: 'このウェーブ中に一度でも列一掃が発生していれば、獲得点をx倍にする',
+
+  // グループ17: コアパラメータ書き換え
+  sanctify: '役が成立するたび基礎コンボ数(baseComboCount)を+1し、同時にそのプレイの実効コンボにも+1する。コンボリセット時は0ではなくbaseComboCountから再開する',
+  protection: '得点計算用の実効コンボがc未満なら、cまで引き上げる(実コンボ数自体は変えない)',
+  earth: '得点計算用の実効コンボに常にcを加算する',
+  golden: 'コンボが進む際、+1ではなく+2する',
+  morningStar: '各役ボーナス(列一掃含む)の加点額を、その役がウェーブ中に過去成立した回数に応じて(1+過去回数×x)倍にする',
+  mercy: 'コンボリセット直前のコンボ数がc以下なら次のコンボを有効化し、そのコンボ中の獲得点をx倍にする',
+  mirror: '成立した役ボーナスのうち未予約の1つを次のプレイ用に予約し、次のプレイの基礎点に無条件加算する(1コンボにつき1件のみ)',
+  deadline: '山札残り枚数(0のときは無効)×nを獲得点に加算する',
+}
+```
+
+- [ ] **Step 2: 型チェックを実行する**
+
+```bash
+npm run check
+```
+
+Expected: `itemActualEffects.ts`に関するエラーが無いこと(`Record<ItemId, string>`型により、87キーすべてが埋まっていなければ「プロパティが不足しています」という型エラーが出るはずなので、それが出ないことを確認する)。
+
+- [ ] **Step 3: コミット**
+
+現在のブランチは`feat`です。プロジェクトのCLAUDE.md規約により、`feat`ブランチではユーザーへの確認なしでコミットしてよい規約になっています。コミットメッセージは日本語で書いてください。
+
+```bash
+git add src/lib/game/shidasu/itemActualEffects.ts
+git commit -m "feat: 護符87種の実際の効果(監査用)対応表を追加"
+```
+
+---
+
+### Task 2: `shidasu-talismans/+page.svelte`への列追加
+
+**Files:**
+- Modify: `src/routes/admin/shidasu-talismans/+page.svelte`
+
+- [ ] **Step 1: `ITEM_ACTUAL_EFFECTS`をimportする**
+
+`src/routes/admin/shidasu-talismans/+page.svelte`の既存のimport文:
+
+```ts
+  import { itemDesc } from '$lib/game/shidasu/items'
+```
+
+の直後に、以下を追加する:
+
+```ts
+  import { ITEM_ACTUAL_EFFECTS } from '$lib/game/shidasu/itemActualEffects'
+```
+
+- [ ] **Step 2: テーブルヘッダーに列を追加する**
+
+既存のテーブルヘッダー:
+
+```svelte
+                <tr class="bg-slate-50 text-slate-500">
+                  <th class="px-2 py-1.5 text-left" style="width:9rem;">護符名</th>
+                  <th class="px-2 py-1.5 text-left" style="width:4rem;">レア度</th>
+                  <th class="px-2 py-1.5 text-left" style="width:11rem;">パラメータ</th>
+                  <th class="px-2 py-1.5 text-left" style="width:16rem;">説明文テンプレート</th>
+                  <th class="px-2 py-1.5 text-left">プレビュー</th>
+                </tr>
+```
+
+を、以下に変更する(「プレビュー」列の右に「実際の効果(監査用)」列を追加):
+
+```svelte
+                <tr class="bg-slate-50 text-slate-500">
+                  <th class="px-2 py-1.5 text-left" style="width:9rem;">護符名</th>
+                  <th class="px-2 py-1.5 text-left" style="width:4rem;">レア度</th>
+                  <th class="px-2 py-1.5 text-left" style="width:11rem;">パラメータ</th>
+                  <th class="px-2 py-1.5 text-left" style="width:16rem;">説明文テンプレート</th>
+                  <th class="px-2 py-1.5 text-left" style="width:16rem;">プレビュー</th>
+                  <th class="px-2 py-1.5 text-left" style="width:20rem;">実際の効果(監査用)</th>
+                </tr>
+```
+
+(「プレビュー」列に`style="width:16rem;"`を追加したのは、新しい列を追加してテーブル全体が広がった際に、プレビュー列だけ際限なく伸びるのを防ぐため。)
+
+- [ ] **Step 3: テーブル本体に列を追加する**
+
+既存のテーブル本体の最終列:
+
+```svelte
+                    <td class="px-2 py-1.5 align-top text-slate-500">{itemDesc(id, config)}</td>
+```
+
+の直後に、以下を追加する:
+
+```svelte
+                    <td class="px-2 py-1.5 align-top text-slate-500">{ITEM_ACTUAL_EFFECTS[id]}</td>
+```
+
+- [ ] **Step 4: 型チェックを実行する**
+
+```bash
+npm run check
+```
+
+Expected: エラーなし。
+
+- [ ] **Step 5: `npm run build`を実行する**
+
+```bash
+npm run build
+```
+
+Expected: ビルド成功。
+
+- [ ] **Step 6: `npm run dev`で実際に画面を確認する**
+
+```bash
+npm run dev
+```
+
+`/admin/shidasu-talismans`を開き、以下を確認する:
+- 「実際の効果(監査用)」列が表示され、87護符すべてにテキストが表示されていること(空欄が無いこと)
+- 既存の護符名・レア度・パラメータ・説明文テンプレート・プレビューの編集や保存が従来通り動作すること
+- コンソールエラーが出ていないこと
+
+- [ ] **Step 7: コミット**
+
+```bash
+git add src/routes/admin/shidasu-talismans/+page.svelte
+git commit -m "feat: 護符管理画面に「実際の効果(監査用)」列を追加"
+```
+
+---
+
+## Self-Review 結果
+
+- **spec coverage:** spec section1(データの持ち方)→Task1、section2(テキストの書き方)→Task1の内容、section3(表示)→Task2、section4(作成範囲・全87種)→Task1で全87キー記載、section5(スコープ外)→config保存フローに触れていないため充足、受け入れ基準1〜4→Task1・Task2でそれぞれ充足。
+- **placeholder scan:** 全87護符の実際のテキストをTask1に完全な形で記載済み(TBD・TODO無し)。Task2のコード変更も差分の前後を完全な形で記載済み。
+- **type consistency:** `ItemId`型(types.ts 7〜31行目)に列挙された87キーと、Task1の`ITEM_ACTUAL_EFFECTS`のキーが完全一致することを確認済み(初期実装2・グループ1:3・グループ2:9・グループ3:6・グループ4:24・グループ5:2・グループ6:5・グループ7:3・グループ8:1・永続デッキ捨て札系:4・グループ9:2・グループ10:2・グループ11:5・グループ12:3・グループ13:3・グループ14:2・グループ15:1・グループ16:2・グループ17:8 の合計87)。`ITEM_ACTUAL_EFFECTS`という定数名・`itemActualEffects.ts`というファイル名はTask1・Task2を通じて一貫している。
