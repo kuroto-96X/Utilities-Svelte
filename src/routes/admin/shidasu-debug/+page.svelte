@@ -182,7 +182,7 @@
 
   function handleUndo() {
     if (!lastSnapshot) return
-    wave = lastSnapshot
+    wave = { ...lastSnapshot, lastGain: null, lastBonusGains: [] }
     lastSnapshot = null
   }
 
