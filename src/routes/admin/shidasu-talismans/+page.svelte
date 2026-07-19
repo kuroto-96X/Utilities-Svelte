@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte'
   import { DEFAULT_PARAMS, type ShidasuParams } from '$lib/game/shidasu/params'
   import { itemDesc } from '$lib/game/shidasu/items'
+  import { ITEM_ACTUAL_EFFECTS } from '$lib/game/shidasu/itemActualEffects'
   import { ITEM_GROUPS } from '$lib/game/shidasu/itemGroups'
   import type { ItemId, Rarity } from '$lib/game/shidasu/types'
 
@@ -113,7 +114,8 @@
                   <th class="px-2 py-1.5 text-left" style="width:4rem;">レア度</th>
                   <th class="px-2 py-1.5 text-left" style="width:11rem;">パラメータ</th>
                   <th class="px-2 py-1.5 text-left" style="width:16rem;">説明文テンプレート</th>
-                  <th class="px-2 py-1.5 text-left">プレビュー</th>
+                  <th class="px-2 py-1.5 text-left" style="width:16rem;">プレビュー</th>
+                  <th class="px-2 py-1.5 text-left" style="width:20rem;">実際の効果(監査用)</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100">
@@ -151,6 +153,7 @@
                       ></textarea>
                     </td>
                     <td class="px-2 py-1.5 align-top text-slate-500">{itemDesc(id, config)}</td>
+                    <td class="px-2 py-1.5 align-top text-slate-500">{ITEM_ACTUAL_EFFECTS[id]}</td>
                   </tr>
                 {/each}
               </tbody>
