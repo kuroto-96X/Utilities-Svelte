@@ -1971,6 +1971,49 @@ describe('エイワズ(コンボリセット防止)とdrawStock/applyStuckCheck�
     expect(result.wave.combo).toBe(0)
     expect(result.wave.chain).toHaveLength(1)
   })
+
+  test('手詰まり時、シールドが1以上ならコンボリセットが防がれ、カードの総数が保存される', () => {
+    const wave = makeWave({
+      tableau: [[card(1, '♠', 8)]], // 場札はあるが取れない(手詰まり)
+      stock: [],
+      foundation: card(0, '♠', 2),
+      discardPile: [card(10, '♥', 4), card(11, '♦', 9)],
+      chain: [card(0, '♠', 2), card(5, '♠', 3)],
+      chainOrigin: ['draw', 'play'],
+      combo: 4,
+      comboResetShieldRemaining: 1,
+      score: 1000,
+    })
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), items: [], wave }
+    const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
+    const totalCards = (w: WaveState) =>
+      w.tableau.reduce((n, col) => n + col.length, 0) + w.stock.length + w.chain.length + w.discardPile.length
+    expect(totalCards(next.wave!)).toBe(totalCards(wave))
+    expect(next.wave!.combo).toBe(4) // シールドでコンボ維持(リセットされない)
+    expect(next.wave!.comboResetShieldRemaining).toBe(0) // シールド1回分消費
+  })
+
+  test('全消し時、シールドが1以上ならコンボリセットが防がれ、カードの総数が保存される', () => {
+    // baseWaveはplayCackのdescribe内にスコープされ本ブロックからは参照できないため、
+    // 同等のfoundation(♠5)を持つmakeWaveを直接使う。プレイする場札♣6はfoundation♠5と差1で取得可能。
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(1, '♣', 6)]],
+      stock: [card(20, '♠', 9)],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
+      discardPile: [card(10, '♦', 1), card(11, '♦', 2)],
+      combo: 4,
+      comboResetShieldRemaining: 1,
+    })
+    const initialTotal =
+      wave.tableau.reduce((n, col) => n + col.length, 0) + wave.stock.length + wave.chain.length + wave.discardPile.length
+    const result = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0, standardDeckComposition(), createRng(1))
+    const totalCards = (w: WaveState) =>
+      w.tableau.reduce((n, col) => n + col.length, 0) + w.stock.length + w.chain.length + w.discardPile.length
+    expect(totalCards(result.wave)).toBe(initialTotal)
+    // プレイでcombo4→5に進んだ後、全消しでもシールドによりリセットされず維持される
+    expect(result.wave.combo).toBe(5)
+  })
 })
 
 describe('forceStockTop', () => {
