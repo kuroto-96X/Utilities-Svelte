@@ -23,6 +23,7 @@ import {
   applyDrawStock,
   applyStuckCheck,
   forceStockTop,
+  useRite,
 } from './engine'
 import { ITEM_POOL } from './items'
 import { isFace, chainContinuesPattern } from './patterns'
@@ -1906,6 +1907,69 @@ describe('applyStuckCheck (不屈の護符)', () => {
     expect(next.wave!.tableau[1].length).toBeGreaterThan(0) // 治癒によって列1は復活している
     expect(next.wave!.status).toBe('ended') // しかし山札には戻っていないため手詰まりのまま終了
     expect(next.wave!.endReason).toBe('stuck')
+  })
+})
+
+describe('useRite', () => {
+  test('所持している秘儀を使用すると効果が適用され、所持から1個削除される', () => {
+    const wave = makeWave({ combo: 2, maxComboThisWave: 2 })
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: ['uruz'] }
+    const next = useRite(DEFAULT_PARAMS, run, 'uruz', createRng(1))
+    expect(next.wave!.combo).toBe(2 + DEFAULT_PARAMS.rites.uruz.n)
+    expect(next.rites).toEqual([])
+  })
+
+  test('所持していない秘儀は使用できない(何も起こらない)', () => {
+    const wave = makeWave({ combo: 2 })
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: [] }
+    const next = useRite(DEFAULT_PARAMS, run, 'uruz', createRng(1))
+    expect(next).toEqual(run)
+  })
+
+  test('使用条件を満たさない秘儀(チェーン2枚未満のティワズ)は使用できない', () => {
+    const wave = makeWave({ chain: [card(1, '♣', 5)], chainOrigin: ['draw'] })
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: ['tiwaz'] }
+    const next = useRite(DEFAULT_PARAMS, run, 'tiwaz', createRng(1))
+    expect(next.rites).toEqual(['tiwaz'])
+  })
+
+  test('同じ秘儀を複数所持している場合、1個だけ消費される', () => {
+    const wave = makeWave({ combo: 2, maxComboThisWave: 2 })
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: ['uruz', 'uruz'] }
+    const next = useRite(DEFAULT_PARAMS, run, 'uruz', createRng(1))
+    expect(next.rites).toEqual(['uruz'])
+  })
+})
+
+describe('エイワズ(コンボリセット防止)とdrawStock/applyStuckCheckの統合', () => {
+  test('シールド残り回数が1以上のとき、drawStockの通常コンボリセットが防がれチェーンが継続扱いになる', () => {
+    const wave = makeWave({
+      stock: [card(20, '♠', 1)],
+      chain: [card(0, '♠', 5)],
+      chainOrigin: ['draw'],
+      linked: true,
+      combo: 3,
+      comboResetShieldRemaining: 1,
+    })
+    const result = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
+    expect(result.wave.status).toBe('playing')
+    expect(result.wave.combo).toBe(3)
+    expect(result.wave.chain).toHaveLength(2)
+    expect(result.wave.comboResetShieldRemaining).toBe(0)
+  })
+
+  test('シールド残り回数が0なら通常通りコンボリセットされる', () => {
+    const wave = makeWave({
+      stock: [card(20, '♠', 1)],
+      chain: [card(0, '♠', 5)],
+      chainOrigin: ['draw'],
+      linked: true,
+      combo: 3,
+      comboResetShieldRemaining: 0,
+    })
+    const result = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
+    expect(result.wave.combo).toBe(0)
+    expect(result.wave.chain).toHaveLength(1)
   })
 })
 

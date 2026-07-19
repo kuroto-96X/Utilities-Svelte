@@ -1,11 +1,13 @@
 // src/lib/game/shidasu/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin, RiteId } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
 import { isFace, chainContinuesPattern, evaluateChainBonus, analyzeSuitColor, countSameRankBefore, countSameRankForWildPlay, fmtMultiplier } from './patterns'
 import { rollItemOffer } from './items'
 import { applyDirectEffects, type DirectEffectContext } from './directEffects'
 import { applyItemEffects, type ItemEffectContext } from './itemEffects'
+import { applyRiteEffect, canUseRite } from './riteEffects'
+import { rollRite } from './rites'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
 
@@ -15,6 +17,8 @@ export function rankLabel(card: Card): string {
 }
 
 export function isPlayable(modifier: StageModifier, wave: WaveState, card: Card): boolean {
+  // アルギズ発動中は、そのウェーブが終わるまであらゆる場札がプレイ可能になる(最優先で判定)
+  if (wave.playFromAnywhereActiveThisWave) return true
   // faceLockはワイルド(場札含む)より優先して評価する: ワイルド場札でも絵札はコンボ不足なら拒否する
   if (modifier === 'faceLock' && isFace(card) && wave.combo < 2) return false
   if (card.wild || wave.foundation.wild) return true
@@ -149,6 +153,23 @@ function resetComboFields(
   newFoundation: Card = wave.foundation,
   newOrigin: ChainCardOrigin = wave.chainOrigin[wave.chainOrigin.length - 1]
 ): WaveState {
+  // エイワズ(秘儀)によるコンボリセット防止。newFoundationが新しく引かれたカード(通常のdrawStock
+  // リセット時)であればチェーンを継続扱いで延長し、全消し・手詰まりのリサイクル時(newFoundation省略、
+  // wave.foundationと同一)はチェーン・コンボ状態をそのまま保持する。いずれもresetDirect系護符
+  // (沈着・冷静・残響等)の判定はこの関数の外側(呼び出し元)で既に行われているため、シールドが
+  // 防ぐのはコンボ・チェーンの状態変化のみである。
+  if (wave.comboResetShieldRemaining > 0) {
+    const isNewCard = newFoundation.id !== wave.foundation.id
+    return {
+      ...wave,
+      foundation: newFoundation,
+      chain: isNewCard ? [...wave.chain, newFoundation] : wave.chain,
+      chainOrigin: isNewCard ? [...wave.chainOrigin, newOrigin] : wave.chainOrigin,
+      linked: true,
+      comboResetShieldRemaining: wave.comboResetShieldRemaining - 1,
+    }
+  }
+
   // 新chainに引き継がれるカード(newFoundation)は捨て札へ重複して送らない。chain内の位置ではなく
   // IDの一致で除外するため、chain末尾が必ずfoundationと一致するという不変条件に依存しない。
   // 通常のdrawStockリセットではnewFoundationが新規に引いたカードでchainに含まれないため何も除去されず、
@@ -774,18 +795,33 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
   return { ...run, phase: 'itemSelect', offer: rollItemOffer(run.items, rand), pendingNewItem: null }
 }
 
-export function pickItem(params: ShidasuParams, run: RunState, itemId: ItemId, seed?: number): RunState {
+// 秘儀を1つ使用する。効果を適用し、所持からその秘儀を1個削除する。
+// 使用条件(canUseRite)を満たさない場合、または所持していない場合は何もしない。
+export function useRite(params: ShidasuParams, run: RunState, riteId: RiteId, rand: () => number = Math.random): RunState {
+  if (run.phase !== 'playing' || !run.wave || run.wave.status !== 'playing') return run
+  if (!canUseRite(params, run.wave, riteId)) return run
+  const idx = run.rites.indexOf(riteId)
+  if (idx === -1) return run
+  const wave = applyRiteEffect(params, run.wave, riteId, rand)
+  const rites = [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)]
+  return { ...run, wave, rites }
+}
+
+export function pickItem(params: ShidasuParams, run: RunState, itemId: ItemId, seed?: number, rand: () => number = Math.random): RunState {
   if (run.phase !== 'itemSelect') return run
   if (run.items.length >= params.items.maxItems) {
     return { ...run, pendingNewItem: itemId }
   }
   const newItems = [...run.items, itemId]
+  const rolledRite = rollRite(run.rites, rand)
+  const newRites = rolledRite ? [...run.rites, rolledRite] : run.rites
   const newWaveIndex = run.waveIndex + 1
   const { wave, deckComposition } = startWave(params, run.stageIndex, newWaveIndex, newItems, run.deckComposition, seed)
   return {
     ...run,
     phase: 'playing',
     items: newItems,
+    rites: newRites,
     waveIndex: newWaveIndex,
     offer: [],
     pendingNewItem: null,
@@ -794,17 +830,20 @@ export function pickItem(params: ShidasuParams, run: RunState, itemId: ItemId, s
   }
 }
 
-export function confirmItemSwap(params: ShidasuParams, run: RunState, oldItemId: ItemId, seed?: number): RunState {
+export function confirmItemSwap(params: ShidasuParams, run: RunState, oldItemId: ItemId, seed?: number, rand: () => number = Math.random): RunState {
   if (run.phase !== 'itemSelect' || run.pendingNewItem === null) return run
   const idx = run.items.indexOf(oldItemId)
   const remaining = idx === -1 ? [...run.items] : [...run.items.slice(0, idx), ...run.items.slice(idx + 1)]
   const newItems = [...remaining, run.pendingNewItem]
+  const rolledRite = rollRite(run.rites, rand)
+  const newRites = rolledRite ? [...run.rites, rolledRite] : run.rites
   const newWaveIndex = run.waveIndex + 1
   const { wave, deckComposition } = startWave(params, run.stageIndex, newWaveIndex, newItems, run.deckComposition, seed)
   return {
     ...run,
     phase: 'playing',
     items: newItems,
+    rites: newRites,
     waveIndex: newWaveIndex,
     offer: [],
     pendingNewItem: null,
