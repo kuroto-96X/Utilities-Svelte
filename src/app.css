@@ -6,3 +6,11 @@
   background: #f1f5f9;
   min-height: 100vh;
 }
+
+@font-face {
+  font-family: 'ShidasuRunic';
+  src: url('/fonts/NotoSansRunic-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
