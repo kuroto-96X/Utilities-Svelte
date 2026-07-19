@@ -83,6 +83,7 @@
   function handleUseRite(riteId: RiteId) {
     if (run.phase !== 'playing' || run.wave?.status !== 'playing') return
     run = useRite(params, run, riteId)
+    afterAction()
   }
 
   function handleDraw() {
