@@ -1,12 +1,15 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
   import { getPlayableColumns, remainingCount } from '$lib/game/shidasu/engine'
-  import type { WaveState, StageModifier, ItemId } from '$lib/game/shidasu/types'
+  import type { WaveState, StageModifier, ItemId, RiteId } from '$lib/game/shidasu/types'
   import type { ShidasuParams } from '$lib/game/shidasu/params'
+  import { canUseRite } from '$lib/game/shidasu/riteEffects'
+  import { riteDesc } from '$lib/game/shidasu/rites'
   import CardFace from './CardFace.svelte'
 
   let {
     wave, params, modifier, target, items, onPlayCard, onDraw, dropTarget = null, headerExtra, extraFooter,
+    rites = [], onUseRite,
   }: {
     wave: WaveState
     params: ShidasuParams
@@ -18,6 +21,8 @@
     dropTarget?: { col: number; row: number } | 'stockTop' | null
     headerExtra?: Snippet
     extraFooter?: Snippet
+    rites?: RiteId[]
+    onUseRite?: (riteId: RiteId) => void
   } = $props()
 
   function chunk<T>(arr: T[], size: number): T[][] {
@@ -146,3 +151,19 @@
     {@render extraFooter()}
   {/if}
 </div>
+
+{#if rites.length > 0}
+  <div class="px-4 pb-4 flex items-center gap-2">
+    {#each rites as riteId, i (i)}
+      {@const usable = canUseRite(params, wave, riteId)}
+      <button
+        type="button"
+        onclick={() => onUseRite?.(riteId)}
+        disabled={!usable}
+        title={riteDesc(riteId, params)}
+        style="font-family: 'ShidasuRunic', sans-serif;"
+        class="w-10 h-10 rounded-lg border-2 flex items-center justify-center text-xl font-black transition-transform active:scale-95 {usable ? 'bg-fuchsia-900 border-fuchsia-500 text-fuchsia-100 hover:bg-fuchsia-800' : 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'}"
+      >{params.rites[riteId].name}</button>
+    {/each}
+  </div>
+{/if}

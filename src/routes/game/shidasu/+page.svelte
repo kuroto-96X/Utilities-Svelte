@@ -4,11 +4,11 @@
   import {
     createInitialRun, beginRun, applyPlayCard, applyDrawStock, applyStuckCheck,
     resolveWaveEnd, pickItem, confirmItemSwap, cancelItemSwap, skipItemSelect,
-    advanceStage, restartRun, startWave, forceStockTop,
+    advanceStage, restartRun, startWave, forceStockTop, useRite,
   } from '$lib/game/shidasu/engine'
   import { itemDesc, itemName } from '$lib/game/shidasu/items'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
-  import type { RunState, ItemId, StageModifier, Suit, Rank } from '$lib/game/shidasu/types'
+  import type { RunState, ItemId, StageModifier, Suit, Rank, RiteId } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
 
@@ -78,6 +78,11 @@
     if (run.phase !== 'playing' || run.wave?.status !== 'playing') return
     run = applyPlayCard(params, run, colIndex)
     afterAction()
+  }
+
+  function handleUseRite(riteId: RiteId) {
+    if (run.phase !== 'playing' || run.wave?.status !== 'playing') return
+    run = useRite(params, run, riteId)
   }
 
   function handleDraw() {
@@ -160,7 +165,7 @@
     aria-hidden="true"
     bind:offsetHeight={measuredPlayHeight}
   >
-    <PlayArea wave={measurementWave} {params} modifier={stage.modifier} {target} items={run.items} onPlayCard={handlePlayCard} onDraw={handleDraw} headerExtra={stageRow} extraFooter={itemBadges} />
+    <PlayArea wave={measurementWave} {params} modifier={stage.modifier} {target} items={run.items} onPlayCard={handlePlayCard} onDraw={handleDraw} headerExtra={stageRow} extraFooter={itemBadges} rites={run.rites} onUseRite={handleUseRite} />
   </div>
   <div class="flex flex-col items-center justify-center gap-6 text-center px-6" style="min-height:{measuredPlayHeight}px;">
     <div>
@@ -183,7 +188,7 @@
   </div>
 
 {:else if wave}
-  <PlayArea {wave} {params} modifier={stage.modifier} {target} items={run.items} onPlayCard={handlePlayCard} onDraw={handleDraw} headerExtra={stageRow} extraFooter={itemBadges} />
+  <PlayArea {wave} {params} modifier={stage.modifier} {target} items={run.items} onPlayCard={handlePlayCard} onDraw={handleDraw} headerExtra={stageRow} extraFooter={itemBadges} rites={run.rites} onUseRite={handleUseRite} />
 {/if}
 
 {#if run.phase === 'itemSelect'}
