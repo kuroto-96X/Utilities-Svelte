@@ -68,7 +68,7 @@
   }
 
   function handleDraw() {
-    const result = drawStock(params, wave, items, deckComposition, 'none')
+    const result = drawStock(params, wave, items, TARGET, deckComposition, 'none')
     wave = result.wave
     deckComposition = result.deckComposition
     lastSnapshot = null
@@ -90,7 +90,7 @@
 
   function handleForceDraw(suit: Suit, rank: Rank, wild: boolean) {
     wave = forceStockTop(wave, suit, rank, wild)
-    const result = drawStock(params, wave, items, deckComposition, 'none')
+    const result = drawStock(params, wave, items, TARGET, deckComposition, 'none')
     wave = result.wave
     deckComposition = result.deckComposition
     lastSnapshot = null
