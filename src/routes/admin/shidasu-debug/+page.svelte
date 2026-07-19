@@ -29,7 +29,7 @@
   let items = $state<ItemId[]>(loadSavedItems())
   let deckComposition = $state<DeckCard[]>(standardDeckComposition())
   let wave = $state<WaveState>(startWave(params, 0, 0, items, deckComposition).wave)
-  let lastSnapshot = $state<{ tableau: Card[][]; stock: Card[] } | null>(null)
+  let lastSnapshot = $state<WaveState | null>(null)
 
   interface DragState {
     source: { suit: Suit; rank: Rank; wild: boolean }
@@ -131,14 +131,14 @@
       if (wave.stock.length === 0) return
       const idx = wave.stock.length - 1
       const newCard: Card = { id: wave.stock[idx].id, suit: source.suit, rank: source.rank, wild: source.wild }
-      lastSnapshot = { tableau: wave.tableau, stock: wave.stock }
+      lastSnapshot = wave
       wave = { ...wave, stock: wave.stock.map((c, i) => (i === idx ? newCard : c)), lastGain: null, lastBonusGains: [] }
     } else {
       const { col, row } = target
       const column = wave.tableau[col]
       if (!column?.[row]) return
       const newCard: Card = { id: column[row].id, suit: source.suit, rank: source.rank, wild: source.wild }
-      lastSnapshot = { tableau: wave.tableau, stock: wave.stock }
+      lastSnapshot = wave
       wave = {
         ...wave,
         tableau: wave.tableau.map((c, ci) => (ci === col ? c.map((cc, ri) => (ri === row ? newCard : cc)) : c)),
@@ -149,7 +149,7 @@
   }
 
   function unifySuit(suit: Suit) {
-    lastSnapshot = { tableau: wave.tableau, stock: wave.stock }
+    lastSnapshot = wave
     wave = {
       ...wave,
       tableau: wave.tableau.map(col => col.map(c => (c.wild ? c : { ...c, suit }))),
@@ -171,7 +171,7 @@
       const rank = (((baseRank - 1 + i) % 13) + 1) as Rank
       newRanks.set(`${ci}-${ri}`, rank)
     })
-    lastSnapshot = { tableau: wave.tableau, stock: wave.stock }
+    lastSnapshot = wave
     wave = {
       ...wave,
       tableau: wave.tableau.map((col, ci) => col.map((c, ri) => ({ ...c, rank: newRanks.get(`${ci}-${ri}`) as Rank }))),
@@ -182,7 +182,7 @@
 
   function handleUndo() {
     if (!lastSnapshot) return
-    wave = { ...wave, tableau: lastSnapshot.tableau, stock: lastSnapshot.stock, lastGain: null, lastBonusGains: [] }
+    wave = lastSnapshot
     lastSnapshot = null
   }
 
