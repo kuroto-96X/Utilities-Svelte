@@ -131,6 +131,8 @@ export function startWave(
     sweptColumnsThisCombo: [],
     regenerationUsedThisWave: false,
     resilienceUsedThisWave: false,
+    comboResetShieldRemaining: 0,
+    playFromAnywhereActiveThisWave: false,
   }
 
   return { wave, deckComposition: composition }
@@ -736,7 +738,7 @@ export function markStuck(wave: WaveState): WaveState {
 }
 
 export function createInitialRun(): RunState {
-  return { phase: 'title', stageIndex: 0, waveIndex: 0, items: [], offer: [], wave: null, pendingNewItem: null, deckComposition: standardDeckComposition() }
+  return { phase: 'title', stageIndex: 0, waveIndex: 0, items: [], offer: [], wave: null, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [] }
 }
 
 export function beginRun(params: ShidasuParams, seed?: number): RunState {
@@ -750,6 +752,7 @@ export function beginRun(params: ShidasuParams, seed?: number): RunState {
     wave,
     pendingNewItem: null,
     deckComposition,
+    rites: [],
   }
 }
 

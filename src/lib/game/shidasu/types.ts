@@ -30,6 +30,16 @@ export type ItemId =
   | 'sanctify' | 'protection' | 'earth' | 'golden'
   | 'morningStar' | 'mercy' | 'mirror' | 'deadline'
 
+// 秘儀(Rite): プレイ中に能動的に使用する消費アイテム。エルダー・フサルク(北欧ルーン文字)の
+// うち今回効果を実装した17種のみをメンバーとする(残り7種はruneName.tsの見た目候補にのみ存在し、
+// 効果が実装されて初めてここに追加する)。
+export type RiteId =
+  | 'raidho' | 'jera' | 'wunjo' | 'othala' | 'perthro'
+  | 'uruz' | 'ingwaz'
+  | 'gebo' | 'fehu' | 'dagaz'
+  | 'algiz' | 'tiwaz' | 'laguz'
+  | 'eihwaz' | 'ansuz' | 'kenaz' | 'thurisaz'
+
 export interface Card {
   id: number
   suit: Suit
@@ -122,6 +132,10 @@ export interface WaveState {
   regenerationUsedThisWave: boolean
   // 不屈用: ウェーブ中に不屈が既に発動したか(ウェーブ中1回のみ)
   resilienceUsedThisWave: boolean
+  // エイワズ用: コンボリセットを防ぐ残り回数(0なら通常通りリセットする)
+  comboResetShieldRemaining: number
+  // アルギズ用: そのウェーブが終わるまで、isPlayable判定をバイパスして全列からプレイ可能にするか
+  playFromAnywhereActiveThisWave: boolean
 }
 
 export type RunPhase = 'title' | 'playing' | 'itemSelect' | 'stageClear' | 'allClear' | 'gameOver'
@@ -136,4 +150,6 @@ export interface RunState {
   pendingNewItem: ItemId | null
   // ラン全体で持続するデッキの構成(永劫・豊穣・静寂によって書き換えられる)
   deckComposition: DeckCard[]
+  // 所持中の秘儀(最大3、同じ種類を複数所持できる)。ウェーブを跨いで持続する(護符と同様)
+  rites: RiteId[]
 }
