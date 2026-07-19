@@ -31,7 +31,7 @@ export type ItemId =
   | 'morningStar' | 'mercy' | 'mirror' | 'deadline'
 
 // 秘儀(Rite): プレイ中に能動的に使用する消費アイテム。エルダー・フサルク(北欧ルーン文字)の
-// うち今回効果を実装した17種のみをメンバーとする(残り7種はruneName.tsの見た目候補にのみ存在し、
+// うち今回効果を実装した17種のみをメンバーとする(残り7種はrunes.tsの見た目候補にのみ存在し、
 // 効果が実装されて初めてここに追加する)。
 export type RiteId =
   | 'raidho' | 'jera' | 'wunjo' | 'othala' | 'perthro'
