@@ -364,6 +364,10 @@ export function playCard(
 
   const scoreAfterGained = wave.score + gained
 
+  // 護符gained+コンボ倍率適用後のスコアが確定した時点で目標に達していれば、
+  // コンボ到達時の直接加算(流星等)や全消し判定を一切行わず、その時点のスコアで終了する。
+  const targetReachedOnGained = scoreAfterGained >= target
+
   const milestoneCtx: DirectEffectContext = {
     comboBeforeReset: 0,
     hasPlayableColumns: true,
@@ -374,7 +378,9 @@ export function playCard(
     previousCombo: wave.combo,
     scoreAfterGained,
   }
-  const milestoneResult = applyDirectEffects('comboMilestoneDirect', items, milestoneCtx, params)
+  const milestoneResult = targetReachedOnGained
+    ? { value: 0, parts: [] as string[] }
+    : applyDirectEffects('comboMilestoneDirect', items, milestoneCtx, params)
 
   const newScore = scoreAfterGained + milestoneResult.value
 
@@ -416,6 +422,11 @@ export function playCard(
     sameRankEchoUsedThisCombo: newSameRankEchoUsedThisCombo,
     lastBonusGains: bonusGains,
     sweptColumnsThisCombo: newSweptColumnsThisCombo,
+  }
+
+  // gained確定時点で目標達成なら、コンボ到達直接加算・全消し判定等を行わず即座に終了する。
+  if (targetReachedOnGained) {
+    return { wave: { ...next, status: 'ended', endReason: 'target' }, deckComposition }
   }
 
   if (remainingBeforeRevival === 0) {
@@ -474,7 +485,7 @@ export function playCard(
 
     if (remainingCount(resetWave.tableau) > 0) {
       if (resetWave.stock.length > 0) {
-        return drawStock(params, resetWave, items, deckComposition, modifier, rand)
+        return drawStock(params, resetWave, items, target, deckComposition, modifier, rand)
       }
       return { wave: resetWave, deckComposition }
     }
@@ -493,6 +504,7 @@ export function drawStock(
   params: ShidasuParams,
   wave: WaveState,
   items: ItemId[],
+  target: number,
   deckComposition: DeckCard[],
   modifier: StageModifier = 'none',
   rand: () => number = Math.random
@@ -524,6 +536,14 @@ export function drawStock(
     }
     stockEmptyResult = applyDirectEffects('stockEmptyDirect', items, stockEmptyCtx, params)
     scoreAfterStockEmpty += stockEmptyResult.value
+  }
+
+  // 山札切れ時の直接加算だけで目標に達したら、以降の得点計算を行わず即座に終了する。
+  if (scoreAfterStockEmpty >= target) {
+    return {
+      wave: { ...wave, stock: newStock, score: scoreAfterStockEmpty, status: 'ended', endReason: 'target' },
+      deckComposition,
+    }
   }
 
   if (patternContinues) {
@@ -610,27 +630,31 @@ export function drawStock(
       patternContinueBonusGains.push({ label: '護符による直接加算', points: drawContinueResult.value, parts: drawContinueResult.parts })
     }
 
-    return {
-      wave: {
-        ...wave,
-        stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [...wave.chain, drawnCard], effectiveStairMinLen, effectiveSuitColorMinLen) : newStock,
-        foundation: drawnCard,
-        combo: naiveCombo,
-        chain: [...wave.chain, drawnCard],
-        chainOrigin: [...wave.chainOrigin, 'draw'],
-        linked: true,
-        lastDrawEffect: drawnCard.wild ? 'wild' : 'pattern',
-        lastGain: naiveGained > 0 ? { points: naiveGained, parts: naiveParts } : null,
-        score: scoreAfterStockEmpty + directGain + naiveGained,
-        drawContinueCountThisChain: newDrawContinueCount,
-        benevolenceUsedThisCombo: benevolenceFires ? true : wave.benevolenceUsedThisCombo,
-        maxComboThisWave: Math.max(wave.maxComboThisWave, naiveCombo),
-        roleFiredThisChain: naiveRoleFiredThisChain,
-        flushActiveThisCombo: naiveFlushActiveThisCombo,
-        lastBonusGains: patternContinueBonusGains,
-      },
-      deckComposition,
+    const continueWave: WaveState = {
+      ...wave,
+      stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [...wave.chain, drawnCard], effectiveStairMinLen, effectiveSuitColorMinLen) : newStock,
+      foundation: drawnCard,
+      combo: naiveCombo,
+      chain: [...wave.chain, drawnCard],
+      chainOrigin: [...wave.chainOrigin, 'draw'],
+      linked: true,
+      lastDrawEffect: drawnCard.wild ? 'wild' : 'pattern',
+      lastGain: naiveGained > 0 ? { points: naiveGained, parts: naiveParts } : null,
+      score: scoreAfterStockEmpty + directGain + naiveGained,
+      drawContinueCountThisChain: newDrawContinueCount,
+      benevolenceUsedThisCombo: benevolenceFires ? true : wave.benevolenceUsedThisCombo,
+      maxComboThisWave: Math.max(wave.maxComboThisWave, naiveCombo),
+      roleFiredThisChain: naiveRoleFiredThisChain,
+      flushActiveThisCombo: naiveFlushActiveThisCombo,
+      lastBonusGains: patternContinueBonusGains,
     }
+
+    // パターン継続分のスコア確定後、目標に達していれば即座に終了する。
+    if (continueWave.score >= target) {
+      return { wave: { ...continueWave, status: 'ended', endReason: 'target' }, deckComposition }
+    }
+
+    return { wave: continueWave, deckComposition }
   }
 
   // combo: 0 を明示するのは、faceLock(絵札はコンボ2以上でのみ取得可)を正しく評価するため。
@@ -668,6 +692,11 @@ export function drawStock(
     lastGain: null,
     score: scoreAfterStockEmpty + resetDirectGain,
     lastBonusGains: resetBonusGains,
+  }
+
+  // コンボリセット時の直接加算だけで目標に達していれば、治癒等の後続処理を行わず即座に終了する。
+  if (resetWave.score >= target) {
+    return { wave: { ...resetWave, status: 'ended', endReason: 'target' }, deckComposition: newDeckComposition }
   }
 
   if (items.includes('healing')) {
@@ -815,8 +844,9 @@ export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: nu
 
 export function applyDrawStock(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
   if (run.phase !== 'playing' || !run.wave) return run
-  const modifier = params.stages[run.stageIndex].modifier
-  const { wave, deckComposition } = drawStock(params, run.wave, run.items, run.deckComposition, modifier, rand)
+  const stage = params.stages[run.stageIndex]
+  const target = stage.targets[run.waveIndex]
+  const { wave, deckComposition } = drawStock(params, run.wave, run.items, target, run.deckComposition, stage.modifier, rand)
   return { ...run, wave, deckComposition }
 }
 
@@ -852,7 +882,8 @@ export function applyStuckCheck(params: ShidasuParams, run: RunState, rand: () =
   }
 
   if (resetWave.stock.length > 0) {
-    const drawResult = drawStock(params, resetWave, run.items, run.deckComposition, modifier, rand)
+    const stageTarget = params.stages[run.stageIndex].targets[run.waveIndex]
+    const drawResult = drawStock(params, resetWave, run.items, stageTarget, run.deckComposition, modifier, rand)
     return { ...run, wave: drawResult.wave, deckComposition: drawResult.deckComposition }
   }
 

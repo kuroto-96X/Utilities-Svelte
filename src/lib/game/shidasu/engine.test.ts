@@ -635,7 +635,7 @@ describe('playCard', () => {
       sweptColumnsThisCombo: [{ colIndex: 0, startLength: DEFAULT_PARAMS.layout.rows }],
       discardPile: [],
     })
-    const result = drawStock(DEFAULT_PARAMS, afterSweep, ['healing'], standardDeckComposition())
+    const result = drawStock(DEFAULT_PARAMS, afterSweep, ['healing'], 1000000, standardDeckComposition())
     // discardPileにはコンボリセットでチェーンの2枚が加わってから復活に使われる
     expect(result.wave.tableau[0].length).toBe(Math.min(2, DEFAULT_PARAMS.layout.rows))
     expect(result.wave.sweptColumnsThisCombo).toEqual([])
@@ -651,7 +651,7 @@ describe('playCard', () => {
       sweptColumnsThisCombo: [{ colIndex: 0, startLength: 2 }],
       discardPile: [card(30, '♦', 1), card(31, '♦', 2), card(32, '♦', 3), card(33, '♦', 4)],
     })
-    const result = drawStock(DEFAULT_PARAMS, afterSweep, ['healing'], standardDeckComposition())
+    const result = drawStock(DEFAULT_PARAMS, afterSweep, ['healing'], 1000000, standardDeckComposition())
     expect(result.wave.tableau[0]).toHaveLength(2) // startLength=2が上限
     expect(result.wave.discardPile).toHaveLength(4 + 1 - 2) // 元4枚+チェーン1枚 - 復活2枚
   })
@@ -666,7 +666,7 @@ describe('playCard', () => {
       sweptColumnsThisCombo: [{ colIndex: 0, startLength: 2 }],
       discardPile: [card(30, '♦', 1)],
     })
-    const result = drawStock(DEFAULT_PARAMS, afterSweep, [], standardDeckComposition())
+    const result = drawStock(DEFAULT_PARAMS, afterSweep, [], 1000000, standardDeckComposition())
     expect(result.wave.tableau[0]).toHaveLength(0)
   })
 
@@ -949,13 +949,39 @@ describe('playCard', () => {
   // 上のdescribe('applyItemEffects (グループ7: コンボ内位置系)')内のctx()往復テストで行う。
   // 計算式自体の実質的な検証は、Task 8/9で序章・幕間がこれらのフィールドを消費するように
   // なった時点で、その挙動テストが担うことになる。
+
+  test('護符gainedの時点で目標スコアに達したら、コンボ到達直接加算(流星等)は適用されずその時点でendReason=targetとなる', () => {
+    const items: ItemId[] = ['shootingStar']
+    const wave = baseWave({
+      score: 0,
+      combo: DEFAULT_PARAMS.talismans.shootingStar.c - 1,
+      chain: [card(20, '♥', 3), card(21, '♦', 4)],
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, scoring.basePoint, 0, standardDeckComposition())
+    expect(next.status).toBe('ended')
+    expect(next.endReason).toBe('target')
+    expect(next.lastBonusGains).toEqual([]) // 流星の直接加算は行われていない
+  })
 })
 
 describe('drawStock', () => {
   test('山札が空なら何もしない', () => {
     const wave = makeWave({ stock: [] })
     const composition = standardDeckComposition()
-    expect(drawStock(DEFAULT_PARAMS, wave, [], composition).wave).toBe(wave)
+    expect(drawStock(DEFAULT_PARAMS, wave, [], 1000000, composition).wave).toBe(wave)
+  })
+
+  test('コンボリセット時の直接加算護符でスコアが目標に達したら、その時点でendReason=targetとなりウェーブが終了する', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)], // 差4、パターン不継続
+      chain: [card(3, '♥', 5)],
+      linked: true,
+      score: 100,
+    })
+    const result = drawStock(DEFAULT_PARAMS, wave, ['composure'], 100 + 1, standardDeckComposition())
+    expect(result.wave.status).toBe('ended')
+    expect(result.wave.endReason).toBe('target')
   })
 
   test('通常時(継続条件なし): コンボ・チェーン・列一掃カウント・comboStreakColumnLengthsがリセットされ、捲った札1枚が新しい起点になる', () => {
@@ -969,7 +995,7 @@ describe('drawStock', () => {
       tableau: [[card(3, '♣', 2)], [card(4, '♦', 8), card(5, '♥', 9)]],
       comboStreakColumnLengths: [0, 1],
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
     expect(next.foundation).toEqual(card(1, '♠', 9))
     expect(next.combo).toBe(0)
     expect(next.chain).toEqual([card(1, '♠', 9)])
@@ -990,7 +1016,7 @@ describe('drawStock', () => {
       linked: true,
       comboStreakColumnLengths: [4, 2],
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
     expect(next.combo).toBe(0)
     expect(next.chain).toEqual([card(1, '★', 0, true)])
     expect(next.chainOrigin).toEqual(['draw'])
@@ -1007,7 +1033,7 @@ describe('drawStock', () => {
       linked: true,
       comboStreakColumnLengths: [4, 2],
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
     expect(next.combo).toBe(3)
     expect(next.chain).toEqual([card(2, '♠', 5), card(3, '♠', 6), card(4, '♠', 7), card(1, '★', 0, true)])
     expect(next.chainOrigin).toEqual(['play', 'play', 'play', 'draw'])
@@ -1025,7 +1051,7 @@ describe('drawStock', () => {
       linked: true,
       comboStreakColumnLengths: [3, 2],
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
     expect(next.combo).toBe(2)
     expect(next.chain).toEqual([card(2, '♠', 4), card(3, '♠', 5), card(1, '♠', 9)])
     expect(next.chainOrigin).toEqual(['play', 'play', 'draw'])
@@ -1043,7 +1069,7 @@ describe('drawStock', () => {
       chainOrigin: ['play', 'play'],
       linked: true,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['bridge'], standardDeckComposition()) // stairRelaxedMinLen=3
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['bridge'], 1000000, standardDeckComposition()) // stairRelaxedMinLen=3
     expect(next.combo).toBe(2)
     expect(next.lastDrawEffect).toBe('pattern')
     expect(next.chain).toEqual([card(2, '♠', 5), card(3, '♣', 6), card(1, '♦', 7)])
@@ -1057,7 +1083,7 @@ describe('drawStock', () => {
       chainOrigin: ['play', 'play'],
       linked: true,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
     expect(next.combo).toBe(0) // リセットされる
     expect(next.lastDrawEffect).toBeNull()
   })
@@ -1070,7 +1096,7 @@ describe('drawStock', () => {
       chainOrigin: ['play'],
       linked: true,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
     expect(next.combo).toBe(0)
     expect(next.chain).toEqual([card(1, '♣', 9)])
     expect(next.chainOrigin).toEqual(['draw'])
@@ -1083,7 +1109,7 @@ describe('drawStock', () => {
       stock: [card(1, '★', 0, true)],
       lastGain: { points: 100, parts: ['同スート+100'] },
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
     expect(next.lastGain).toBeNull()
   })
 
@@ -1094,7 +1120,7 @@ describe('drawStock', () => {
       linked: true,
       discardPile: [card(9, '♦', 1)],
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
     expect(next.discardPile).toEqual([card(9, '♦', 1), card(2, '♥', 5), card(3, '♥', 6)])
   })
 
@@ -1105,7 +1131,7 @@ describe('drawStock', () => {
       linked: true,
       discardPile: [],
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
     expect(next.discardPile).toEqual([])
   })
 
@@ -1117,7 +1143,7 @@ describe('drawStock', () => {
       linked: true,
     })
     const composition = standardDeckComposition()
-    const { wave: next, deckComposition } = drawStock(DEFAULT_PARAMS, wave, ['silence'], composition, 'none', createRng(1))
+    const { wave: next, deckComposition } = drawStock(DEFAULT_PARAMS, wave, ['silence'], 1000000, composition, 'none', createRng(1))
     expect(next.foundation.wild).toBe(true)
     expect(next.chain).toEqual([{ ...card(1, '♣', 9), wild: true }])
     expect(deckComposition.filter(c => c.wild)).toHaveLength(1)
@@ -1131,7 +1157,7 @@ describe('drawStock', () => {
       linked: true,
     })
     const composition = standardDeckComposition()
-    const { wave: next, deckComposition } = drawStock(DEFAULT_PARAMS, wave, ['silence'], composition, 'none', createRng(1))
+    const { wave: next, deckComposition } = drawStock(DEFAULT_PARAMS, wave, ['silence'], 1000000, composition, 'none', createRng(1))
     expect(next.foundation.wild).toBe(false)
     expect(deckComposition.filter(c => c.wild)).toHaveLength(0)
   })
@@ -1145,7 +1171,7 @@ describe('drawStock', () => {
       linked: true,
     })
     const composition = standardDeckComposition()
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['silence'], composition, 'faceLock', createRng(1))
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['silence'], 1000000, composition, 'faceLock', createRng(1))
     expect(next.foundation.wild).toBe(true)
   })
 
@@ -1157,7 +1183,7 @@ describe('drawStock', () => {
       linked: true,
       score: 100,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['composure'], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['composure'], 1000000, standardDeckComposition())
     expect(next.score).toBe(100 + DEFAULT_PARAMS.talismans.composure.n)
   })
 
@@ -1170,7 +1196,7 @@ describe('drawStock', () => {
       roleFiredThisChain: false,
       score: 100,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['clarity'], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['clarity'], 1000000, standardDeckComposition())
     expect(next.score).toBe(100 + DEFAULT_PARAMS.talismans.clarity.n)
   })
 
@@ -1183,7 +1209,7 @@ describe('drawStock', () => {
       roleFiredThisChain: true,
       score: 100,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['clarity'], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['clarity'], 1000000, standardDeckComposition())
     expect(next.score).toBe(100)
   })
 
@@ -1196,7 +1222,7 @@ describe('drawStock', () => {
       combo: 4,
       score: 100,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['echo'], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['echo'], 1000000, standardDeckComposition())
     expect(next.score).toBe(100 + 4 * DEFAULT_PARAMS.talismans.echo.n)
   })
 
@@ -1207,7 +1233,7 @@ describe('drawStock', () => {
       linked: true,
       roleFiredThisChain: true,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
     expect(next.roleFiredThisChain).toBe(false)
   })
 
@@ -1219,7 +1245,7 @@ describe('drawStock', () => {
       linked: false,
       score: 100,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['arrogance'], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['arrogance'], 1000000, standardDeckComposition())
     expect(next.stock).toHaveLength(0)
     expect(next.score).toBe(100 + 2 * DEFAULT_PARAMS.talismans.arrogance.x)
   })
@@ -1233,7 +1259,7 @@ describe('drawStock', () => {
       score: 100,
       drawContinueCountThisChain: 0,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['sincerity'], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['sincerity'], 1000000, standardDeckComposition())
     expect(next.linked).toBe(true)
     expect(next.score).toBe(100 + DEFAULT_PARAMS.talismans.sincerity.n)
     expect(next.drawContinueCountThisChain).toBe(1)
@@ -1246,7 +1272,7 @@ describe('drawStock', () => {
       linked: true,
       score: 100,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['sincerity'], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['sincerity'], 1000000, standardDeckComposition())
     expect(next.score).toBe(100)
   })
 
@@ -1258,7 +1284,7 @@ describe('drawStock', () => {
       combo: 2,
       benevolenceUsedThisCombo: false,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['benevolence'], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['benevolence'], 1000000, standardDeckComposition())
     expect(next.combo).toBe(2) // リセットされず維持
     expect(next.linked).toBe(true)
     expect(next.chain).toEqual([card(2, '♥', 5), card(1, '♣', 9)])
@@ -1273,7 +1299,7 @@ describe('drawStock', () => {
       combo: 2,
       benevolenceUsedThisCombo: true,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['benevolence'], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['benevolence'], 1000000, standardDeckComposition())
     expect(next.combo).toBe(0)
   })
 
@@ -1285,7 +1311,7 @@ describe('drawStock', () => {
       linked: true,
       baseComboCount: 4,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['sanctify'], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['sanctify'], 1000000, standardDeckComposition())
     expect(next.combo).toBe(4)
   })
 
@@ -1297,7 +1323,7 @@ describe('drawStock', () => {
       linked: true,
       baseComboCount: 4,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
     expect(next.combo).toBe(0)
   })
 
@@ -1308,7 +1334,7 @@ describe('drawStock', () => {
       linked: true,
       combo: DEFAULT_PARAMS.talismans.mercy.c,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['mercy'], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['mercy'], 1000000, standardDeckComposition())
     expect(next.mercyActiveNextCombo).toBe(true)
   })
 
@@ -1320,7 +1346,7 @@ describe('drawStock', () => {
       combo: DEFAULT_PARAMS.talismans.mercy.c + 5,
       mercyActiveNextCombo: true,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['mercy'], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['mercy'], 1000000, standardDeckComposition())
     expect(next.mercyActiveNextCombo).toBe(false)
   })
 
@@ -1333,7 +1359,7 @@ describe('drawStock', () => {
       chain: [card(0, '♠', 5)],
       linked: false,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, standardDeckComposition(), 'none')
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition(), 'none')
     const remainingTableau = 2
     const expected = remainingTableau * DEFAULT_PARAMS.talismans.arrogance.x
     expect(next.lastBonusGains.some(g => g.label === '護符による直接加算' && g.parts.includes(`慢心+${expected}`))).toBe(true)
@@ -1354,7 +1380,7 @@ describe('drawStock', () => {
       linked: false,
       roleFiredThisChain: false,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, standardDeckComposition(), 'none')
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition(), 'none')
     const entry = next.lastBonusGains.find(g => g.label === '護符による直接加算')
     expect(entry).toBeDefined()
     expect(entry?.parts).toContain(`沈着+${DEFAULT_PARAMS.talismans.composure.n}`)
@@ -1375,7 +1401,7 @@ describe('drawStock', () => {
       chain: [card(20, '♥', 3), card(21, '♦', 9), card(22, '♥', 2)],
       linked: true,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, standardDeckComposition(), 'none')
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition(), 'none')
     expect(next.lastDrawEffect).toBe('pattern')
     expect(next.lastBonusGains.some(g => g.label === '護符による直接加算' && g.parts.includes(`誠実+${DEFAULT_PARAMS.talismans.sincerity.n}`))).toBe(true)
     // 回帰防止: lastGainとlastBonusGainsの合計が実際のスコア増分と一致することを確認する(二重計上防止)。
@@ -1395,7 +1421,7 @@ describe('drawStock', () => {
       chain: [card(20, '♥', 3), card(21, '♦', 9), card(22, '♥', 2)],
       linked: true,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, standardDeckComposition(), 'none')
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition(), 'none')
     expect(next.lastDrawEffect).toBe('pattern')
     // naiveによる山札めくり得点計算が実際に発生している(lastGainがnullでない)ことを確認した上で、
     // 誠実の直接加算がlastBonusGainsにも別枠で入っていることを確認する。
@@ -1885,7 +1911,7 @@ describe('drawStock (素朴の得点ルール変更)', () => {
       linked: true,
       score: 0,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['naive'], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['naive'], 1000000, standardDeckComposition())
     expect(next.combo).toBe(3) // 通常プレイと同様にコンボが加算される
     expect(next.score).toBeGreaterThan(0) // 得点が発生する(通常は0のまま)
   })
@@ -1898,7 +1924,7 @@ describe('drawStock (素朴の得点ルール変更)', () => {
       linked: true,
       score: 0,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
     expect(next.combo).toBe(2) // 据え置き
     expect(next.score).toBe(0)
   })
@@ -1912,8 +1938,8 @@ describe('drawStock (素朴の得点ルール変更)', () => {
       score: 0,
       drawContinueCountThisChain: 2,
     })
-    const withoutIntuition = drawStock(DEFAULT_PARAMS, wave, ['naive'], standardDeckComposition())
-    const withIntuition = drawStock(DEFAULT_PARAMS, wave, ['naive', 'intuition'], standardDeckComposition())
+    const withoutIntuition = drawStock(DEFAULT_PARAMS, wave, ['naive'], 1000000, standardDeckComposition())
+    const withIntuition = drawStock(DEFAULT_PARAMS, wave, ['naive', 'intuition'], 1000000, standardDeckComposition())
     expect(withIntuition.wave.score).toBeGreaterThan(withoutIntuition.wave.score)
   })
 
@@ -1928,7 +1954,7 @@ describe('drawStock (素朴の得点ルール変更)', () => {
       roleFiredThisChain: false,
       flushActiveThisCombo: false,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['naive'], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['naive'], 1000000, standardDeckComposition())
     expect(next.roleFiredThisChain).toBe(true)
     expect(next.flushActiveThisCombo).toBe(true)
   })
@@ -1941,7 +1967,7 @@ describe('drawStock (素朴の得点ルール変更)', () => {
       linked: true,
       score: 0,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['naive', 'golden'], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['naive', 'golden'], 1000000, standardDeckComposition())
     expect(next.combo).toBe(4)
   })
 
@@ -1955,8 +1981,8 @@ describe('drawStock (素朴の得点ルール変更)', () => {
     })
     // combo=0で継続めくり: newCombo=1。大地(c=2)が先なら一時combo=3(庇護c=3未満は満たさず不発化)。
     // 庇護が先なら一時combo=3に底上げ後、大地で+2して5になり、より高スコアになるはず。
-    const earthThenProtection = drawStock(DEFAULT_PARAMS, wave, ['naive', 'earth', 'protection'], standardDeckComposition())
-    const protectionThenEarth = drawStock(DEFAULT_PARAMS, wave, ['naive', 'protection', 'earth'], standardDeckComposition())
+    const earthThenProtection = drawStock(DEFAULT_PARAMS, wave, ['naive', 'earth', 'protection'], 1000000, standardDeckComposition())
+    const protectionThenEarth = drawStock(DEFAULT_PARAMS, wave, ['naive', 'protection', 'earth'], 1000000, standardDeckComposition())
     expect(protectionThenEarth.wave.score).toBeGreaterThan(earthThenProtection.wave.score)
   })
 
@@ -1974,7 +2000,7 @@ describe('drawStock (素朴の得点ルール変更)', () => {
       linked: true,
       score: 0,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition())
     expect(next.combo).toBe(3)
     const multiplier = 1 + (3 - 1) * DEFAULT_PARAMS.scoring.comboMultiplierStep
     const base = DEFAULT_PARAMS.scoring.basePoint + DEFAULT_PARAMS.scoring.suitBonus
@@ -1999,7 +2025,7 @@ describe('drawStock (素朴の得点ルール変更)', () => {
       linked: true,
       score: 0,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition())
     expect(next.lastDrawEffect).toBe('pattern')
     expect(next.lastGain?.parts.some(p => p.startsWith('序章'))).toBe(false)
   })
@@ -2022,7 +2048,7 @@ describe('drawStock (素朴の得点ルール変更)', () => {
       linked: true,
       score: 0,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition())
     expect(next.lastDrawEffect).toBe('pattern')
     expect(next.lastGain?.parts.some(p => p.startsWith('幕間'))).toBe(false)
   })
@@ -2070,7 +2096,7 @@ describe('約束・暗雲', () => {
       chain: [card(9, '♠', 4), card(10, '♠', 5)], // 黒2枚継続中
       linked: true,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['promise'], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['promise'], 1000000, standardDeckComposition())
     expect(next.stock[next.stock.length - 1]).toEqual(card(2, '♠', 6))
   })
 
@@ -2080,7 +2106,7 @@ describe('約束・暗雲', () => {
       chain: [card(9, '♠', 4), card(10, '♠', 5)],
       linked: true,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], standardDeckComposition())
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
     expect(next.stock).toEqual([card(2, '♠', 6), card(1, '♦', 1)])
   })
 
