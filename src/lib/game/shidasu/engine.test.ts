@@ -1265,6 +1265,46 @@ describe('drawStock', () => {
     expect(next.drawContinueCountThisChain).toBe(1)
   })
 
+  test('慢心(山札切れ直接加算)でスコアが目標に達したら即座にendReason=targetとなり、lastBonusGainsに慢心の加算が反映される(古い内訳が残らない)', () => {
+    const x = DEFAULT_PARAMS.talismans.arrogance.x
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)], // 最後の1枚。引くと山札0枚になり慢心が発動
+      tableau: [[card(2, '♣', 8)], [card(4, '♦', 5)]], // 残数2 → 慢心+2x
+      chain: [card(3, '♥', 1)],
+      linked: false,
+      score: 100,
+      lastGain: { points: 888, parts: ['古い内訳'] },
+      lastBonusGains: [{ label: '古い', points: 999, parts: ['古い'] }],
+    })
+    const result = drawStock(DEFAULT_PARAMS, wave, ['arrogance'], 100 + 2 * x, standardDeckComposition())
+    expect(result.wave.stock).toHaveLength(0)
+    expect(result.wave.status).toBe('ended')
+    expect(result.wave.endReason).toBe('target')
+    expect(result.wave.score).toBe(100 + 2 * x)
+    // 直前プレイの古い内訳が残らず、慢心の加算がlastBonusGainsに正しく反映される
+    expect(result.wave.lastGain).toBeNull()
+    expect(result.wave.lastBonusGains).toHaveLength(1)
+    const gain = result.wave.lastBonusGains[0]
+    expect(gain?.points).toBe(2 * x)
+    expect(gain?.parts).toContain(`慢心+${2 * x}`)
+  })
+
+  test('誠実(パターン継続時の直接加算)でスコアが目標に達したら即座にendReason=targetとなりウェーブが終了する', () => {
+    const n = DEFAULT_PARAMS.talismans.sincerity.n
+    const wave = makeWave({
+      stock: [card(1, '♠', 6)], // 黒(色継続)。引くとパターン継続する
+      chain: [card(2, '♣', 4), card(3, '♠', 5)], // 黒2枚、同色成立中
+      linked: true,
+      combo: 2,
+      score: 100,
+    })
+    const result = drawStock(DEFAULT_PARAMS, wave, ['sincerity'], 100 + n, standardDeckComposition())
+    expect(result.wave.linked).toBe(true)
+    expect(result.wave.score).toBe(100 + n)
+    expect(result.wave.status).toBe('ended')
+    expect(result.wave.endReason).toBe('target')
+  })
+
   test('パターン継続めくりが同スートパターンで成立した場合、誠実は発動しない(同色専用)', () => {
     const wave = makeWave({
       stock: [card(1, '♠', 6)],

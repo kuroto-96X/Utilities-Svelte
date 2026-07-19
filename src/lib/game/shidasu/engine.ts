@@ -540,8 +540,22 @@ export function drawStock(
 
   // 山札切れ時の直接加算だけで目標に達したら、以降の得点計算を行わず即座に終了する。
   if (scoreAfterStockEmpty >= target) {
+    // この分岐で発生する得点は慢心等の直接加算のみ。lastGain/lastBonusGainsを更新しないと
+    // 直前プレイの古い内訳が残ってしまうため、他の即時終了箇所と同様に新しい値を明示的に設定する。
+    const stockEmptyBonusGains: BonusGain[] =
+      stockEmptyResult.parts.length > 0
+        ? [{ label: '護符による直接加算', points: stockEmptyResult.value, parts: stockEmptyResult.parts }]
+        : []
     return {
-      wave: { ...wave, stock: newStock, score: scoreAfterStockEmpty, status: 'ended', endReason: 'target' },
+      wave: {
+        ...wave,
+        stock: newStock,
+        score: scoreAfterStockEmpty,
+        lastGain: null,
+        lastBonusGains: stockEmptyBonusGains,
+        status: 'ended',
+        endReason: 'target',
+      },
       deckComposition,
     }
   }
