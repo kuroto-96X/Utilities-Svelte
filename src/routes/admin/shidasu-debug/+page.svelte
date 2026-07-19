@@ -2,9 +2,11 @@
   import { onMount } from 'svelte'
   import { loadParams } from '$lib/game/shidasu/params'
   import { startWave, playCard, drawStock, forceStockTop } from '$lib/game/shidasu/engine'
+  import { applyRiteEffect } from '$lib/game/shidasu/riteEffects'
+  import RiteExecutePanel from './RiteExecutePanel.svelte'
   import { ITEM_POOL } from '$lib/game/shidasu/items'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
-  import type { WaveState, Card, ItemId, DeckCard, Suit, Rank } from '$lib/game/shidasu/types'
+  import type { WaveState, Card, ItemId, DeckCard, Suit, Rank, RiteId } from '$lib/game/shidasu/types'
   import ItemChecklist from './ItemChecklist.svelte'
   import DebugStatePanel from './DebugStatePanel.svelte'
   import CardPalette from './CardPalette.svelte'
@@ -158,6 +160,11 @@
     }
   }
 
+  function handleExecuteRite(riteId: RiteId) {
+    lastSnapshot = wave
+    wave = applyRiteEffect(params, wave, riteId, Math.random)
+  }
+
   function stairifyTableau() {
     if (wave.tableau.length === 0 || wave.tableau[0].length === 0) return
     // 列優先: 列0を手前(末尾)→奥(先頭)、次に列1を手前→奥…の順に走査する
@@ -241,6 +248,7 @@
     <div class="space-y-4">
       <CardPalette onCardPointerDown={onPaletteCardPointerDown} onUnifySuit={unifySuit} />
       <ItemChecklist {items} onToggle={handleToggleItem} onSetAll={handleSetAllItems} />
+      <RiteExecutePanel onExecute={handleExecuteRite} />
     </div>
   </div>
 
