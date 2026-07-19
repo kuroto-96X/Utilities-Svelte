@@ -121,6 +121,25 @@ export interface ShidasuParams {
     mirror: { name: string; rarity: Rarity; desc: string }
     deadline: { name: string; n: number; rarity: Rarity; desc: string }
   }
+  rites: {
+    raidho: { name: string; desc: string }
+    jera: { name: string; desc: string }
+    wunjo: { name: string; desc: string }
+    othala: { name: string; desc: string }
+    perthro: { name: string; desc: string }
+    uruz: { name: string; n: number; desc: string }
+    ingwaz: { name: string; n: number; desc: string }
+    gebo: { name: string; desc: string }
+    fehu: { name: string; desc: string }
+    dagaz: { name: string; desc: string }
+    algiz: { name: string; desc: string }
+    tiwaz: { name: string; desc: string }
+    laguz: { name: string; desc: string }
+    eihwaz: { name: string; n: number; desc: string }
+    ansuz: { name: string; n: number; desc: string }
+    kenaz: { name: string; desc: string }
+    thurisaz: { name: string; desc: string }
+  }
   flow: {
     wavesPerStage: number
     clearDelayMs: number
@@ -247,6 +266,25 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     mercy: { name: '慈悲', c: 3, x: 1.5, rarity: 'U', desc: 'コンボ数が{c}以下でリセットされたとき、次のコンボの間、獲得点を{x}倍' },
     mirror: { name: '水鏡', rarity: 'R', desc: '役が成立するたび(コンボ中1回、同ランクは枚数ごとに1回)、次のプレイで同じ役ボーナスを追加でもう一度加算する' },
     deadline: { name: '刻限', n: 10, rarity: 'U', desc: 'カードを取るたび、山札の残り枚数×{n}点加算' },
+  },
+  rites: {
+    raidho: { name: 'ᚱ', desc: '場札のランダムな1列を階段に変換する(最下段起点、昇順/降順はランダム)' },
+    jera: { name: 'ᛃ', desc: '場札の各列をそれぞれソートする(列ごとに昇順/降順はランダム)' },
+    wunjo: { name: 'ᚹ', desc: '場札を一番多い色に統一変換する(変換後のスートはカードごとにランダム)' },
+    othala: { name: 'ᛟ', desc: '場札を一番多いスートに統一変換する' },
+    perthro: { name: 'ᛈ', desc: '現在のチェーンの一番上のカードをワイルドに変換する' },
+    uruz: { name: 'ᚢ', n: 3, desc: '現在のコンボ数に+{n}する' },
+    ingwaz: { name: 'ᛜ', n: 2, desc: '基礎コンボ数に+{n}する' },
+    gebo: { name: 'ᚷ', desc: '捨て札からランダムに、場札の各列へ1枚ずつ配置する(捨て札が列数未満なら使用不可)' },
+    fehu: { name: 'ᚠ', desc: '山札の上から、場札の各列へ1枚ずつ配置する(山札の残りが列数以下なら使用不可)' },
+    dagaz: { name: 'ᛞ', desc: '捨て札を山札に加えてシャッフルする' },
+    algiz: { name: 'ᛉ', desc: 'そのウェーブが終わるまで、場札のどの列からでもカードをプレイできるようになる' },
+    tiwaz: { name: 'ᛏ', desc: '現在のチェーンのカードを、チェーン内で一番多いスートに統一変換する(チェーンが2枚以上のときのみ使用可)' },
+    laguz: { name: 'ᛚ', desc: '現在のチェーンのカードを、チェーン内で一番多い色に統一変換する(変換後のスートはカードごとにランダム。チェーンが2枚以上のときのみ使用可)' },
+    eihwaz: { name: 'ᛇ', n: 3, desc: 'コンボリセットを{n}回防ぐ' },
+    ansuz: { name: 'ᚨ', n: 3, desc: '場札の中からランダムに{n}枚をワイルドに変換する' },
+    kenaz: { name: 'ᚲ', desc: '場札のJ・Q・K以外のカードを、ランダムにJ・Q・Kのいずれかへ変換する(スートは維持)' },
+    thurisaz: { name: 'ᚦ', desc: '場札のJ・Q・Kのカードを、ランダムにJ・Q・K以外のランクへ変換する(スートは維持)' },
   },
   flow: { wavesPerStage: 3, clearDelayMs: 450 },
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },
