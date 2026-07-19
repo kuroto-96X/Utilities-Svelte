@@ -27,6 +27,17 @@
     return Object.keys(talismanEntry(id)).filter(key => key !== 'name' && key !== 'rarity' && key !== 'desc')
   }
 
+  let rarityCounts = $derived.by(() => {
+    const counts: Record<Rarity, number> = { C: 0, U: 0, R: 0 }
+    if (!config) return counts
+    for (const group of ITEM_GROUPS) {
+      for (const id of group.ids) {
+        counts[talismanEntry(id).rarity]++
+      }
+    }
+    return counts
+  })
+
   let hasValidationError = $derived.by(() => {
     if (!config) return false
     return ITEM_GROUPS.some(group => group.ids.some(id => {
@@ -96,6 +107,10 @@
       </button>
     </div>
   </div>
+
+  {#if config}
+    <p class="text-xs text-slate-400 mb-4">C: {rarityCounts.C}件 / U: {rarityCounts.U}件 / R: {rarityCounts.R}件</p>
+  {/if}
 
   {#if error}
     <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">{error}</div>
