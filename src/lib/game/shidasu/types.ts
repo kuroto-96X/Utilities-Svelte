@@ -31,7 +31,7 @@ export type ItemId =
   | 'morningStar' | 'mercy' | 'mirror' | 'deadline'
 
 // 秘儀(Rite): プレイ中に能動的に使用する消費アイテム。エルダー・フサルク(北欧ルーン文字)の
-// うち今回効果を実装した18種のみをメンバーとする(残り6種はrunes.tsの見た目候補にのみ存在し、
+// うち今回効果を実装した20種のみをメンバーとする(残り4種はrunes.tsの見た目候補にのみ存在し、
 // 効果が実装されて初めてここに追加する)。
 export type RiteId =
   | 'raidho' | 'jera' | 'wunjo' | 'othala' | 'perthro'
@@ -40,6 +40,7 @@ export type RiteId =
   | 'algiz' | 'tiwaz' | 'laguz'
   | 'eihwaz' | 'ansuz' | 'kenaz' | 'thurisaz'
   | 'hagalaz'
+  | 'nauthiz' | 'isa'
 
 export interface Card {
   id: number
@@ -143,6 +144,10 @@ export interface WaveState {
   comboResetShieldRemaining: number
   // アルギズ用: そのウェーブが終わるまで、isPlayable判定をバイパスして全列からプレイ可能にするか
   playFromAnywhereActiveThisWave: boolean
+  // ナウジズ用: そのウェーブが終わるまで、コンボリセット時の再開式を変更するか
+  nauthizActiveThisWave: boolean
+  // イサ用: そのウェーブが終わるまで、コンボ数の変化を凍結するか
+  comboFrozenThisWave: boolean
 }
 
 export type RunPhase = 'title' | 'playing' | 'itemSelect' | 'stageClear' | 'allClear' | 'gameOver'

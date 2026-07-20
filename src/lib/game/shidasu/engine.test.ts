@@ -89,6 +89,8 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     resilienceUsedThisWave: false,
     comboResetShieldRemaining: 0,
     playFromAnywhereActiveThisWave: false,
+    nauthizActiveThisWave: false,
+    comboFrozenThisWave: false,
     ...overrides,
   }
 }
@@ -966,6 +968,12 @@ describe('playCard', () => {
     expect(next.endReason).toBe('target')
     expect(next.lastBonusGains).toEqual([]) // 流星の直接加算は行われていない
   })
+
+  test('イサ: comboFrozenThisWave中はplayCardでもコンボ数が変わらない', () => {
+    const wave = baseWave({ combo: 3, comboFrozenThisWave: true })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    expect(next.combo).toBe(3)
+  })
 })
 
 describe('drawStock', () => {
@@ -1372,6 +1380,60 @@ describe('drawStock', () => {
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
     expect(next.combo).toBe(0)
+  })
+
+  test('ナウジズ: コンボリセット時、floor((直前コンボ-基礎コンボ)/2)+基礎コンボから再開する', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)],
+      tableau: [[card(2, '♣', 8)]],
+      chain: [card(3, '♥', 5)],
+      linked: true,
+      combo: 7,
+      baseComboCount: 1,
+      nauthizActiveThisWave: true,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
+    expect(next.combo).toBe(4) // floor((7-1)/2)+1
+  })
+
+  test('イサ: comboFrozenThisWave中はコンボリセットが起きても値が変わらない', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)],
+      tableau: [[card(2, '♣', 8)]],
+      chain: [card(3, '♥', 5)],
+      linked: true,
+      combo: 7,
+      comboFrozenThisWave: true,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
+    expect(next.combo).toBe(7)
+  })
+
+  test('イサはナウジズより優先される(両方有効でも凍結が勝つ)', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)],
+      tableau: [[card(2, '♣', 8)]],
+      chain: [card(3, '♥', 5)],
+      linked: true,
+      combo: 7,
+      baseComboCount: 1,
+      comboFrozenThisWave: true,
+      nauthizActiveThisWave: true,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
+    expect(next.combo).toBe(7)
+  })
+
+  test('イサ: comboFrozenThisWave中は素朴パスでもコンボ数が変わらない', () => {
+    const wave = makeWave({
+      stock: [card(1, '♠', 9)],
+      combo: 5,
+      chain: [card(2, '♠', 4), card(3, '♠', 5)],
+      linked: true,
+      comboFrozenThisWave: true,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['naive'], 1000000, standardDeckComposition())
+    expect(next.combo).toBe(5)
   })
 
   test('慈悲: コンボ数がc以下でリセットされるとmercyActiveNextComboがtrueになる', () => {

@@ -163,6 +163,14 @@ function applyHagalaz(wave: WaveState, rand: () => number): WaveState {
   return { ...wave, tableau, stock }
 }
 
+function applyNauthiz(wave: WaveState): WaveState {
+  return { ...wave, nauthizActiveThisWave: true }
+}
+
+function applyIsa(wave: WaveState): WaveState {
+  return { ...wave, comboFrozenThisWave: true }
+}
+
 // 秘儀が現在の盤面状態で使用可能か判定する(捨て札・山札の枚数不足、チェーン長不足などの条件)。
 // UIのボタンdisabled判定に使う。
 export function canUseRite(_params: ShidasuParams, wave: WaveState, riteId: RiteId): boolean {
@@ -219,5 +227,9 @@ export function applyRiteEffect(params: ShidasuParams, wave: WaveState, riteId: 
       return applyThurisaz(wave, rand)
     case 'hagalaz':
       return applyHagalaz(wave, rand)
+    case 'nauthiz':
+      return applyNauthiz(wave)
+    case 'isa':
+      return applyIsa(wave)
   }
 }

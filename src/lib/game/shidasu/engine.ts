@@ -147,6 +147,8 @@ export function startWave(
     resilienceUsedThisWave: false,
     comboResetShieldRemaining: 0,
     playFromAnywhereActiveThisWave: false,
+    nauthizActiveThisWave: false,
+    comboFrozenThisWave: false,
   }
 
   return { wave, deckComposition: composition }
@@ -185,10 +187,16 @@ function resetComboFields(
   // 通常のdrawStockリセットではnewFoundationが新規に引いたカードでchainに含まれないため何も除去されず、
   // 全消し・手詰まりのリサイクル時のみ該当カードが除外される。
   const chainToDiscard = wave.chain.filter(c => c.id !== newFoundation.id)
+  // イサ(凍結)がナウジズより優先。凍結中はcomboを一切変更しない。
+  const comboAfterReset = wave.comboFrozenThisWave
+    ? wave.combo
+    : wave.nauthizActiveThisWave
+      ? Math.floor((wave.combo - wave.baseComboCount) / 2) + wave.baseComboCount
+      : items.includes('sanctify') ? wave.baseComboCount : 0
   return {
     ...wave,
     foundation: newFoundation,
-    combo: items.includes('sanctify') ? wave.baseComboCount : 0,
+    combo: comboAfterReset,
     chain: [newFoundation],
     chainOrigin: [newOrigin],
     linked: false,
@@ -261,7 +269,8 @@ export function playCard(
   if (!isPlayable(modifier, wave, card)) return { wave, deckComposition }
 
   // 黄金: 通常のコンボ加算処理そのものを+1ではなく+2にする(他の護符には無干渉)
-  const newCombo = wave.combo + (items.includes('golden') ? 2 : 1)
+  // イサ(凍結)発動中は加算自体を行わない
+  const newCombo = wave.comboFrozenThisWave ? wave.combo : wave.combo + (items.includes('golden') ? 2 : 1)
   let base = params.scoring.basePoint
   const parts = [`基礎点+${base}`]
 
@@ -620,7 +629,7 @@ export function drawStock(
     let naiveRoleFiredThisChain = wave.roleFiredThisChain
     let naiveFlushActiveThisCombo = wave.flushActiveThisCombo
     if (wouldContinue && items.includes('naive')) {
-      const newCombo = wave.combo + (items.includes('golden') ? 2 : 1)
+      const newCombo = wave.comboFrozenThisWave ? wave.combo : wave.combo + (items.includes('golden') ? 2 : 1)
       let base = params.scoring.basePoint
       const parts = [`基礎点+${base}`]
       const chainResult = evaluateChainBonus(params.scoring, wave.chain, drawnCard, effectiveStairMinLen, undefined, effectiveSuitColorMinLen)

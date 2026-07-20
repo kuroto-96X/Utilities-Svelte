@@ -47,6 +47,8 @@ function baseWave(overrides: Partial<WaveState> = {}): WaveState {
     resilienceUsedThisWave: false,
     comboResetShieldRemaining: 0,
     playFromAnywhereActiveThisWave: false,
+    nauthizActiveThisWave: false,
+    comboFrozenThisWave: false,
     ...overrides,
   }
 }
@@ -224,5 +226,17 @@ describe('riteEffects', () => {
     expect(allIds).toEqual([1, 2, 3, 10, 11, 12])
     expect(next.foundation).toEqual(wave.foundation)
     expect(next.combo).toBe(wave.combo)
+  })
+
+  test('ナウジズ: nauthizActiveThisWaveがtrueになる', () => {
+    const wave = baseWave()
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'nauthiz', createRng(1))
+    expect(next.nauthizActiveThisWave).toBe(true)
+  })
+
+  test('イサ: comboFrozenThisWaveがtrueになる', () => {
+    const wave = baseWave()
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'isa', createRng(1))
+    expect(next.comboFrozenThisWave).toBe(true)
   })
 })

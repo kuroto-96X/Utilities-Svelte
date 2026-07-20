@@ -2,14 +2,14 @@
 import type { RiteId } from './types'
 import type { ShidasuParams } from './params'
 
-// rollRiteは重み付けなしの完全均等抽選。効果が実装済みの18種のみが対象。
+// rollRiteは重み付けなしの完全均等抽選。効果が実装済みの20種のみが対象。
 export const RITE_POOL: RiteId[] = [
   'raidho', 'jera', 'wunjo', 'othala', 'perthro',
   'uruz', 'ingwaz',
   'gebo', 'fehu', 'dagaz',
   'algiz', 'tiwaz', 'laguz',
   'eihwaz', 'ansuz', 'kenaz', 'thurisaz',
-  'hagalaz',
+  'hagalaz', 'nauthiz', 'isa',
 ]
 
 export function riteName(id: RiteId, params: ShidasuParams): string {

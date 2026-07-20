@@ -140,6 +140,8 @@ export interface ShidasuParams {
     kenaz: { name: string; desc: string }
     thurisaz: { name: string; desc: string }
     hagalaz: { name: string; desc: string }
+    nauthiz: { name: string; desc: string }
+    isa: { name: string; desc: string }
   }
   flow: {
     wavesPerStage: number
@@ -287,6 +289,8 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     kenaz: { name: 'ᚲ', desc: '場札のJ・Q・K以外のカードを、ランダムにJ・Q・Kのいずれかへ変換する(スートは維持)' },
     thurisaz: { name: 'ᚦ', desc: '場札のJ・Q・Kのカードを、ランダムにJ・Q・K以外のランクへ変換する(スートは維持)' },
     hagalaz: { name: 'ᚺ', desc: '場札と山札の残りを全て合流させ、シャッフルして配り直す' },
+    nauthiz: { name: 'ᚾ', desc: 'そのウェーブが終わるまで、コンボリセット時の再開値を直前のコンボ数の半分程度(基礎コンボ数を除く)にする' },
+    isa: { name: 'ᛁ', desc: 'そのウェーブが終わるまで、コンボ数を今の値のまま増減しなくする' },
   },
   flow: { wavesPerStage: 3, clearDelayMs: 450 },
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },
