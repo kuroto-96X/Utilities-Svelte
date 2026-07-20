@@ -227,7 +227,7 @@
   <title>Shidasu デバッグサンドボックス</title>
 </svelte:head>
 
-<div class="min-h-screen bg-slate-50 px-4 py-4">
+<div class="bg-slate-50 px-4 py-4">
   <div class="flex items-center justify-between mb-3">
     <h1 class="text-lg font-bold text-slate-800">Shidasu デバッグサンドボックス</h1>
     <div class="flex items-center gap-2">
@@ -240,9 +240,9 @@
 
   <div class="overflow-x-auto">
     <div class="grid gap-4 items-start" style="grid-template-columns: minmax(480px, 1.4fr) minmax(420px, 1fr) minmax(260px, 0.8fr) minmax(260px, 0.8fr);">
-      <div class="bg-emerald-950 rounded-lg p-3">
+      <div class="bg-emerald-950 rounded-lg p-3 flex flex-col" style="max-height: 70vh;">
         <PlayArea {wave} {params} modifier={'none'} target={TARGET} {items} onPlayCard={handlePlayCard} onDraw={handleDraw} {dropTarget} />
-        <div class="mt-4">
+        <div class="mt-4 flex-1 min-h-0 overflow-y-auto">
           <DebugStatePanel {wave} {items} onForceDraw={handleForceDraw} />
         </div>
       </div>
