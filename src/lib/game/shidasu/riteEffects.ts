@@ -184,6 +184,10 @@ function applyMannaz(wave: WaveState): WaveState {
   return { ...wave, mannazActiveThisWave: true }
 }
 
+function applyEhwaz(wave: WaveState): WaveState {
+  return { ...wave, ehwazActiveThisWave: true }
+}
+
 // 秘儀が現在の盤面状態で使用可能か判定する(捨て札・山札の枚数不足、チェーン長不足などの条件)。
 // UIのボタンdisabled判定に使う。
 export function canUseRite(_params: ShidasuParams, wave: WaveState, riteId: RiteId): boolean {
@@ -250,5 +254,7 @@ export function applyRiteEffect(params: ShidasuParams, wave: WaveState, riteId: 
       return applyBerkano(wave, params.rites.berkano.x)
     case 'mannaz':
       return applyMannaz(wave)
+    case 'ehwaz':
+      return applyEhwaz(wave)
   }
 }

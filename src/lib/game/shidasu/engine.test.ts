@@ -94,6 +94,7 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     sowiloActiveThisWave: false,
     sowiloBoostedRole: null,
     mannazActiveThisWave: false,
+    ehwazActiveThisWave: false,
     ...overrides,
   }
 }
@@ -133,6 +134,29 @@ describe('isPlayable', () => {
     expect(isPlayable('none', wave, card(2, '★', 0, true))).toBe(true)
     const wildFoundationWave = makeWave({ foundation: card(1, '★', 0, true) })
     expect(isPlayable('none', wildFoundationWave, card(2, '♣', 9))).toBe(true)
+  })
+
+  test('エワズ有効時はランク差2も取れる(ループ含む)', () => {
+    const wave = makeWave({ foundation: card(1, '♠', 5), ehwazActiveThisWave: true })
+    expect(isPlayable('none', wave, card(2, '♣', 7))).toBe(true)
+    expect(isPlayable('none', wave, card(3, '♣', 3))).toBe(true)
+  })
+
+  test('エワズ有効時、ランク差2でのループ越え(K→2、Q→Aなど)はnoLoop中だけ取れない', () => {
+    const wave = makeWave({ foundation: card(1, '♠', 13), ehwazActiveThisWave: true })
+    expect(isPlayable('none', wave, card(2, '♣', 2))).toBe(true)
+    expect(isPlayable('noLoop', wave, card(2, '♣', 2))).toBe(false)
+  })
+
+  test('エワズが無効ならランク差2は通常通り取れない', () => {
+    const wave = makeWave({ foundation: card(1, '♠', 5) })
+    expect(isPlayable('none', wave, card(2, '♣', 7))).toBe(false)
+  })
+
+  test('エワズが有効でも、階段パターンの継続判定はランク差1のみを認識する(ランク差2は継続しない)', () => {
+    const chain = [card(1, '♠', 1), card(2, '♥', 2), card(3, '♣', 3), card(4, '♦', 4)]
+    const result = chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(5, '♠', 6))
+    expect(result).toBe(false)
   })
 })
 

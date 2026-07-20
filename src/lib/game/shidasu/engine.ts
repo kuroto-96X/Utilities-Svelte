@@ -25,6 +25,12 @@ export function isPlayable(modifier: StageModifier, wave: WaveState, card: Card)
   const d = Math.abs(card.rank - wave.foundation.rank)
   if (d === 1) return true
   if (d === 12 && modifier !== 'noLoop') return true
+  // エワズ発動中は、そのウェーブが終わるまでランク差2(ループ越え含む)も許可する。
+  // 階段パターン判定(analyzeStair)には一切影響しない。
+  if (wave.ehwazActiveThisWave) {
+    if (d === 2) return true
+    if (d === 11 && modifier !== 'noLoop') return true
+  }
   return false
 }
 
@@ -159,6 +165,7 @@ export function startWave(
     sowiloActiveThisWave: false,
     sowiloBoostedRole: null,
     mannazActiveThisWave: false,
+    ehwazActiveThisWave: false,
   }
 
   return { wave, deckComposition: composition }

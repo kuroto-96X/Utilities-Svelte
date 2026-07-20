@@ -52,6 +52,7 @@ function baseWave(overrides: Partial<WaveState> = {}): WaveState {
     sowiloActiveThisWave: false,
     sowiloBoostedRole: null,
     mannazActiveThisWave: false,
+    ehwazActiveThisWave: false,
     ...overrides,
   }
 }
@@ -261,5 +262,11 @@ describe('riteEffects', () => {
     const wave = baseWave()
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'mannaz', createRng(1))
     expect(next.mannazActiveThisWave).toBe(true)
+  })
+
+  test('エワズ: ehwazActiveThisWaveがtrueになる', () => {
+    const wave = baseWave()
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'ehwaz', createRng(1))
+    expect(next.ehwazActiveThisWave).toBe(true)
   })
 })

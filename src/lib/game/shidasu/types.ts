@@ -30,9 +30,8 @@ export type ItemId =
   | 'sanctify' | 'protection' | 'earth' | 'golden'
   | 'morningStar' | 'mercy' | 'mirror' | 'deadline'
 
-// 秘儀(Rite): プレイ中に能動的に使用する消費アイテム。エルダー・フサルク(北欧ルーン文字)の
-// うち今回効果を実装した23種のみをメンバーとする(残り1種はrunes.tsの見た目候補にのみ存在し、
-// 効果が実装されて初めてここに追加する)。
+// 秘儀(Rite): プレイ中に能動的に使用する消費アイテム。エルダー・フサルク(北欧ルーン文字)
+// 全24種すべてに効果を実装済みで、ここにメンバーとして揃っている。
 export type RiteId =
   | 'raidho' | 'jera' | 'wunjo' | 'othala' | 'perthro'
   | 'uruz' | 'ingwaz'
@@ -44,6 +43,7 @@ export type RiteId =
   | 'sowilo'
   | 'berkano'
   | 'mannaz'
+  | 'ehwaz'
 
 export interface Card {
   id: number
@@ -157,6 +157,8 @@ export interface WaveState {
   sowiloBoostedRole: RoleName | null
   // マンナズ用: そのウェーブが終わるまで、得点計算に護符レア度倍率を掛けるか
   mannazActiveThisWave: boolean
+  // エワズ用: そのウェーブが終わるまで、場札の許容ランク差を2まで拡張するか
+  ehwazActiveThisWave: boolean
 }
 
 export type RunPhase = 'title' | 'playing' | 'itemSelect' | 'stageClear' | 'allClear' | 'gameOver'
