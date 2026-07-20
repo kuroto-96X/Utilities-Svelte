@@ -46,8 +46,9 @@ gained = floor(base × multiplier)
 ```
 
 - `base = basePoint(100) + チェーンボーナス合計 + 列一掃ボーナス(成立時のみ)`
-- `multiplier = 1 + (今回のコンボ数 - 1) × comboMultiplierStep(0.1)`
-  - コンボ1(倍率1.0)、コンボ2(倍率1.1)、コンボ3(倍率1.2)…と際限なく上昇する(上限なし)。
+- `multiplier = 1 + 今回のコンボ数 × comboMultiplierStep(0.1)`
+  - コンボ1(倍率1.1)、コンボ2(倍率1.2)、コンボ3(倍率1.3)…と際限なく上昇する(上限なし)。
+  - 「今回のコンボ数」は基礎コンボ数(baseComboCount。祝福の護符で加算される。得点計算時に常に加算され、コンボリセットの影響を受けない)を含んだ計算用の値(`effectiveCombo`)であり、実際のコンボ数(`wave.combo`)とは異なる場合がある。
 
 ### 4.2 チェーンボーナス(`evaluateChainBonus`)
 

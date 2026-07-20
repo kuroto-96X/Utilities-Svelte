@@ -267,25 +267,25 @@ describe('playCard', () => {
     expect(next).toBe(wave)
   })
 
-  test('コンボ1(倍率1.0)で基礎点そのまま加点される', () => {
+  test('コンボ1(倍率1+0.1=1.1)で加点される', () => {
     // 列一掃ボーナスが混ざらないよう、played対象の下にダミー札を積んで列が空にならないようにする
     const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.combo).toBe(1)
-    expect(next.score).toBe(scoring.basePoint)
+    expect(next.score).toBe(Math.floor(scoring.basePoint * 1.1))
     expect(next.foundation).toEqual(card(1, '♣', 6))
     expect(next.chain).toEqual([card(1, '♣', 6)])
     expect(next.tableau[0]).toEqual([card(9, '♠', 1)])
   })
 
-  test('lastGain.partsの先頭に基礎点の内訳が入り、コンボ1(倍率1.0)ではコンボ倍率の内訳は表示されない', () => {
+  test('lastGain.partsの先頭に基礎点の内訳が入り、コンボ1(倍率1.1)でもコンボ倍率の内訳が表示される', () => {
     const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.lastGain?.parts[0]).toBe(`基礎点+${scoring.basePoint}`)
-    expect(next.lastGain?.parts.some(p => p.startsWith('コンボ倍率'))).toBe(false)
+    expect(next.lastGain?.parts).toContain('コンボ倍率×1.1')
   })
 
-  test('コンボ2(倍率1+0.1=1.1)で加点される(パターン不一致の場合)', () => {
+  test('コンボ2(倍率1+0.2=1.2)で加点される(パターン不一致の場合)', () => {
     // 1枚目を取ってコンボ1にし、2枚目(パターン不一致)を取ってコンボ2にする
     // (列一掃・全消しボーナスが混ざらないよう、played対象の下にダミー札を積んでおく)
     const wave = baseWave({
@@ -304,8 +304,8 @@ describe('playCard', () => {
     const { wave: next } = playCard(DEFAULT_PARAMS, wave2, 'none', [], 1000000, 1, standardDeckComposition())
     expect(next.combo).toBe(2)
     // 6→7は階段方向+1・長さ2(既定stairMinLen=5未満でボーナスなし)、スート♣→♦で色も違う→パターンボーナス0
-    expect(next.score).toBe(afterFirst.score + Math.floor(scoring.basePoint * 1.1))
-    expect(next.lastGain?.parts).toContain('コンボ倍率×1.1')
+    expect(next.score).toBe(afterFirst.score + Math.floor(scoring.basePoint * 1.2))
+    expect(next.lastGain?.parts).toContain('コンボ倍率×1.2')
   })
 
   test('基本ルール: 列の全カードを1コンボで空にすると列一掃ボーナスが加算される(1列目)', () => {
@@ -315,7 +315,7 @@ describe('playCard', () => {
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.columnsEmptiedThisCombo).toBe(1)
-    expect(next.score).toBe(scoring.basePoint + scoring.columnSweepBonus * 1)
+    expect(next.score).toBe(Math.floor((scoring.basePoint + scoring.columnSweepBonus * 1) * 1.1))
     expect(next.lastGain?.parts).toContain(`列一掃+${scoring.columnSweepBonus}`)
   })
 
@@ -374,7 +374,7 @@ describe('playCard', () => {
     expect(next.status).toBe('ended')
     expect(next.endReason).toBe('fullClear')
     const expectedClearBonus = scoring.clearBonus + 2 * scoring.clearBonusPerStock
-    expect(next.score).toBe(scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus)
+    expect(next.score).toBe(Math.floor((scoring.basePoint + scoring.columnSweepBonus * 1) * 1.1) + expectedClearBonus)
   })
 
   test('全消し時、lastBonusGainsに全消しボーナスが別枠で入る(lastGainはプレイ得点のみ)', () => {
@@ -385,7 +385,7 @@ describe('playCard', () => {
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0, standardDeckComposition())
     const expectedClearBonus = scoring.clearBonus + 2 * scoring.clearBonusPerStock
-    const expectedPlayGain = scoring.basePoint + scoring.columnSweepBonus * 1
+    const expectedPlayGain = Math.floor((scoring.basePoint + scoring.columnSweepBonus * 1) * 1.1)
     expect(next.lastGain?.points).toBe(expectedPlayGain)
     expect(next.lastGain?.parts).not.toContain(`全消しボーナス+${expectedClearBonus}`)
     expect(next.lastBonusGains).toHaveLength(1)
@@ -467,12 +467,12 @@ describe('playCard', () => {
         [card(10, '♠', 2), card(2, '♦', 2)],
       ],
     })
-    // コンボ1: 倍率1+(1-1)*0.25=1.0 → 15*1.0=15 (割り切れる、floorの効果を見るには2枚目が必要)
+    // コンボ1: 倍率1+1*0.25=1.25 → 15*1.25=18.75 → floor=18
     const { wave: afterFirst } = playCard(oddParams, wave, 'none', [], 1000000, 0, standardDeckComposition())
     const wave2 = { ...afterFirst, tableau: [[card(9, '♠', 1)], [card(10, '♠', 2), card(2, '♦', 7)]] }
     const { wave: next } = playCard(oddParams, wave2, 'none', [], 1000000, 1, standardDeckComposition())
-    // コンボ2: 倍率1+(2-1)*0.25=1.25 → 15*1.25=18.75 → floor=18
-    expect(next.score).toBe(afterFirst.score + 18)
+    // コンボ2: 倍率1+2*0.25=1.5 → 15*1.5=22.5 → floor=22
+    expect(next.score).toBe(afterFirst.score + 22)
   })
 
   test('カードを取るとlastDrawEffectがクリアされる', () => {
@@ -548,7 +548,7 @@ describe('playCard', () => {
       tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['springBreeze'], 1000000, 0, standardDeckComposition())
-    expect(next.score).toBe(scoring.basePoint + DEFAULT_PARAMS.talismans.springBreeze.n)
+    expect(next.score).toBe(Math.floor((scoring.basePoint + DEFAULT_PARAMS.talismans.springBreeze.n) * 1.1))
   })
 
   test('コンボ倍率は護符のgained加算効果にも適用される(最後に一括適用)', () => {
@@ -562,7 +562,7 @@ describe('playCard', () => {
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
     expect(next.combo).toBe(3)
-    const multiplier = 1 + (3 - 1) * scoring.comboMultiplierStep
+    const multiplier = 1 + 3 * scoring.comboMultiplierStep
     const expectedGained = Math.floor((scoring.basePoint + DEFAULT_PARAMS.talismans.springBreeze.n) * multiplier)
     expect(next.lastGain?.points).toBe(expectedGained)
   })
@@ -576,7 +576,7 @@ describe('playCard', () => {
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['purify'], 100000000, 0, standardDeckComposition())
     expect(next.endReason).toBe('fullClear')
     const expectedClearBonus = scoring.clearBonus + 2 * scoring.clearBonusPerStock + DEFAULT_PARAMS.talismans.purify.n
-    expect(next.score).toBe(scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus)
+    expect(next.score).toBe(Math.floor((scoring.basePoint + scoring.columnSweepBonus * 1) * 1.1) + expectedClearBonus)
   })
 
   test('複数のclearBonus護符は所持順に適用される(purify→temperanceとtemperance→purifyで結果が異なる)', () => {
@@ -595,8 +595,9 @@ describe('playCard', () => {
     const { wave: order1 } = playCard(DEFAULT_PARAMS, wave, 'none', ['conscience', 'courage'], 1000000, 0, standardDeckComposition())
     const { wave: order2 } = playCard(DEFAULT_PARAMS, wave, 'none', ['courage', 'conscience'], 1000000, 0, standardDeckComposition())
     expect(order1.score).not.toBe(order2.score)
-    expect(order1.score).toBe(Math.floor((scoring.basePoint + DEFAULT_PARAMS.talismans.conscience.n) * (1 + 1 * DEFAULT_PARAMS.talismans.courage.x)))
-    expect(order2.score).toBe(Math.floor(scoring.basePoint * (1 + 1 * DEFAULT_PARAMS.talismans.courage.x) + DEFAULT_PARAMS.talismans.conscience.n))
+    const comboMultiplier = 1 + 1 * scoring.comboMultiplierStep
+    expect(order1.score).toBe(Math.floor((scoring.basePoint + DEFAULT_PARAMS.talismans.conscience.n) * (1 + 1 * DEFAULT_PARAMS.talismans.courage.x) * comboMultiplier))
+    expect(order2.score).toBe(Math.floor((scoring.basePoint * (1 + 1 * DEFAULT_PARAMS.talismans.courage.x) + DEFAULT_PARAMS.talismans.conscience.n) * comboMultiplier))
   })
 
   test('同じ列を連続でプレイするとsameColumnStreakが増え、違う列なら1に戻る', () => {
@@ -1083,8 +1084,9 @@ describe('playCard', () => {
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
     const weight: Record<'C' | 'U' | 'R', number> = { C: 1, U: 2, R: 4 }
     const weightSum = items.reduce((sum, id) => sum + weight[DEFAULT_PARAMS.talismans[id].rarity], 0)
-    const expectedFactor = 1 + weightSum * DEFAULT_PARAMS.rites.mannaz.x
-    expect(next.score).toBe(Math.floor(scoring.basePoint * expectedFactor))
+    const mannazFactor = 1 + weightSum * DEFAULT_PARAMS.rites.mannaz.x
+    const comboMultiplier = 1 + 1 * scoring.comboMultiplierStep
+    expect(next.score).toBe(Math.floor(scoring.basePoint * comboMultiplier * mannazFactor))
   })
 
   test('マンナズ: コンボ倍率とも正しく乗算合成される(上書きしない)', () => {
@@ -1099,7 +1101,7 @@ describe('playCard', () => {
     const weight: Record<'C' | 'U' | 'R', number> = { C: 1, U: 2, R: 4 }
     const weightSum = items.reduce((sum, id) => sum + weight[DEFAULT_PARAMS.talismans[id].rarity], 0)
     const mannazFactor = 1 + weightSum * DEFAULT_PARAMS.rites.mannaz.x
-    const comboMultiplier = 1 + (wave.combo + 1 - 1) * scoring.comboMultiplierStep // newCombo=combo+1、コンボ倍率は(newCombo-1)*step
+    const comboMultiplier = 1 + (wave.combo + 1) * scoring.comboMultiplierStep // newCombo=combo+1
     expect(next.score).toBe(Math.floor(scoring.basePoint * comboMultiplier * mannazFactor))
   })
 
@@ -1109,7 +1111,7 @@ describe('playCard', () => {
       tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['bridge'], 1000000, 0, standardDeckComposition())
-    expect(next.score).toBe(scoring.basePoint)
+    expect(next.score).toBe(Math.floor(scoring.basePoint * 1.1))
   })
 })
 
@@ -2340,7 +2342,7 @@ describe('drawStock (素朴の得点ルール変更)', () => {
     const weightSum = items.reduce((sum, id) => sum + weight[DEFAULT_PARAMS.talismans[id].rarity], 0)
     const mannazFactor = 1 + weightSum * DEFAULT_PARAMS.rites.mannaz.x
     const newCombo = wave.combo + 1 // golden未所持
-    const comboMultiplier = 1 + (newCombo - 1) * DEFAULT_PARAMS.scoring.comboMultiplierStep
+    const comboMultiplier = 1 + newCombo * DEFAULT_PARAMS.scoring.comboMultiplierStep
     // chain[♠4,♠5]+drawn♠9で同スート継続(3枚)成立、同スートボーナスが基礎点に加算される
     const base = DEFAULT_PARAMS.scoring.basePoint + DEFAULT_PARAMS.scoring.suitBonus
     expect(next.score).toBe(wave.score + Math.floor(base * comboMultiplier * mannazFactor))
@@ -2391,7 +2393,7 @@ describe('drawStock (素朴の得点ルール変更)', () => {
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition())
     expect(next.combo).toBe(3)
-    const multiplier = 1 + (3 - 1) * DEFAULT_PARAMS.scoring.comboMultiplierStep
+    const multiplier = 1 + 3 * DEFAULT_PARAMS.scoring.comboMultiplierStep
     const base = DEFAULT_PARAMS.scoring.basePoint + DEFAULT_PARAMS.scoring.suitBonus
     const expectedGained = Math.floor((base + DEFAULT_PARAMS.talismans.springBreeze.n) * multiplier)
     expect(next.lastGain?.points).toBe(expectedGained)

@@ -432,7 +432,7 @@ export function playCard(
   parts.push(...itemResult.parts)
 
   const comboMultiplierStep = params.scoring.comboMultiplierStep
-  const multiplier = 1 + (effectiveCombo - 1) * comboMultiplierStep
+  const multiplier = 1 + effectiveCombo * comboMultiplierStep
   if (multiplier !== 1) parts.push(`コンボ倍率×${fmtMultiplier(multiplier)}`)
   const mannazFactor = wave.mannazActiveThisWave ? 1 + mannazWeightSum(items, params) * params.rites.mannaz.x : 1
   if (mannazFactor !== 1) parts.push(`マンナズ×${fmtMultiplier(mannazFactor)}`)
@@ -707,7 +707,7 @@ export function drawStock(
       parts.push(...itemResult.parts)
 
       const comboMultiplierStep = params.scoring.comboMultiplierStep
-      const multiplier = 1 + (effectiveCombo - 1) * comboMultiplierStep
+      const multiplier = 1 + effectiveCombo * comboMultiplierStep
       if (multiplier !== 1) parts.push(`コンボ倍率×${fmtMultiplier(multiplier)}`)
       const mannazFactor = wave.mannazActiveThisWave ? 1 + mannazWeightSum(items, params) * params.rites.mannaz.x : 1
       if (mannazFactor !== 1) parts.push(`マンナズ×${fmtMultiplier(mannazFactor)}`)
