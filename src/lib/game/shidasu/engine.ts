@@ -178,7 +178,6 @@ export function startWave(
 function resetComboFields(
   wave: WaveState,
   params: ShidasuParams,
-  items: ItemId[],
   newFoundation: Card = wave.foundation,
   newOrigin: ChainCardOrigin = wave.chainOrigin[wave.chainOrigin.length - 1]
 ): WaveState {
@@ -205,11 +204,12 @@ function resetComboFields(
   // 全消し・手詰まりのリサイクル時のみ該当カードが除外される。
   const chainToDiscard = wave.chain.filter(c => c.id !== newFoundation.id)
   // イサ(凍結)がナウジズより優先。凍結中はcomboを一切変更しない。
+  // 基礎コンボ数(baseComboCount)はリセット処理では一切参照しない(得点計算時に常に加算される別枠の値のため)。
   const comboAfterReset = wave.comboFrozenThisWave
     ? wave.combo
     : wave.nauthizActiveThisWave
-      ? Math.floor((wave.combo - wave.baseComboCount) / 2) + wave.baseComboCount
-      : items.includes('sanctify') ? wave.baseComboCount : 0
+      ? Math.floor(wave.combo / 2)
+      : 0
   return {
     ...wave,
     foundation: newFoundation,
@@ -383,18 +383,19 @@ export function playCard(
   const newRoleFiredThisChain = wave.roleFiredThisChain || roleFired.length > 0
   const newFlushActiveThisCombo = wave.flushActiveThisCombo || roleFired.some(r => r.name === 'flush')
 
-  // 庇護・大地・祝福: 所持順(itemsの並び順)で一時comboに順に適用する。wave.combo(実コンボ)自体は変化しない。
-  let effectiveCombo = newCombo
+  // 祝福: 役成立ごとに基礎コンボ数(baseComboCount)を永続的に+1する
+  const newBaseComboCount = items.includes('sanctify') && roleFired.length > 0 ? wave.baseComboCount + 1 : wave.baseComboCount
+
+  // 基礎コンボ数は計算用のコンボ数に常に加算する(このプレイで祝福により増えた分も含む)。
+  // 庇護・大地: 所持順(itemsの並び順)でさらに一時comboに適用する。wave.combo(実コンボ)自体は変化しない。
+  let effectiveCombo = newCombo + newBaseComboCount
   for (const id of items) {
     if (id === 'protection' && effectiveCombo < params.talismans.protection.c) {
       effectiveCombo = params.talismans.protection.c
     } else if (id === 'earth') {
       effectiveCombo += params.talismans.earth.c
-    } else if (id === 'sanctify' && roleFired.length > 0) {
-      effectiveCombo += 1
     }
   }
-  const newBaseComboCount = items.includes('sanctify') && roleFired.length > 0 ? wave.baseComboCount + 1 : wave.baseComboCount
 
   // 明星: 今回成立した役の種類ごとに、ウェーブ内累積成立回数を+1する(今回分は次回以降に反映)
   let newRoleOccurrenceCountThisWave = wave.roleOccurrenceCountThisWave
@@ -526,7 +527,7 @@ export function playCard(
       return { wave: { ...waveAfterClearBonus, status: 'ended', endReason: 'target' }, deckComposition }
     }
 
-    let resetWave = resetComboFields(waveAfterClearBonus, params, items)
+    let resetWave = resetComboFields(waveAfterClearBonus, params)
 
     for (const id of items) {
       if (id === 'healing') {
@@ -671,7 +672,8 @@ export function drawStock(
       parts.push(...chainResult.parts)
       naiveRoleFiredThisChain = wave.roleFiredThisChain || chainResult.roleFired.length > 0
       naiveFlushActiveThisCombo = wave.flushActiveThisCombo || chainResult.roleFired.some(r => r.name === 'flush')
-      let effectiveCombo = newCombo
+      // 基礎コンボ数は計算用のコンボ数に常に加算する(素朴パスでは祝福による基礎コンボ数の増加は発生しない)。
+      let effectiveCombo = newCombo + wave.baseComboCount
       for (const id of items) {
         if (id === 'protection' && effectiveCombo < params.talismans.protection.c) {
           effectiveCombo = params.talismans.protection.c
@@ -778,7 +780,7 @@ export function drawStock(
   }
 
   let resetWave: WaveState = {
-    ...resetComboFields(wave, params, items, card, 'draw'),
+    ...resetComboFields(wave, params, card, 'draw'),
     stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [card], effectiveStairMinLen, effectiveSuitColorMinLen) : newStock,
     lastDrawEffect: null,
     lastGain: null,
@@ -971,7 +973,7 @@ export function applyStuckCheck(params: ShidasuParams, run: RunState, rand: () =
   const wave = run.wave
   if (!isStuck(modifier, wave)) return run
 
-  let resetWave = resetComboFields(wave, params, run.items)
+  let resetWave = resetComboFields(wave, params)
 
   for (const id of run.items) {
     if (id === 'healing') {

@@ -125,7 +125,8 @@ export interface WaveState {
   columnSweepActiveThisWave: boolean
   // 博愛用: 現在のコンボで無効化を既に使ったか
   benevolenceUsedThisCombo: boolean
-  // 祝福用: 役成立のたび+1、コンボリセット時にwave.comboの復帰先になる(ウェーブ単位)
+  // 祝福用: 役成立のたび+1(ウェーブ単位、永続)。コンボリセット処理では参照せず、
+  // 得点計算時の実効コンボ(effectiveCombo)に常に加算する別枠の値として扱う
   baseComboCount: number
   // 水鏡用: 役の種類ごと(sameRank以外)に、今コンボで遅延複製をスケジュール済みか
   roleEchoUsedThisCombo: Partial<Record<RoleName, boolean>>

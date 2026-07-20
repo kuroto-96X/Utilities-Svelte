@@ -879,6 +879,19 @@ describe('playCard', () => {
     expect(next.baseComboCount).toBe(2)
   })
 
+  test('基礎コンボ数(baseComboCount)は所持護符に関わらず常に得点計算のコンボ数に加算される', () => {
+    const wave = baseWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
+      baseComboCount: 3,
+    })
+    const { wave: withBase } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: without } = playCard(DEFAULT_PARAMS, { ...wave, baseComboCount: 0 }, 'none', [], 1000000, 0, standardDeckComposition())
+    expect(withBase.score).toBeGreaterThan(without.score)
+    // baseComboCount自体はプレイ後も変化しない(役成立時の祝福以外では増減しない)
+    expect(withBase.baseComboCount).toBe(3)
+  })
+
   test('明星: 役の種類ごとのウェーブ内累積成立回数に応じて役ボーナスが倍加する', () => {
     // フラッシュが成立する組み合わせ(4スート)
     const wave = baseWave({
@@ -1482,7 +1495,7 @@ describe('drawStock', () => {
     expect(next.combo).toBe(0)
   })
 
-  test('祝福: コンボリセット時、wave.comboは0ではなくbaseComboCountになる', () => {
+  test('祝福を持っていても、コンボリセット時にwave.comboは0になる(baseComboCount自体は保持される)', () => {
     const wave = makeWave({
       stock: [card(1, '♣', 9)],
       tableau: [[card(2, '♣', 8)]],
@@ -1491,7 +1504,8 @@ describe('drawStock', () => {
       baseComboCount: 4,
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['sanctify'], 1000000, standardDeckComposition())
-    expect(next.combo).toBe(4)
+    expect(next.combo).toBe(0)
+    expect(next.baseComboCount).toBe(4)
   })
 
   test('祝福を持たなければコンボリセット時は通常通り0になる', () => {
@@ -1506,7 +1520,7 @@ describe('drawStock', () => {
     expect(next.combo).toBe(0)
   })
 
-  test('ナウジズ: コンボリセット時、floor((直前コンボ-基礎コンボ)/2)+基礎コンボから再開する', () => {
+  test('ナウジズ: コンボリセット時、floor(直前コンボ/2)から再開する(baseComboCountは無関係)', () => {
     const wave = makeWave({
       stock: [card(1, '♣', 9)],
       tableau: [[card(2, '♣', 8)]],
@@ -1517,7 +1531,8 @@ describe('drawStock', () => {
       nauthizActiveThisWave: true,
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
-    expect(next.combo).toBe(4) // floor((7-1)/2)+1
+    expect(next.combo).toBe(3) // floor(7/2)
+    expect(next.baseComboCount).toBe(1) // 変化しない
   })
 
   test('イサ: comboFrozenThisWave中はコンボリセットが起きても値が変わらない', () => {
@@ -2329,6 +2344,20 @@ describe('drawStock (素朴の得点ルール変更)', () => {
     // chain[♠4,♠5]+drawn♠9で同スート継続(3枚)成立、同スートボーナスが基礎点に加算される
     const base = DEFAULT_PARAMS.scoring.basePoint + DEFAULT_PARAMS.scoring.suitBonus
     expect(next.score).toBe(wave.score + Math.floor(base * comboMultiplier * mannazFactor))
+  })
+
+  test('基礎コンボ数(baseComboCount)は素朴パスの得点計算にも常に加算される', () => {
+    const wave = makeWave({
+      stock: [card(1, '♠', 9)],
+      combo: 2,
+      chain: [card(2, '♠', 4), card(3, '♠', 5)],
+      linked: true,
+      score: 0,
+      baseComboCount: 5,
+    })
+    const { wave: withBase } = drawStock(DEFAULT_PARAMS, wave, ['naive'], 1000000, standardDeckComposition())
+    const { wave: without } = drawStock(DEFAULT_PARAMS, { ...wave, baseComboCount: 0 }, ['naive'], 1000000, standardDeckComposition())
+    expect(withBase.score).toBeGreaterThan(without.score)
   })
 
   test('庇護・大地: 素朴パスでも所持順で一時comboに適用される', () => {

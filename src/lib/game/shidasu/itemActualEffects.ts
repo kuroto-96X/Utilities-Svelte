@@ -120,7 +120,7 @@ export const ITEM_ACTUAL_EFFECTS: Record<ItemId, string> = {
   fightingSpirit: 'このウェーブ中に一度でも列一掃が発生していれば、獲得点をx倍にする',
 
   // グループ17: コアパラメータ書き換え
-  sanctify: '通常プレイで役が成立するたび基礎コンボ数(baseComboCount)を+1し、同時にそのプレイの実効コンボにも+1する(素朴による山札めくり継続時は対象外)。コンボリセット時は0ではなくbaseComboCountから再開する',
+  sanctify: '通常プレイで役が成立するたび基礎コンボ数(baseComboCount)を永続的に+1する(素朴による山札めくり継続時は対象外)。baseComboCountはコンボリセット処理では参照されず、得点計算時の実効コンボ(effectiveCombo)に常に加算される別枠の値',
   protection: '得点計算用の実効コンボがc未満なら、cまで引き上げる(実コンボ数自体は変えない)',
   earth: '得点計算用の実効コンボに常にcを加算する',
   golden: 'コンボが進む際、+1ではなく+2する',

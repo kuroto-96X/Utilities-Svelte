@@ -59,7 +59,9 @@
     </div>
     <div class="text-right transition-transform origin-bottom-right {comboScale[displayComboTier]}">
       <div class="text-xs text-emerald-300/70 tracking-widest">COMBO</div>
-      <div class="text-3xl font-black italic tabular-nums leading-none {comboColor[displayComboTier]}">×{wave.combo}</div>
+      <div class="text-3xl font-black italic tabular-nums leading-none {comboColor[displayComboTier]}">
+        ×{wave.combo}{#if wave.baseComboCount > 0}<span class="text-lg not-italic ml-1 text-emerald-300/80">+{wave.baseComboCount}</span>{/if}
+      </div>
     </div>
   </div>
   <div class="mt-1 h-1.5 rounded-full bg-emerald-900 overflow-hidden">

@@ -22,7 +22,7 @@ export const RITE_ACTUAL_EFFECTS: Record<RiteId, string> = {
   kenaz: '場札の非ワイルド・非絵札(J/Q/K以外)のカードを、ランダムにJ/Q/Kのいずれかへ変換する(スートは維持。絵札・ワイルドは対象外)',
   thurisaz: '場札の非ワイルド・絵札(J/Q/K)のカードを、ランダムにJ/Q/K以外のランク(1〜10)へ変換する(スートは維持。非絵札・ワイルドは対象外)',
   hagalaz: '場札の全カードと山札の残りを合流させシャッフルし、各列の現在の枚数を維持したまま先頭から配り直す(余りは新しい山札にする。foundation・chain・comboは変更しない)',
-  nauthiz: 'nauthizActiveThisWaveをtrueにする。以後resetComboFieldsの通常リセットで、comboFrozenThisWaveがfalseの場合に限り、combo再開値をfloor((リセット直前のcombo-baseComboCount)/2)+baseComboCountにする',
+  nauthiz: 'nauthizActiveThisWaveをtrueにする。以後resetComboFieldsの通常リセットで、comboFrozenThisWaveがfalseの場合に限り、combo再開値をfloor(リセット直前のcombo/2)にする(baseComboCountは参照しない)',
   isa: 'comboFrozenThisWaveをtrueにする。以後resetComboFieldsの通常リセット・playCardのコンボ加算・drawStockの素朴(naive)分岐のコンボ加算を全て無効化し、wave.comboを変化させない(ナウジズより優先)',
   sowilo: 'sowiloActiveThisWaveをtrueにする(sowiloBoostedRoleはnullのまま)。以後playCard内のroleBonusMultiplierで、sowiloBoostedRoleが未確定なら最初に成立した役をその場でx倍しつつ記憶し、確定済みならその役が成立するたび常にx倍する(drawStockの素朴(naive)分岐には明星と同様に適用されない)',
   berkano: '現在のコンボ数をfloor(combo×x)にする(uruzの乗算版)。maxComboThisWaveも追従更新する(イサのcomboFrozenThisWave中は変化しない)',
