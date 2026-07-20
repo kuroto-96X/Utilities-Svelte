@@ -49,6 +49,14 @@ function convertRandomCardToWild(composition: DeckCard[], rand: () => number): D
   return composition.map((c, i) => (i === target ? { ...c, wild: true } : c))
 }
 
+// 指定したdeckIdに一致する(まだワイルドでない)デッキ構成エントリをワイルドへ変換した新しい配列を返す。
+// 該当エントリが無い(既にワイルド化済み、またはdeckIdが存在しない)場合は何もしない(静寂の護符が使用する)。
+function convertCardToWildByDeckId(composition: DeckCard[], deckId: number): DeckCard[] {
+  const index = composition.findIndex(c => c.deckId === deckId && !c.wild)
+  if (index === -1) return composition
+  return composition.map((c, i) => (i === index ? { ...c, wild: true } : c))
+}
+
 // 山札(末尾が次にめくられる位置)の中から、今のチェーンが継続できる最初のカードを探し、末尾と交換する。
 // 候補が無ければ何もしない(元の配列をそのまま返す)。
 function arrangeNextCardForContinuation(scoring: ShidasuParams['scoring'], stock: Card[], chain: Card[], stairMinLen: number, suitColorMinLen: number = scoring.suitColorMinLen): Card[] {
@@ -79,7 +87,9 @@ export function startWave(
 
   let composition = deckComposition
   if (items.includes('eternity')) {
-    composition = [...composition, { suit: '★', rank: 0 as Rank, wild: true }]
+    // deckIdは既存エントリと重複しないよう、現在の配列長を新規idとして採番する(deckComposition
+    // からエントリが削除されることは無いため、長さは単調増加でありidが枯渇・衝突することはない)
+    composition = [...composition, { deckId: composition.length, suit: '★', rank: 0 as Rank, wild: true }]
   }
   if (items.includes('abundance')) {
     composition = convertRandomCardToWild(composition, rand)
@@ -699,7 +709,7 @@ export function drawStock(
   const hasPlayableColumns = getPlayableColumns(modifier, { ...wave, foundation: drawnCard, combo: 0 }).size > 0
   const silenceFires = !hasPlayableColumns && items.includes('silence')
   const card = silenceFires ? { ...drawnCard, wild: true } : drawnCard
-  const newDeckComposition = silenceFires ? convertRandomCardToWild(deckComposition, rand) : deckComposition
+  const newDeckComposition = silenceFires ? convertCardToWildByDeckId(deckComposition, drawnCard.deckId) : deckComposition
 
   const resetCtx: DirectEffectContext = {
     comboBeforeReset: wave.combo,
@@ -951,7 +961,8 @@ let debugCardIdSeq = 900000
 // デバッグパネル専用: 山札の一番上(次にめくられる札)を指定カードに差し替える。
 // idは既存デッキ(最大でも数百枚程度)と衝突しないよう90万番台から発番する。
 export function forceStockTop(wave: WaveState, suit: Suit, rank: Rank, wild: boolean): WaveState {
-  const card: Card = { id: ++debugCardIdSeq, suit, rank, wild }
+  // deckComposition由来ではない合成カードのため、実在しない値(-1)をdeckIdとして設定する
+  const card: Card = { id: ++debugCardIdSeq, deckId: -1, suit, rank, wild }
   const newStock = wave.stock.length === 0 ? [card] : [...wave.stock.slice(0, -1), card]
   return { ...wave, stock: newStock }
 }

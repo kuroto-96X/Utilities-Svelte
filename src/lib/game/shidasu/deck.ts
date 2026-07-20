@@ -4,9 +4,10 @@ const SUITS: Suit[] = ['♠', '♥', '♦', '♣']
 
 export function createDeck(nextId: () => number): Card[] {
   const deck: Card[] = []
+  let deckId = 0
   for (const suit of SUITS) {
     for (let rank = 1; rank <= 13; rank++) {
-      deck.push({ id: nextId(), suit, rank: rank as Rank, wild: false })
+      deck.push({ id: nextId(), deckId: deckId++, suit, rank: rank as Rank, wild: false })
     }
   }
   return deck
@@ -14,9 +15,10 @@ export function createDeck(nextId: () => number): Card[] {
 
 export function standardDeckComposition(): DeckCard[] {
   const composition: DeckCard[] = []
+  let deckId = 0
   for (const suit of SUITS) {
     for (let rank = 1; rank <= 13; rank++) {
-      composition.push({ suit, rank: rank as Rank, wild: false })
+      composition.push({ deckId: deckId++, suit, rank: rank as Rank, wild: false })
     }
   }
   return composition

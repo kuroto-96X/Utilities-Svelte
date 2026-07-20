@@ -33,7 +33,7 @@
           onpointerdown={(e) => onCardPointerDown({ suit, rank, wild: false }, e)}
           class="cursor-grab active:cursor-grabbing touch-none"
         >
-          <CardFace card={{ id: -1, suit, rank, wild: false }} covered={false} />
+          <CardFace card={{ id: -1, deckId: -1, suit, rank, wild: false }} covered={false} />
         </div>
       {/each}
     {/each}
@@ -43,7 +43,7 @@
       onpointerdown={(e) => onCardPointerDown({ suit: '★', rank: 0, wild: true }, e)}
       class="cursor-grab active:cursor-grabbing touch-none"
     >
-      <CardFace card={{ id: -1, suit: '★', rank: 0, wild: true }} covered={false} />
+      <CardFace card={{ id: -1, deckId: -1, suit: '★', rank: 0, wild: true }} covered={false} />
     </div>
   </div>
 </div>

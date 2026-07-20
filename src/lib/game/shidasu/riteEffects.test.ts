@@ -4,8 +4,8 @@ import { DEFAULT_PARAMS } from './params'
 import { createRng } from './deck'
 import type { Card, WaveState } from './types'
 
-function card(id: number, suit: Card['suit'], rank: Card['rank'], wild = false): Card {
-  return { id, suit, rank, wild }
+function card(id: number, suit: Card['suit'], rank: Card['rank'], wild = false, deckId = id): Card {
+  return { id, deckId, suit, rank, wild }
 }
 
 function baseWave(overrides: Partial<WaveState> = {}): WaveState {

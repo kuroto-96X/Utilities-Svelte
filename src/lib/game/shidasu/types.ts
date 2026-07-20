@@ -42,13 +42,19 @@ export type RiteId =
 
 export interface Card {
   id: number
+  // 由来のdeckComposition内での永続的な識別子(deckComposition[].deckIdをそのまま引き継ぐ)。
+  // スート・ランクが変換されても不変。idはウェーブごとに振り直される一時的な連番なのに対し、
+  // deckIdはラン全体で「同じデッキ枠」を指し続ける(静寂の護符が参照する)。
+  deckId: number
   suit: Suit
   rank: Rank
   wild: boolean
 }
 
-// ラン全体で持続するデッキの中身(idを持たない。ウェーブ開始のたびに新しいidを振ってCardを生成する)
+// ラン全体で持続するデッキの中身(idを持たない。ウェーブ開始のたびに新しいidを振ってCardを生成する)。
+// deckIdは生成時に一度だけ振られる永続的な識別子で、以後配列内での位置が変わらない限り不変。
 export interface DeckCard {
+  deckId: number
   suit: Suit
   rank: Rank
   wild: boolean

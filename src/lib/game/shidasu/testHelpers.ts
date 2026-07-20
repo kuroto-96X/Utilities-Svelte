@@ -4,8 +4,8 @@ import type { DirectEffectContext } from './directEffects'
 import type { ItemEffectContext } from './itemEffects'
 import { DEFAULT_PARAMS } from './params'
 
-export function card(id: number, suit: Card['suit'], rank: Card['rank'], wild = false): Card {
-  return { id, suit, rank, wild }
+export function card(id: number, suit: Card['suit'], rank: Card['rank'], wild = false, deckId = id): Card {
+  return { id, deckId, suit, rank, wild }
 }
 
 export function directCtx(overrides: Partial<DirectEffectContext> = {}): DirectEffectContext {

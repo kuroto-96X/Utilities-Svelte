@@ -1138,18 +1138,22 @@ describe('drawStock', () => {
     expect(next.discardPile).toEqual([])
   })
 
-  test('静寂: リセット時に取れる場札が無ければ、めくった札がそのウェーブ内でワイルド化し、deckCompositionも1枚ワイルドに変換される', () => {
+  test('静寂: リセット時に取れる場札が無ければ、めくった札がそのウェーブ内でワイルド化し、deckComposition内の同じdeckIdのエントリだけがワイルドに変換される(ランダムではない)', () => {
+    // standardDeckComposition()内で♣9はdeckId=47(♠13枚+♥13枚+♦13枚+♣内rank9で0始まり8番目)。
+    // 引いた札に同じdeckId=47を明示的に持たせ、実際にそのエントリだけが変換されることを検証する。
     const wave = makeWave({
-      stock: [card(1, '♣', 9)],
+      stock: [card(1, '♣', 9, false, 47)],
       tableau: [[card(2, '♠', 2)]], // foundation想定rank9との差が大きく取れない
       chain: [card(3, '♥', 5)],
       linked: true,
     })
     const composition = standardDeckComposition()
+    expect(composition[47]).toEqual({ deckId: 47, suit: '♣', rank: 9, wild: false })
     const { wave: next, deckComposition } = drawStock(DEFAULT_PARAMS, wave, ['silence'], 1000000, composition, 'none', createRng(1))
     expect(next.foundation.wild).toBe(true)
-    expect(next.chain).toEqual([{ ...card(1, '♣', 9), wild: true }])
-    expect(deckComposition.filter(c => c.wild)).toHaveLength(1)
+    expect(next.chain).toEqual([{ ...card(1, '♣', 9, false, 47), wild: true }])
+    const wildEntries = deckComposition.filter(c => c.wild)
+    expect(wildEntries).toEqual([{ deckId: 47, suit: '♣', rank: 9, wild: true }])
   })
 
   test('静寂を持っていても取れる場札があれば発動しない', () => {

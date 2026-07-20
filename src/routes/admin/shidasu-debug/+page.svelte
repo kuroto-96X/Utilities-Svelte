@@ -132,14 +132,14 @@
     if (target === 'stockTop') {
       if (wave.stock.length === 0) return
       const idx = wave.stock.length - 1
-      const newCard: Card = { id: wave.stock[idx].id, suit: source.suit, rank: source.rank, wild: source.wild }
+      const newCard: Card = { id: wave.stock[idx].id, deckId: wave.stock[idx].deckId, suit: source.suit, rank: source.rank, wild: source.wild }
       lastSnapshot = wave
       wave = { ...wave, stock: wave.stock.map((c, i) => (i === idx ? newCard : c)), lastGain: null, lastBonusGains: [] }
     } else {
       const { col, row } = target
       const column = wave.tableau[col]
       if (!column?.[row]) return
-      const newCard: Card = { id: column[row].id, suit: source.suit, rank: source.rank, wild: source.wild }
+      const newCard: Card = { id: column[row].id, deckId: column[row].deckId, suit: source.suit, rank: source.rank, wild: source.wild }
       lastSnapshot = wave
       wave = {
         ...wave,
@@ -254,7 +254,7 @@
 
   {#if dragState?.isDragging}
     <div class="fixed pointer-events-none z-50" style="left:{dragState.currentX - 32}px; top:{dragState.currentY - 48}px; width:64px;">
-      <CardFace card={{ id: -1, suit: dragState.source.suit, rank: dragState.source.rank, wild: dragState.source.wild }} covered={false} />
+      <CardFace card={{ id: -1, deckId: -1, suit: dragState.source.suit, rank: dragState.source.rank, wild: dragState.source.wild }} covered={false} />
     </div>
   {/if}
 </div>
