@@ -113,6 +113,12 @@ describe('riteEffects', () => {
     expect(next.maxComboThisWave).toBe(next.combo)
   })
 
+  test('イサ発動中はウルズを使ってもコンボ数が変わらない', () => {
+    const wave = baseWave({ combo: 2, maxComboThisWave: 2, comboFrozenThisWave: true })
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'uruz', createRng(1))
+    expect(next.combo).toBe(2)
+  })
+
   test('イングズ: 基礎コンボ数にnが加算される(現在のコンボ数は変わらない)', () => {
     const wave = baseWave({ combo: 2, baseComboCount: 0 })
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'ingwaz', createRng(1))
@@ -256,6 +262,12 @@ describe('riteEffects', () => {
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'berkano', createRng(1))
     expect(next.combo).toBe(Math.floor(5 * DEFAULT_PARAMS.rites.berkano.x))
     expect(next.maxComboThisWave).toBe(next.combo)
+  })
+
+  test('イサ発動中はベルカナを使ってもコンボ数が変わらない', () => {
+    const wave = baseWave({ combo: 2, maxComboThisWave: 2, comboFrozenThisWave: true })
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'berkano', createRng(1))
+    expect(next.combo).toBe(2)
   })
 
   test('マンナズ: mannazActiveThisWaveがtrueになる', () => {

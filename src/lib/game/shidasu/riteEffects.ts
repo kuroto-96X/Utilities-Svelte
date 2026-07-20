@@ -56,6 +56,7 @@ function applyPerthro(wave: WaveState): WaveState {
 }
 
 function applyUruz(wave: WaveState, n: number): WaveState {
+  if (wave.comboFrozenThisWave) return wave
   const combo = wave.combo + n
   return { ...wave, combo, maxComboThisWave: Math.max(wave.maxComboThisWave, combo) }
 }
@@ -176,6 +177,7 @@ function applySowilo(wave: WaveState): WaveState {
 }
 
 function applyBerkano(wave: WaveState, x: number): WaveState {
+  if (wave.comboFrozenThisWave) return wave
   const combo = Math.floor(wave.combo * x)
   return { ...wave, combo, maxComboThisWave: Math.max(wave.maxComboThisWave, combo) }
 }
