@@ -248,4 +248,11 @@ describe('riteEffects', () => {
     expect(next.sowiloActiveThisWave).toBe(true)
     expect(next.sowiloBoostedRole).toBeNull()
   })
+
+  test('ベルカナ: 現在のコンボ数がx倍になる(切り捨て)', () => {
+    const wave = baseWave({ combo: 5, maxComboThisWave: 5 })
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'berkano', createRng(1))
+    expect(next.combo).toBe(Math.floor(5 * DEFAULT_PARAMS.rites.berkano.x))
+    expect(next.maxComboThisWave).toBe(next.combo)
+  })
 })

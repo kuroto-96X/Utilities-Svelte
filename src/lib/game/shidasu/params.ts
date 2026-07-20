@@ -143,6 +143,7 @@ export interface ShidasuParams {
     nauthiz: { name: string; desc: string }
     isa: { name: string; desc: string }
     sowilo: { name: string; x: number; desc: string }
+    berkano: { name: string; x: number; desc: string }
   }
   flow: {
     wavesPerStage: number
@@ -293,6 +294,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     nauthiz: { name: 'ᚾ', desc: 'そのウェーブが終わるまで、コンボリセット時の再開値を直前のコンボ数の半分程度(基礎コンボ数を除く)にする' },
     isa: { name: 'ᛁ', desc: 'そのウェーブが終わるまで、コンボ数を今の値のまま増減しなくする' },
     sowilo: { name: 'ᛋ', x: 2, desc: '発動後に初めて成立した役の種類を記憶し、そのウェーブが終わるまでその役のボーナスを{x}倍にする' },
+    berkano: { name: 'ᛒ', x: 2, desc: '現在のコンボ数を{x}倍にする(端数切り捨て)' },
   },
   flow: { wavesPerStage: 3, clearDelayMs: 450 },
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },
