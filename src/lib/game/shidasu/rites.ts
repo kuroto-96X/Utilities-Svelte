@@ -9,7 +9,7 @@ export const RITE_POOL: RiteId[] = [
   'gebo', 'fehu', 'dagaz',
   'algiz', 'tiwaz', 'laguz',
   'eihwaz', 'ansuz', 'kenaz', 'thurisaz',
-  'hagalaz', 'nauthiz', 'isa',
+  'hagalaz', 'nauthiz', 'isa', 'sowilo',
 ]
 
 export function riteName(id: RiteId, params: ShidasuParams): string {

@@ -91,6 +91,8 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     playFromAnywhereActiveThisWave: false,
     nauthizActiveThisWave: false,
     comboFrozenThisWave: false,
+    sowiloActiveThisWave: false,
+    sowiloBoostedRole: null,
     ...overrides,
   }
 }
@@ -873,6 +875,30 @@ describe('playCard', () => {
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.roleOccurrenceCountThisWave.flush).toBe(2)
+  })
+
+  test('ソウィロ: 発動後に初めて成立した役(このプレイ自体)がx倍になり、役の種類が記憶される', () => {
+    const wave = baseWave({
+      foundation: card(0, '♠', 5),
+      chain: [card(20, '♥', 3), card(21, '♦', 4), card(22, '♠', 5)],
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      sowiloActiveThisWave: true,
+    })
+    const { wave: withSowilo } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: without } = playCard(DEFAULT_PARAMS, { ...wave, sowiloActiveThisWave: false }, 'none', [], 1000000, 0, standardDeckComposition())
+    expect(withSowilo.score).toBeGreaterThan(without.score)
+    expect(withSowilo.sowiloBoostedRole).toBe('flush')
+  })
+
+  test('ソウィロ: 一度確定した役は、次のプレイでも同じ役だけがx倍のまま維持される', () => {
+    const wave = baseWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(1, '♣', 9)], [card(2, '♦', 2)]],
+      sowiloActiveThisWave: true,
+      sowiloBoostedRole: 'flush',
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    expect(next.sowiloBoostedRole).toBe('flush')
   })
 
   test('水鏡: 役が成立すると次のプレイへ同じ役ボーナスの複製が予約される', () => {

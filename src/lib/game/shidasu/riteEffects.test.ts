@@ -49,6 +49,8 @@ function baseWave(overrides: Partial<WaveState> = {}): WaveState {
     playFromAnywhereActiveThisWave: false,
     nauthizActiveThisWave: false,
     comboFrozenThisWave: false,
+    sowiloActiveThisWave: false,
+    sowiloBoostedRole: null,
     ...overrides,
   }
 }
@@ -238,5 +240,12 @@ describe('riteEffects', () => {
     const wave = baseWave()
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'isa', createRng(1))
     expect(next.comboFrozenThisWave).toBe(true)
+  })
+
+  test('ソウィロ: sowiloActiveThisWaveがtrueになりsowiloBoostedRoleはまだnull', () => {
+    const wave = baseWave()
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'sowilo', createRng(1))
+    expect(next.sowiloActiveThisWave).toBe(true)
+    expect(next.sowiloBoostedRole).toBeNull()
   })
 })

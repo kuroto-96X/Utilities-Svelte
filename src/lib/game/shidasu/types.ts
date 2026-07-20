@@ -41,6 +41,7 @@ export type RiteId =
   | 'eihwaz' | 'ansuz' | 'kenaz' | 'thurisaz'
   | 'hagalaz'
   | 'nauthiz' | 'isa'
+  | 'sowilo'
 
 export interface Card {
   id: number
@@ -148,6 +149,10 @@ export interface WaveState {
   nauthizActiveThisWave: boolean
   // イサ用: そのウェーブが終わるまで、コンボ数の変化を凍結するか
   comboFrozenThisWave: boolean
+  // ソウィロ用: 発動済みか(役未確定の待機状態を含む)
+  sowiloActiveThisWave: boolean
+  // ソウィロ用: 倍率対象として確定した役(未確定ならnull)
+  sowiloBoostedRole: RoleName | null
 }
 
 export type RunPhase = 'title' | 'playing' | 'itemSelect' | 'stageClear' | 'allClear' | 'gameOver'

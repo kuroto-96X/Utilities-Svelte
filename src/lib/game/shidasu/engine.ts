@@ -149,6 +149,8 @@ export function startWave(
     playFromAnywhereActiveThisWave: false,
     nauthizActiveThisWave: false,
     comboFrozenThisWave: false,
+    sowiloActiveThisWave: false,
+    sowiloBoostedRole: null,
   }
 
   return { wave, deckComposition: composition }
@@ -283,10 +285,24 @@ export function playCard(
   const effectiveStairMinLen = items.includes('bridge') ? params.scoring.stairMinLen - params.talismans.bridge.m : params.scoring.stairMinLen
   const effectiveSuitColorMinLen = items.includes('bridge') ? params.scoring.suitColorMinLen - params.talismans.bridge.m : params.scoring.suitColorMinLen
   // 明星: 役の種類ごとのウェーブ内累積成立回数(今回成立分は含まない)に応じて役ボーナス額を倍率適用する
+  // ソウィロ: 発動後に初めて成立が確定した役をこのプレイ内で記憶し(sowiloCommittedThisPlay)、
+  // その役をx倍にする。以後のプレイではsowiloBoostedRoleが確定済みのため同じ役だけがx倍になる。
+  let sowiloCommittedThisPlay: RoleName | null = null
   const roleBonusMultiplier = (name: RoleName): number => {
-    if (!items.includes('morningStar')) return 1
-    const count = wave.roleOccurrenceCountThisWave[name] ?? 0
-    return 1 + count * params.talismans.morningStar.x
+    let factor = 1
+    if (items.includes('morningStar')) {
+      const count = wave.roleOccurrenceCountThisWave[name] ?? 0
+      factor *= 1 + count * params.talismans.morningStar.x
+    }
+    if (wave.sowiloActiveThisWave) {
+      if (wave.sowiloBoostedRole === name) {
+        factor *= params.rites.sowilo.x
+      } else if (wave.sowiloBoostedRole === null && sowiloCommittedThisPlay === null) {
+        sowiloCommittedThisPlay = name
+        factor *= params.rites.sowilo.x
+      }
+    }
+    return factor
   }
   const chainResult = evaluateChainBonus(params.scoring, wave.chain, card, effectiveStairMinLen, roleBonusMultiplier, effectiveSuitColorMinLen)
   base += chainResult.bonus
@@ -464,6 +480,7 @@ export function playCard(
     sameRankEchoUsedThisCombo: newSameRankEchoUsedThisCombo,
     lastBonusGains: bonusGains,
     sweptColumnsThisCombo: newSweptColumnsThisCombo,
+    sowiloBoostedRole: wave.sowiloBoostedRole ?? sowiloCommittedThisPlay,
   }
 
   // gained確定時点で目標達成なら、コンボ到達直接加算・全消し判定等を行わず即座に終了する。
