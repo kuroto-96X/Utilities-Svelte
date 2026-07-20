@@ -210,4 +210,19 @@ describe('riteEffects', () => {
     expect(next.tableau[0][1].suit).toBe('♦')
     expect(next.tableau[0][0].rank).toBe(5)
   })
+
+  test('ハガラズ: 場札と山札が合流・シャッフルされ、各列の枚数を維持したまま配り直される', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♠', 5), card(2, '♦', 9)], [card(3, '♣', 2)]],
+      stock: [card(10, '♥', 4), card(11, '♥', 7), card(12, '♠', 1)],
+    })
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'hagalaz', createRng(1))
+    expect(next.tableau[0]).toHaveLength(2)
+    expect(next.tableau[1]).toHaveLength(1)
+    expect(next.stock).toHaveLength(3)
+    const allIds = [...next.tableau.flat(), ...next.stock].map(c => c.id).sort((a, b) => a - b)
+    expect(allIds).toEqual([1, 2, 3, 10, 11, 12])
+    expect(next.foundation).toEqual(wave.foundation)
+    expect(next.combo).toBe(wave.combo)
+  })
 })
