@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin, RiteId } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin, RiteId, Rarity } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
 import { isFace, chainContinuesPattern, evaluateChainBonus, analyzeSuitColor, countSameRankBefore, countSameRankForWildPlay, fmtMultiplier } from './patterns'
@@ -39,6 +39,13 @@ export function getPlayableColumns(modifier: StageModifier, wave: WaveState): Se
 
 export function remainingCount(tableau: Card[][]): number {
   return tableau.reduce((n, c) => n + c.length, 0)
+}
+
+const MANNAZ_RARITY_WEIGHT: Record<Rarity, number> = { C: 1, U: 2, R: 4 }
+
+// マンナズ用: 所持護符それぞれのレア度重み(コモン=1、アンコモン=2、レア=4)の合計を求める
+function mannazWeightSum(items: ItemId[], params: ShidasuParams): number {
+  return items.reduce((sum, id) => sum + MANNAZ_RARITY_WEIGHT[params.talismans[id].rarity], 0)
 }
 
 // デッキ構成のうち非ワイルドの1枚をランダムに選びワイルドへ変換した新しい配列を返す(候補が無ければそのまま返す)
@@ -151,6 +158,7 @@ export function startWave(
     comboFrozenThisWave: false,
     sowiloActiveThisWave: false,
     sowiloBoostedRole: null,
+    mannazActiveThisWave: false,
   }
 
   return { wave, deckComposition: composition }
@@ -418,7 +426,9 @@ export function playCard(
   const comboMultiplierStep = params.scoring.comboMultiplierStep
   const multiplier = 1 + (effectiveCombo - 1) * comboMultiplierStep
   if (multiplier !== 1) parts.push(`コンボ倍率×${fmtMultiplier(multiplier)}`)
-  let gained = Math.floor(itemResult.value * multiplier)
+  const mannazFactor = wave.mannazActiveThisWave ? 1 + mannazWeightSum(items, params) * params.rites.mannaz.x : 1
+  if (mannazFactor !== 1) parts.push(`マンナズ×${fmtMultiplier(mannazFactor)}`)
+  let gained = Math.floor(itemResult.value * multiplier * mannazFactor)
 
   const scoreAfterGained = wave.score + gained
 
@@ -690,7 +700,9 @@ export function drawStock(
       const comboMultiplierStep = params.scoring.comboMultiplierStep
       const multiplier = 1 + (effectiveCombo - 1) * comboMultiplierStep
       if (multiplier !== 1) parts.push(`コンボ倍率×${fmtMultiplier(multiplier)}`)
-      naiveGained = Math.floor(itemResult.value * multiplier)
+      const mannazFactor = wave.mannazActiveThisWave ? 1 + mannazWeightSum(items, params) * params.rites.mannaz.x : 1
+      if (mannazFactor !== 1) parts.push(`マンナズ×${fmtMultiplier(mannazFactor)}`)
+      naiveGained = Math.floor(itemResult.value * multiplier * mannazFactor)
       naiveParts = parts
       naiveCombo = newCombo
     }

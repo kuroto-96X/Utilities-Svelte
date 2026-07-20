@@ -93,6 +93,7 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     comboFrozenThisWave: false,
     sowiloActiveThisWave: false,
     sowiloBoostedRole: null,
+    mannazActiveThisWave: false,
     ...overrides,
   }
 }
@@ -1021,6 +1022,29 @@ describe('playCard', () => {
     const wave = baseWave({ combo: 3, comboFrozenThisWave: true })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.combo).toBe(3)
+  })
+
+  test('マンナズ: 所持護符のレア度重み合計に応じて得点が倍算される', () => {
+    const wave = baseWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
+      mannazActiveThisWave: true,
+    })
+    const items: ItemId[] = ['bridge']
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
+    const weight: Record<'C' | 'U' | 'R', number> = { C: 1, U: 2, R: 4 }
+    const weightSum = items.reduce((sum, id) => sum + weight[DEFAULT_PARAMS.talismans[id].rarity], 0)
+    const expectedFactor = 1 + weightSum * DEFAULT_PARAMS.rites.mannaz.x
+    expect(next.score).toBe(Math.floor(scoring.basePoint * expectedFactor))
+  })
+
+  test('マンナズが無効なら得点は通常通り(倍算されない)', () => {
+    const wave = baseWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['bridge'], 1000000, 0, standardDeckComposition())
+    expect(next.score).toBe(scoring.basePoint)
   })
 })
 

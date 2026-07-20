@@ -144,6 +144,7 @@ export interface ShidasuParams {
     isa: { name: string; desc: string }
     sowilo: { name: string; x: number; desc: string }
     berkano: { name: string; x: number; desc: string }
+    mannaz: { name: string; x: number; desc: string }
   }
   flow: {
     wavesPerStage: number
@@ -295,6 +296,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     isa: { name: 'ᛁ', desc: 'そのウェーブが終わるまで、コンボ数を今の値のまま増減しなくする' },
     sowilo: { name: 'ᛋ', x: 2, desc: '発動後に初めて成立した役の種類を記憶し、そのウェーブが終わるまでその役のボーナスを{x}倍にする' },
     berkano: { name: 'ᛒ', x: 2, desc: '現在のコンボ数を{x}倍にする(端数切り捨て)' },
+    mannaz: { name: 'ᛗ', x: 0.1, desc: 'そのウェーブが終わるまで、得点計算時に所持護符のレア度重み(コモン=1、アンコモン=2、レア=4)の合計×{x}を1に加えた係数を掛ける' },
   },
   flow: { wavesPerStage: 3, clearDelayMs: 450 },
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },

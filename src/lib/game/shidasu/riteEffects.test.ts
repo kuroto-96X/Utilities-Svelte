@@ -51,6 +51,7 @@ function baseWave(overrides: Partial<WaveState> = {}): WaveState {
     comboFrozenThisWave: false,
     sowiloActiveThisWave: false,
     sowiloBoostedRole: null,
+    mannazActiveThisWave: false,
     ...overrides,
   }
 }
@@ -254,5 +255,11 @@ describe('riteEffects', () => {
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'berkano', createRng(1))
     expect(next.combo).toBe(Math.floor(5 * DEFAULT_PARAMS.rites.berkano.x))
     expect(next.maxComboThisWave).toBe(next.combo)
+  })
+
+  test('マンナズ: mannazActiveThisWaveがtrueになる', () => {
+    const wave = baseWave()
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'mannaz', createRng(1))
+    expect(next.mannazActiveThisWave).toBe(true)
   })
 })

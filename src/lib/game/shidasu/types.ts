@@ -31,7 +31,7 @@ export type ItemId =
   | 'morningStar' | 'mercy' | 'mirror' | 'deadline'
 
 // 秘儀(Rite): プレイ中に能動的に使用する消費アイテム。エルダー・フサルク(北欧ルーン文字)の
-// うち今回効果を実装した21種のみをメンバーとする(残り3種はrunes.tsの見た目候補にのみ存在し、
+// うち今回効果を実装した23種のみをメンバーとする(残り1種はrunes.tsの見た目候補にのみ存在し、
 // 効果が実装されて初めてここに追加する)。
 export type RiteId =
   | 'raidho' | 'jera' | 'wunjo' | 'othala' | 'perthro'
@@ -43,6 +43,7 @@ export type RiteId =
   | 'nauthiz' | 'isa'
   | 'sowilo'
   | 'berkano'
+  | 'mannaz'
 
 export interface Card {
   id: number
@@ -154,6 +155,8 @@ export interface WaveState {
   sowiloActiveThisWave: boolean
   // ソウィロ用: 倍率対象として確定した役(未確定ならnull)
   sowiloBoostedRole: RoleName | null
+  // マンナズ用: そのウェーブが終わるまで、得点計算に護符レア度倍率を掛けるか
+  mannazActiveThisWave: boolean
 }
 
 export type RunPhase = 'title' | 'playing' | 'itemSelect' | 'stageClear' | 'allClear' | 'gameOver'
