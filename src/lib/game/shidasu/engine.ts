@@ -295,7 +295,7 @@ export function playCard(
       factor *= 1 + count * params.talismans.morningStar.x
     }
     if (wave.sowiloActiveThisWave) {
-      if (wave.sowiloBoostedRole === name) {
+      if (wave.sowiloBoostedRole === name || sowiloCommittedThisPlay === name) {
         factor *= params.rites.sowilo.x
       } else if (wave.sowiloBoostedRole === null && sowiloCommittedThisPlay === null) {
         sowiloCommittedThisPlay = name

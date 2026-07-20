@@ -901,6 +901,28 @@ describe('playCard', () => {
     expect(next.sowiloBoostedRole).toBe('flush')
   })
 
+  test('ソウィロ: completeRunがコミット初回のプレイで同スート追加ボーナスも同じプレイ内でx倍になる', () => {
+    // ランク11・12を末尾以外に配置し、ロイヤルセット(J,Q,K)が誤って同時成立しないようにする。
+    // 全13ランクを単一スート(♠)で揃えることでcompleteRun成立時にsuitHeld=trueとなり、
+    // 「コンプリートラン」本体ボーナスと「コンプリートラン(同スート)」追加ボーナスの2つが
+    // 同一プレイ内でroleBonusMultiplier('completeRun')を2回呼び出す状況を再現する。
+    const ranksInChainOrder = [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    const chainBefore = ranksInChainOrder.map((rank, i) => card(i + 1, '♠', rank as Card['rank']))
+    const wave = baseWave({
+      // foundationはchainとは独立したフィールドであり、isPlayable判定(プレイする札とのランク差)にのみ使う。
+      // プレイする13のカードがランク差1で取れるよう、ランク12にしておく(chain内の要素との一致は不要)。
+      foundation: card(99, '♠', 12),
+      chain: chainBefore,
+      tableau: [[card(90, '♠', 13)], [card(91, '♦', 2)]],
+      sowiloActiveThisWave: true,
+      sowiloBoostedRole: null,
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    expect(next.lastGain?.parts).toContain(`コンプリートラン+${scoring.completeRunBonus * DEFAULT_PARAMS.rites.sowilo.x}`)
+    expect(next.lastGain?.parts).toContain(`コンプリートラン(同スート)+${scoring.completeRunSuitBonus * DEFAULT_PARAMS.rites.sowilo.x}`)
+    expect(next.sowiloBoostedRole).toBe('completeRun')
+  })
+
   test('水鏡: 役が成立すると次のプレイへ同じ役ボーナスの複製が予約される', () => {
     const wave = baseWave({
       foundation: card(0, '♠', 5),
