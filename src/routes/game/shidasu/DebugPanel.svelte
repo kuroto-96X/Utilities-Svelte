@@ -58,6 +58,7 @@
     <div class="font-bold text-slate-300 mb-1">内部状態</div>
     <div class="grid grid-cols-2 gap-x-3 gap-y-0.5 font-mono">
       <div>combo: {wave.combo}</div>
+      <div>baseComboCount: {wave.baseComboCount}</div>
       <div class="col-span-2">comboStreakColumnLengths: {wave.comboStreakColumnLengths.join(',')}</div>
       <div>columnsEmptied: {wave.columnsEmptiedThisCombo}</div>
       <div>lastDrawEffect: {wave.lastDrawEffect ?? 'null'}</div>
