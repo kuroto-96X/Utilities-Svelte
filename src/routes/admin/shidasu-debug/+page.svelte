@@ -239,14 +239,14 @@
   </div>
 
   <div class="overflow-x-auto">
-    <div class="grid gap-4 items-start" style="grid-template-columns: minmax(480px, 1.4fr) minmax(420px, 1fr) minmax(260px, 0.8fr) minmax(260px, 0.8fr);">
+    <div class="grid gap-4 items-start" style="grid-template-columns: minmax(420px, 1fr) minmax(480px, 1.4fr) minmax(260px, 0.8fr) minmax(260px, 0.8fr);">
+      <CardPalette onCardPointerDown={onPaletteCardPointerDown} onUnifySuit={unifySuit} />
       <div class="bg-emerald-950 rounded-lg p-3 flex flex-col" style="max-height: 70vh;">
         <PlayArea {wave} {params} modifier={'none'} target={TARGET} {items} onPlayCard={handlePlayCard} onDraw={handleDraw} {dropTarget} />
         <div class="mt-4 flex-1 min-h-0 overflow-y-auto">
           <DebugStatePanel {wave} {items} onForceDraw={handleForceDraw} />
         </div>
       </div>
-      <CardPalette onCardPointerDown={onPaletteCardPointerDown} onUnifySuit={unifySuit} />
       <ItemChecklist {items} onToggle={handleToggleItem} onSetAll={handleSetAllItems} />
       <RiteExecutePanel onExecute={handleExecuteRite} />
     </div>
