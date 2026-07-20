@@ -211,6 +211,18 @@ describe('startWave', () => {
     expect(wave.discardPile).toEqual([])
   })
 
+  test('秘儀由来の持続フラグは全てウェーブ開始時に初期化される', () => {
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1)
+    expect(wave.comboResetShieldRemaining).toBe(0)
+    expect(wave.playFromAnywhereActiveThisWave).toBe(false)
+    expect(wave.nauthizActiveThisWave).toBe(false)
+    expect(wave.comboFrozenThisWave).toBe(false)
+    expect(wave.sowiloActiveThisWave).toBe(false)
+    expect(wave.sowiloBoostedRole).toBeNull()
+    expect(wave.mannazActiveThisWave).toBe(false)
+    expect(wave.ehwazActiveThisWave).toBe(false)
+  })
+
   test('同じシードなら同じ結果になる(決定的、アイテムを持っていても山札生成自体は変わらない)', () => {
     const a = startWave(DEFAULT_PARAMS, 0, 0, ['bridge'], standardDeckComposition(), 123)
     const b = startWave(DEFAULT_PARAMS, 0, 0, ['bridge'], standardDeckComposition(), 123)
@@ -1060,6 +1072,22 @@ describe('playCard', () => {
     const weightSum = items.reduce((sum, id) => sum + weight[DEFAULT_PARAMS.talismans[id].rarity], 0)
     const expectedFactor = 1 + weightSum * DEFAULT_PARAMS.rites.mannaz.x
     expect(next.score).toBe(Math.floor(scoring.basePoint * expectedFactor))
+  })
+
+  test('マンナズ: コンボ倍率とも正しく乗算合成される(上書きしない)', () => {
+    const wave = baseWave({
+      foundation: card(0, '♠', 3),
+      tableau: [[card(9, '♠', 1), card(1, '♣', 4)], [card(2, '♦', 2)]],
+      combo: 3,
+      mannazActiveThisWave: true,
+    })
+    const items: ItemId[] = ['bridge']
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
+    const weight: Record<'C' | 'U' | 'R', number> = { C: 1, U: 2, R: 4 }
+    const weightSum = items.reduce((sum, id) => sum + weight[DEFAULT_PARAMS.talismans[id].rarity], 0)
+    const mannazFactor = 1 + weightSum * DEFAULT_PARAMS.rites.mannaz.x
+    const comboMultiplier = 1 + (wave.combo + 1 - 1) * scoring.comboMultiplierStep // newCombo=combo+1、コンボ倍率は(newCombo-1)*step
+    expect(next.score).toBe(Math.floor(scoring.basePoint * comboMultiplier * mannazFactor))
   })
 
   test('マンナズが無効なら得点は通常通り(倍算されない)', () => {
@@ -2280,6 +2308,27 @@ describe('drawStock (素朴の得点ルール変更)', () => {
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['naive', 'golden'], 1000000, standardDeckComposition())
     expect(next.combo).toBe(4)
+  })
+
+  test('マンナズ: 素朴パス(drawStockの継続得点計算)でも得点が倍算される', () => {
+    const wave = makeWave({
+      stock: [card(1, '♠', 9)],
+      combo: 2,
+      chain: [card(2, '♠', 4), card(3, '♠', 5)],
+      linked: true,
+      score: 0,
+      mannazActiveThisWave: true,
+    })
+    const items: ItemId[] = ['naive', 'bridge']
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition())
+    const weight: Record<'C' | 'U' | 'R', number> = { C: 1, U: 2, R: 4 }
+    const weightSum = items.reduce((sum, id) => sum + weight[DEFAULT_PARAMS.talismans[id].rarity], 0)
+    const mannazFactor = 1 + weightSum * DEFAULT_PARAMS.rites.mannaz.x
+    const newCombo = wave.combo + 1 // golden未所持
+    const comboMultiplier = 1 + (newCombo - 1) * DEFAULT_PARAMS.scoring.comboMultiplierStep
+    // chain[♠4,♠5]+drawn♠9で同スート継続(3枚)成立、同スートボーナスが基礎点に加算される
+    const base = DEFAULT_PARAMS.scoring.basePoint + DEFAULT_PARAMS.scoring.suitBonus
+    expect(next.score).toBe(wave.score + Math.floor(base * comboMultiplier * mannazFactor))
   })
 
   test('庇護・大地: 素朴パスでも所持順で一時comboに適用される', () => {
