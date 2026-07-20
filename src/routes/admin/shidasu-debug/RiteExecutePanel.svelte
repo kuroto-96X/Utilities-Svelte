@@ -11,7 +11,7 @@
 </script>
 
 <div class="space-y-1 max-h-[70vh] overflow-y-auto pr-1">
-  <h2 class="text-sm font-bold text-slate-700 sticky top-0 bg-slate-50">秘儀(17種・所持数無視で直接発動)</h2>
+  <h2 class="text-sm font-bold text-slate-700 sticky top-0 bg-slate-50">秘儀({RITE_POOL.length}種・所持数無視で直接発動)</h2>
   {#each RITE_POOL as id (id)}
     <div class="flex items-start gap-1.5 text-xs">
       <button
