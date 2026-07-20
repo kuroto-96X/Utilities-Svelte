@@ -4,6 +4,7 @@
   import { riteDesc } from '$lib/game/shidasu/rites'
   import { RUNES } from '$lib/game/shidasu/runes'
   import { RITE_POOL } from '$lib/game/shidasu/rites'
+  import { RITE_ACTUAL_EFFECTS } from '$lib/game/shidasu/riteActualEffects'
   import type { RiteId } from '$lib/game/shidasu/types'
 
   let config = $state<ShidasuParams | null>(null)
@@ -111,6 +112,7 @@
               <th class="px-2 py-1.5 text-left" style="width:11rem;">パラメータ</th>
               <th class="px-2 py-1.5 text-left" style="width:16rem;">説明文テンプレート</th>
               <th class="px-2 py-1.5 text-left" style="width:16rem;">プレビュー</th>
+              <th class="px-2 py-1.5 text-left" style="width:20rem;">実際の効果(監査用)</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -145,6 +147,7 @@
                   ></textarea>
                 </td>
                 <td class="px-2 py-1.5 align-top text-slate-500">{riteDesc(id, config)}</td>
+                <td class="px-2 py-1.5 align-top text-slate-500">{RITE_ACTUAL_EFFECTS[id]}</td>
               </tr>
             {/each}
           </tbody>
