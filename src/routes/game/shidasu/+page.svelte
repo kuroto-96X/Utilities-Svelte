@@ -84,7 +84,7 @@
   }
 
   function handleUseRite(riteId: RiteId) {
-    if (run.phase !== 'playing' || run.wave?.status !== 'playing') return
+    if ((run.phase !== 'playing' && run.phase !== 'revelationSelect') || run.wave?.status !== 'playing') return
     run = useRite(params, run, riteId)
     afterAction()
   }
@@ -211,12 +211,18 @@
   </div>
 {/snippet}
 
-{#snippet revelationSelectExtra()}
+{#snippet revelationTargetPrompt()}
   <div class="text-xs w-full">
-    {#if pendingRevelationTarget}
-      <div class="text-yellow-300 font-black mb-2">列を選んでください</div>
-      <button onclick={handleCancelRevelationTarget} class="text-emerald-300/70 underline">キャンセル</button>
-    {:else}
+    <div class="text-yellow-300 font-black mb-2">列を選んでください</div>
+    <button onclick={handleCancelRevelationTarget} class="text-emerald-300/70 underline">キャンセル</button>
+  </div>
+{/snippet}
+
+{#snippet revelationSelectExtra()}
+  {#if pendingRevelationTarget}
+    {@render revelationTargetPrompt()}
+  {:else}
+    <div class="text-xs w-full">
       <div class="text-emerald-300/70 mb-2">天啓を1つ選ぶ</div>
       <div class="flex flex-col gap-1.5">
         {#each run.revelationOffer as id (id)}
@@ -238,8 +244,8 @@
         {/each}
       </div>
       <button onclick={handleSkipRevelationSelect} class="mt-2 text-emerald-300/70 underline">使用・獲得しない</button>
-    {/if}
-  </div>
+    </div>
+  {/if}
 {/snippet}
 
 <div
@@ -290,7 +296,17 @@
     chainAreaExtra={revelationSelectExtra}
   />
 {:else if wave}
-  <PlayArea {wave} {params} modifier={stage.modifier} {target} items={run.items} onPlayCard={handlePlayCard} onDraw={handleDraw} headerExtra={stageRow} extraFooter={itemBadges} rites={run.rites} onUseRite={handleUseRite} revelations={run.revelations} onUseRevelationClick={handleUseRevelationClick} />
+  <PlayArea
+    {wave} {params} modifier={stage.modifier} {target} items={run.items}
+    onPlayCard={handlePlayCard} onDraw={handleDraw}
+    headerExtra={stageRow} extraFooter={itemBadges}
+    rites={run.rites} onUseRite={handleUseRite}
+    revelations={run.revelations} onUseRevelationClick={handleUseRevelationClick}
+    columnTargetMode={pendingRevelationTarget !== null}
+    canTargetColumn={canTargetRevelationColumn}
+    onTargetColumn={handleTargetColumn}
+    chainAreaExtra={pendingRevelationTarget ? revelationTargetPrompt : undefined}
+  />
 {/if}
 
 {#if run.phase === 'itemSelect'}
