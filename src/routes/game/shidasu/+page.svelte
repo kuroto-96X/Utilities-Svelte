@@ -6,14 +6,17 @@
     resolveWaveEnd, pickItem, confirmItemSwap, cancelItemSwap, skipItemSelect,
     advanceStage, restartRun, startWave, forceStockTop, useRite,
     useRevelation, useRevelationFromOffer, pickRevelationFromOffer, skipRevelationSelect,
+    pickOracleFromOffer, skipOracleSelect,
   } from '$lib/game/shidasu/engine'
   import { itemDesc, itemName } from '$lib/game/shidasu/items'
   import { revelationDesc, revelationName } from '$lib/game/shidasu/revelations'
   import { revelationNeedsTarget } from '$lib/game/shidasu/revelationEffects'
+  import { oracleName, oracleDesc } from '$lib/game/shidasu/oracles'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
-  import type { RunState, ItemId, StageModifier, Suit, Rank, RiteId, RevelationId } from '$lib/game/shidasu/types'
+  import type { RunState, ItemId, StageModifier, Suit, Rank, RiteId, RevelationId, RoleName } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
+  import RoleStatusPanel from './RoleStatusPanel.svelte'
 
   const params = loadParams()
 
@@ -184,6 +187,16 @@
     if (pendingRevelationTarget.revelationId === 'aya') return true
     return wave.tableau[colIndex].length > 0
   }
+
+  function handlePickOracle(roleName: RoleName) {
+    run = pickOracleFromOffer(run, roleName)
+    afterAction()
+  }
+
+  function handleSkipOracleSelect() {
+    run = skipOracleSelect(run)
+    afterAction()
+  }
 </script>
 
 {#snippet stageRow()}
@@ -307,6 +320,7 @@
     onTargetColumn={handleTargetColumn}
     chainAreaExtra={pendingRevelationTarget ? revelationTargetPrompt : undefined}
   />
+  <RoleStatusPanel {params} oracleLevels={run.oracleLevels} />
 {/if}
 
 {#if run.phase === 'itemSelect'}
@@ -353,6 +367,30 @@
           </button>
         </div>
       {/if}
+    </div>
+  </div>
+{:else if run.phase === 'oracleSelect'}
+  <div class="fixed inset-0 z-50 bg-emerald-950/90 backdrop-blur-sm flex items-center justify-center p-6">
+    <div class="w-full max-w-sm flex flex-col items-center text-center">
+      <div class="text-yellow-300 text-xs tracking-widest mb-1">ORACLE</div>
+      <div class="text-emerald-100/70 text-sm mb-4">神託を1つ選ぶ</div>
+      <div class="flex flex-col gap-3 w-full">
+        {#each run.oracleOffer as roleName (roleName)}
+          <button
+            onclick={() => handlePickOracle(roleName)}
+            class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
+          >
+            <div class="font-black text-yellow-300">{oracleName(roleName, params)}</div>
+            <div class="text-xs text-emerald-100/80 mt-0.5">{oracleDesc(roleName, params)}</div>
+          </button>
+        {/each}
+        <button
+          onclick={handleSkipOracleSelect}
+          class="text-center text-emerald-200/70 border border-emerald-700/60 rounded-xl px-4 py-2 active:scale-[0.98] transition-transform"
+        >
+          選ばない
+        </button>
+      </div>
     </div>
   </div>
 {:else if run.phase === 'stageClear'}
