@@ -69,6 +69,7 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     linked: false,
     columnsEmptiedThisCombo: 0,
     comboStreakColumnLengths: [],
+    dealtRows: DEFAULT_PARAMS.layout.rows,
     lastDrawEffect: null,
     status: 'playing',
     endReason: null,
@@ -357,6 +358,19 @@ describe('playCard', () => {
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
     expect(next.lastGain?.parts.some(p => p.startsWith('列一掃'))).toBe(true)
+  })
+
+  test('暗雲の護符所持時: 配布行数が増えていても、その行数分を1コンボで空にすれば列一掃ボーナスが成立する(バグ回帰テスト)', () => {
+    const items: ItemId[] = ['darkClouds']
+    const dealtRows = DEFAULT_PARAMS.layout.rows + DEFAULT_PARAMS.talismans.darkClouds.r
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
+      comboStreakColumnLengths: [dealtRows, 1],
+      dealtRows,
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
+    expect(next.columnsEmptiedThisCombo).toBe(1)
+    expect(next.lastGain?.parts).toContain(`列一掃+${scoring.columnSweepBonus}`)
   })
 
   test('同じコンボ内で2列目を空にすると列一掃ボーナスが列数倍になる', () => {

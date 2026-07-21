@@ -21,6 +21,7 @@ function baseWave(overrides: Partial<WaveState> = {}): WaveState {
     linked: false,
     columnsEmptiedThisCombo: 0,
     comboStreakColumnLengths: [1],
+    dealtRows: DEFAULT_PARAMS.layout.rows,
     lastDrawEffect: null,
     status: 'playing',
     endReason: null,

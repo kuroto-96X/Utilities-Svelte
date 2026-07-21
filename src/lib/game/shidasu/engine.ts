@@ -138,6 +138,7 @@ export function startWave(
     linked: false,
     columnsEmptiedThisCombo: 0,
     comboStreakColumnLengths: tableau.map(col => col.length),
+    dealtRows: rows,
     lastDrawEffect: null,
     status: 'playing',
     endReason: null as WaveEndReason,
@@ -336,7 +337,7 @@ export function playCard(
   const newTableau = wave.tableau.map((c, i) => (i === colIndex ? c.slice(0, -1) : c))
   const columnJustEmptied = newTableau[colIndex].length === 0
   const streakStartLength = wave.comboStreakColumnLengths[colIndex]
-  const rows = params.layout.rows
+  const rows = wave.dealtRows
   const sweepQualifies = columnJustEmptied && (
     items.includes('grace')
       ? streakStartLength <= rows - params.talismans.grace.m

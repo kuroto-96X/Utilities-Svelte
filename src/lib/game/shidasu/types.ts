@@ -105,6 +105,11 @@ export interface WaveState {
   // 各列について、現在の連続コンボが始まった時点(直近でcomboが0にリセットされた瞬間)での残り枚数のスナップショット。
   // コンボが継続している間は更新されず、drawStockでコンボがリセットされる時とstartWaveでのみ再設定される。
   comboStreakColumnLengths: number[]
+  // startWaveで実際に配られた1列あたりの行数(暗雲護符・虚(天啓)によるextraTableauRowsを含んだ値)。
+  // 列一掃ボーナスの「列を1コンボで全て空にしたか」判定(playCardのsweepQualifies)は、
+  // params.layout.rowsそのものではなくこの値と比較する(暗雲・虚を考慮せず判定すると、
+  // それらを持つ間ずっと列一掃ボーナスが成立しなくなるバグがあったため)。
+  dealtRows: number
   lastDrawEffect: DrawEffect
   status: WaveStatus
   endReason: WaveEndReason
