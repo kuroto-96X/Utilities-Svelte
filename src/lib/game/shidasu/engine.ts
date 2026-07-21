@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin, RiteId, Rarity } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin, RiteId, Rarity, RevelationId } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
 import { isFace, chainContinuesPattern, evaluateChainBonus, analyzeSuitColor, countSameRankBefore, countSameRankForWildPlay, fmtMultiplier } from './patterns'
@@ -8,6 +8,8 @@ import { applyDirectEffects, type DirectEffectContext } from './directEffects'
 import { applyItemEffects, type ItemEffectContext } from './itemEffects'
 import { applyRiteEffect, canUseRite } from './riteEffects'
 import { rollRite } from './rites'
+import { rollRevelationOffer } from './revelations'
+import { applyRevelationEffect, canUseRevelation } from './revelationEffects'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
 
@@ -92,7 +94,8 @@ export function startWave(
   _waveIndex: number,
   items: ItemId[],
   deckComposition: DeckCard[],
-  seed?: number
+  seed?: number,
+  extraTableauRows: number = 0
 ): { wave: WaveState; deckComposition: DeckCard[] } {
   const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
   let idSeq = 0
@@ -110,7 +113,7 @@ export function startWave(
 
   const deck = shuffle(composition.map(c => ({ id: nextId(), ...c })), rand)
   const { cols } = params.layout
-  const rows = params.layout.rows + (items.includes('darkClouds') ? params.talismans.darkClouds.r : 0)
+  const rows = params.layout.rows + (items.includes('darkClouds') ? params.talismans.darkClouds.r : 0) + extraTableauRows
   const tableau: Card[][] = []
   for (let c = 0; c < cols; c++) {
     tableau.push(deck.splice(0, rows))
@@ -816,11 +819,14 @@ export function markStuck(wave: WaveState): WaveState {
 }
 
 export function createInitialRun(): RunState {
-  return { phase: 'title', stageIndex: 0, waveIndex: 0, items: [], offer: [], wave: null, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [] }
+  return {
+    phase: 'title', stageIndex: 0, waveIndex: 0, items: [], offer: [], wave: null, pendingNewItem: null,
+    deckComposition: standardDeckComposition(), rites: [], revelations: [], revelationOffer: [], extraTableauRows: 0,
+  }
 }
 
 export function beginRun(params: ShidasuParams, seed?: number): RunState {
-  const { wave, deckComposition } = startWave(params, 0, 0, [], standardDeckComposition(), seed)
+  const { wave, deckComposition } = startWave(params, 0, 0, [], standardDeckComposition(), seed, 0)
   return {
     phase: 'playing',
     stageIndex: 0,
@@ -831,6 +837,9 @@ export function beginRun(params: ShidasuParams, seed?: number): RunState {
     pendingNewItem: null,
     deckComposition,
     rites: [],
+    revelations: [],
+    revelationOffer: [],
+    extraTableauRows: 0,
   }
 }
 
@@ -855,13 +864,54 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
 // 秘儀を1つ使用する。効果を適用し、所持からその秘儀を1個削除する。
 // 使用条件(canUseRite)を満たさない場合、または所持していない場合は何もしない。
 export function useRite(params: ShidasuParams, run: RunState, riteId: RiteId, rand: () => number = Math.random): RunState {
-  if (run.phase !== 'playing' || !run.wave || run.wave.status !== 'playing') return run
+  if ((run.phase !== 'playing' && run.phase !== 'revelationSelect') || !run.wave || run.wave.status !== 'playing') return run
   if (!canUseRite(params, run.wave, riteId)) return run
   const idx = run.rites.indexOf(riteId)
   if (idx === -1) return run
   const wave = applyRiteEffect(params, run.wave, riteId, rand)
   const rites = [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)]
   return { ...run, wave, rites }
+}
+
+// 護符選択解決後、天啓選択画面(プレビュー用ウェーブ)へ遷移する共通処理。
+// この時点でのdeckComposition・extraTableauRowsから、通常のウェーブ開始と同じロジックで
+// プレビュー用のウェーブを配る(天啓・秘儀のターゲットとして使うためだけの仮のウェーブで、
+// 天啓選択画面を終えると改めて実際のウェーブを配り直す。詳細はfinishRevelationSelect)。
+function enterRevelationSelect(
+  params: ShidasuParams,
+  run: RunState,
+  newItems: ItemId[],
+  newRites: RiteId[],
+  newWaveIndex: number,
+  seed: number | undefined,
+  rand: () => number
+): RunState {
+  const { wave, deckComposition } = startWave(params, run.stageIndex, newWaveIndex, newItems, run.deckComposition, seed, run.extraTableauRows)
+  return {
+    ...run,
+    phase: 'revelationSelect',
+    items: newItems,
+    rites: newRites,
+    waveIndex: newWaveIndex,
+    offer: [],
+    pendingNewItem: null,
+    wave,
+    deckComposition,
+    revelationOffer: rollRevelationOffer(rand),
+  }
+}
+
+// 天啓選択画面を終了し、その時点のdeckComposition・extraTableauRowsから実際のウェーブを
+// 新しく配り直してプレイ画面へ進む。
+function finishRevelationSelect(params: ShidasuParams, run: RunState, seed?: number): RunState {
+  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, run.items, run.deckComposition, seed, run.extraTableauRows)
+  return {
+    ...run,
+    phase: 'playing',
+    wave,
+    deckComposition,
+    revelationOffer: [],
+  }
 }
 
 export function pickItem(params: ShidasuParams, run: RunState, itemId: ItemId, seed?: number, rand: () => number = Math.random): RunState {
@@ -872,19 +922,7 @@ export function pickItem(params: ShidasuParams, run: RunState, itemId: ItemId, s
   const newItems = [...run.items, itemId]
   const rolledRite = rollRite(run.rites, rand)
   const newRites = rolledRite ? [...run.rites, rolledRite] : run.rites
-  const newWaveIndex = run.waveIndex + 1
-  const { wave, deckComposition } = startWave(params, run.stageIndex, newWaveIndex, newItems, run.deckComposition, seed)
-  return {
-    ...run,
-    phase: 'playing',
-    items: newItems,
-    rites: newRites,
-    waveIndex: newWaveIndex,
-    offer: [],
-    pendingNewItem: null,
-    wave,
-    deckComposition,
-  }
+  return enterRevelationSelect(params, run, newItems, newRites, run.waveIndex + 1, seed, rand)
 }
 
 export function confirmItemSwap(params: ShidasuParams, run: RunState, oldItemId: ItemId, seed?: number, rand: () => number = Math.random): RunState {
@@ -894,19 +932,7 @@ export function confirmItemSwap(params: ShidasuParams, run: RunState, oldItemId:
   const newItems = [...remaining, run.pendingNewItem]
   const rolledRite = rollRite(run.rites, rand)
   const newRites = rolledRite ? [...run.rites, rolledRite] : run.rites
-  const newWaveIndex = run.waveIndex + 1
-  const { wave, deckComposition } = startWave(params, run.stageIndex, newWaveIndex, newItems, run.deckComposition, seed)
-  return {
-    ...run,
-    phase: 'playing',
-    items: newItems,
-    rites: newRites,
-    waveIndex: newWaveIndex,
-    offer: [],
-    pendingNewItem: null,
-    wave,
-    deckComposition,
-  }
+  return enterRevelationSelect(params, run, newItems, newRites, run.waveIndex + 1, seed, rand)
 }
 
 export function cancelItemSwap(run: RunState): RunState {
@@ -914,25 +940,68 @@ export function cancelItemSwap(run: RunState): RunState {
   return { ...run, pendingNewItem: null }
 }
 
-export function skipItemSelect(params: ShidasuParams, run: RunState, seed?: number): RunState {
+export function skipItemSelect(params: ShidasuParams, run: RunState, seed?: number, rand: () => number = Math.random): RunState {
   if (run.phase !== 'itemSelect') return run
-  const newWaveIndex = run.waveIndex + 1
-  const { wave, deckComposition } = startWave(params, run.stageIndex, newWaveIndex, run.items, run.deckComposition, seed)
-  return {
-    ...run,
-    phase: 'playing',
-    waveIndex: newWaveIndex,
-    offer: [],
-    pendingNewItem: null,
-    wave,
-    deckComposition,
-  }
+  return enterRevelationSelect(params, run, run.items, run.rites, run.waveIndex + 1, seed, rand)
+}
+
+// 所持中の天啓を1つ使用する(消費される)。プレイ中・天啓選択画面のどちらでも動作し、
+// フェーズは変えない(秘儀のuseRiteと同じ位置づけ)。
+export function useRevelation(
+  params: ShidasuParams,
+  run: RunState,
+  revelationId: RevelationId,
+  targetCol: number | null,
+  rand: () => number = Math.random
+): RunState {
+  if ((run.phase !== 'playing' && run.phase !== 'revelationSelect') || !run.wave || run.wave.status !== 'playing') return run
+  const idx = run.revelations.indexOf(revelationId)
+  if (idx === -1) return run
+  if (!canUseRevelation(params, run.wave, revelationId)) return run
+  const { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
+  const extraTableauRows = revelationId === 'kyo' ? run.extraTableauRows + params.revelations.kyo.n : run.extraTableauRows
+  const revelations = [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
+  return { ...run, wave, deckComposition, revelations, extraTableauRows }
+}
+
+// 天啓選択画面のオファーから選んだものをその場で使用する(所持には加わらない)。
+// 使用後、実際のウェーブを配り直してプレイ画面へ進む。
+export function useRevelationFromOffer(
+  params: ShidasuParams,
+  run: RunState,
+  revelationId: RevelationId,
+  targetCol: number | null,
+  seed?: number,
+  rand: () => number = Math.random
+): RunState {
+  if (run.phase !== 'revelationSelect' || !run.wave) return run
+  if (!run.revelationOffer.includes(revelationId)) return run
+  if (!canUseRevelation(params, run.wave, revelationId)) return run
+  const { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
+  const extraTableauRows = revelationId === 'kyo' ? run.extraTableauRows + params.revelations.kyo.n : run.extraTableauRows
+  return finishRevelationSelect(params, { ...run, deckComposition, extraTableauRows }, seed)
+}
+
+// 天啓選択画面のオファーから選んだものを所持へ加える(所持上限2に達している間は何もしない)。
+// 実際のウェーブを配り直してプレイ画面へ進む。
+export function pickRevelationFromOffer(params: ShidasuParams, run: RunState, revelationId: RevelationId, seed?: number): RunState {
+  if (run.phase !== 'revelationSelect') return run
+  if (!run.revelationOffer.includes(revelationId)) return run
+  if (run.revelations.length >= 2) return run
+  const revelations = [...run.revelations, revelationId]
+  return finishRevelationSelect(params, { ...run, revelations }, seed)
+}
+
+// 天啓を使用・獲得せずに天啓選択画面を終了する。
+export function skipRevelationSelect(params: ShidasuParams, run: RunState, seed?: number): RunState {
+  if (run.phase !== 'revelationSelect') return run
+  return finishRevelationSelect(params, run, seed)
 }
 
 export function advanceStage(params: ShidasuParams, run: RunState, seed?: number): RunState {
   if (run.phase !== 'stageClear') return run
   const newStageIndex = run.stageIndex + 1
-  const { wave, deckComposition } = startWave(params, newStageIndex, 0, run.items, run.deckComposition, seed)
+  const { wave, deckComposition } = startWave(params, newStageIndex, 0, run.items, run.deckComposition, seed, run.extraTableauRows)
   return {
     ...run,
     phase: 'playing',

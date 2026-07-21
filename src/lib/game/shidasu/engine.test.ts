@@ -24,6 +24,10 @@ import {
   applyStuckCheck,
   forceStockTop,
   useRite,
+  useRevelation,
+  useRevelationFromOffer,
+  pickRevelationFromOffer,
+  skipRevelationSelect,
 } from './engine'
 import { ITEM_POOL } from './items'
 import { isFace, chainContinuesPattern } from './patterns'
@@ -1871,10 +1875,10 @@ describe('resolveWaveEnd', () => {
 })
 
 describe('pickItem / advanceStage / restartRun', () => {
-  test('pickItemでアイテムが追加され次ウェーブが始まる', () => {
+  test('pickItemでアイテムが追加され次ウェーブが始まる(revelationSelectフェーズを経由する)', () => {
     const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', waveIndex: 0, offer: ['bridge'] }
     const next = pickItem(DEFAULT_PARAMS, run, 'bridge', 2)
-    expect(next.phase).toBe('playing')
+    expect(next.phase).toBe('revelationSelect')
     expect(next.items).toEqual(['bridge'])
     expect(next.waveIndex).toBe(1)
   })
@@ -1911,10 +1915,10 @@ describe('護符所持上限・交換(maxItems / confirmItemSwap / cancelItemSwa
     }
   }
 
-  test('所持数がmaxItems未満ならpickItemで即座に反映される(従来通り)', () => {
+  test('所持数がmaxItems未満ならpickItemで即座に反映される(従来通り)。以後はrevelationSelectフェーズへ進む', () => {
     const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', items: ['bridge'], offer: ['grace'] }
     const next = pickItem(DEFAULT_PARAMS, run, 'grace', 2)
-    expect(next.phase).toBe('playing')
+    expect(next.phase).toBe('revelationSelect')
     expect(next.items).toEqual(['bridge', 'grace'])
     expect(next.pendingNewItem).toBeNull()
   })
@@ -1929,11 +1933,11 @@ describe('護符所持上限・交換(maxItems / confirmItemSwap / cancelItemSwa
     expect(next.waveIndex).toBe(run.waveIndex)
   })
 
-  test('confirmItemSwapで指定した護符が1つ入れ替わり次ウェーブへ進む', () => {
+  test('confirmItemSwapで指定した護符が1つ入れ替わり次ウェーブへ進む(revelationSelectフェーズを経由する)', () => {
     const run = fullItemsRun({ pendingNewItem: 'grace' })
     // run.items = ['bridge', 'grace', 'bridge', 'grace', 'bridge'] (先頭のbridgeが入れ替え対象)
     const next = confirmItemSwap(DEFAULT_PARAMS, run, 'bridge', 3)
-    expect(next.phase).toBe('playing')
+    expect(next.phase).toBe('revelationSelect')
     expect(next.items).toEqual(['grace', 'bridge', 'grace', 'bridge', 'grace'])
     expect(next.pendingNewItem).toBeNull()
     expect(next.waveIndex).toBe(run.waveIndex + 1)
@@ -1954,10 +1958,10 @@ describe('護符所持上限・交換(maxItems / confirmItemSwap / cancelItemSwa
     expect(next.items).toEqual(run.items)
   })
 
-  test('skipItemSelectは護符を追加せずウェーブを進める', () => {
+  test('skipItemSelectは護符を追加せずウェーブを進める(revelationSelectフェーズを経由する)', () => {
     const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', items: ['bridge'], offer: ['grace'] }
     const next = skipItemSelect(DEFAULT_PARAMS, run, 2)
-    expect(next.phase).toBe('playing')
+    expect(next.phase).toBe('revelationSelect')
     expect(next.items).toEqual(['bridge'])
     expect(next.waveIndex).toBe(run.waveIndex + 1)
     expect(next.pendingNewItem).toBeNull()
@@ -2516,6 +2520,102 @@ describe('約束・暗雲', () => {
   test('暗雲を持たなければ通常通りrows枚', () => {
     const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1)
     wave.tableau.forEach(col => expect(col).toHaveLength(DEFAULT_PARAMS.layout.rows))
+  })
+})
+
+describe('天啓選択フェーズ', () => {
+  test('護符選択(pickItem)を解決すると、revelationSelectフェーズへ遷移しrevelationOfferが3件セットされる', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const itemSelectRun: RunState = { ...run, phase: 'itemSelect', offer: ['bridge', 'grace'] }
+    const next = pickItem(DEFAULT_PARAMS, itemSelectRun, 'bridge', 2, createRng(1))
+    expect(next.phase).toBe('revelationSelect')
+    expect(next.revelationOffer).toHaveLength(3)
+    expect(next.items).toContain('bridge')
+    expect(next.wave).not.toBeNull()
+  })
+
+  test('skipItemSelectを解決してもrevelationSelectフェーズへ遷移する', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const itemSelectRun: RunState = { ...run, phase: 'itemSelect', offer: ['bridge'] }
+    const next = skipItemSelect(DEFAULT_PARAMS, itemSelectRun, 2, createRng(1))
+    expect(next.phase).toBe('revelationSelect')
+    expect(next.revelationOffer).toHaveLength(3)
+  })
+
+  test('useRevelationFromOffer: 対象選択不要な天啓(心)を使用すると、実際のウェーブが配られplayingへ遷移する。所持には加わらない', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const revSelectRun: RunState = { ...run, phase: 'revelationSelect', revelationOffer: ['shin', 'kou', 'tei'] }
+    const next = useRevelationFromOffer(DEFAULT_PARAMS, revSelectRun, 'shin', null, 3)
+    expect(next.phase).toBe('playing')
+    expect(next.revelations).toEqual([])
+    expect(next.revelationOffer).toEqual([])
+  })
+
+  test('useRevelationFromOffer: オファーに含まれない天啓は無視される', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const revSelectRun: RunState = { ...run, phase: 'revelationSelect', revelationOffer: ['shin', 'kou', 'tei'] }
+    const next = useRevelationFromOffer(DEFAULT_PARAMS, revSelectRun, 'bi', null, 3)
+    expect(next).toBe(revSelectRun)
+  })
+
+  test('pickRevelationFromOffer: オファーから獲得すると所持に加わり、revelationSelectを終了してplayingへ遷移する', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const revSelectRun: RunState = { ...run, phase: 'revelationSelect', revelationOffer: ['shin', 'kou', 'tei'] }
+    const next = pickRevelationFromOffer(DEFAULT_PARAMS, revSelectRun, 'shin', 3)
+    expect(next.phase).toBe('playing')
+    expect(next.revelations).toEqual(['shin'])
+  })
+
+  test('pickRevelationFromOffer: 所持数が上限2の間は何もしない', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const revSelectRun: RunState = { ...run, phase: 'revelationSelect', revelationOffer: ['shin', 'kou', 'tei'], revelations: ['bi', 'ki'] }
+    const next = pickRevelationFromOffer(DEFAULT_PARAMS, revSelectRun, 'shin', 3)
+    expect(next).toBe(revSelectRun)
+  })
+
+  test('skipRevelationSelect: 何も選ばず終了すると、実際のウェーブが配られplayingへ遷移する', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const revSelectRun: RunState = { ...run, phase: 'revelationSelect', revelationOffer: ['shin', 'kou', 'tei'] }
+    const next = skipRevelationSelect(DEFAULT_PARAMS, revSelectRun, 3)
+    expect(next.phase).toBe('playing')
+  })
+
+  test('useRevelation: 所持中の天啓を使用すると1個消費され、revelationSelect中でもplaying中でもフェーズは変わらない', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const playingRun: RunState = { ...run, revelations: ['shin', 'shin'] }
+    const next = useRevelation(DEFAULT_PARAMS, playingRun, 'shin', null)
+    expect(next.phase).toBe('playing')
+    expect(next.revelations).toEqual(['shin'])
+
+    const revSelectRun: RunState = { ...run, phase: 'revelationSelect', revelations: ['bi'] }
+    const next2 = useRevelation(DEFAULT_PARAMS, revSelectRun, 'bi', null)
+    expect(next2.phase).toBe('revelationSelect')
+    expect(next2.revelations).toEqual([])
+  })
+
+  test('useRevelation: 所持していない天啓は無視される', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const next = useRevelation(DEFAULT_PARAMS, run, 'shin', null)
+    expect(next).toBe(run)
+  })
+
+  test('虚(kyo)を使用すると、extraTableauRowsが恒久的に増え、以後のstartWaveの配布行数に反映される', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    // beginRunで配られた直後のウェーブは山札が十分残っているため、canUseRevelation('kyo')の
+    // 「山札が(列数×n)枚以上」という条件を素の状態のまま満たす。
+    const playingRun: RunState = { ...run, revelations: ['kyo'] }
+    const next = useRevelation(DEFAULT_PARAMS, playingRun, 'kyo', null)
+    expect(next.extraTableauRows).toBe(DEFAULT_PARAMS.revelations.kyo.n)
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 1, next.items, next.deckComposition, 5, next.extraTableauRows)
+    wave.tableau.forEach(col => expect(col).toHaveLength(DEFAULT_PARAMS.layout.rows + next.extraTableauRows))
+  })
+
+  test('useRite: revelationSelectフェーズ中でも秘儀を使用できる', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const revSelectRun: RunState = { ...run, phase: 'revelationSelect', rites: ['uruz'] }
+    const next = useRite(DEFAULT_PARAMS, revSelectRun, 'uruz', createRng(1))
+    expect(next.rites).toEqual([])
+    expect(next.phase).toBe('revelationSelect')
   })
 })
 
