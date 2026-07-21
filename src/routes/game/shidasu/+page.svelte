@@ -17,6 +17,7 @@
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
   import RoleStatusPanel from './RoleStatusPanel.svelte'
+  import SuitCountPanel from './SuitCountPanel.svelte'
 
   const params = loadParams()
 
@@ -320,6 +321,7 @@
     onTargetColumn={handleTargetColumn}
     chainAreaExtra={pendingRevelationTarget ? revelationTargetPrompt : undefined}
   />
+  <SuitCountPanel {wave} />
   <RoleStatusPanel {params} oracleLevels={run.oracleLevels} />
 {/if}
 
