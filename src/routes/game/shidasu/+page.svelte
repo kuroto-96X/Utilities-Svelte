@@ -5,10 +5,13 @@
     createInitialRun, beginRun, applyPlayCard, applyDrawStock, applyStuckCheck,
     resolveWaveEnd, pickItem, confirmItemSwap, cancelItemSwap, skipItemSelect,
     advanceStage, restartRun, startWave, forceStockTop, useRite,
+    useRevelation, useRevelationFromOffer, pickRevelationFromOffer, skipRevelationSelect,
   } from '$lib/game/shidasu/engine'
   import { itemDesc, itemName } from '$lib/game/shidasu/items'
+  import { revelationDesc, revelationName } from '$lib/game/shidasu/revelations'
+  import { revelationNeedsTarget } from '$lib/game/shidasu/revelationEffects'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
-  import type { RunState, ItemId, StageModifier, Suit, Rank, RiteId } from '$lib/game/shidasu/types'
+  import type { RunState, ItemId, StageModifier, Suit, Rank, RiteId, RevelationId } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
 
@@ -127,6 +130,60 @@
     run = { ...run, wave: forceStockTop(run.wave, suit, rank, wild) }
     handleDraw()
   }
+
+  let pendingRevelationTarget = $state<{ revelationId: RevelationId; source: 'offer' | 'held' } | null>(null)
+
+  function revelationHandlerFor(source: 'offer' | 'held') {
+    return (revelationId: RevelationId) => {
+      if (revelationNeedsTarget(revelationId)) {
+        pendingRevelationTarget = { revelationId, source }
+        return
+      }
+      if (source === 'offer') {
+        run = useRevelationFromOffer(params, run, revelationId, null)
+        afterAction()
+      } else {
+        run = useRevelation(params, run, revelationId, null)
+        if (run.phase === 'playing') afterAction()
+      }
+    }
+  }
+
+  const handleRevelationOfferUse = revelationHandlerFor('offer')
+  const handleUseRevelationClick = revelationHandlerFor('held')
+
+  function handleRevelationOfferAcquire(revelationId: RevelationId) {
+    run = pickRevelationFromOffer(params, run, revelationId)
+    afterAction()
+  }
+
+  function handleSkipRevelationSelect() {
+    run = skipRevelationSelect(params, run)
+    afterAction()
+  }
+
+  function handleCancelRevelationTarget() {
+    pendingRevelationTarget = null
+  }
+
+  function handleTargetColumn(colIndex: number) {
+    if (!pendingRevelationTarget) return
+    const { revelationId, source } = pendingRevelationTarget
+    pendingRevelationTarget = null
+    if (source === 'offer') {
+      run = useRevelationFromOffer(params, run, revelationId, colIndex)
+      afterAction()
+    } else {
+      run = useRevelation(params, run, revelationId, colIndex)
+      if (run.phase === 'playing') afterAction()
+    }
+  }
+
+  function canTargetRevelationColumn(colIndex: number): boolean {
+    if (!wave || !pendingRevelationTarget) return false
+    if (pendingRevelationTarget.revelationId === 'aya') return true
+    return wave.tableau[colIndex].length > 0
+  }
 </script>
 
 {#snippet stageRow()}
@@ -151,6 +208,37 @@
         {itemName(id, params)}{n > 1 ? `×${n}` : ''}
       </span>
     {/each}
+  </div>
+{/snippet}
+
+{#snippet revelationSelectExtra()}
+  <div class="text-xs w-full">
+    {#if pendingRevelationTarget}
+      <div class="text-yellow-300 font-black mb-2">列を選んでください</div>
+      <button onclick={handleCancelRevelationTarget} class="text-emerald-300/70 underline">キャンセル</button>
+    {:else}
+      <div class="text-emerald-300/70 mb-2">天啓を1つ選ぶ</div>
+      <div class="flex flex-col gap-1.5">
+        {#each run.revelationOffer as id (id)}
+          <div class="bg-emerald-900/80 border border-yellow-500/40 rounded-lg px-2 py-1.5 text-left">
+            <div class="font-black text-yellow-300">{revelationName(id, params)}</div>
+            <div class="text-emerald-100/80 text-[11px] mt-0.5">{revelationDesc(id, params)}</div>
+            <div class="flex gap-1.5 mt-1.5">
+              <button
+                onclick={() => handleRevelationOfferUse(id)}
+                class="flex-1 bg-indigo-700 text-white rounded px-2 py-1 active:scale-95 transition-transform"
+              >使用</button>
+              <button
+                onclick={() => handleRevelationOfferAcquire(id)}
+                disabled={run.revelations.length >= 2}
+                class="flex-1 bg-slate-700 text-white rounded px-2 py-1 active:scale-95 transition-transform disabled:opacity-30 disabled:cursor-not-allowed"
+              >獲得</button>
+            </div>
+          </div>
+        {/each}
+      </div>
+      <button onclick={handleSkipRevelationSelect} class="mt-2 text-emerald-300/70 underline">使用・獲得しない</button>
+    {/if}
   </div>
 {/snippet}
 
@@ -188,8 +276,21 @@
     </button>
   </div>
 
+{:else if wave && run.phase === 'revelationSelect'}
+  <PlayArea
+    {wave} {params} modifier={stage.modifier} {target} items={run.items}
+    onPlayCard={() => {}} onDraw={() => {}}
+    showScoreAndCombo={false} allowDraw={false}
+    headerExtra={stageRow}
+    rites={run.rites} onUseRite={handleUseRite}
+    revelations={run.revelations} onUseRevelationClick={handleUseRevelationClick}
+    columnTargetMode={pendingRevelationTarget !== null}
+    canTargetColumn={canTargetRevelationColumn}
+    onTargetColumn={handleTargetColumn}
+    chainAreaExtra={revelationSelectExtra}
+  />
 {:else if wave}
-  <PlayArea {wave} {params} modifier={stage.modifier} {target} items={run.items} onPlayCard={handlePlayCard} onDraw={handleDraw} headerExtra={stageRow} extraFooter={itemBadges} rites={run.rites} onUseRite={handleUseRite} />
+  <PlayArea {wave} {params} modifier={stage.modifier} {target} items={run.items} onPlayCard={handlePlayCard} onDraw={handleDraw} headerExtra={stageRow} extraFooter={itemBadges} rites={run.rites} onUseRite={handleUseRite} revelations={run.revelations} onUseRevelationClick={handleUseRevelationClick} />
 {/if}
 
 {#if run.phase === 'itemSelect'}
