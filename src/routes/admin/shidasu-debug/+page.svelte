@@ -6,9 +6,11 @@
   import { applyRevelationEffect, revelationNeedsTarget } from '$lib/game/shidasu/revelationEffects'
   import RiteExecutePanel from './RiteExecutePanel.svelte'
   import RevelationExecutePanel from './RevelationExecutePanel.svelte'
-  import { ITEM_POOL } from '$lib/game/shidasu/items'
+  import RoleStatusEditor from './RoleStatusEditor.svelte'
+  import { ITEM_POOL, itemDesc, itemName } from '$lib/game/shidasu/items'
+  import { defaultOracleLevels } from '$lib/game/shidasu/oracles'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
-  import type { WaveState, Card, ItemId, DeckCard, Suit, Rank, RiteId, RevelationId } from '$lib/game/shidasu/types'
+  import type { WaveState, Card, ItemId, DeckCard, Suit, Rank, RiteId, RevelationId, RoleName } from '$lib/game/shidasu/types'
   import ItemChecklist from './ItemChecklist.svelte'
   import DebugStatePanel from './DebugStatePanel.svelte'
   import CardPalette from './CardPalette.svelte'
@@ -32,7 +34,8 @@
 
   let items = $state<ItemId[]>(loadSavedItems())
   let deckComposition = $state<DeckCard[]>(standardDeckComposition())
-  let wave = $state<WaveState>(startWave(params, 0, 0, items, deckComposition).wave)
+  let oracleLevels = $state<Record<RoleName, number>>(defaultOracleLevels())
+  let wave = $state<WaveState>(startWave(params, 0, 0, items, deckComposition, undefined, 0, oracleLevels).wave)
   let lastSnapshot = $state<WaveState | null>(null)
 
   interface DragState {
@@ -48,7 +51,7 @@
   let dropTarget = $state<{ col: number; row: number } | 'stockTop' | null>(null)
 
   function newWave() {
-    const result = startWave(params, 0, 0, items, deckComposition)
+    const result = startWave(params, 0, 0, items, deckComposition, undefined, 0, oracleLevels)
     wave = result.wave
     deckComposition = result.deckComposition
     lastSnapshot = null
@@ -59,11 +62,18 @@
     deckComposition = standardDeckComposition()
     // 護符の効果(永劫のワイルド追加・豊穣のランダム変換・暗雲の場札増加など)を
     // 発動させずに配り直すため、newWave()を再利用せずitemsに空配列を渡す
-    const result = startWave(params, 0, 0, [], deckComposition)
+    const result = startWave(params, 0, 0, [], deckComposition, undefined, 0, oracleLevels)
     wave = result.wave
     deckComposition = result.deckComposition
     lastSnapshot = null
     pendingDebugRevelation = null
+  }
+
+  function handleSetOracleLevel(roleName: RoleName, level: number) {
+    const clamped = Math.max(1, Math.floor(level) || 1)
+    oracleLevels = { ...oracleLevels, [roleName]: clamped }
+    wave = { ...wave, oracleLevels: { ...wave.oracleLevels, [roleName]: clamped } }
+    lastSnapshot = null
   }
 
   function handlePlayCard(colIndex: number) {
@@ -259,6 +269,17 @@
   })
 </script>
 
+{#snippet itemBadges()}
+  <div class="flex-1 flex flex-wrap gap-1 justify-end">
+    {#each [...new Set(items)] as id (id)}
+      {@const n = items.filter(x => x === id).length}
+      <span class="text-xs bg-emerald-900 text-yellow-200/90 border border-yellow-600/40 rounded px-1.5 py-0.5" title={itemDesc(id, params)}>
+        {itemName(id, params)}{n > 1 ? `×${n}` : ''}
+      </span>
+    {/each}
+  </div>
+{/snippet}
+
 <svelte:head>
   <title>Shidasu デバッグサンドボックス</title>
 </svelte:head>
@@ -280,6 +301,7 @@
       <div class="bg-emerald-950 rounded-lg p-3 flex flex-col" style="max-height: 70vh;">
         <PlayArea
           {wave} {params} modifier={'none'} target={TARGET} {items} onPlayCard={handlePlayCard} onDraw={handleDraw} {dropTarget}
+          extraFooter={itemBadges}
           columnTargetMode={pendingDebugRevelation !== null}
           canTargetColumn={canTargetDebugColumn}
           onTargetColumn={handleTargetDebugColumn}
@@ -296,6 +318,7 @@
           pendingRevelationId={pendingDebugRevelation}
           onCancelTarget={handleCancelDebugRevelationTarget}
         />
+        <RoleStatusEditor {params} {oracleLevels} onSetLevel={handleSetOracleLevel} />
       </div>
     </div>
   </div>
