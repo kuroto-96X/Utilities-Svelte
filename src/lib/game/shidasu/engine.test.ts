@@ -1723,6 +1723,26 @@ describe('isStuck', () => {
     const wave = makeWave({ stock: [], tableau: [] })
     expect(isStuck('none', wave)).toBe(false)
   })
+
+  test('ダガズを所持していて捨て札があれば、山札が復活できるため手詰まりではない', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      stock: [],
+      tableau: [[card(1, '♣', 9)]], // 差4、取れない
+      discardPile: [card(2, '♦', 3)],
+    })
+    expect(isStuck('none', wave, ['dagaz'])).toBe(false)
+  })
+
+  test('ダガズを所持していても捨て札が無ければ手詰まりのまま', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      stock: [],
+      tableau: [[card(1, '♣', 9)]],
+      discardPile: [],
+    })
+    expect(isStuck('none', wave, ['dagaz'])).toBe(true)
+  })
 })
 
 describe('markStuck', () => {

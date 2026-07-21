@@ -8,6 +8,7 @@
   import { canUseRevelation } from '$lib/game/shidasu/revelationEffects'
   import { revelationDesc } from '$lib/game/shidasu/revelations'
   import CardFace from './CardFace.svelte'
+  import SuitCountPanel from './SuitCountPanel.svelte'
 
   let {
     wave, params, modifier, target, items, onPlayCard, onDraw, dropTarget = null, headerExtra, extraFooter,
@@ -99,6 +100,8 @@
     <div class="h-5"></div>
   {/if}
 </div>
+
+<SuitCountPanel {wave} />
 
 <div class="px-3 pt-1">
   <div class="grid gap-1" style="grid-template-columns: repeat({params.layout.cols}, minmax(0, 1fr));">

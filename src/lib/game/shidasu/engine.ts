@@ -814,11 +814,15 @@ export function drawStock(
   }
 }
 
-export function isStuck(modifier: StageModifier, wave: WaveState): boolean {
+export function isStuck(modifier: StageModifier, wave: WaveState, rites: RiteId[] = []): boolean {
   const remaining = remainingCount(wave.tableau)
   if (remaining === 0) return false
   if (wave.stock.length > 0) return false
-  return getPlayableColumns(modifier, wave).size === 0
+  if (getPlayableColumns(modifier, wave).size > 0) return false
+  // ダガズ(山札と捨て札を合流してシャッフルし新しい山札にする秘儀)を所持しており、
+  // 捨て札が実際にあれば、使用すれば山札が復活するため手詰まりとしない
+  if (rites.includes('dagaz') && wave.discardPile.length > 0) return false
+  return true
 }
 
 export function markStuck(wave: WaveState): WaveState {
@@ -1075,7 +1079,7 @@ export function applyStuckCheck(params: ShidasuParams, run: RunState, rand: () =
   if (run.phase !== 'playing' || !run.wave) return run
   const modifier = params.stages[run.stageIndex].modifier
   const wave = run.wave
-  if (!isStuck(modifier, wave)) return run
+  if (!isStuck(modifier, wave, run.rites)) return run
 
   let resetWave = resetComboFields(wave, params)
 
