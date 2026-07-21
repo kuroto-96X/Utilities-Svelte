@@ -1,15 +1,24 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
   import { getPlayableColumns, remainingCount } from '$lib/game/shidasu/engine'
-  import type { WaveState, StageModifier, ItemId, RiteId } from '$lib/game/shidasu/types'
+  import type { WaveState, StageModifier, ItemId, RiteId, RevelationId } from '$lib/game/shidasu/types'
   import type { ShidasuParams } from '$lib/game/shidasu/params'
   import { canUseRite } from '$lib/game/shidasu/riteEffects'
   import { riteDesc } from '$lib/game/shidasu/rites'
+  import { canUseRevelation } from '$lib/game/shidasu/revelationEffects'
+  import { revelationDesc } from '$lib/game/shidasu/revelations'
   import CardFace from './CardFace.svelte'
 
   let {
     wave, params, modifier, target, items, onPlayCard, onDraw, dropTarget = null, headerExtra, extraFooter,
     rites = [], onUseRite,
+    revelations = [], onUseRevelationClick,
+    showScoreAndCombo = true,
+    allowDraw = true,
+    columnTargetMode = false,
+    canTargetColumn = () => true,
+    onTargetColumn,
+    chainAreaExtra,
   }: {
     wave: WaveState
     params: ShidasuParams
@@ -23,6 +32,14 @@
     extraFooter?: Snippet
     rites?: RiteId[]
     onUseRite?: (riteId: RiteId) => void
+    revelations?: RevelationId[]
+    onUseRevelationClick?: (revelationId: RevelationId) => void
+    showScoreAndCombo?: boolean
+    allowDraw?: boolean
+    columnTargetMode?: boolean
+    canTargetColumn?: (colIndex: number) => boolean
+    onTargetColumn?: (colIndex: number) => void
+    chainAreaExtra?: Snippet
   } = $props()
 
   function chunk<T>(arr: T[], size: number): T[][] {
@@ -50,20 +67,22 @@
   {#if headerExtra}
     {@render headerExtra()}
   {/if}
-  <div class="mt-2 flex items-end justify-between">
-    <div>
-      <div class="text-xs text-emerald-300/70 tracking-widest">SCORE / TARGET</div>
-      <div class="text-xl font-black text-amber-50 tabular-nums">
-        {wave.score} <span class="text-sm text-emerald-300/70">/ {target}</span>
+  {#if showScoreAndCombo}
+    <div class="mt-2 flex items-end justify-between">
+      <div>
+        <div class="text-xs text-emerald-300/70 tracking-widest">SCORE / TARGET</div>
+        <div class="text-xl font-black text-amber-50 tabular-nums">
+          {wave.score} <span class="text-sm text-emerald-300/70">/ {target}</span>
+        </div>
+      </div>
+      <div class="text-right transition-transform origin-bottom-right {comboScale[displayComboTier]}">
+        <div class="text-xs text-emerald-300/70 tracking-widest">COMBO</div>
+        <div class="text-3xl font-black italic tabular-nums leading-none {comboColor[displayComboTier]}">
+          ×{wave.combo}{#if wave.baseComboCount > 0}<span class="text-lg not-italic ml-1 text-emerald-300/80">+{wave.baseComboCount}</span>{/if}
+        </div>
       </div>
     </div>
-    <div class="text-right transition-transform origin-bottom-right {comboScale[displayComboTier]}">
-      <div class="text-xs text-emerald-300/70 tracking-widest">COMBO</div>
-      <div class="text-3xl font-black italic tabular-nums leading-none {comboColor[displayComboTier]}">
-        ×{wave.combo}{#if wave.baseComboCount > 0}<span class="text-lg not-italic ml-1 text-emerald-300/80">+{wave.baseComboCount}</span>{/if}
-      </div>
-    </div>
-  </div>
+  {/if}
   <div class="mt-1 h-1.5 rounded-full bg-emerald-900 overflow-hidden">
     <div class="h-full bg-gradient-to-r from-yellow-500 to-yellow-300 transition-all duration-300" style="width:{Math.min(100, (wave.score / target) * 100)}%"></div>
   </div>
@@ -94,10 +113,11 @@
             data-drop-row={ri}
           >
             {#if isTop}
+              {@const isTargetable = columnTargetMode && canTargetColumn(ci)}
               <button
                 type="button"
-                onclick={() => onPlayCard(ci)}
-                class="w-full text-left {playableCols.has(ci) ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : ''} transition-transform"
+                onclick={() => (columnTargetMode ? (isTargetable && onTargetColumn?.(ci)) : onPlayCard(ci))}
+                class="w-full text-left {columnTargetMode ? (isTargetable ? 'ring-2 ring-fuchsia-400 shadow-lg -translate-y-0.5' : '') : (playableCols.has(ci) ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : '')} transition-transform"
               >
                 <CardFace {card} covered={false} />
               </button>
@@ -120,7 +140,7 @@
   <button
     type="button"
     onclick={onDraw}
-    disabled={wave.stock.length === 0}
+    disabled={wave.stock.length === 0 || !allowDraw}
     data-drop-stock
     style="aspect-ratio: 2 / 3; margin-top:20px;"
     class="w-16 shrink-0 rounded-lg border-2 flex flex-col items-center justify-center font-black active:scale-95 transition-transform {dropTarget === 'stockTop' ? 'ring-4 ring-sky-400' : ''} {wave.stock.length > 0 ? 'bg-emerald-700 border-emerald-500 text-amber-50' : 'bg-emerald-900 border-emerald-800 text-emerald-700'}"
@@ -136,18 +156,22 @@
     </div>
   {/if}
   <div class="overflow-x-auto min-w-0">
-    {#each chainRows as row, ri (ri)}
-      <div class="relative" style="height:116px; width:{64 + (row.length - 1) * params.ui.chainCardOffsetX}px;">
-        {#each row as entry, j (entry.card.id)}
-          <div
-            class="absolute"
-            style="left:{j * params.ui.chainCardOffsetX}px; top:{entry.origin === 'draw' ? 20 : 0}px; z-index:{j + 1}; width:64px;"
-          >
-            <CardFace card={entry.card} covered={false} />
-          </div>
-        {/each}
-      </div>
-    {/each}
+    {#if chainAreaExtra}
+      {@render chainAreaExtra()}
+    {:else}
+      {#each chainRows as row, ri (ri)}
+        <div class="relative" style="height:116px; width:{64 + (row.length - 1) * params.ui.chainCardOffsetX}px;">
+          {#each row as entry, j (entry.card.id)}
+            <div
+              class="absolute"
+              style="left:{j * params.ui.chainCardOffsetX}px; top:{entry.origin === 'draw' ? 20 : 0}px; z-index:{j + 1}; width:64px;"
+            >
+              <CardFace card={entry.card} covered={false} />
+            </div>
+          {/each}
+        </div>
+      {/each}
+    {/if}
   </div>
   {#if extraFooter}
     {@render extraFooter()}
@@ -166,6 +190,21 @@
         style="font-family: 'ShidasuRunic', sans-serif;"
         class="w-10 h-10 rounded-lg border-2 flex items-center justify-center text-xl font-black transition-transform active:scale-95 {usable ? 'bg-fuchsia-900 border-fuchsia-500 text-fuchsia-100 hover:bg-fuchsia-800' : 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'}"
       >{params.rites[riteId].name}</button>
+    {/each}
+  </div>
+{/if}
+
+{#if revelations.length > 0}
+  <div class="px-4 pb-4 flex items-center gap-2">
+    {#each revelations as revelationId, i (i)}
+      {@const usable = canUseRevelation(params, wave, revelationId)}
+      <button
+        type="button"
+        onclick={() => onUseRevelationClick?.(revelationId)}
+        disabled={!usable}
+        title={revelationDesc(revelationId, params)}
+        class="w-10 h-10 rounded-lg border-2 flex items-center justify-center text-lg font-black transition-transform active:scale-95 {usable ? 'bg-indigo-900 border-indigo-500 text-indigo-100 hover:bg-indigo-800' : 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'}"
+      >{params.revelations[revelationId].name}</button>
     {/each}
   </div>
 {/if}
