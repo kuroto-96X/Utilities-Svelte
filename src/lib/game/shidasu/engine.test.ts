@@ -28,6 +28,8 @@ import {
   useRevelationFromOffer,
   pickRevelationFromOffer,
   skipRevelationSelect,
+  pickOracleFromOffer,
+  skipOracleSelect,
 } from './engine'
 import { ITEM_POOL } from './items'
 import { isFace, chainContinuesPattern } from './patterns'
@@ -2550,11 +2552,11 @@ describe('天啓選択フェーズ', () => {
     expect(next.revelationOffer).toHaveLength(3)
   })
 
-  test('useRevelationFromOffer: 対象選択不要な天啓(心)を使用すると、実際のウェーブが配られplayingへ遷移する。所持には加わらない', () => {
+  test('useRevelationFromOffer: 対象選択不要な天啓(心)を使用すると、実際のウェーブが配られoracleSelectへ遷移する。所持には加わらない', () => {
     const run = beginRun(DEFAULT_PARAMS, 1)
     const revSelectRun: RunState = { ...run, phase: 'revelationSelect', revelationOffer: ['shin', 'kou', 'tei'] }
     const next = useRevelationFromOffer(DEFAULT_PARAMS, revSelectRun, 'shin', null, 3)
-    expect(next.phase).toBe('playing')
+    expect(next.phase).toBe('oracleSelect')
     expect(next.revelations).toEqual([])
     expect(next.revelationOffer).toEqual([])
   })
@@ -2566,11 +2568,11 @@ describe('天啓選択フェーズ', () => {
     expect(next).toBe(revSelectRun)
   })
 
-  test('pickRevelationFromOffer: オファーから獲得すると所持に加わり、revelationSelectを終了してplayingへ遷移する', () => {
+  test('pickRevelationFromOffer: オファーから獲得すると所持に加わり、revelationSelectを終了してoracleSelectへ遷移する', () => {
     const run = beginRun(DEFAULT_PARAMS, 1)
     const revSelectRun: RunState = { ...run, phase: 'revelationSelect', revelationOffer: ['shin', 'kou', 'tei'] }
     const next = pickRevelationFromOffer(DEFAULT_PARAMS, revSelectRun, 'shin', 3)
-    expect(next.phase).toBe('playing')
+    expect(next.phase).toBe('oracleSelect')
     expect(next.revelations).toEqual(['shin'])
   })
 
@@ -2581,11 +2583,11 @@ describe('天啓選択フェーズ', () => {
     expect(next).toBe(revSelectRun)
   })
 
-  test('skipRevelationSelect: 何も選ばず終了すると、実際のウェーブが配られplayingへ遷移する', () => {
+  test('skipRevelationSelect: 何も選ばず終了すると、実際のウェーブが配られoracleSelectへ遷移する', () => {
     const run = beginRun(DEFAULT_PARAMS, 1)
     const revSelectRun: RunState = { ...run, phase: 'revelationSelect', revelationOffer: ['shin', 'kou', 'tei'] }
     const next = skipRevelationSelect(DEFAULT_PARAMS, revSelectRun, 3)
-    expect(next.phase).toBe('playing')
+    expect(next.phase).toBe('oracleSelect')
   })
 
   test('useRevelation: 所持中の天啓を使用すると1個消費され、revelationSelect中でもplaying中でもフェーズは変わらない', () => {
@@ -2624,6 +2626,58 @@ describe('天啓選択フェーズ', () => {
     const next = useRite(DEFAULT_PARAMS, revSelectRun, 'uruz', createRng(1))
     expect(next.rites).toEqual([])
     expect(next.phase).toBe('revelationSelect')
+  })
+})
+
+describe('神託選択フェーズ', () => {
+  test('天啓選択画面を終了すると、oracleSelectフェーズへ遷移しoracleOfferが3件セットされる', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const revSelectRun: RunState = { ...run, phase: 'revelationSelect', revelationOffer: ['shin', 'kou', 'tei'] }
+    const next = skipRevelationSelect(DEFAULT_PARAMS, revSelectRun, 3, createRng(1))
+    expect(next.phase).toBe('oracleSelect')
+    expect(next.oracleOffer).toHaveLength(3)
+    expect(next.wave).not.toBeNull()
+  })
+
+  test('pickOracleFromOffer: オファーから選ぶと対応する役のレベルが+1され、即座にplayingへ遷移する', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const oracleSelectRun: RunState = { ...run, phase: 'oracleSelect', oracleOffer: ['suit', 'color', 'stair'] }
+    const next = pickOracleFromOffer(oracleSelectRun, 'suit')
+    expect(next.phase).toBe('playing')
+    expect(next.oracleLevels.suit).toBe(2)
+    expect(next.oracleLevels.color).toBe(1)
+    expect(next.oracleOffer).toEqual([])
+  })
+
+  test('pickOracleFromOffer: オファーに含まれない役は無視される', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const oracleSelectRun: RunState = { ...run, phase: 'oracleSelect', oracleOffer: ['suit', 'color', 'stair'] }
+    const next = pickOracleFromOffer(oracleSelectRun, 'flush')
+    expect(next).toBe(oracleSelectRun)
+  })
+
+  test('pickOracleFromOffer: 同じ役を複数回選ぶとレベルが積み上がる', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const oracleSelectRun: RunState = { ...run, phase: 'oracleSelect', oracleOffer: ['suit', 'color', 'stair'], oracleLevels: { ...run.oracleLevels, suit: 3 } }
+    const next = pickOracleFromOffer(oracleSelectRun, 'suit')
+    expect(next.oracleLevels.suit).toBe(4)
+  })
+
+  test('skipOracleSelect: 何も選ばず終了すると、レベルを変えずplayingへ遷移する', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const oracleSelectRun: RunState = { ...run, phase: 'oracleSelect', oracleOffer: ['suit', 'color', 'stair'] }
+    const next = skipOracleSelect(oracleSelectRun)
+    expect(next.phase).toBe('playing')
+    expect(next.oracleLevels).toEqual(run.oracleLevels)
+  })
+
+  test('神託のレベルは新しいウェーブに引き継がれ、得点計算に反映される', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const oracleSelectRun: RunState = { ...run, phase: 'oracleSelect', oracleOffer: ['suit', 'color', 'stair'] }
+    const afterPick = pickOracleFromOffer(oracleSelectRun, 'suit')
+    expect(afterPick.oracleLevels.suit).toBe(2)
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 1, afterPick.items, afterPick.deckComposition, 5, afterPick.extraTableauRows, afterPick.oracleLevels)
+    expect(wave.oracleLevels.suit).toBe(2)
   })
 })
 

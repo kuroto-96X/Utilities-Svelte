@@ -10,6 +10,7 @@ import { applyRiteEffect, canUseRite } from './riteEffects'
 import { rollRite } from './rites'
 import { rollRevelationOffer } from './revelations'
 import { applyRevelationEffect, canUseRevelation } from './revelationEffects'
+import { rollOracleOffer, defaultOracleLevels } from './oracles'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
 
@@ -95,7 +96,8 @@ export function startWave(
   items: ItemId[],
   deckComposition: DeckCard[],
   seed?: number,
-  extraTableauRows: number = 0
+  extraTableauRows: number = 0,
+  oracleLevels: Record<RoleName, number> = defaultOracleLevels()
 ): { wave: WaveState; deckComposition: DeckCard[] } {
   const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
   let idSeq = 0
@@ -169,6 +171,7 @@ export function startWave(
     sowiloBoostedRole: null,
     mannazActiveThisWave: false,
     ehwazActiveThisWave: false,
+    oracleLevels,
   }
 
   return { wave, deckComposition: composition }
@@ -322,7 +325,9 @@ export function playCard(
     }
     return factor
   }
-  const chainResult = evaluateChainBonus(params.scoring, wave.chain, card, effectiveStairMinLen, roleBonusMultiplier, effectiveSuitColorMinLen)
+  // 神託: 役ごとの現在レベルをそのまま基礎点の乗数として渡す(ウェーブ開始時点で固定済み)
+  const oracleLevel = (name: RoleName): number => wave.oracleLevels[name] ?? 1
+  const chainResult = evaluateChainBonus(params.scoring, wave.chain, card, effectiveStairMinLen, roleBonusMultiplier, effectiveSuitColorMinLen, oracleLevel)
   base += chainResult.bonus
   parts.push(...chainResult.parts)
 
@@ -343,7 +348,7 @@ export function playCard(
     : wave.sweptColumnsThisCombo
   const roleFired = [...chainResult.roleFired]
   if (sweepQualifies) {
-    const sweepGain = Math.floor(params.scoring.columnSweepBonus * newColumnsEmptied * roleBonusMultiplier('columnSweep'))
+    const sweepGain = Math.floor(params.scoring.columnSweepBonus * oracleLevel('columnSweep') * newColumnsEmptied * roleBonusMultiplier('columnSweep'))
     base += sweepGain
     parts.push(`列一掃+${sweepGain}`)
     roleFired.push({ name: 'columnSweep', usedWild: false, amount: sweepGain })
@@ -670,7 +675,10 @@ export function drawStock(
       const newCombo = wave.comboFrozenThisWave ? wave.combo : wave.combo + (items.includes('golden') ? 2 : 1)
       let base = params.scoring.basePoint
       const parts = [`基礎点+${base}`]
-      const chainResult = evaluateChainBonus(params.scoring, wave.chain, drawnCard, effectiveStairMinLen, undefined, effectiveSuitColorMinLen)
+      // 神託: このパスは明星・ソウィロによる役倍率(roleBonusMultiplier)を通さない既存方針を維持しつつ、
+      // 神託レベルは永続的な基礎点の一部として引き続き適用する
+      const oracleLevel = (name: RoleName): number => wave.oracleLevels[name] ?? 1
+      const chainResult = evaluateChainBonus(params.scoring, wave.chain, drawnCard, effectiveStairMinLen, undefined, effectiveSuitColorMinLen, oracleLevel)
       base += chainResult.bonus
       parts.push(...chainResult.parts)
       naiveRoleFiredThisChain = wave.roleFiredThisChain || chainResult.roleFired.length > 0
@@ -822,11 +830,12 @@ export function createInitialRun(): RunState {
   return {
     phase: 'title', stageIndex: 0, waveIndex: 0, items: [], offer: [], wave: null, pendingNewItem: null,
     deckComposition: standardDeckComposition(), rites: [], revelations: [], revelationOffer: [], extraTableauRows: 0,
+    oracleLevels: defaultOracleLevels(), oracleOffer: [],
   }
 }
 
 export function beginRun(params: ShidasuParams, seed?: number): RunState {
-  const { wave, deckComposition } = startWave(params, 0, 0, [], standardDeckComposition(), seed, 0)
+  const { wave, deckComposition } = startWave(params, 0, 0, [], standardDeckComposition(), seed, 0, defaultOracleLevels())
   return {
     phase: 'playing',
     stageIndex: 0,
@@ -840,6 +849,8 @@ export function beginRun(params: ShidasuParams, seed?: number): RunState {
     revelations: [],
     revelationOffer: [],
     extraTableauRows: 0,
+    oracleLevels: defaultOracleLevels(),
+    oracleOffer: [],
   }
 }
 
@@ -886,7 +897,7 @@ function enterRevelationSelect(
   seed: number | undefined,
   rand: () => number
 ): RunState {
-  const { wave, deckComposition } = startWave(params, run.stageIndex, newWaveIndex, newItems, run.deckComposition, seed, run.extraTableauRows)
+  const { wave, deckComposition } = startWave(params, run.stageIndex, newWaveIndex, newItems, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels)
   return {
     ...run,
     phase: 'revelationSelect',
@@ -903,14 +914,15 @@ function enterRevelationSelect(
 
 // 天啓選択画面を終了し、その時点のdeckComposition・extraTableauRowsから実際のウェーブを
 // 新しく配り直してプレイ画面へ進む。
-function finishRevelationSelect(params: ShidasuParams, run: RunState, seed?: number): RunState {
-  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, run.items, run.deckComposition, seed, run.extraTableauRows)
+function finishRevelationSelect(params: ShidasuParams, run: RunState, seed?: number, rand: () => number = Math.random): RunState {
+  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels)
   return {
     ...run,
-    phase: 'playing',
+    phase: 'oracleSelect',
     wave,
     deckComposition,
     revelationOffer: [],
+    oracleOffer: rollOracleOffer(rand),
   }
 }
 
@@ -979,29 +991,45 @@ export function useRevelationFromOffer(
   if (!canUseRevelation(params, run.wave, revelationId)) return run
   const { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
   const extraTableauRows = revelationId === 'kyo' ? run.extraTableauRows + params.revelations.kyo.n : run.extraTableauRows
-  return finishRevelationSelect(params, { ...run, deckComposition, extraTableauRows }, seed)
+  return finishRevelationSelect(params, { ...run, deckComposition, extraTableauRows }, seed, rand)
 }
 
 // 天啓選択画面のオファーから選んだものを所持へ加える(所持上限2に達している間は何もしない)。
 // 実際のウェーブを配り直してプレイ画面へ進む。
-export function pickRevelationFromOffer(params: ShidasuParams, run: RunState, revelationId: RevelationId, seed?: number): RunState {
+export function pickRevelationFromOffer(params: ShidasuParams, run: RunState, revelationId: RevelationId, seed?: number, rand: () => number = Math.random): RunState {
   if (run.phase !== 'revelationSelect') return run
   if (!run.revelationOffer.includes(revelationId)) return run
   if (run.revelations.length >= 2) return run
   const revelations = [...run.revelations, revelationId]
-  return finishRevelationSelect(params, { ...run, revelations }, seed)
+  return finishRevelationSelect(params, { ...run, revelations }, seed, rand)
 }
 
 // 天啓を使用・獲得せずに天啓選択画面を終了する。
-export function skipRevelationSelect(params: ShidasuParams, run: RunState, seed?: number): RunState {
+export function skipRevelationSelect(params: ShidasuParams, run: RunState, seed?: number, rand: () => number = Math.random): RunState {
   if (run.phase !== 'revelationSelect') return run
-  return finishRevelationSelect(params, run, seed)
+  return finishRevelationSelect(params, run, seed, rand)
+}
+
+// 神託選択画面のオファーから1つ選ぶと、対応する役のレベルが+1され、即座にplayingへ遷移する。
+// 天啓と異なり所持・ウェーブ再配布の概念は無く、実ウェーブは変更しない。paramsに依存する処理が
+// 無いため(useRevelationFromOffer等と異なりparamsを使う効果適用が無い)、引数に含めない。
+export function pickOracleFromOffer(run: RunState, roleName: RoleName): RunState {
+  if (run.phase !== 'oracleSelect') return run
+  if (!run.oracleOffer.includes(roleName)) return run
+  const oracleLevels = { ...run.oracleLevels, [roleName]: run.oracleLevels[roleName] + 1 }
+  return { ...run, phase: 'playing', oracleLevels, oracleOffer: [] }
+}
+
+// 神託を選ばずに神託選択画面を終了する。
+export function skipOracleSelect(run: RunState): RunState {
+  if (run.phase !== 'oracleSelect') return run
+  return { ...run, phase: 'playing', oracleOffer: [] }
 }
 
 export function advanceStage(params: ShidasuParams, run: RunState, seed?: number): RunState {
   if (run.phase !== 'stageClear') return run
   const newStageIndex = run.stageIndex + 1
-  const { wave, deckComposition } = startWave(params, newStageIndex, 0, run.items, run.deckComposition, seed, run.extraTableauRows)
+  const { wave, deckComposition } = startWave(params, newStageIndex, 0, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels)
   return {
     ...run,
     phase: 'playing',
