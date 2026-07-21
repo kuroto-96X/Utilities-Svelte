@@ -126,6 +126,16 @@
             {/if}
           </div>
         {/each}
+        {#if col.length === 0 && columnTargetMode}
+          {@const isTargetable = canTargetColumn(ci)}
+          <button
+            type="button"
+            onclick={() => isTargetable && onTargetColumn?.(ci)}
+            aria-label="空の列{ci + 1}"
+            class="absolute left-0 right-0 top-0 w-full rounded-lg border-2 border-dashed {isTargetable ? 'border-fuchsia-400' : 'border-transparent'}"
+            style="aspect-ratio: 2 / 3;"
+          ></button>
+        {/if}
       </div>
     {/each}
   </div>
