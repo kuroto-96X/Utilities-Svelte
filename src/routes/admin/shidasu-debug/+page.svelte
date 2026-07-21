@@ -3,10 +3,12 @@
   import { loadParams } from '$lib/game/shidasu/params'
   import { startWave, playCard, drawStock, forceStockTop } from '$lib/game/shidasu/engine'
   import { applyRiteEffect } from '$lib/game/shidasu/riteEffects'
+  import { applyRevelationEffect, revelationNeedsTarget } from '$lib/game/shidasu/revelationEffects'
   import RiteExecutePanel from './RiteExecutePanel.svelte'
+  import RevelationExecutePanel from './RevelationExecutePanel.svelte'
   import { ITEM_POOL } from '$lib/game/shidasu/items'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
-  import type { WaveState, Card, ItemId, DeckCard, Suit, Rank, RiteId } from '$lib/game/shidasu/types'
+  import type { WaveState, Card, ItemId, DeckCard, Suit, Rank, RiteId, RevelationId } from '$lib/game/shidasu/types'
   import ItemChecklist from './ItemChecklist.svelte'
   import DebugStatePanel from './DebugStatePanel.svelte'
   import CardPalette from './CardPalette.svelte'
@@ -165,6 +167,38 @@
     wave = applyRiteEffect(params, wave, riteId, Math.random)
   }
 
+  let pendingDebugRevelation = $state<RevelationId | null>(null)
+
+  function handleExecuteRevelation(revelationId: RevelationId) {
+    if (revelationNeedsTarget(revelationId)) {
+      pendingDebugRevelation = revelationId
+      return
+    }
+    lastSnapshot = wave
+    const result = applyRevelationEffect(params, wave, deckComposition, revelationId, null, Math.random)
+    wave = result.wave
+    deckComposition = result.deckComposition
+  }
+
+  function handleTargetDebugColumn(colIndex: number) {
+    if (!pendingDebugRevelation) return
+    lastSnapshot = wave
+    const result = applyRevelationEffect(params, wave, deckComposition, pendingDebugRevelation, colIndex, Math.random)
+    wave = result.wave
+    deckComposition = result.deckComposition
+    pendingDebugRevelation = null
+  }
+
+  function canTargetDebugColumn(colIndex: number): boolean {
+    if (!pendingDebugRevelation) return false
+    if (pendingDebugRevelation === 'aya') return true
+    return wave.tableau[colIndex].length > 0
+  }
+
+  function handleCancelDebugRevelationTarget() {
+    pendingDebugRevelation = null
+  }
+
   function stairifyTableau() {
     if (wave.tableau.length === 0 || wave.tableau[0].length === 0) return
     // 列優先: 列0を手前(末尾)→奥(先頭)、次に列1を手前→奥…の順に走査する
@@ -242,13 +276,25 @@
     <div class="grid gap-4 items-start" style="grid-template-columns: minmax(420px, 1fr) minmax(480px, 1.4fr) minmax(260px, 0.8fr) minmax(260px, 0.8fr);">
       <CardPalette onCardPointerDown={onPaletteCardPointerDown} onUnifySuit={unifySuit} />
       <div class="bg-emerald-950 rounded-lg p-3 flex flex-col" style="max-height: 70vh;">
-        <PlayArea {wave} {params} modifier={'none'} target={TARGET} {items} onPlayCard={handlePlayCard} onDraw={handleDraw} {dropTarget} />
+        <PlayArea
+          {wave} {params} modifier={'none'} target={TARGET} {items} onPlayCard={handlePlayCard} onDraw={handleDraw} {dropTarget}
+          columnTargetMode={pendingDebugRevelation !== null}
+          canTargetColumn={canTargetDebugColumn}
+          onTargetColumn={handleTargetDebugColumn}
+        />
         <div class="mt-4 flex-1 min-h-0 overflow-y-auto">
           <DebugStatePanel {wave} {items} onForceDraw={handleForceDraw} />
         </div>
       </div>
       <ItemChecklist {items} onToggle={handleToggleItem} onSetAll={handleSetAllItems} />
-      <RiteExecutePanel onExecute={handleExecuteRite} />
+      <div class="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+        <RiteExecutePanel onExecute={handleExecuteRite} />
+        <RevelationExecutePanel
+          onExecute={handleExecuteRevelation}
+          pendingRevelationId={pendingDebugRevelation}
+          onCancelTarget={handleCancelDebugRevelationTarget}
+        />
+      </div>
     </div>
   </div>
 
