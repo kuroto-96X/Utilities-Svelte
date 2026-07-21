@@ -165,7 +165,8 @@ export function evaluateChainBonus(
   card: Card,
   stairMinLen: number = scoring.stairMinLen,
   roleBonusMultiplier: (name: RoleName) => number = () => 1,
-  suitColorMinLen: number = scoring.suitColorMinLen
+  suitColorMinLen: number = scoring.suitColorMinLen,
+  oracleLevel: (name: RoleName) => number = () => 1
 ): ChainBonusResult {
   if (chainBefore.length === 0) {
     return { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] }
@@ -182,13 +183,15 @@ export function evaluateChainBonus(
   const { suitHeld, colorHeld } = analyzeSuitColor(chainIncludingThis)
   if (chainIncludingThis.length >= suitColorMinLen) {
     if (suitHeld) {
-      bonus += scoring.suitBonus
-      parts.push(`同スート+${scoring.suitBonus}`)
+      const suitGain = Math.floor(scoring.suitBonus * oracleLevel('suit'))
+      bonus += suitGain
+      parts.push(`同スート+${suitGain}`)
       patternFired = true
       patternFiredCount += 1
     } else if (colorHeld) {
-      bonus += scoring.colorBonus
-      parts.push(`同色+${scoring.colorBonus}`)
+      const colorGain = Math.floor(scoring.colorBonus * oracleLevel('color'))
+      bonus += colorGain
+      parts.push(`同色+${colorGain}`)
       patternFired = true
       patternFiredCount += 1
     }
@@ -196,14 +199,15 @@ export function evaluateChainBonus(
 
   const stairInfo = analyzeStair(chainIncludingThis)
   if (stairInfo.held && stairInfo.len >= stairMinLen) {
-    bonus += scoring.stairBonus
-    parts.push(`階段${stairInfo.len} +${scoring.stairBonus}`)
+    const stairGain = Math.floor(scoring.stairBonus * oracleLevel('stair'))
+    bonus += stairGain
+    parts.push(`階段${stairInfo.len} +${stairGain}`)
     patternFired = true
     patternFiredCount += 1
   }
 
   if (checkFlush(chainIncludingThis)) {
-    const flushGain = Math.floor(scoring.flushBonus * roleBonusMultiplier('flush'))
+    const flushGain = Math.floor(scoring.flushBonus * oracleLevel('flush') * roleBonusMultiplier('flush'))
     bonus += flushGain
     parts.push(`フラッシュ+${flushGain}`)
     const last4 = chainIncludingThis.slice(-4)
@@ -213,7 +217,7 @@ export function evaluateChainBonus(
   }
 
   if (checkRoyalSet(chainIncludingThis)) {
-    const royalSetGain = Math.floor(scoring.royalSetBonus * roleBonusMultiplier('royalSet'))
+    const royalSetGain = Math.floor(scoring.royalSetBonus * oracleLevel('royalSet') * roleBonusMultiplier('royalSet'))
     bonus += royalSetGain
     parts.push(`ロイヤル+${royalSetGain}`)
     const last3 = chainIncludingThis.slice(-3)
@@ -225,7 +229,7 @@ export function evaluateChainBonus(
 
   const sameRankCount = card.wild ? countSameRankForWildPlay(chainBefore) : countSameRankBefore(chainBefore, card.rank)
   if (sameRankCount > 0) {
-    const sameRankGain = Math.floor(scoring.sameRankBonusUnit * sameRankCount * roleBonusMultiplier('sameRank'))
+    const sameRankGain = Math.floor(scoring.sameRankBonusUnit * sameRankCount * oracleLevel('sameRank') * roleBonusMultiplier('sameRank'))
     bonus += sameRankGain
     parts.push(`同ランク+${sameRankGain}`)
     const sameRankUsedWild = card.wild || chainBefore.some(c => c.wild)
@@ -233,7 +237,7 @@ export function evaluateChainBonus(
   }
 
   if (checkCompleteRun(chainBefore, chainIncludingThis)) {
-    const completeRunGain = Math.floor(scoring.completeRunBonus * roleBonusMultiplier('completeRun'))
+    const completeRunGain = Math.floor(scoring.completeRunBonus * oracleLevel('completeRun') * roleBonusMultiplier('completeRun'))
     bonus += completeRunGain
     parts.push(`コンプリートラン+${completeRunGain}`)
     const distinctRealNow = new Set(chainIncludingThis.filter(c => !c.wild).map(c => c.rank)).size
@@ -243,7 +247,7 @@ export function evaluateChainBonus(
     // (他の役は単一の加点のみだが、completeRunは同スート追加分も合算してamountに含めるため)。
     let completeRunTotalGain = completeRunGain
     if (suitHeld) {
-      const completeRunSuitGain = Math.floor(scoring.completeRunSuitBonus * roleBonusMultiplier('completeRun'))
+      const completeRunSuitGain = Math.floor(scoring.completeRunSuitBonus * oracleLevel('completeRun') * roleBonusMultiplier('completeRun'))
       bonus += completeRunSuitGain
       parts.push(`コンプリートラン(同スート)+${completeRunSuitGain}`)
       completeRunTotalGain += completeRunSuitGain

@@ -578,3 +578,66 @@ describe('evaluateChainBonus', () => {
     expect(result.patternFiredCount).toBe(0)
   })
 })
+
+describe('evaluateChainBonus: 神託レベル(oracleLevel)による得点上昇', () => {
+  const scoring = DEFAULT_PARAMS.scoring
+
+  test('同スートボーナスにレベルが乗算される', () => {
+    const chainBefore = [card(1, '♠', 3), card(2, '♠', 4)]
+    const oracleLevel = (name: RoleName) => (name === 'suit' ? 3 : 1)
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♠', 5), undefined, undefined, undefined, oracleLevel)
+    expect(result.bonus).toBe(scoring.suitBonus * 3)
+  })
+
+  test('同色ボーナスにレベルが乗算される', () => {
+    const chainBefore = [card(1, '♠', 3), card(2, '♣', 4)]
+    const oracleLevel = (name: RoleName) => (name === 'color' ? 2 : 1)
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♠', 6), undefined, undefined, undefined, oracleLevel)
+    expect(result.bonus).toBe(scoring.colorBonus * 2)
+  })
+
+  test('階段ボーナスにレベルが乗算される', () => {
+    // スートを♠♥♦♠♠にして、直近4枚が偶然フラッシュ(全スート網羅)を満たさないようにする
+    // (♠♥♦♣♠だと直近4枚が♥♦♣♠で全スート揃いフラッシュも同時成立してしまうため)
+    const chainBefore = [card(1, '♠', 1), card(2, '♥', 2), card(3, '♦', 3), card(4, '♠', 4)]
+    const oracleLevel = (name: RoleName) => (name === 'stair' ? 4 : 1)
+    const result = evaluateChainBonus(scoring, chainBefore, card(5, '♠', 5), undefined, undefined, undefined, oracleLevel)
+    expect(result.bonus).toBe(scoring.stairBonus * 4)
+  })
+
+  test('フラッシュボーナスにレベルが乗算され、既存のroleBonusMultiplierとも併用できる', () => {
+    const chainBefore = [card(1, '♠', 2), card(2, '♥', 3), card(3, '♦', 4)]
+    const oracleLevel = (name: RoleName) => (name === 'flush' ? 2 : 1)
+    const roleBonusMultiplier = (name: RoleName) => (name === 'flush' ? 1.5 : 1)
+    const result = evaluateChainBonus(scoring, chainBefore, card(4, '♣', 5), undefined, roleBonusMultiplier, undefined, oracleLevel)
+    const flushEntry = result.roleFired.find(r => r.name === 'flush')
+    expect(flushEntry?.amount).toBe(Math.floor(scoring.flushBonus * 2 * 1.5))
+  })
+
+  test('コンプリートラン・コンプリートラン(同スート)は同じcompleteRunレベルを参照する', () => {
+    const chainBefore: Card[] = []
+    for (let rank = 1 as Card['rank']; rank <= 12; rank = (rank + 1) as Card['rank']) {
+      chainBefore.push(card(rank, '♠', rank))
+    }
+    const oracleLevel = (name: RoleName) => (name === 'completeRun' ? 2 : 1)
+    const result = evaluateChainBonus(scoring, chainBefore, card(13, '♠', 13), undefined, undefined, undefined, oracleLevel)
+    const completeRunEntry = result.roleFired.find(r => r.name === 'completeRun')
+    expect(completeRunEntry?.amount).toBe(Math.floor(scoring.completeRunBonus * 2) + Math.floor(scoring.completeRunSuitBonus * 2))
+  })
+
+  test('同ランクボーナスにレベルが乗算される', () => {
+    const chainBefore = [card(1, '♠', 5), card(2, '♥', 5)]
+    const oracleLevel = (name: RoleName) => (name === 'sameRank' ? 3 : 1)
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 5), undefined, undefined, undefined, oracleLevel)
+    const sameRankEntry = result.roleFired.find(r => r.name === 'sameRank')
+    expect(sameRankEntry?.amount).toBe(Math.floor(scoring.sameRankBonusUnit * 2 * 3))
+  })
+
+  test('oracleLevelを省略すると全役レベル1として扱われ、既存の挙動と一致する', () => {
+    const chainBefore = [card(1, '♠', 3), card(2, '♠', 4)]
+    const withDefault = evaluateChainBonus(scoring, chainBefore, card(3, '♠', 5))
+    const withExplicitOne = evaluateChainBonus(scoring, chainBefore, card(3, '♠', 5), undefined, undefined, undefined, () => 1)
+    expect(withDefault.bonus).toBe(withExplicitOne.bonus)
+    expect(withDefault.bonus).toBe(scoring.suitBonus)
+  })
+})
