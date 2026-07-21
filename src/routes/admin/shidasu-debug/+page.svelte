@@ -52,6 +52,7 @@
     wave = result.wave
     deckComposition = result.deckComposition
     lastSnapshot = null
+    pendingDebugRevelation = null
   }
 
   function resetDeck() {
@@ -62,6 +63,7 @@
     wave = result.wave
     deckComposition = result.deckComposition
     lastSnapshot = null
+    pendingDebugRevelation = null
   }
 
   function handlePlayCard(colIndex: number) {
