@@ -4,6 +4,7 @@
   import { revelationDesc } from '$lib/game/shidasu/revelations'
   import { MANSIONS } from '$lib/game/shidasu/mansions'
   import { REVELATION_POOL } from '$lib/game/shidasu/revelations'
+  import { REVELATION_ACTUAL_EFFECTS } from '$lib/game/shidasu/revelationActualEffects'
   import type { RevelationId } from '$lib/game/shidasu/types'
 
   let config = $state<ShidasuParams | null>(null)
@@ -109,8 +110,9 @@
             <tr class="bg-slate-50 text-slate-500">
               <th class="px-2 py-1.5 text-left" style="width:9rem;">名前</th>
               <th class="px-2 py-1.5 text-left" style="width:11rem;">パラメータ</th>
-              <th class="px-2 py-1.5 text-left" style="width:20rem;">説明文テンプレート</th>
-              <th class="px-2 py-1.5 text-left" style="width:20rem;">プレビュー</th>
+              <th class="px-2 py-1.5 text-left" style="width:16rem;">説明文テンプレート</th>
+              <th class="px-2 py-1.5 text-left" style="width:16rem;">プレビュー</th>
+              <th class="px-2 py-1.5 text-left" style="width:20rem;">実際の効果(監査用)</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -145,6 +147,7 @@
                   ></textarea>
                 </td>
                 <td class="px-2 py-1.5 align-top text-slate-500">{revelationDesc(id, config)}</td>
+                <td class="px-2 py-1.5 align-top text-slate-500">{REVELATION_ACTUAL_EFFECTS[id]}</td>
               </tr>
             {/each}
           </tbody>

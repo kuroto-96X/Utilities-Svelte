@@ -3,6 +3,7 @@
   import { DEFAULT_PARAMS, type ShidasuParams } from '$lib/game/shidasu/params'
   import { oracleDesc, ORACLE_POOL } from '$lib/game/shidasu/oracles'
   import { TRIGRAMS } from '$lib/game/shidasu/trigrams'
+  import { ORACLE_ACTUAL_EFFECTS } from '$lib/game/shidasu/oracleActualEffects'
   import type { RoleName } from '$lib/game/shidasu/types'
 
   let config = $state<ShidasuParams | null>(null)
@@ -108,8 +109,9 @@
             <tr class="bg-slate-50 text-slate-500">
               <th class="px-2 py-1.5 text-left" style="width:9rem;">名前</th>
               <th class="px-2 py-1.5 text-left" style="width:11rem;">パラメータ</th>
-              <th class="px-2 py-1.5 text-left" style="width:20rem;">説明文テンプレート</th>
-              <th class="px-2 py-1.5 text-left" style="width:20rem;">プレビュー</th>
+              <th class="px-2 py-1.5 text-left" style="width:16rem;">説明文テンプレート</th>
+              <th class="px-2 py-1.5 text-left" style="width:16rem;">プレビュー</th>
+              <th class="px-2 py-1.5 text-left" style="width:20rem;">実際の効果(監査用)</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -144,6 +146,7 @@
                   ></textarea>
                 </td>
                 <td class="px-2 py-1.5 align-top text-slate-500">{oracleDesc(roleName, config)}</td>
+                <td class="px-2 py-1.5 align-top text-slate-500">{ORACLE_ACTUAL_EFFECTS[roleName]}</td>
               </tr>
             {/each}
           </tbody>
