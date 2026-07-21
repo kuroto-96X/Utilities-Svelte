@@ -2649,6 +2649,15 @@ describe('神託選択フェーズ', () => {
     expect(next.oracleOffer).toEqual([])
   })
 
+  test('pickOracleFromOffer: 既に配られている実ウェーブ(wave.oracleLevels)にも即座に反映される(次のウェーブまで遅延しない)', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const oracleSelectRun: RunState = { ...run, phase: 'oracleSelect', oracleOffer: ['suit', 'color', 'stair'] }
+    const next = pickOracleFromOffer(oracleSelectRun, 'suit')
+    expect(next.wave).not.toBeNull()
+    expect(next.wave?.oracleLevels.suit).toBe(2)
+    expect(next.wave?.oracleLevels.color).toBe(1)
+  })
+
   test('pickOracleFromOffer: オファーに含まれない役は無視される', () => {
     const run = beginRun(DEFAULT_PARAMS, 1)
     const oracleSelectRun: RunState = { ...run, phase: 'oracleSelect', oracleOffer: ['suit', 'color', 'stair'] }

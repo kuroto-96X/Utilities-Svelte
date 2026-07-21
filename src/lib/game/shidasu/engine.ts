@@ -1013,11 +1013,18 @@ export function skipRevelationSelect(params: ShidasuParams, run: RunState, seed?
 // 神託選択画面のオファーから1つ選ぶと、対応する役のレベルが+1され、即座にplayingへ遷移する。
 // 天啓と異なり所持・ウェーブ再配布の概念は無く、実ウェーブは変更しない。paramsに依存する処理が
 // 無いため(useRevelationFromOffer等と異なりparamsを使う効果適用が無い)、引数に含めない。
+// 既に配られている実ウェーブ(finishRevelationSelectで確定済み)のwave.oracleLevelsは
+// デッキ内容と違い「配布時に固定される値」ではなく、得点計算の都度参照される値のため、
+// run.oracleLevels側だけでなくwave.oracleLevels側も同じ新しい値に更新する。これを怠ると、
+// 常時表示エリア(run.oracleLevels参照)ではレベルが上がって見えるのに、選んだそのウェーブの
+// 実際のプレイ(wave.oracleLevels参照)には反映されない(次のウェーブまで効果が遅延する)
+// 不整合が起きる。
 export function pickOracleFromOffer(run: RunState, roleName: RoleName): RunState {
   if (run.phase !== 'oracleSelect') return run
   if (!run.oracleOffer.includes(roleName)) return run
   const oracleLevels = { ...run.oracleLevels, [roleName]: run.oracleLevels[roleName] + 1 }
-  return { ...run, phase: 'playing', oracleLevels, oracleOffer: [] }
+  const wave = run.wave ? { ...run.wave, oracleLevels } : run.wave
+  return { ...run, phase: 'playing', oracleLevels, oracleOffer: [], wave }
 }
 
 // 神託を選ばずに神託選択画面を終了する。
