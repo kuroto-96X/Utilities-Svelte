@@ -3,7 +3,7 @@ export type Suit = '♠' | '♥' | '♦' | '♣' | '★'
 export type Rank = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13
 export type StageModifier = 'none' | 'noLoop' | 'faceLock'
 export type Rarity = 'C' | 'U' | 'R'
-export type RoleName = 'flush' | 'royalSet' | 'sameRank' | 'completeRun' | 'columnSweep'
+export type RoleName = 'flush' | 'royalSet' | 'sameRank' | 'completeRun' | 'columnSweep' | 'suit' | 'color' | 'stair'
 export type ItemId =
   | 'bridge' | 'grace'
   | 'patience' | 'purify' | 'temperance'
@@ -169,9 +169,12 @@ export interface WaveState {
   mannazActiveThisWave: boolean
   // エワズ用: そのウェーブが終わるまで、場札の許容ランク差を2まで拡張するか
   ehwazActiveThisWave: boolean
+  // 神託用: ウェーブ開始時点の各役のレベル(ラン全体で持続。ウェーブ中は不変)。
+  // 得点計算時、各役の基礎点にこのレベルを乗算する(patterns.ts・engine.ts参照)
+  oracleLevels: Record<RoleName, number>
 }
 
-export type RunPhase = 'title' | 'playing' | 'itemSelect' | 'revelationSelect' | 'stageClear' | 'allClear' | 'gameOver'
+export type RunPhase = 'title' | 'playing' | 'itemSelect' | 'revelationSelect' | 'oracleSelect' | 'stageClear' | 'allClear' | 'gameOver'
 
 export interface RunState {
   phase: RunPhase
@@ -191,4 +194,8 @@ export interface RunState {
   revelationOffer: RevelationId[]
   // 天啓「虚」由来の、ウェーブ開始時の配布行数への永続的な追加分(暗雲護符のrと合算される)
   extraTableauRows: number
+  // 各役の現在レベル(初期値1、上限なし)。ラン全体で持続する(神託選択画面で+1される)
+  oracleLevels: Record<RoleName, number>
+  // 神託選択画面('oracleSelect'フェーズ)で提示中のオファー(3択)。それ以外のフェーズでは空配列
+  oracleOffer: RoleName[]
 }

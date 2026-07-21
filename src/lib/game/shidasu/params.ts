@@ -161,6 +161,16 @@ export interface ShidasuParams {
     kyo: { name: string; n: number; desc: string }
     aya: { name: string; desc: string }
   }
+  oracles: {
+    completeRun: { name: string; desc: string }
+    royalSet: { name: string; desc: string }
+    flush: { name: string; desc: string }
+    stair: { name: string; desc: string }
+    color: { name: string; desc: string }
+    suit: { name: string; desc: string }
+    columnSweep: { name: string; desc: string }
+    sameRank: { name: string; desc: string }
+  }
   flow: {
     wavesPerStage: number
     clearDelayMs: number
@@ -327,6 +337,16 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     jo: { name: '女', desc: '場札から選んだ1列を、ランクJ・Q・Kのいずれかへランダムに変換する(1枚ごとに個別抽選。ワイルドは対象外)' },
     kyo: { name: '虚', n: 1, desc: '場札に{n}行追加する(山札の上から配る)。以後のウェーブ開始時の配布行数も恒久的に{n}増える' },
     aya: { name: '危', desc: '場札から選んだ1列の一番上に、ワイルドを1枚追加する' },
+  },
+  oracles: {
+    completeRun: { name: '乾', desc: '使用すると「コンプリートラン」の得点が永続的に上昇する(レベル+1)' },
+    royalSet: { name: '兌', desc: '使用すると「ロイヤルセット」の得点が永続的に上昇する(レベル+1)' },
+    flush: { name: '離', desc: '使用すると「フラッシュ」の得点が永続的に上昇する(レベル+1)' },
+    stair: { name: '震', desc: '使用すると「階段」の得点が永続的に上昇する(レベル+1)' },
+    color: { name: '巽', desc: '使用すると「同色」の得点が永続的に上昇する(レベル+1)' },
+    suit: { name: '坎', desc: '使用すると「同スート」の得点が永続的に上昇する(レベル+1)' },
+    columnSweep: { name: '艮', desc: '使用すると「列一掃」の得点が永続的に上昇する(レベル+1)' },
+    sameRank: { name: '坤', desc: '使用すると「同ランク」の得点が永続的に上昇する(レベル+1)' },
   },
   flow: { wavesPerStage: 3, clearDelayMs: 450 },
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },
