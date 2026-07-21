@@ -72,11 +72,15 @@
 画面はPlayArea(実際のプレイ画面と同一コンポーネント)を流用する:
 
 - SCORE/TARGET・COMBO表示は非表示にする(PlayAreaに新規プロパティを追加)
-- チェーン表示エリアには、新規オファー(3択から1つ選ぶ。各候補に「使用」「獲得」の2ボタン。所持数が上限2の間は「獲得」を非活性にする)と、所持中の天啓一覧(各「使用」ボタンのみ)を表示する
+- チェーン表示エリアには、新規オファー(3択から1つ選ぶ。各候補に「使用」「獲得」の2ボタン。所持数が上限2の間は「獲得」を非活性にする)を表示する
 - 秘儀ボタン列(既存のPlayArea機能)はそのまま表示され、この画面でも使用できる。秘儀の消費は`run.rites`に対する本物の消費として扱う。秘儀によるコンボ・スコアなどのウェーブ状態の変化は、この一時的なプレビューウェーブ限りで次のウェーブには引き継がれない
 - 場札の列クリックは、通常のカードプレイ(`onPlayCard`)ではなく天啓のターゲティング専用として扱う(列を選ぶ必要がある天啓を選択した状態でのみ、列クリックが意味を持つ)
 
-天啓の決定(いずれかのオファーを使用/獲得する、または所持中のものを使用する)を1つ行うと、画面は終了し、その時点の(天啓による変更を反映済みの)`deckComposition`から実際のウェーブを新しく配り直して`'playing'`へ遷移する。「使用しない・獲得しない」を選ぶスキップ操作も用意する。
+天啓の決定(いずれかのオファーを使用/獲得する)を1つ行うか、「使用しない・獲得しない」を選ぶと、画面は終了し、その時点の(天啓による変更を反映済みの)`deckComposition`から実際のウェーブを新しく配り直して`'playing'`へ遷移する。
+
+### 4.1.1 所持中の天啓の使用(プレイ中・取得画面 共通)
+
+所持中の天啓(最大2)は、秘儀と同じ要領でPlayAreaに新設する天啓ボタン列から使用できる。これは**取得画面に限らず、通常のプレイ画面(`'playing'`フェーズ)でもそのまま使用できる**(冒頭で確認した「獲得時とプレイ中に使用できる」を満たす)。使用すると対象の天啓が所持から1個消費され、効果はその時点の実際の`wave`・`deckComposition`(取得画面ならプレビュー用、プレイ中なら本物)に反映される。取得画面でこの操作を行っても画面は終了せず(オファーへの回答は別途必要)、通常プレイ中に行った場合はその場で盤面に反映されるのみでフェーズは変わらない。
 
 ### 4.2 対象列選択(ターゲティングモード)
 
@@ -98,15 +102,19 @@
   - `RunState`に`revelations: RevelationId[]`(所持中の天啓、最大2、重複可)・`extraTableauRows: number`(天啓由来の永続的な追加配布行数)を追加
 - `src/lib/game/shidasu/mansions.ts`(新規): `RevelationId`とは独立した、全28宿の`{ kanji: string; reading: string }`一覧(`runes.ts`と同構造)
 - `src/lib/game/shidasu/params.ts`: `ShidasuParams`に`revelations: Record<RevelationId, { name: string; desc: string; ...効果パラメータ }>`を追加(場札拡張の「虚」のみ`n: number`を持つ)
-- `src/lib/game/shidasu/revelations.ts`(新規): `REVELATION_POOL`(12種)、`revelationName`/`revelationDesc`(秘儀の`rites.ts`と同じ関数群)、`rollRevelationOffer(currentRevelations, rand) => RevelationId[]`(所持数に関わらず均等ランダムに3つ選ぶ。重複除外しない、秘儀のrollRiteと同じ方式)
+- `src/lib/game/shidasu/revelations.ts`(新規): `REVELATION_POOL`(12種)、`revelationName`/`revelationDesc`(秘儀の`rites.ts`と同じ関数群)、`rollRevelationOffer(rand) => RevelationId[]`(所持数に関わらず均等ランダムに3つ選ぶ。重複除外しない、秘儀のrollRiteと同じ方式。ただしrollRiteと異なり上限による抽選中断は無い)
 - `src/lib/game/shidasu/revelationEffects.ts`(新規): 天啓ごとの効果ロジック。`applyRevelationEffect(params, wave, deckComposition, revelationId, targetCol, rand) => { wave, deckComposition }`(`wave`と`deckComposition`の両方を書き換えて返す点が秘儀の`applyRiteEffect`との違い)。`canUseRevelation`(場札拡張の山札枚数チェック)。列選択が必要な種類かどうかを返す`revelationNeedsTarget(id): boolean`
 - `src/lib/game/shidasu/engine.ts`:
-  - `startWave`: 配布行数の計算に`run.extraTableauRows`を合算
-  - 護符選択解決(`pickItem`/`confirmItemSwap`/`skipItemSelect`)の最終ステップを、直接`'playing'`へ遷移する処理から、プレビュー用ウェーブを配り天啓オファーを抽選して`'revelationSelect'`へ遷移する共通処理に変更する
-  - `useRite`のフェーズガードを`'revelationSelect'`中も動作するよう拡張
-  - 新規関数: `useRevelationFromOffer`(オファーから使用)・`pickRevelationFromOffer`(オファーから獲得)・`useHeldRevelation`(所持中のものを使用)・`skipRevelationSelect`(何もせず終了)。いずれも最終的に実際のウェーブを新しく配り直して`'playing'`へ遷移する
-- `src/routes/game/shidasu/PlayArea.svelte`: SCORE/TARGET・COMBO表示の非表示プロパティ、列ターゲティングモード用プロパティ(対象になり得る列のハイライト・クリック時のコールバック切り替え)を追加
-- `src/routes/game/shidasu/+page.svelte`: `'revelationSelect'`フェーズのUI(オファー・所持一覧・ターゲティングモードの状態管理)を追加
+  - `startWave`: 配布行数の計算に`extraTableauRows`引数(新規、末尾に追加。省略時0)を合算
+  - 護符選択解決(`pickItem`/`confirmItemSwap`/`skipItemSelect`)の最終ステップを、直接`'playing'`へ遷移する処理から、プレビュー用ウェーブを配り天啓オファーを抽選して`'revelationSelect'`へ遷移する共通処理(`enterRevelationSelect`)に変更する
+  - `useRite`のフェーズガードを`'playing'`・`'revelationSelect'`の両方で動作するよう拡張(既存は`'playing'`のみ)
+  - 新規関数:
+    - `useRevelation`(所持中の天啓を1つ使用。`'playing'`・`'revelationSelect'`どちらのフェーズでも動作し、フェーズ遷移はしない。秘儀の`useRite`と同じ位置づけ)
+    - `useRevelationFromOffer`(取得画面のオファーから選んだものをその場で使用。所持には加わらない。使用後、実際のウェーブを配り直して`'playing'`へ遷移する)
+    - `pickRevelationFromOffer`(取得画面のオファーから選んだものを所持へ加える。所持上限2の間は何もしない。実際のウェーブを配り直して`'playing'`へ遷移する)
+    - `skipRevelationSelect`(取得画面を何もせず終了。実際のウェーブを配り直して`'playing'`へ遷移する)
+- `src/routes/game/shidasu/PlayArea.svelte`: SCORE/TARGET・COMBO非表示プロパティ、山札めくり無効化プロパティ、列ターゲティングモード用プロパティ(対象になり得る列のハイライト・クリック時のコールバック切り替え)、チェーン表示エリア差し替え用スニペットプロパティ、天啓ボタン列(所持中の天啓、秘儀ボタン列と同じ位置づけ)を追加。天啓ボタン列は取得画面に限らず通常のプレイ画面でも表示・使用できる
+- `src/routes/game/shidasu/+page.svelte`: `'revelationSelect'`フェーズのUI(オファー・ターゲティングモードの状態管理)を追加。天啓ボタン列のクリックハンドラ(`useRevelation`呼び出し、対象列選択が必要な場合はターゲティングモードへ)を追加
 
 ## 6. スコープ外
 
@@ -118,11 +126,12 @@
 
 1. `RevelationId`型(12種)・`mansions.ts`(見た目用の全28宿参照データ、`RevelationId`とは独立)・`ShidasuParams.revelations`(12種すべての効果パラメータ)が実装されている
 2. 護符選択の解決直後(ステージクリア・オールクリアを除く)、毎回天啓選択画面(`'revelationSelect'`)へ遷移する
-3. 天啓選択画面では、通常のウェーブ開始と同じロジックでプレビュー用の場札・山札が配られ、オファー3択のいずれかを「使用」または「獲得」でき、所持中の天啓(最大2)も「使用」できる。所持数が上限2の間はオファーの「獲得」が選べない
+3. 天啓選択画面では、通常のウェーブ開始と同じロジックでプレビュー用の場札・山札が配られ、オファー3択のいずれかを「使用」または「獲得」できる。所持数が上限2の間はオファーの「獲得」が選べない
 4. 天啓選択画面でも秘儀を使用でき、`run.rites`から本物に消費される。ウェーブの状態変化(コンボ・スコア等)はプレビューウェーブ限りで次のウェーブに引き継がれない
 5. 天啓選択画面の終了時、それまでの天啓・秘儀による`deckComposition`の変更を反映した状態から、実際のウェーブが新しく配り直され`'playing'`へ遷移する
 6. 12種それぞれの効果が仕様通りに`wave`・`deckComposition`の両方へ反映され、対象の天啓が「使用」時は即座に、「獲得」時は所持へ追加された上で後で使用時に消費される
-7. 場札拡張(虚)を使うと、即座に指定行数が山札から配られ、以後のウェーブ開始時の配布行数も恒久的に増える(暗雲護符の効果とも正しく合算される)
-8. 列選択が必要な天啓を選ぶと列を選ぶモードになり、対象になり得る列がハイライトされ、クリックで即座に適用される。列選択が不要な天啓は即座に適用される
-9. `/admin/shidasu-revelations`が新設され、名前列が28宿からの選択式になっており、レア度列が無いことを除き秘儀管理画面と同じ構成で表示・編集・保存ができる
-10. `npm run test`・`npm run check`・`npm run build`が成功する
+7. 所持中の天啓は、取得画面に限らず通常のプレイ画面でも秘儀と同様のボタン列から使用できる(冒頭要件「獲得時とプレイ中に使用できる」)
+8. 場札拡張(虚)を使うと、即座に指定行数が山札から配られ、以後のウェーブ開始時の配布行数も恒久的に増える(暗雲護符の効果とも正しく合算される)
+9. 列選択が必要な天啓を選ぶと列を選ぶモードになり、対象になり得る列がハイライトされ、クリックで即座に適用される。列選択が不要な天啓は即座に適用される
+10. `/admin/shidasu-revelations`が新設され、名前列が28宿からの選択式になっており、レア度列が無いことを除き秘儀管理画面と同じ構成で表示・編集・保存ができる
+11. `npm run test`・`npm run check`・`npm run build`が成功する
