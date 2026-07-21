@@ -2014,6 +2014,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
     const run: RunState = {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['resilience'], offer: [],
       wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
+      revelations: [], revelationOffer: [], extraTableauRows: 0,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
     expect(next.wave!.status).toBe('playing') // 手詰まりが解消されている
@@ -2037,6 +2038,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
     const run: RunState = {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['resilience'], offer: [],
       wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
+      revelations: [], revelationOffer: [], extraTableauRows: 0,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run)
     expect(next.wave!.status).toBe('ended')
@@ -2054,6 +2056,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
     const run: RunState = {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: [], offer: [],
       wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
+      revelations: [], revelationOffer: [], extraTableauRows: 0,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run)
     expect(next.wave!.status).toBe('ended')
@@ -2072,6 +2075,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
     const run: RunState = {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['resilience'], offer: [],
       wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
+      revelations: [], revelationOffer: [], extraTableauRows: 0,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run)
     expect(next.wave!.status).toBe('ended')
@@ -2091,6 +2095,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
     const run: RunState = {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['healing', 'resilience'], offer: [],
       wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
+      revelations: [], revelationOffer: [], extraTableauRows: 0,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
     expect(next.wave!.tableau[1].length).toBeGreaterThan(0) // 治癒によって列1が復活している
@@ -2109,6 +2114,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
     const run: RunState = {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['healing'], offer: [],
       wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
+      revelations: [], revelationOffer: [], extraTableauRows: 0,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
     expect(next.wave!.tableau[1].length).toBeGreaterThan(0) // 治癒によって列1は復活している

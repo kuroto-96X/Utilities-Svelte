@@ -147,6 +147,20 @@ export interface ShidasuParams {
     mannaz: { name: string; x: number; desc: string }
     ehwaz: { name: string; desc: string }
   }
+  revelations: {
+    kaku: { name: string; desc: string }
+    kou: { name: string; desc: string }
+    tei: { name: string; desc: string }
+    bou: { name: string; desc: string }
+    shin: { name: string; desc: string }
+    bi: { name: string; desc: string }
+    ki: { name: string; desc: string }
+    to: { name: string; desc: string }
+    gyu: { name: string; desc: string }
+    jo: { name: string; desc: string }
+    kyo: { name: string; n: number; desc: string }
+    aya: { name: string; desc: string }
+  }
   flow: {
     wavesPerStage: number
     clearDelayMs: number
@@ -299,6 +313,20 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     berkano: { name: 'ᛒ', x: 2, desc: '現在のコンボ数を{x}倍にする(端数切り捨て)' },
     mannaz: { name: 'ᛗ', x: 0.1, desc: 'そのウェーブが終わるまで、得点計算時に所持護符のレア度重み(コモン=1、アンコモン=2、レア=4)の合計×{x}を1に加えた係数を掛ける' },
     ehwaz: { name: 'ᛖ', desc: 'そのウェーブが終わるまで、場札の許容ランク差を2差まで拡張する(ループを跨ぐK→2、Q→Aなども対象)' },
+  },
+  revelations: {
+    kaku: { name: '角', desc: '場札から選んだ1列を、全て♠に変換する(ワイルドは対象外)' },
+    kou: { name: '亢', desc: '場札から選んだ1列を、全て♥に変換する(ワイルドは対象外)' },
+    tei: { name: '氐', desc: '場札から選んだ1列を、全て♦に変換する(ワイルドは対象外)' },
+    bou: { name: '房', desc: '場札から選んだ1列を、全て♣に変換する(ワイルドは対象外)' },
+    shin: { name: '心', desc: '場札の♠を全て♥に変換する(ワイルドは対象外)' },
+    bi: { name: '尾', desc: '場札の♥を全て♣に変換する(ワイルドは対象外)' },
+    ki: { name: '箕', desc: '場札の♣を全て♦に変換する(ワイルドは対象外)' },
+    to: { name: '斗', desc: '場札の♦を全て♠に変換する(ワイルドは対象外)' },
+    gyu: { name: '牛', desc: '場札から選んだ1列を、ランクA〜10のいずれかへランダムに変換する(1枚ごとに個別抽選。ワイルドは対象外)' },
+    jo: { name: '女', desc: '場札から選んだ1列を、ランクJ・Q・Kのいずれかへランダムに変換する(1枚ごとに個別抽選。ワイルドは対象外)' },
+    kyo: { name: '虚', n: 1, desc: '場札に{n}行追加する(山札の上から配る)。以後のウェーブ開始時の配布行数も恒久的に{n}増える' },
+    aya: { name: '危', desc: '場札から選んだ1列の一番上に、ワイルドを1枚追加する' },
   },
   flow: { wavesPerStage: 3, clearDelayMs: 450 },
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },

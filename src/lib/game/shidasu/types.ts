@@ -45,6 +45,15 @@ export type RiteId =
   | 'mannaz'
   | 'ehwaz'
 
+// 天啓(Revelation): いつでも使用可能で、場札・デッキ構成の両方に永続的な効果を発揮する消費アイテム。
+// 二十八宿のうち今回効果を実装した12種のみをメンバーとする(残り16種はmansions.tsの見た目候補にのみ存在)。
+export type RevelationId =
+  | 'kaku' | 'kou' | 'tei' | 'bou'
+  | 'shin' | 'bi' | 'ki' | 'to'
+  | 'gyu' | 'jo'
+  | 'kyo'
+  | 'aya'
+
 export interface Card {
   id: number
   // 由来のdeckComposition内での永続的な識別子(deckComposition[].deckIdをそのまま引き継ぐ)。
@@ -162,7 +171,7 @@ export interface WaveState {
   ehwazActiveThisWave: boolean
 }
 
-export type RunPhase = 'title' | 'playing' | 'itemSelect' | 'stageClear' | 'allClear' | 'gameOver'
+export type RunPhase = 'title' | 'playing' | 'itemSelect' | 'revelationSelect' | 'stageClear' | 'allClear' | 'gameOver'
 
 export interface RunState {
   phase: RunPhase
@@ -176,4 +185,10 @@ export interface RunState {
   deckComposition: DeckCard[]
   // 所持中の秘儀(最大3、同じ種類を複数所持できる)。ウェーブを跨いで持続する(護符と同様)
   rites: RiteId[]
+  // 所持中の天啓(最大2、同じ種類を複数所持できる)。ウェーブを跨いで持続する(秘儀と同様)
+  revelations: RevelationId[]
+  // 天啓選択画面('revelationSelect'フェーズ)で提示中のオファー(3択)。それ以外のフェーズでは空配列
+  revelationOffer: RevelationId[]
+  // 天啓「虚」由来の、ウェーブ開始時の配布行数への永続的な追加分(暗雲護符のrと合算される)
+  extraTableauRows: number
 }
