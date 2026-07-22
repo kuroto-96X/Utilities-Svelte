@@ -4,9 +4,10 @@
   import {
     createInitialRun, beginRun, applyPlayCard, applyDrawStock, applyStuckCheck,
     resolveWaveEnd, pickItem, confirmItemSwap, cancelItemSwap, skipItemSelect,
-    advanceStage, restartRun, startWave, forceStockTop, useRite,
+    continueAfterGreatMisfortune, stopAfterGreatMisfortune, restartRun, startWave, forceStockTop, useRite,
     useRevelation, useRevelationFromOffer, pickRevelationFromOffer, skipRevelationSelect,
     pickOracleFromOffer, skipOracleSelect,
+    waveTarget, stageModifierFor, bossTierOf, isBossWave,
   } from '$lib/game/shidasu/engine'
   import { itemDesc, itemName } from '$lib/game/shidasu/items'
   import { revelationDesc, revelationName } from '$lib/game/shidasu/revelations'
@@ -37,9 +38,20 @@
 
   onDestroy(clearPendingTimer)
 
-  let stage = $derived(params.stages[run.stageIndex])
-  let target = $derived(stage.targets[run.waveIndex])
+  let target = $derived(waveTarget(params, run.stageIndex, run.waveIndex))
   let wave = $derived(run.wave)
+  let currentModifier = $derived(stageModifierFor(params, run))
+
+  // 次のボス(小凶→中凶→大凶)の情報を返す。nextStageIndexは次に迎えるステージ番号
+  // (現在ボスウェーブ中ならその次のサイクルの小凶、それ以外なら現在のステージ自身)。
+  let upcomingBossInfo = $derived.by(() => {
+    const nextStageIndex = isBossWave(params, run.waveIndex) ? run.stageIndex + 1 : run.stageIndex
+    const tier = bossTierOf(nextStageIndex)
+    if (tier === 0) return { label: params.bossTiers.shoukyou.name, detail: 'A⇔Kループ禁止' }
+    if (tier === 1) return { label: params.bossTiers.chuukyou.name, detail: `${params.bossTiers.chuukyou.maxCombo}コンボ以下で無得点` }
+    const suit = tier === bossTierOf(run.stageIndex) ? run.currentGreatMisfortuneSuit : null
+    return { label: params.bossTiers.taikyou.name, detail: suit ? `${suit}で無得点` : '対象スート未確定' }
+  })
 
   function modifierLabel(modifier: StageModifier): string {
     if (modifier === 'noLoop') return 'A-Kループ禁止'
@@ -118,9 +130,13 @@
     run = cancelItemSwap(run)
   }
 
-  function handleAdvanceStage() {
-    run = advanceStage(params, run)
+  function handleContinueAfterGreatMisfortune() {
+    run = continueAfterGreatMisfortune(params, run)
     afterAction()
+  }
+
+  function handleStopAfterGreatMisfortune() {
+    run = stopAfterGreatMisfortune(run)
   }
 
   function handleRestart() {
@@ -201,15 +217,16 @@
 
 {#snippet stageRow()}
   <div class="flex items-center justify-between text-xs">
-    <div class="flex items-center gap-2">
-      <span class="font-black text-amber-50">{stage.name}</span>
-      <span class="flex gap-1">
-        {#each [0, 1, 2] as w (w)}
-          <span class="w-2 h-2 rounded-full {w < run.waveIndex ? 'bg-yellow-400' : w === run.waveIndex ? 'bg-yellow-400 animate-pulse' : 'bg-emerald-800'}"></span>
-        {/each}
-      </span>
-    </div>
-    <span class="text-emerald-300/80">{modifierLabel(stage.modifier)}</span>
+    <span class="flex gap-1">
+      {#each [0, 1, 2] as w (w)}
+        <span class="w-2 h-2 rounded-full {w < run.waveIndex ? 'bg-yellow-400' : w === run.waveIndex ? 'bg-yellow-400 animate-pulse' : 'bg-emerald-800'}"></span>
+      {/each}
+    </span>
+    {#if isBossWave(params, run.waveIndex)}
+      <span class="font-black text-rose-400">{upcomingBossInfo.label}({upcomingBossInfo.detail})</span>
+    {:else}
+      <span class="text-emerald-300/80">次: {upcomingBossInfo.label}({upcomingBossInfo.detail})</span>
+    {/if}
   </div>
 {/snippet}
 
@@ -273,7 +290,7 @@
     aria-hidden="true"
     bind:offsetHeight={measuredPlayHeight}
   >
-    <PlayArea wave={measurementWave} {params} modifier={stage.modifier} {target} items={run.items} onPlayCard={handlePlayCard} onDraw={handleDraw} headerExtra={stageRow} extraFooter={itemBadges} rites={run.rites} onUseRite={handleUseRite} />
+    <PlayArea wave={measurementWave} {params} modifier={currentModifier} {target} items={run.items} onPlayCard={handlePlayCard} onDraw={handleDraw} headerExtra={stageRow} extraFooter={itemBadges} rites={run.rites} onUseRite={handleUseRite} />
   </div>
   <div class="flex flex-col items-center justify-center gap-6 text-center px-6" style="min-height:{measuredPlayHeight}px;">
     <div>
@@ -297,7 +314,7 @@
 
 {:else if wave && run.phase === 'revelationSelect'}
   <PlayArea
-    {wave} {params} modifier={stage.modifier} {target} items={run.items}
+    {wave} {params} modifier={currentModifier} {target} items={run.items}
     onPlayCard={() => {}} onDraw={() => {}}
     showScoreAndCombo={false} allowDraw={false}
     headerExtra={stageRow}
@@ -310,7 +327,7 @@
   />
 {:else if wave}
   <PlayArea
-    {wave} {params} modifier={stage.modifier} {target} items={run.items}
+    {wave} {params} modifier={currentModifier} {target} items={run.items}
     onPlayCard={handlePlayCard} onDraw={handleDraw}
     headerExtra={stageRow} extraFooter={itemBadges}
     rites={run.rites} onUseRite={handleUseRite}
@@ -393,25 +410,27 @@
       </div>
     </div>
   </div>
-{:else if run.phase === 'stageClear'}
+{:else if run.phase === 'continueChoice'}
   <div class="fixed inset-0 z-50 bg-emerald-950/90 backdrop-blur-sm flex items-center justify-center p-6">
     <div class="w-full max-w-sm flex flex-col items-center text-center">
-      <div class="text-yellow-300 text-xs tracking-widest mb-2">STAGE CLEAR</div>
-      <div class="text-3xl font-black text-amber-50 mb-4">{stage.name} 突破!</div>
-      <div class="bg-emerald-900/80 border border-emerald-500/40 rounded-xl px-4 py-3 mb-5 text-sm">
-        <div class="text-emerald-300/80 text-xs mb-1">次のステージの制約</div>
-        <div class="font-bold text-amber-50">{modifierLabel(params.stages[run.stageIndex + 1].modifier)}</div>
+      <div class="text-yellow-300 text-xs tracking-widest mb-2">{params.bossTiers.taikyou.name} 撃破!</div>
+      <div class="text-2xl font-black text-amber-50 mb-6">続けますか?</div>
+      <div class="flex flex-col gap-3 w-full">
+        <button onclick={handleContinueAfterGreatMisfortune} class="px-10 py-3 rounded-full bg-yellow-400 text-emerald-950 font-black active:scale-95 transition-transform">
+          続ける
+        </button>
+        <button onclick={handleStopAfterGreatMisfortune} class="px-10 py-3 rounded-full border border-emerald-700/60 text-emerald-200/70 font-black active:scale-95 transition-transform">
+          やめる
+        </button>
       </div>
-      <button onclick={handleAdvanceStage} class="px-10 py-3 rounded-full bg-yellow-400 text-emerald-950 font-black active:scale-95 transition-transform">
-        次のステージへ
-      </button>
     </div>
   </div>
 {:else if run.phase === 'allClear'}
   <div class="fixed inset-0 z-50 bg-emerald-950/90 backdrop-blur-sm flex items-center justify-center p-6">
     <div class="w-full max-w-sm flex flex-col items-center text-center">
-      <div class="text-3xl font-black text-yellow-300 mb-2">全ステージクリア!</div>
-      <div class="text-emerald-100/80 text-sm mb-6">全ての山を制覇した</div>
+      <div class="text-3xl font-black text-yellow-300 mb-2">結果</div>
+      <div class="text-2xl font-black text-amber-50 mb-1">{run.wave?.score ?? 0} 点</div>
+      <div class="text-emerald-100/80 text-sm mb-6">お疲れ様でした</div>
       <button onclick={handleRestart} class="px-10 py-3 rounded-full bg-yellow-400 text-emerald-950 font-black active:scale-95">
         もう一度
       </button>
