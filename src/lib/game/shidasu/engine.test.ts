@@ -1990,6 +1990,11 @@ describe('createInitialRun / beginRun', () => {
     expect(run.pendingNewItem).toBeNull()
   })
 
+  test('createInitialRunのspreadIdは既定でfool', () => {
+    const run = createInitialRun()
+    expect(run.spreadId).toBe('fool')
+  })
+
   test('beginRunはplayingフェーズでステージ0・ウェーブ0から始まる、pendingNewItemはnull', () => {
     const run = beginRun(DEFAULT_PARAMS, 1)
     expect(run.phase).toBe('playing')
@@ -1997,6 +2002,33 @@ describe('createInitialRun / beginRun', () => {
     expect(run.waveIndex).toBe(0)
     expect(run.wave).not.toBeNull()
     expect(run.pendingNewItem).toBeNull()
+  })
+
+  test('beginRunはspreadIdを省略するとfoolになり、extraTableauRowsは0、場札は通常の行数(5行)で配られる', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    expect(run.spreadId).toBe('fool')
+    expect(run.extraTableauRows).toBe(0)
+    run.wave!.tableau.forEach(col => expect(col).toHaveLength(DEFAULT_PARAMS.layout.rows))
+  })
+
+  test('beginRunでspreadId=moonを指定すると、extraTableauRowsは-1になり、場札は通常より1行少なく配られる', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1, 'moon')
+    expect(run.spreadId).toBe('moon')
+    expect(run.extraTableauRows).toBe(-1)
+    run.wave!.tableau.forEach(col => expect(col).toHaveLength(DEFAULT_PARAMS.layout.rows - 1))
+  })
+
+  test('waveTargetはspreadIdごとに設定された基礎値・倍率を参照する', () => {
+    const custom = {
+      ...DEFAULT_PARAMS,
+      spreads: {
+        fool: { ...DEFAULT_PARAMS.spreads.fool, waveTargetBase: 1000, waveTargetMultiplier: 2 },
+        moon: { ...DEFAULT_PARAMS.spreads.moon, waveTargetBase: 3000, waveTargetMultiplier: 1.1 },
+      },
+    }
+    expect(waveTarget(custom, 0, 0, 'fool')).toBe(1000) // 1000 × 2^0
+    expect(waveTarget(custom, 0, 1, 'fool')).toBe(2000) // 1000 × 2^1
+    expect(waveTarget(custom, 0, 0, 'moon')).toBe(3000) // 3000 × 1.1^0
   })
 })
 

@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin, RiteId, Rarity, RevelationId } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
 import { isFace, chainContinuesPattern, evaluateChainBonus, analyzeSuitColor, countSameRankBefore, countSameRankForWildPlay, fmtMultiplier } from './patterns'
@@ -886,9 +886,10 @@ export function bossScoreLockFor(params: ShidasuParams, run: RunState): BossScor
 
 // ラン開始からの通しウェーブ番号(1始まり)から目標スコアを算出する。
 // target(n) = waveTargetBase × waveTargetMultiplier^(n-1)
-export function waveTarget(params: ShidasuParams, stageIndex: number, waveIndex: number): number {
+export function waveTarget(params: ShidasuParams, stageIndex: number, waveIndex: number, spreadId: SpreadId = 'fool'): number {
   const overallWaveNumber = stageIndex * params.flow.wavesPerStage + waveIndex + 1
-  return Math.floor(params.scoring.waveTargetBase * params.scoring.waveTargetMultiplier ** (overallWaveNumber - 1))
+  const spread = params.spreads[spreadId]
+  return Math.floor(spread.waveTargetBase * spread.waveTargetMultiplier ** (overallWaveNumber - 1))
 }
 
 const GREAT_MISFORTUNE_SUITS: Suit[] = ['♠', '♥', '♦', '♣']
@@ -941,12 +942,13 @@ export function createInitialRun(): RunState {
   return {
     phase: 'title', stageIndex: 0, waveIndex: 0, items: [], offer: [], wave: null, pendingNewItem: null,
     deckComposition: standardDeckComposition(), rites: [], revelations: [], revelationOffer: [], extraTableauRows: 0,
-    oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null,
+    oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null, spreadId: 'fool',
   }
 }
 
-export function beginRun(params: ShidasuParams, seed?: number): RunState {
-  const { wave, deckComposition } = startWave(params, 0, 0, [], standardDeckComposition(), seed, 0, defaultOracleLevels())
+export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadId = 'fool'): RunState {
+  const initialExtraTableauRows = params.spreads[spreadId].initialExtraTableauRows
+  const { wave, deckComposition } = startWave(params, 0, 0, [], standardDeckComposition(), seed, initialExtraTableauRows, defaultOracleLevels())
   return {
     phase: 'playing',
     stageIndex: 0,
@@ -959,10 +961,11 @@ export function beginRun(params: ShidasuParams, seed?: number): RunState {
     rites: [],
     revelations: [],
     revelationOffer: [],
-    extraTableauRows: 0,
+    extraTableauRows: initialExtraTableauRows,
     oracleLevels: defaultOracleLevels(),
     oracleOffer: [],
     currentGreatMisfortuneSuit: null,
+    spreadId,
   }
 }
 
@@ -970,7 +973,7 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
   const wave = run.wave
   if (!wave || wave.status !== 'ended') return run
 
-  const target = waveTarget(params, run.stageIndex, run.waveIndex)
+  const target = waveTarget(params, run.stageIndex, run.waveIndex, run.spreadId)
   if (wave.score < target) {
     return { ...run, phase: 'gameOver' }
   }
@@ -1168,7 +1171,7 @@ export function restartRun(params: ShidasuParams, seed?: number): RunState {
 
 export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: number, rand: () => number = Math.random, rowIndex?: number): RunState {
   if (run.phase !== 'playing' || !run.wave) return run
-  const target = waveTarget(params, run.stageIndex, run.waveIndex)
+  const target = waveTarget(params, run.stageIndex, run.waveIndex, run.spreadId)
   const modifier = stageModifierFor(params, run)
   const scoreLock = bossScoreLockFor(params, run)
   const { wave, deckComposition } = playCard(params, run.wave, modifier, run.items, target, colIndex, run.deckComposition, rand, scoreLock, rowIndex)
@@ -1177,7 +1180,7 @@ export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: nu
 
 export function applyDrawStock(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
   if (run.phase !== 'playing' || !run.wave) return run
-  const target = waveTarget(params, run.stageIndex, run.waveIndex)
+  const target = waveTarget(params, run.stageIndex, run.waveIndex, run.spreadId)
   const modifier = stageModifierFor(params, run)
   const scoreLock = bossScoreLockFor(params, run)
   const { wave, deckComposition } = drawStock(params, run.wave, run.items, target, run.deckComposition, modifier, rand, scoreLock)
@@ -1216,7 +1219,7 @@ export function applyStuckCheck(params: ShidasuParams, run: RunState, rand: () =
   }
 
   if (resetWave.stock.length > 0) {
-    const stageTarget = waveTarget(params, run.stageIndex, run.waveIndex)
+    const stageTarget = waveTarget(params, run.stageIndex, run.waveIndex, run.spreadId)
     const scoreLock = bossScoreLockFor(params, run)
     const drawResult = drawStock(params, resetWave, run.items, stageTarget, run.deckComposition, modifier, rand, scoreLock)
     return { ...run, wave: drawResult.wave, deckComposition: drawResult.deckComposition }
