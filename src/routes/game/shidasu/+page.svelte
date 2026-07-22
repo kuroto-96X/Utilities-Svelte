@@ -14,7 +14,7 @@
   import { revelationNeedsTarget } from '$lib/game/shidasu/revelationEffects'
   import { oracleName, oracleDesc } from '$lib/game/shidasu/oracles'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
-  import type { RunState, ItemId, StageModifier, Suit, Rank, RiteId, RevelationId, RoleName } from '$lib/game/shidasu/types'
+  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
   import RoleStatusPanel from './RoleStatusPanel.svelte'
@@ -51,12 +51,6 @@
     if (tier === 1) return { label: params.bossTiers.chuukyou.name, detail: `${params.bossTiers.chuukyou.maxCombo}コンボ以下で無得点` }
     return { label: params.bossTiers.taikyou.name, detail: run.currentGreatMisfortuneSuit ? `${run.currentGreatMisfortuneSuit}で無得点` : '対象スート未確定' }
   })
-
-  function modifierLabel(modifier: StageModifier): string {
-    if (modifier === 'noLoop') return 'A-Kループ禁止'
-    if (modifier === 'faceLock') return '絵札はコンボ2以上でのみ取れる'
-    return '制約なし'
-  }
 
   function scheduleStuckCheck() {
     clearPendingTimer()
@@ -130,8 +124,11 @@
   }
 
   function handleContinueAfterGreatMisfortune() {
+    // continueAfterGreatMisfortuneはphaseを'itemSelect'にするだけでrun.waveは
+    // 大凶撃破時のまま(status:'ended')なので、afterAction()を呼ぶとresolveWaveEndが
+    // 同じ「終了済みウェーブ」を再評価し、'continueChoice'へ巻き戻ってしまう
+    // (handlePickItemが上限到達時にafterAction()を呼ばないのと同じ理由)。
     run = continueAfterGreatMisfortune(params, run)
-    afterAction()
   }
 
   function handleStopAfterGreatMisfortune() {
