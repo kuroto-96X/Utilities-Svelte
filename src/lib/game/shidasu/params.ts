@@ -23,10 +23,6 @@ export interface ShidasuParams {
     completeRunBonus: number
     completeRunSuitBonus: number
     columnSweepBonus: number
-    // 目標スコア算出式 target(n) = waveTargetBase × waveTargetMultiplier^(n-1) の基礎値・倍率
-    // (nはラン開始からの通しウェーブ番号、1始まり)
-    waveTargetBase: number
-    waveTargetMultiplier: number
   }
   // ボス階級ごとの設定。stageIndex % 3 (0=小凶,1=中凶,2=大凶)でインデックスする代わりに、
   // 読みやすさのため名前付きキーで持つ(shoukyou=小凶,chuukyou=中凶,taikyou=大凶)
@@ -34,6 +30,14 @@ export interface ShidasuParams {
     shoukyou: { name: string }
     chuukyou: { name: string; maxCombo: number }
     taikyou: { name: string }
+  }
+  // スプレッド(ラン開始時に選ぶ固有ルールセット)ごとの設定。目標スコア算出式
+  // target(n) = waveTargetBase × waveTargetMultiplier^(n-1) の基礎値・倍率(nは通しウェーブ番号、1始まり)と、
+  // ウェーブ開始時の配布行数への初期オフセット(initialExtraTableauRows)をスプレッドごとに持つ。
+  // 暗雲護符・虚の天啓によるextraTableauRowsの加算は、この初期値を起点に通常通り行われる。
+  spreads: {
+    fool: { name: string; desc: string; initialExtraTableauRows: number; waveTargetBase: number; waveTargetMultiplier: number }
+    moon: { name: string; desc: string; initialExtraTableauRows: number; waveTargetBase: number; waveTargetMultiplier: number }
   }
   items: {
     maxItems: number
@@ -206,13 +210,15 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     completeRunBonus: 1000,
     completeRunSuitBonus: 1000,
     columnSweepBonus: 150,
-    waveTargetBase: 2000,
-    waveTargetMultiplier: 1.5,
   },
   bossTiers: {
     shoukyou: { name: '小凶' },
     chuukyou: { name: '中凶', maxCombo: 2 },
     taikyou: { name: '大凶' },
+  },
+  spreads: {
+    fool: { name: '愚者', desc: '特殊ルールなし', initialExtraTableauRows: 0, waveTargetBase: 2000, waveTargetMultiplier: 1.5 },
+    moon: { name: '月', desc: '場札は常に1行少ない状態で始まる(護符・天啓による行数変動は通常通り発生する)', initialExtraTableauRows: -1, waveTargetBase: 2000, waveTargetMultiplier: 1.5 },
   },
   items: {
     maxItems: 5,
