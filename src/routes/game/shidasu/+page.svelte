@@ -4,7 +4,7 @@
   import {
     createInitialRun, beginRun, applyPlayCard, applyDrawStock, applyStuckCheck,
     resolveWaveEnd, pickItem, confirmItemSwap, cancelItemSwap, skipItemSelect,
-    continueAfterGreatMisfortune, stopAfterGreatMisfortune, restartRun, startWave, forceStockTop, useRite,
+    continueAfterGreatMisfortune, stopAfterGreatMisfortune, startWave, forceStockTop, useRite,
     useRevelation, useRevelationFromOffer, pickRevelationFromOffer, skipRevelationSelect,
     pickOracleFromOffer, skipOracleSelect,
     waveTarget, stageModifierFor, bossTierOf, isBossWave,
@@ -135,9 +135,8 @@
     run = stopAfterGreatMisfortune(run)
   }
 
-  function handleRestart() {
-    run = restartRun(params)
-    afterAction()
+  function handleBackToTitle() {
+    run = createInitialRun()
   }
 
   function handleForceDraw(suit: Suit, rank: Rank, wild: boolean) {
@@ -427,8 +426,8 @@
       <div class="text-3xl font-black text-yellow-300 mb-2">結果</div>
       <div class="text-2xl font-black text-amber-50 mb-1">{run.wave?.score ?? 0} 点</div>
       <div class="text-emerald-100/80 text-sm mb-6">お疲れ様でした</div>
-      <button onclick={handleRestart} class="px-10 py-3 rounded-full bg-yellow-400 text-emerald-950 font-black active:scale-95">
-        もう一度
+      <button onclick={handleBackToTitle} class="px-10 py-3 rounded-full bg-yellow-400 text-emerald-950 font-black active:scale-95">
+        タイトルへ戻る
       </button>
     </div>
   </div>
@@ -438,8 +437,8 @@
       <div class="text-rose-400 text-xs tracking-widest mb-2">GAME OVER</div>
       <div class="text-2xl font-black text-amber-50 mb-1">{run.wave?.score ?? 0} / {target}</div>
       <div class="text-emerald-100/70 text-sm mb-6">目標スコアに届かなかった</div>
-      <button onclick={handleRestart} class="px-10 py-3 rounded-full bg-yellow-400 text-emerald-950 font-black active:scale-95">
-        最初から
+      <button onclick={handleBackToTitle} class="px-10 py-3 rounded-full bg-yellow-400 text-emerald-950 font-black active:scale-95">
+        タイトルへ戻る
       </button>
     </div>
   </div>
