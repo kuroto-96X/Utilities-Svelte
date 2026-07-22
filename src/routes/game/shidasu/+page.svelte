@@ -14,7 +14,7 @@
   import { revelationNeedsTarget } from '$lib/game/shidasu/revelationEffects'
   import { oracleName, oracleDesc } from '$lib/game/shidasu/oracles'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
-  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName } from '$lib/game/shidasu/types'
+  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
   import RoleStatusPanel from './RoleStatusPanel.svelte'
@@ -38,7 +38,7 @@
 
   onDestroy(clearPendingTimer)
 
-  let target = $derived(waveTarget(params, run.stageIndex, run.waveIndex))
+  let target = $derived(waveTarget(params, run.stageIndex, run.waveIndex, run.spreadId))
   let wave = $derived(run.wave)
   let currentModifier = $derived(stageModifierFor(params, run))
 
@@ -80,8 +80,10 @@
     scheduleStuckCheck()
   }
 
-  function startGame() {
-    run = beginRun(params)
+  const SPREAD_IDS: SpreadId[] = ['fool', 'moon']
+
+  function handleStartWithSpread(spreadId: SpreadId) {
+    run = beginRun(params, undefined, spreadId)
     afterAction()
   }
 
@@ -212,10 +214,13 @@
 
 {#snippet stageRow()}
   <div class="flex items-center justify-between text-xs">
-    <span class="flex gap-1">
-      {#each [0, 1, 2] as w (w)}
-        <span class="w-2 h-2 rounded-full {w < run.waveIndex ? 'bg-yellow-400' : w === run.waveIndex ? 'bg-yellow-400 animate-pulse' : 'bg-emerald-800'}"></span>
-      {/each}
+    <span class="flex items-center gap-2">
+      <span class="text-emerald-200/90 font-bold">{params.spreads[run.spreadId].name}</span>
+      <span class="flex gap-1">
+        {#each [0, 1, 2] as w (w)}
+          <span class="w-2 h-2 rounded-full {w < run.waveIndex ? 'bg-yellow-400' : w === run.waveIndex ? 'bg-yellow-400 animate-pulse' : 'bg-emerald-800'}"></span>
+        {/each}
+      </span>
     </span>
     {#if isBossWave(params, run.waveIndex)}
       <span class="font-black text-rose-400">{upcomingBossInfo.label}({upcomingBossInfo.detail})</span>
@@ -299,12 +304,17 @@
         突破でステージクリア。
       </p>
     </div>
-    <button
-      onclick={startGame}
-      class="px-10 py-3 rounded-full bg-yellow-400 text-emerald-950 font-black text-lg active:scale-95 transition-transform"
-    >
-      はじめる
-    </button>
+    <div class="flex flex-col gap-3 w-full max-w-xs">
+      {#each SPREAD_IDS as spreadId (spreadId)}
+        <button
+          onclick={() => handleStartWithSpread(spreadId)}
+          class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
+        >
+          <div class="font-black text-yellow-300 text-lg">{params.spreads[spreadId].name}</div>
+          <div class="text-xs text-emerald-100/80 mt-0.5">{params.spreads[spreadId].desc}</div>
+        </button>
+      {/each}
+    </div>
   </div>
 
 {:else if wave && run.phase === 'revelationSelect'}
