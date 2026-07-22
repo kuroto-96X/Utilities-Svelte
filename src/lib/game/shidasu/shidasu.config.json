@@ -40,6 +40,13 @@
   "items": {
     "maxItems": 5
   },
+  "currency": {
+    "name": "星片",
+    "symbol": "☆",
+    "initialAmount": 5,
+    "waveClearAmount": 5,
+    "bossBonus": { "shoukyou": 5, "chuukyou": 10, "taikyou": 15 }
+  },
   "talismans": {
     "bridge": {
       "name": "架橋",
