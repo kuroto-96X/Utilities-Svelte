@@ -1135,6 +1135,70 @@ describe('playCard', () => {
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['bridge'], 1000000, 0, standardDeckComposition())
     expect(next.score).toBe(Math.floor(scoring.basePoint * 1.1))
   })
+
+  describe('playCard: BossScoreLock(ボス制約による得点0)', () => {
+    test('scoreLockがkind:comboで、effectiveComboがmaxCombo以下なら獲得点が0になる', () => {
+      // 列を単一にすると全消しボーナス(clearBonus)が別枠で加算され score の比較が崩れるため、
+      // 他のテストと同様にダミー列を残して全消しにならないようにする
+      const wave = baseWave({
+        foundation: card(0, '♠', 5),
+        tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+        combo: 1, // このプレイでnewCombo=2、baseComboCount=0によりeffectiveCombo=2
+      })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'combo', maxCombo: 2 })
+      expect(next.score).toBe(wave.score)
+      expect(next.lastGain?.points).toBe(0)
+    })
+
+    test('scoreLockがkind:comboで、effectiveComboがmaxComboを超えるなら通常通り得点する', () => {
+      const wave = baseWave({
+        foundation: card(0, '♠', 5),
+        tableau: [[card(1, '♣', 6)]],
+        combo: 2, // このプレイでnewCombo=3、effectiveCombo=3 > maxCombo(2)
+      })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'combo', maxCombo: 2 })
+      expect(next.lastGain?.points).toBeGreaterThan(0)
+    })
+
+    test('scoreLockがkind:suitで、対象スートのカードを取ると獲得点が0になる', () => {
+      // 列を単一にすると全消しボーナス(clearBonus)が別枠で加算され score の比較が崩れるため、
+      // 他のテストと同様にダミー列を残して全消しにならないようにする
+      const wave = baseWave({
+        foundation: card(0, '♠', 5),
+        tableau: [[card(1, '♠', 6)], [card(2, '♦', 2)]],
+      })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'suit', suit: '♠' })
+      expect(next.score).toBe(wave.score)
+      expect(next.lastGain?.points).toBe(0)
+    })
+
+    test('scoreLockがkind:suitで、対象外のスートのカードを取ると通常通り得点する', () => {
+      const wave = baseWave({
+        foundation: card(0, '♠', 5),
+        tableau: [[card(1, '♥', 6)]],
+      })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'suit', suit: '♠' })
+      expect(next.lastGain?.points).toBeGreaterThan(0)
+    })
+
+    test('scoreLockがkind:suitで、ワイルドを取ると対象スートと一致していても通常通り得点する', () => {
+      const wave = baseWave({
+        foundation: card(0, '♠', 5),
+        tableau: [[card(1, '★', 0, true)]],
+      })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'suit', suit: '♠' })
+      expect(next.lastGain?.points).toBeGreaterThan(0)
+    })
+
+    test('scoreLockを省略(未指定)すると通常通り得点する(既存の呼び出し箇所は無変更のまま動作する)', () => {
+      const wave = baseWave({
+        foundation: card(0, '♠', 5),
+        tableau: [[card(1, '♣', 6)]],
+      })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+      expect(next.lastGain?.points).toBeGreaterThan(0)
+    })
+  })
 })
 
 describe('drawStock', () => {

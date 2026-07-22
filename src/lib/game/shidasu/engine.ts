@@ -276,6 +276,11 @@ function resolveHealingRestoration(
   }
 }
 
+// 中凶・大凶ボスウェーブによる得点ロック。isPlayable(取得可否)には一切影響せず、
+// 獲得点(基礎点・チェーンボーナス・列一掃ボーナス等を含めた総額)だけを0にする。
+// 既存のStageModifier(取得を禁止する型)とは別の仕組みとして扱う。
+export type BossScoreLock = { kind: 'combo'; maxCombo: number } | { kind: 'suit'; suit: Suit } | null
+
 export function playCard(
   params: ShidasuParams,
   wave: WaveState,
@@ -284,7 +289,8 @@ export function playCard(
   target: number,
   colIndex: number,
   deckComposition: DeckCard[],
-  rand: () => number = Math.random
+  rand: () => number = Math.random,
+  scoreLock: BossScoreLock = null
 ): { wave: WaveState; deckComposition: DeckCard[] } {
   if (wave.status !== 'playing') return { wave, deckComposition }
   const col = wave.tableau[colIndex]
@@ -446,6 +452,13 @@ export function playCard(
   const mannazFactor = wave.mannazActiveThisWave ? 1 + mannazWeightSum(items, params) * params.rites.mannaz.x : 1
   if (mannazFactor !== 1) parts.push(`マンナズ×${fmtMultiplier(mannazFactor)}`)
   let gained = Math.floor(itemResult.value * multiplier * mannazFactor)
+  if (scoreLock) {
+    const locked = scoreLock.kind === 'combo' ? effectiveCombo <= scoreLock.maxCombo : (!card.wild && card.suit === scoreLock.suit)
+    if (locked) {
+      parts.push(scoreLock.kind === 'combo' ? '中凶: 獲得点0' : '大凶: 獲得点0')
+      gained = 0
+    }
+  }
 
   const scoreAfterGained = wave.score + gained
 
@@ -593,7 +606,8 @@ export function drawStock(
   target: number,
   deckComposition: DeckCard[],
   modifier: StageModifier = 'none',
-  rand: () => number = Math.random
+  rand: () => number = Math.random,
+  scoreLock: BossScoreLock = null
 ): { wave: WaveState; deckComposition: DeckCard[] } {
   if (wave.status !== 'playing') return { wave, deckComposition }
   if (wave.stock.length === 0) return { wave, deckComposition }
@@ -724,6 +738,13 @@ export function drawStock(
       const mannazFactor = wave.mannazActiveThisWave ? 1 + mannazWeightSum(items, params) * params.rites.mannaz.x : 1
       if (mannazFactor !== 1) parts.push(`マンナズ×${fmtMultiplier(mannazFactor)}`)
       naiveGained = Math.floor(itemResult.value * multiplier * mannazFactor)
+      if (scoreLock) {
+        const locked = scoreLock.kind === 'combo' ? effectiveCombo <= scoreLock.maxCombo : (!drawnCard.wild && drawnCard.suit === scoreLock.suit)
+        if (locked) {
+          parts.push(scoreLock.kind === 'combo' ? '中凶: 獲得点0' : '大凶: 獲得点0')
+          naiveGained = 0
+        }
+      }
       naiveParts = parts
       naiveCombo = newCombo
     }
