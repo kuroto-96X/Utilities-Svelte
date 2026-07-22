@@ -85,9 +85,9 @@
     afterAction()
   }
 
-  function handlePlayCard(colIndex: number) {
+  function handlePlayCard(colIndex: number, rowIndex: number) {
     if (run.phase !== 'playing' || run.wave?.status !== 'playing') return
-    run = applyPlayCard(params, run, colIndex)
+    run = applyPlayCard(params, run, colIndex, undefined, rowIndex)
     afterAction()
   }
 

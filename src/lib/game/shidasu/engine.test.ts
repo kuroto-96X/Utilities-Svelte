@@ -4,6 +4,7 @@ import {
   rankLabel,
   isPlayable,
   getPlayableColumns,
+  getPlayableRowsInColumn,
   remainingCount,
   startWave,
   playCard,
@@ -169,6 +170,12 @@ describe('isPlayable', () => {
     const result = chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(5, '♠', 6))
     expect(result).toBe(false)
   })
+
+  test('アルギズ発動中(playFromAnywhereActiveThisWave)でも、ランク差等の判定基準そのものはバイパスしない(列内のどのカードが対象になるかが変わるだけ)', () => {
+    const wave = makeWave({ foundation: card(1, '♠', 5), playFromAnywhereActiveThisWave: true })
+    expect(isPlayable('none', wave, card(2, '♣', 7))).toBe(false) // ランク差2は通常通り取れない
+    expect(isPlayable('none', wave, card(3, '♣', 6))).toBe(true) // ランク差1は通常通り取れる
+  })
 })
 
 describe('getPlayableColumns / remainingCount', () => {
@@ -183,11 +190,47 @@ describe('getPlayableColumns / remainingCount', () => {
     expect(getPlayableColumns('none', wave)).toEqual(new Set([0]))
   })
 
+  test('アルギズ発動中は、一番手前だけでなく列内のどのカードが取れるかで判定する', () => {
+    const wave = makeWave({
+      foundation: card(1, '♠', 5),
+      playFromAnywhereActiveThisWave: true,
+      tableau: [
+        [card(2, '♣', 6), card(3, '♣', 9)], // 手前(9)は取れないが、奥(6)はランク差1で取れる
+        [card(4, '♦', 2)],                   // どちらも取れない
+      ],
+    })
+    expect(getPlayableColumns('none', wave)).toEqual(new Set([0]))
+  })
+
   test('remainingCountは全列の合計枚数', () => {
     const wave = makeWave({
       tableau: [[card(1, '♠', 1)], [card(2, '♠', 2), card(3, '♠', 3)]],
     })
     expect(remainingCount(wave.tableau)).toBe(3)
+  })
+})
+
+describe('getPlayableRowsInColumn', () => {
+  test('通常時は一番手前の行のみを判定対象にする(奥に取れるカードがあっても対象に含めない)', () => {
+    const wave = makeWave({
+      foundation: card(1, '♠', 5),
+      tableau: [[card(2, '♣', 6), card(3, '♣', 9)]], // 奥(idx0)=6は取れる、手前(idx1)=9は取れない
+    })
+    expect(getPlayableRowsInColumn('none', wave, 0)).toEqual(new Set())
+  })
+
+  test('アルギズ発動中は列内の全行を判定対象にし、isPlayableを満たす行のみ返す', () => {
+    const wave = makeWave({
+      foundation: card(1, '♠', 5),
+      playFromAnywhereActiveThisWave: true,
+      tableau: [[card(2, '♣', 6), card(3, '♣', 9), card(4, '♣', 4)]], // idx0=6(取れる) idx1=9(取れない) idx2=4(取れる)
+    })
+    expect(getPlayableRowsInColumn('none', wave, 0)).toEqual(new Set([0, 2]))
+  })
+
+  test('空の列は空集合を返す', () => {
+    const wave = makeWave({ tableau: [[]] })
+    expect(getPlayableRowsInColumn('none', wave, 0)).toEqual(new Set())
   })
 })
 
@@ -275,6 +318,24 @@ describe('playCard', () => {
   test('取れない列を指定した場合は何も変わらない', () => {
     const wave = baseWave()
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 1, standardDeckComposition()) // 列1(2)は取れない
+    expect(next).toBe(wave)
+  })
+
+  test('アルギズ発動中は、rowIndexを指定して列の途中のカードをプレイでき、上に乗っていたカードは繰り下がって残る', () => {
+    const wave = baseWave({
+      playFromAnywhereActiveThisWave: true,
+      tableau: [[card(1, '♣', 6), card(9, '♠', 1)], [card(2, '♦', 2)]], // idx0=6(取れる) idx1=1(取れない、これが一番上)
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, null, 0)
+    expect(next.foundation).toEqual(card(1, '♣', 6))
+    expect(next.tableau[0]).toEqual([card(9, '♠', 1)])
+  })
+
+  test('アルギズ非発動中は、rowIndexで一番上以外(取れるランクのカード)を指定しても無視され何も変わらない', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6), card(9, '♠', 10)], [card(2, '♦', 2)]], // idx0=6(奥、ランク的には取れる) idx1=10(一番上、ランク差5で取れない)
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, null, 0)
     expect(next).toBe(wave)
   })
 

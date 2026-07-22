@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
-  import { getPlayableColumns, remainingCount } from '$lib/game/shidasu/engine'
+  import { getPlayableColumns, isPlayable, remainingCount } from '$lib/game/shidasu/engine'
   import type { WaveState, StageModifier, ItemId, RiteId, RevelationId } from '$lib/game/shidasu/types'
   import type { ShidasuParams } from '$lib/game/shidasu/params'
   import { canUseRite } from '$lib/game/shidasu/riteEffects'
@@ -26,7 +26,7 @@
     modifier: StageModifier
     target: number
     items: ItemId[]
-    onPlayCard: (colIndex: number) => void
+    onPlayCard: (colIndex: number, rowIndex: number) => void
     onDraw: () => void
     dropTarget?: { col: number; row: number } | 'stockTop' | null
     headerExtra?: Snippet
@@ -109,18 +109,20 @@
       <div class="relative" style="min-height: 10.5rem;">
         {#each col as card, ri (card.id)}
           {@const isTop = ri === col.length - 1}
+          {@const isSelectable = columnTargetMode ? isTop : (isTop || wave.playFromAnywhereActiveThisWave)}
           <div
             class="absolute left-0 right-0 {dropTarget && dropTarget !== 'stockTop' && dropTarget.col === ci && dropTarget.row === ri ? 'ring-4 ring-sky-400 rounded-lg' : ''}"
             style="top:{ri * 18}px; z-index:{ri};"
             data-drop-col={ci}
             data-drop-row={ri}
           >
-            {#if isTop}
+            {#if isSelectable}
               {@const isTargetable = columnTargetMode && canTargetColumn(ci)}
+              {@const isCardPlayable = !columnTargetMode && isPlayable(modifier, wave, card)}
               <button
                 type="button"
-                onclick={() => (columnTargetMode ? (isTargetable && onTargetColumn?.(ci)) : onPlayCard(ci))}
-                class="w-full text-left {columnTargetMode ? (isTargetable ? 'ring-2 ring-fuchsia-400 shadow-lg -translate-y-0.5' : '') : (playableCols.has(ci) ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : '')} transition-transform"
+                onclick={() => (columnTargetMode ? (isTargetable && onTargetColumn?.(ci)) : onPlayCard(ci, ri))}
+                class="w-full text-left {columnTargetMode ? (isTargetable ? 'ring-2 ring-fuchsia-400 shadow-lg -translate-y-0.5' : '') : (isCardPlayable ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : '')} transition-transform"
               >
                 <CardFace {card} covered={false} />
               </button>

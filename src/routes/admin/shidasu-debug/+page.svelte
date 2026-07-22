@@ -76,8 +76,8 @@
     lastSnapshot = null
   }
 
-  function handlePlayCard(colIndex: number) {
-    const result = playCard(params, wave, 'none', items, TARGET, colIndex, deckComposition)
+  function handlePlayCard(colIndex: number, rowIndex: number) {
+    const result = playCard(params, wave, 'none', items, TARGET, colIndex, deckComposition, Math.random, null, rowIndex)
     wave = result.wave
     deckComposition = result.deckComposition
     lastSnapshot = null

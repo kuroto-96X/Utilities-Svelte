@@ -20,8 +20,6 @@ export function rankLabel(card: Card): string {
 }
 
 export function isPlayable(modifier: StageModifier, wave: WaveState, card: Card): boolean {
-  // アルギズ発動中は、そのウェーブが終わるまであらゆる場札がプレイ可能になる(最優先で判定)
-  if (wave.playFromAnywhereActiveThisWave) return true
   // faceLockはワイルド(場札含む)より優先して評価する: ワイルド場札でも絵札はコンボ不足なら拒否する
   if (modifier === 'faceLock' && isFace(card) && wave.combo < 2) return false
   if (card.wild || wave.foundation.wild) return true
@@ -37,11 +35,27 @@ export function isPlayable(modifier: StageModifier, wave: WaveState, card: Card)
   return false
 }
 
+// アルギズ発動中は列内の全カードが、それ以外は一番上のカードのみがプレイ対象になる。
+// 対象カードのうち実際にisPlayableを満たす行インデックスの集合を返す(判定基準自体は変わらない)。
+export function getPlayableRowsInColumn(modifier: StageModifier, wave: WaveState, colIndex: number): Set<number> {
+  const col = wave.tableau[colIndex]
+  const result = new Set<number>()
+  if (!col || col.length === 0) return result
+  if (wave.playFromAnywhereActiveThisWave) {
+    col.forEach((c, ri) => {
+      if (isPlayable(modifier, wave, c)) result.add(ri)
+    })
+  } else {
+    const topIndex = col.length - 1
+    if (isPlayable(modifier, wave, col[topIndex])) result.add(topIndex)
+  }
+  return result
+}
+
 export function getPlayableColumns(modifier: StageModifier, wave: WaveState): Set<number> {
   const result = new Set<number>()
   wave.tableau.forEach((col, i) => {
-    const top = col[col.length - 1]
-    if (top && isPlayable(modifier, wave, top)) result.add(i)
+    if (getPlayableRowsInColumn(modifier, wave, i).size > 0) result.add(i)
   })
   return result
 }
@@ -290,11 +304,16 @@ export function playCard(
   colIndex: number,
   deckComposition: DeckCard[],
   rand: () => number = Math.random,
-  scoreLock: BossScoreLock = null
+  scoreLock: BossScoreLock = null,
+  rowIndex?: number
 ): { wave: WaveState; deckComposition: DeckCard[] } {
   if (wave.status !== 'playing') return { wave, deckComposition }
   const col = wave.tableau[colIndex]
-  const card = col?.[col.length - 1]
+  if (!col || col.length === 0) return { wave, deckComposition }
+  const row = rowIndex ?? col.length - 1
+  // アルギズ非発動中は一番上以外の行を指定しても無視する(不正なプレイを防ぐガード)
+  if (row !== col.length - 1 && !wave.playFromAnywhereActiveThisWave) return { wave, deckComposition }
+  const card = col[row]
   if (!card) return { wave, deckComposition }
   if (!isPlayable(modifier, wave, card)) return { wave, deckComposition }
 
@@ -340,7 +359,7 @@ export function playCard(
 
   const chainIncludingThis = [...wave.chain, card]
 
-  const newTableau = wave.tableau.map((c, i) => (i === colIndex ? c.slice(0, -1) : c))
+  const newTableau = wave.tableau.map((c, i) => (i === colIndex ? [...c.slice(0, row), ...c.slice(row + 1)] : c))
   const columnJustEmptied = newTableau[colIndex].length === 0
   const streakStartLength = wave.comboStreakColumnLengths[colIndex]
   const rows = wave.dealtRows
@@ -1147,12 +1166,12 @@ export function restartRun(params: ShidasuParams, seed?: number): RunState {
   return beginRun(params, seed)
 }
 
-export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: number, rand: () => number = Math.random): RunState {
+export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: number, rand: () => number = Math.random, rowIndex?: number): RunState {
   if (run.phase !== 'playing' || !run.wave) return run
   const target = waveTarget(params, run.stageIndex, run.waveIndex)
   const modifier = stageModifierFor(params, run)
   const scoreLock = bossScoreLockFor(params, run)
-  const { wave, deckComposition } = playCard(params, run.wave, modifier, run.items, target, colIndex, run.deckComposition, rand, scoreLock)
+  const { wave, deckComposition } = playCard(params, run.wave, modifier, run.items, target, colIndex, run.deckComposition, rand, scoreLock, rowIndex)
   return { ...run, wave, deckComposition }
 }
 
