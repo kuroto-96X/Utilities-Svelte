@@ -7,8 +7,9 @@
     continueAfterGreatMisfortune, stopAfterGreatMisfortune, startWave, forceStockTop, useRite,
     useRevelation, useRevelationFromOffer, pickRevelationFromOffer, skipRevelationSelect,
     pickOracleFromOffer, skipOracleSelect,
-    waveTarget, stageModifierFor, bossTierOf, isBossWave,
+    waveTarget, stageModifierFor, isBossWave,
   } from '$lib/game/shidasu/engine'
+  import { bossDesc } from '$lib/game/shidasu/bosses'
   import { itemDesc, itemName } from '$lib/game/shidasu/items'
   import { revelationDesc, revelationName } from '$lib/game/shidasu/revelations'
   import { revelationNeedsTarget } from '$lib/game/shidasu/revelationEffects'
@@ -46,10 +47,13 @@
   // 常に同じボス階級を共有し、ボスウェーブ(3ウェーブ目)でのみ実際に制約が発動する
   // (どちらの表示にするかはstageRow側のisBossWave分岐が担い、ここでは扱わない)。
   let upcomingBossInfo = $derived.by(() => {
-    const tier = bossTierOf(run.stageIndex)
-    if (tier === 0) return { label: params.bossTiers.shoukyou.name, detail: 'A⇔Kループ禁止' }
-    if (tier === 1) return { label: params.bossTiers.chuukyou.name, detail: `${params.bossTiers.chuukyou.maxCombo}コンボ以下で無得点` }
-    return { label: params.bossTiers.taikyou.name, detail: run.currentGreatMisfortuneSuit ? `${run.currentGreatMisfortuneSuit}で無得点` : '対象スート未確定' }
+    const kind = run.currentBossKind
+    if (!kind) return { label: '', detail: '' }
+    if (kind === 'suit') {
+      const detail = run.currentGreatMisfortuneSuit ? `${run.currentGreatMisfortuneSuit}で無得点` : '対象スート未確定'
+      return { label: params.bosses.suit.name, detail }
+    }
+    return { label: params.bosses[kind].name, detail: bossDesc(kind, params) }
   })
 
   function scheduleStuckCheck() {
