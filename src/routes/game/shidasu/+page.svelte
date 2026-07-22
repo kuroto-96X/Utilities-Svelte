@@ -225,6 +225,7 @@
           <span class="w-2 h-2 rounded-full {w < run.waveIndex ? 'bg-yellow-400' : w === run.waveIndex ? 'bg-yellow-400 animate-pulse' : 'bg-emerald-800'}"></span>
         {/each}
       </span>
+      <span class="text-yellow-300 font-bold">{params.currency.symbol}{run.currency}</span>
     </span>
     {#if isBossWave(params, run.waveIndex)}
       <span class="font-black text-rose-400">{upcomingBossInfo.label}({upcomingBossInfo.detail})</span>
