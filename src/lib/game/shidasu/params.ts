@@ -52,6 +52,17 @@ export interface ShidasuParams {
   items: {
     maxItems: number
   }
+  currency: {
+    name: string
+    symbol: string
+    initialAmount: number
+    waveClearAmount: number
+    bossBonus: {
+      shoukyou: number
+      chuukyou: number
+      taikyou: number
+    }
+  }
   talismans: {
     bridge: { name: string; m: number; rarity: Rarity; desc: string }
     grace: { name: string; m: number; rarity: Rarity; desc: string }
@@ -240,6 +251,13 @@ export const DEFAULT_PARAMS: ShidasuParams = {
   },
   items: {
     maxItems: 5,
+  },
+  currency: {
+    name: '星片',
+    symbol: '☆',
+    initialAmount: 5,
+    waveClearAmount: 5,
+    bossBonus: { shoukyou: 5, chuukyou: 10, taikyou: 15 },
   },
   talismans: {
     bridge: { name: '架橋', m: 2, rarity: 'C', desc: '階段・同スート・同色の成立に必要な枚数を{m}枚緩和' },
