@@ -5,7 +5,7 @@
   import ItemsSection from './ItemsSection.svelte'
   import ScoringSection from './ScoringSection.svelte'
   import RoleBonusSection from './RoleBonusSection.svelte'
-  import StagesSection from './StagesSection.svelte'
+  import BossTiersSection from './BossTiersSection.svelte'
   import FlowUiSection from './FlowUiSection.svelte'
   import JsonPanel from './JsonPanel.svelte'
 
@@ -22,10 +22,9 @@
 
   let hasValidationError = $derived.by(() => {
     if (!config) return false
-    if (config.stages.length < 1) return true
-    for (const stage of config.stages) {
-      if (stage.targets.some(t => !Number.isFinite(t) || t < 0)) return true
-    }
+    if (!Number.isFinite(config.scoring.waveTargetBase) || config.scoring.waveTargetBase <= 0) return true
+    if (!Number.isFinite(config.scoring.waveTargetMultiplier) || config.scoring.waveTargetMultiplier <= 1) return true
+    if (!Number.isFinite(config.bossTiers.chuukyou.maxCombo) || config.bossTiers.chuukyou.maxCombo < 0) return true
     // 場札(cols×rows)配布後にfoundation用の1枚が残らないと山札が尽きてゲームが起動できない
     if (config.layout.cols < 1 || config.layout.rows < 1) return true
     if (config.layout.cols * config.layout.rows > 51) return true
@@ -35,11 +34,6 @@
     if (!Number.isFinite(config.scoring.suitColorMinLen) || config.scoring.suitColorMinLen < 1) return true
     if (!Number.isFinite(config.talismans.morningMist.x) || config.talismans.morningMist.x <= 0) return true
     return false
-  })
-
-  let targetsNotAscending = $derived.by(() => {
-    if (!config) return false
-    return config.stages.some(s => !(s.targets[0] < s.targets[1] && s.targets[1] < s.targets[2]))
   })
 
   async function loadConfig(toast = false) {
@@ -97,8 +91,6 @@
       </button>
       {#if hasValidationError}
         <p class="text-xs text-red-600 self-center">入力値が不正です</p>
-      {:else if targetsNotAscending}
-        <p class="text-xs text-amber-600 self-center">目標スコアが昇順ではありません</p>
       {/if}
       <button
         onclick={save}
@@ -122,7 +114,7 @@
 
       <RoleBonusSection {config} />
 
-      <StagesSection {config} />
+      <BossTiersSection {config} />
 
       <ItemsSection {config} />
 
