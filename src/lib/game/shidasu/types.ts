@@ -222,4 +222,7 @@ export interface RunState {
   // 配る時点)にそのステージの階級(bossTierOf(stageIndex))に属する候補群からrandで1つ抽選し、
   // そのステージの3ウェーブ間(表示・実際の判定とも)固定で使い回す。titleフェーズではnull
   currentBossKind: BossKind | null
+  // ラン単位で保持する通貨(星片)の所持数。continueChoiceを挟んでもリセットされず、
+  // beginRun(新しいラン開始)のときのみ初期値に戻る
+  currency: number
 }
