@@ -14,10 +14,18 @@
   function isValidShidasuParams(value: unknown): value is ShidasuParams {
     if (typeof value !== 'object' || value === null) return false
     const v = value as Record<string, unknown>
+    const bossTiers = v.bossTiers as Record<string, unknown> | undefined
+    const shoukyou = bossTiers?.shoukyou as Record<string, unknown> | undefined
+    const chuukyou = bossTiers?.chuukyou as Record<string, unknown> | undefined
+    const taikyou = bossTiers?.taikyou as Record<string, unknown> | undefined
     return (
       typeof v.layout === 'object' && v.layout !== null &&
       typeof v.scoring === 'object' && v.scoring !== null &&
-      Array.isArray(v.stages) && v.stages.length >= 1 &&
+      typeof v.bossTiers === 'object' && v.bossTiers !== null &&
+      typeof shoukyou?.name === 'string' &&
+      typeof chuukyou?.name === 'string' &&
+      typeof chuukyou?.maxCombo === 'number' &&
+      typeof taikyou?.name === 'string' &&
       typeof v.items === 'object' && v.items !== null &&
       typeof v.flow === 'object' && v.flow !== null &&
       typeof v.ui === 'object' && v.ui !== null &&
@@ -29,7 +37,7 @@
     try {
       const parsed = JSON.parse(jsonText)
       if (!isValidShidasuParams(parsed)) {
-        jsonError = '必須項目(layout/scoring/stages/items/flow/ui)が不足しています'
+        jsonError = '必須項目(layout/scoring/bossTiers/items/flow/ui)が不足しています'
         return
       }
       onApply(parsed)
