@@ -294,10 +294,10 @@ function resolveHealingRestoration(
 // 獲得点(基礎点・チェーンボーナス・列一掃ボーナス等を含めた総額)だけを0にする。
 // 既存のStageModifier(取得を禁止する型)とは別の仕組みとして扱う。
 export type BossScoreLock =
-  | { kind: 'combo'; maxCombo: number }
-  | { kind: 'suit'; suit: Suit }
-  | { kind: 'oddCombo' }
-  | { kind: 'face' }
+  | { kind: 'combo'; maxCombo: number; tierLabel: string }
+  | { kind: 'suit'; suit: Suit; tierLabel: string }
+  | { kind: 'oddCombo'; tierLabel: string }
+  | { kind: 'face'; tierLabel: string }
   | null
 
 // scoreLockの種別ごとの無得点化条件を判定する共通ヘルパー。playCard/drawStockの両方から使う。
@@ -307,13 +307,21 @@ function isBossScoreLocked(scoreLock: NonNullable<BossScoreLock>, effectiveCombo
     case 'suit': return !card.wild && card.suit === scoreLock.suit
     case 'oddCombo': return effectiveCombo % 2 === 1
     case 'face': return !card.wild && isFace(card)
+    default: {
+      // 網羅性チェック: BossScoreLockに新しいkindが追加されコンパイル時に更新漏れがあれば、
+      // ここで型エラーになる(値をnever型に代入できないため)。
+      const _exhaustive: never = scoreLock
+      return _exhaustive
+    }
   }
 }
 
-// 無得点になった際にlastGain.partsへ積むメッセージ。小凶由来はStageModifierで別途扱うため、
-// ここではscoreLock(中凶・大凶)由来の2種のみ対象。
+// 無得点になった際にlastGain.partsへ積むメッセージ。scoreLockが構築された時点(bossScoreLockFor)で
+// 確定した実際の階級名(tierLabel)をそのまま使う。kindからtierを再導出しない
+// (kindとtierの対応はparams.bosses[kind].tierとして管理画面から変更できるため、
+// ここで再導出すると階級再割り当てに追従できなくなる)。
 function bossScoreLockMessage(scoreLock: NonNullable<BossScoreLock>): string {
-  return scoreLock.kind === 'combo' || scoreLock.kind === 'oddCombo' ? '中凶: 獲得点0' : '大凶: 獲得点0'
+  return `${scoreLock.tierLabel}: 獲得点0`
 }
 
 export function playCard(
@@ -896,11 +904,12 @@ export function stageModifierFor(params: ShidasuParams, run: RunState): StageMod
 // (実際にはsuitが選ばれた瞬間に必ず確定させるため、通常はnullにならない)。
 export function bossScoreLockFor(params: ShidasuParams, run: RunState): BossScoreLock {
   if (!isBossWave(params, run.waveIndex)) return null
+  const tierLabelFor = (bossKind: BossKind) => params.bossTiers[params.bosses[bossKind].tier].name
   switch (run.currentBossKind) {
-    case 'lowCombo': return { kind: 'combo', maxCombo: params.bosses.lowCombo.maxCombo }
-    case 'oddCombo': return { kind: 'oddCombo' }
-    case 'suit': return run.currentGreatMisfortuneSuit ? { kind: 'suit', suit: run.currentGreatMisfortuneSuit } : null
-    case 'face': return { kind: 'face' }
+    case 'lowCombo': return { kind: 'combo', maxCombo: params.bosses.lowCombo.maxCombo, tierLabel: tierLabelFor('lowCombo') }
+    case 'oddCombo': return { kind: 'oddCombo', tierLabel: tierLabelFor('oddCombo') }
+    case 'suit': return run.currentGreatMisfortuneSuit ? { kind: 'suit', suit: run.currentGreatMisfortuneSuit, tierLabel: tierLabelFor('suit') } : null
+    case 'face': return { kind: 'face', tierLabel: tierLabelFor('face') }
     default: return null
   }
 }

@@ -1210,7 +1210,7 @@ describe('playCard', () => {
         tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
         combo: 1, // このプレイでnewCombo=2、baseComboCount=0によりeffectiveCombo=2
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'combo', maxCombo: 2 })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'combo', maxCombo: 2, tierLabel: DEFAULT_PARAMS.bossTiers.chuukyou.name })
       expect(next.score).toBe(wave.score)
       expect(next.lastGain?.points).toBe(0)
     })
@@ -1221,7 +1221,7 @@ describe('playCard', () => {
         tableau: [[card(1, '♣', 6)]],
         combo: 2, // このプレイでnewCombo=3、effectiveCombo=3 > maxCombo(2)
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'combo', maxCombo: 2 })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'combo', maxCombo: 2, tierLabel: DEFAULT_PARAMS.bossTiers.chuukyou.name })
       expect(next.lastGain?.points).toBeGreaterThan(0)
     })
 
@@ -1232,7 +1232,7 @@ describe('playCard', () => {
         foundation: card(0, '♠', 5),
         tableau: [[card(1, '♠', 6)], [card(2, '♦', 2)]],
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'suit', suit: '♠' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'suit', suit: '♠', tierLabel: DEFAULT_PARAMS.bossTiers.taikyou.name })
       expect(next.score).toBe(wave.score)
       expect(next.lastGain?.points).toBe(0)
     })
@@ -1242,7 +1242,7 @@ describe('playCard', () => {
         foundation: card(0, '♠', 5),
         tableau: [[card(1, '♥', 6)]],
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'suit', suit: '♠' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'suit', suit: '♠', tierLabel: DEFAULT_PARAMS.bossTiers.taikyou.name })
       expect(next.lastGain?.points).toBeGreaterThan(0)
     })
 
@@ -1251,7 +1251,7 @@ describe('playCard', () => {
         foundation: card(0, '♠', 5),
         tableau: [[card(1, '★', 0, true)]],
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'suit', suit: '♠' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'suit', suit: '♠', tierLabel: DEFAULT_PARAMS.bossTiers.taikyou.name })
       expect(next.lastGain?.points).toBeGreaterThan(0)
     })
 
@@ -1273,7 +1273,7 @@ describe('playCard', () => {
         tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
         combo: 0, // このプレイでnewCombo=1、baseComboCount=0によりeffectiveCombo=1(奇数)
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, oddWave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'oddCombo' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, oddWave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'oddCombo', tierLabel: DEFAULT_PARAMS.bossTiers.chuukyou.name })
       expect(next.score).toBe(oddWave.score)
       expect(next.lastGain?.points).toBe(0)
     })
@@ -1284,7 +1284,7 @@ describe('playCard', () => {
         tableau: [[card(1, '♣', 6)]],
         combo: 1, // このプレイでnewCombo=2、effectiveCombo=2(偶数)
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'oddCombo' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'oddCombo', tierLabel: DEFAULT_PARAMS.bossTiers.chuukyou.name })
       expect(next.lastGain?.points).toBeGreaterThan(0)
     })
 
@@ -1296,7 +1296,7 @@ describe('playCard', () => {
         foundation: card(0, '♠', 12), // Q
         tableau: [[card(1, '♠', 13)], [card(2, '♦', 2)]], // K、ランク差1で取れる、かつ絵札
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'face' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'face', tierLabel: DEFAULT_PARAMS.bossTiers.taikyou.name })
       expect(next.score).toBe(wave.score)
       expect(next.lastGain?.points).toBe(0)
     })
@@ -1306,7 +1306,7 @@ describe('playCard', () => {
         foundation: card(0, '♠', 5),
         tableau: [[card(1, '♣', 6)]], // 絵札ではない
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'face' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'face', tierLabel: DEFAULT_PARAMS.bossTiers.taikyou.name })
       expect(next.lastGain?.points).toBeGreaterThan(0)
     })
 
@@ -1315,7 +1315,7 @@ describe('playCard', () => {
         foundation: card(0, '♠', 5),
         tableau: [[card(1, '★', 0, true)]],
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'face' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'face', tierLabel: DEFAULT_PARAMS.bossTiers.taikyou.name })
       expect(next.lastGain?.points).toBeGreaterThan(0)
     })
   })
@@ -2166,22 +2166,22 @@ describe('stageModifierFor / bossScoreLockFor', () => {
 
   test('currentBossKindがlowComboならkind:comboのscoreLockが返る', () => {
     const run = runWith({ currentBossKind: 'lowCombo' })
-    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'combo', maxCombo: DEFAULT_PARAMS.bosses.lowCombo.maxCombo })
+    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'combo', maxCombo: DEFAULT_PARAMS.bosses.lowCombo.maxCombo, tierLabel: DEFAULT_PARAMS.bossTiers.chuukyou.name })
   })
 
   test('currentBossKindがoddComboならkind:oddComboのscoreLockが返る', () => {
     const run = runWith({ currentBossKind: 'oddCombo' })
-    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'oddCombo' })
+    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'oddCombo', tierLabel: DEFAULT_PARAMS.bossTiers.chuukyou.name })
   })
 
   test('currentBossKindがsuitかつcurrentGreatMisfortuneSuitが確定していればkind:suitのscoreLockが返る', () => {
     const run = runWith({ currentBossKind: 'suit', currentGreatMisfortuneSuit: '♠' })
-    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'suit', suit: '♠' })
+    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'suit', suit: '♠', tierLabel: DEFAULT_PARAMS.bossTiers.taikyou.name })
   })
 
   test('currentBossKindがfaceならkind:faceのscoreLockが返る', () => {
     const run = runWith({ currentBossKind: 'face' })
-    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'face' })
+    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'face', tierLabel: DEFAULT_PARAMS.bossTiers.taikyou.name })
   })
 })
 
@@ -2678,7 +2678,7 @@ describe('drawStock (素朴の得点ルール変更)', () => {
       linked: true,
       score: 0,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['naive'], 1000000, standardDeckComposition(), 'none', Math.random, { kind: 'combo', maxCombo: 3 })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['naive'], 1000000, standardDeckComposition(), 'none', Math.random, { kind: 'combo', maxCombo: 3, tierLabel: DEFAULT_PARAMS.bossTiers.chuukyou.name })
     expect(next.combo).toBe(3) // コンボ自体は通常通り進行する
     expect(next.score).toBe(0) // 得点はロックされる
     expect(next.lastGain).not.toBeNull() // メッセージは欠落しない
@@ -3083,4 +3083,3 @@ describe('神託選択フェーズ', () => {
     expect(wave.oracleLevels.suit).toBe(2)
   })
 })
-
