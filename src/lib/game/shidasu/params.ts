@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/params.ts
 import shidasuConfigJson from './shidasu.config.json'
-import type { StageModifier, Rarity } from './types'
+import type { Rarity } from './types'
 
 export interface ShidasuParams {
   layout: {
@@ -23,12 +23,18 @@ export interface ShidasuParams {
     completeRunBonus: number
     completeRunSuitBonus: number
     columnSweepBonus: number
+    // 目標スコア算出式 target(n) = waveTargetBase × waveTargetMultiplier^(n-1) の基礎値・倍率
+    // (nはラン開始からの通しウェーブ番号、1始まり)
+    waveTargetBase: number
+    waveTargetMultiplier: number
   }
-  stages: Array<{
-    name: string
-    modifier: StageModifier
-    targets: [number, number, number]
-  }>
+  // ボス階級ごとの設定。stageIndex % 3 (0=小凶,1=中凶,2=大凶)でインデックスする代わりに、
+  // 読みやすさのため名前付きキーで持つ(shoukyou=小凶,chuukyou=中凶,taikyou=大凶)
+  bossTiers: {
+    shoukyou: { name: string }
+    chuukyou: { name: string; maxCombo: number }
+    taikyou: { name: string }
+  }
   items: {
     maxItems: number
   }
@@ -200,12 +206,14 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     completeRunBonus: 1000,
     completeRunSuitBonus: 1000,
     columnSweepBonus: 150,
+    waveTargetBase: 2000,
+    waveTargetMultiplier: 1.5,
   },
-  stages: [
-    { name: 'STAGE 1', modifier: 'none', targets: [4000, 7500, 13000] },
-    { name: 'STAGE 2', modifier: 'noLoop', targets: [6000, 11000, 19000] },
-    { name: 'STAGE 3', modifier: 'faceLock', targets: [8000, 15000, 26000] },
-  ],
+  bossTiers: {
+    shoukyou: { name: '小凶' },
+    chuukyou: { name: '中凶', maxCombo: 2 },
+    taikyou: { name: '大凶' },
+  },
   items: {
     maxItems: 5,
   },

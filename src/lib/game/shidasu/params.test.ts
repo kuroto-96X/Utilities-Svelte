@@ -7,11 +7,6 @@ describe('DEFAULT_PARAMS', () => {
     expect(DEFAULT_PARAMS.layout).toEqual({ cols: 7, rows: 5 })
   })
 
-  test('ステージが3つ、modifierが none/noLoop/faceLock の順で定義されている', () => {
-    expect(DEFAULT_PARAMS.stages).toHaveLength(3)
-    expect(DEFAULT_PARAMS.stages.map(s => s.modifier)).toEqual(['none', 'noLoop', 'faceLock'])
-  })
-
   test('ui.comboTierThresholds は [3, 5, 8]', () => {
     expect(DEFAULT_PARAMS.ui.comboTierThresholds).toEqual([3, 5, 8])
   })
@@ -30,9 +25,6 @@ describe('DEFAULT_PARAMS', () => {
     expect(s.completeRunBonus % 10).toBe(0)
     expect(s.completeRunSuitBonus % 10).toBe(0)
     expect(s.columnSweepBonus % 10).toBe(0)
-    DEFAULT_PARAMS.stages.forEach(stage => {
-      stage.targets.forEach(t => expect(t % 10).toBe(0))
-    })
   })
 
   test('comboMultiplierStepは0.1', () => {

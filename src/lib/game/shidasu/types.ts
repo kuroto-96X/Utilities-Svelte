@@ -179,7 +179,7 @@ export interface WaveState {
   oracleLevels: Record<RoleName, number>
 }
 
-export type RunPhase = 'title' | 'playing' | 'itemSelect' | 'revelationSelect' | 'oracleSelect' | 'stageClear' | 'allClear' | 'gameOver'
+export type RunPhase = 'title' | 'playing' | 'itemSelect' | 'revelationSelect' | 'oracleSelect' | 'continueChoice' | 'allClear' | 'gameOver'
 
 export interface RunState {
   phase: RunPhase
@@ -203,4 +203,8 @@ export interface RunState {
   oracleLevels: Record<RoleName, number>
   // 神託選択画面('oracleSelect'フェーズ)で提示中のオファー(3択)。それ以外のフェーズでは空配列
   oracleOffer: RoleName[]
+  // 大凶ステージ(stageIndex % 3 === 2)の対象スート。中凶クリア直後(大凶ステージの1ウェーブ目を
+  // 配る時点)にrandで抽選して確定し、そのステージが終わるまで(1〜3ウェーブ目)固定で使い回す。
+  // 小凶・中凶ステージの間は常にnull
+  currentGreatMisfortuneSuit: Suit | null
 }
