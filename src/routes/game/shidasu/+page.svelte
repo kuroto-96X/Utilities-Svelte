@@ -9,7 +9,7 @@
     pickOracleFromOffer, skipOracleSelect,
     waveTarget, stageModifierFor, isBossWave,
   } from '$lib/game/shidasu/engine'
-  import { bossDesc } from '$lib/game/shidasu/bosses'
+  import { bossName, bossDesc } from '$lib/game/shidasu/bosses'
   import { itemDesc, itemName } from '$lib/game/shidasu/items'
   import { revelationDesc, revelationName } from '$lib/game/shidasu/revelations'
   import { revelationNeedsTarget } from '$lib/game/shidasu/revelationEffects'
@@ -51,9 +51,9 @@
     if (!kind) return { label: '', detail: '' }
     if (kind === 'suit') {
       const detail = run.currentGreatMisfortuneSuit ? `${run.currentGreatMisfortuneSuit}で無得点` : '対象スート未確定'
-      return { label: params.bosses.suit.name, detail }
+      return { label: bossName('suit', params), detail }
     }
-    return { label: params.bosses[kind].name, detail: bossDesc(kind, params) }
+    return { label: bossName(kind, params), detail: bossDesc(kind, params) }
   })
 
   function scheduleStuckCheck() {
