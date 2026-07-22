@@ -2390,6 +2390,22 @@ describe('drawStock (素朴の得点ルール変更)', () => {
     expect(next.score).toBeGreaterThan(0) // 得点が発生する(通常は0のまま)
   })
 
+  test('素朴+scoreLock(kind:combo): パターン継続めくりでeffectiveComboがmaxCombo以下ならlastGainは残るが得点は0になる', () => {
+    const wave = makeWave({
+      stock: [card(1, '♠', 9)],
+      combo: 2, // このめくりでnewCombo=3、baseComboCount=0によりeffectiveCombo=3
+      chain: [card(2, '♠', 4), card(3, '♠', 5)],
+      linked: true,
+      score: 0,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['naive'], 1000000, standardDeckComposition(), 'none', Math.random, { kind: 'combo', maxCombo: 3 })
+    expect(next.combo).toBe(3) // コンボ自体は通常通り進行する
+    expect(next.score).toBe(0) // 得点はロックされる
+    expect(next.lastGain).not.toBeNull() // メッセージは欠落しない
+    expect(next.lastGain?.points).toBe(0)
+    expect(next.lastGain?.parts).toContain('中凶: 獲得点0')
+  })
+
   test('素朴を持たない場合は、パターン継続めくりで得点もコンボ加算も発生しない(既存挙動)', () => {
     const wave = makeWave({
       stock: [card(1, '♠', 9)],

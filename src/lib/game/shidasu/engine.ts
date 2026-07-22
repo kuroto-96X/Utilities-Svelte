@@ -766,7 +766,7 @@ export function drawStock(
       chainOrigin: [...wave.chainOrigin, 'draw'],
       linked: true,
       lastDrawEffect: drawnCard.wild ? 'wild' : 'pattern',
-      lastGain: naiveGained > 0 ? { points: naiveGained, parts: naiveParts } : null,
+      lastGain: naiveParts.length > 0 ? { points: naiveGained, parts: naiveParts } : null,
       score: scoreAfterStockEmpty + directGain + naiveGained,
       drawContinueCountThisChain: newDrawContinueCount,
       benevolenceUsedThisCombo: benevolenceFires ? true : wave.benevolenceUsedThisCombo,
