@@ -27,7 +27,6 @@
       typeof v.bossTiers === 'object' && v.bossTiers !== null &&
       typeof shoukyou?.name === 'string' &&
       typeof chuukyou?.name === 'string' &&
-      typeof chuukyou?.maxCombo === 'number' &&
       typeof taikyou?.name === 'string' &&
       typeof v.spreads === 'object' && v.spreads !== null &&
       typeof fool?.name === 'string' &&
