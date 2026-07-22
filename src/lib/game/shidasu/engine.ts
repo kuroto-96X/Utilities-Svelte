@@ -836,6 +836,72 @@ export function drawStock(
   }
 }
 
+// 各ステージの最終ウェーブ(ボスウェーブ)かどうかを返す。
+export function isBossWave(params: ShidasuParams, waveIndex: number): boolean {
+  return waveIndex === params.flow.wavesPerStage - 1
+}
+
+// stageIndexから、そのステージのボス階級を返す(0=小凶,1=中凶,2=大凶)。stageIndexは
+// 無制限に増加するため、3で割った余りで階級を決定する(3ステージごとに小凶→中凶→大凶を繰り返す)。
+export function bossTierOf(stageIndex: number): 0 | 1 | 2 {
+  return (stageIndex % 3) as 0 | 1 | 2
+}
+
+// そのウェーブで適用されるisPlayable用の修飾子を返す(小凶ボスウェーブ=noLoop、それ以外=none)。
+// 中凶・大凶の制約はisPlayableの可否には影響しないため、ここでは扱わない(bossScoreLockForを使う)。
+export function stageModifierFor(params: ShidasuParams, run: RunState): StageModifier {
+  if (isBossWave(params, run.waveIndex) && bossTierOf(run.stageIndex) === 0) return 'noLoop'
+  return 'none'
+}
+
+// そのウェーブで適用される得点ロックを返す(中凶=nコンボ以下無得点、大凶=対象スート無得点)。
+// 大凶で対象スートが未確定(currentGreatMisfortuneSuitがnull)の場合はロック無しとして扱う
+// (実際には大凶ステージ突入時に必ず確定させるため、通常はnullにならない)。
+export function bossScoreLockFor(params: ShidasuParams, run: RunState): BossScoreLock {
+  if (!isBossWave(params, run.waveIndex)) return null
+  const tier = bossTierOf(run.stageIndex)
+  if (tier === 1) return { kind: 'combo', maxCombo: params.bossTiers.chuukyou.maxCombo }
+  if (tier === 2 && run.currentGreatMisfortuneSuit) return { kind: 'suit', suit: run.currentGreatMisfortuneSuit }
+  return null
+}
+
+// ラン開始からの通しウェーブ番号(1始まり)から目標スコアを算出する。
+// target(n) = waveTargetBase × waveTargetMultiplier^(n-1)
+export function waveTarget(params: ShidasuParams, stageIndex: number, waveIndex: number): number {
+  const overallWaveNumber = stageIndex * params.flow.wavesPerStage + waveIndex + 1
+  return Math.floor(params.scoring.waveTargetBase * params.scoring.waveTargetMultiplier ** (overallWaveNumber - 1))
+}
+
+const GREAT_MISFORTUNE_SUITS: Suit[] = ['♠', '♥', '♦', '♣']
+
+// 大凶ステージの対象スートを、既存のrand(シード連動PRNG)を使って抽選する。
+// 将来「ラン開始時にシードを指定してステージ構成を再現する」機能に対応できるよう、
+// Math.random()を直接使わずこの関数経由で必ずrandを通すこと。
+function rollGreatMisfortuneSuit(rand: () => number): Suit {
+  return GREAT_MISFORTUNE_SUITS[Math.floor(rand() * GREAT_MISFORTUNE_SUITS.length)]
+}
+
+// 現在のstageIndexから次のウェーブの(stageIndex, waveIndex)を算出する。
+// waveIndexがwavesPerStageに達したら次のステージ(stageIndex+1・waveIndex0)へ繰り上がる。
+function nextWaveLocation(params: ShidasuParams, run: RunState): { stageIndex: number; waveIndex: number } {
+  const nextWaveIndex = run.waveIndex + 1
+  if (nextWaveIndex >= params.flow.wavesPerStage) {
+    return { stageIndex: run.stageIndex + 1, waveIndex: 0 }
+  }
+  return { stageIndex: run.stageIndex, waveIndex: nextWaveIndex }
+}
+
+// 次のウェーブ位置に応じたcurrentGreatMisfortuneSuitを算出する。同じステージ内に留まる場合は
+// 現在の値を維持し、新しいステージに入る場合は小凶・中凶ならnullに、大凶ならrandで新規抽選する。
+function nextGreatMisfortuneSuit(
+  run: RunState,
+  newLocation: { stageIndex: number; waveIndex: number },
+  rand: () => number
+): Suit | null {
+  if (newLocation.stageIndex === run.stageIndex) return run.currentGreatMisfortuneSuit
+  return bossTierOf(newLocation.stageIndex) === 2 ? rollGreatMisfortuneSuit(rand) : null
+}
+
 export function isStuck(modifier: StageModifier, wave: WaveState, rites: RiteId[] = []): boolean {
   const remaining = remainingCount(wave.tableau)
   if (remaining === 0) return false
@@ -856,7 +922,7 @@ export function createInitialRun(): RunState {
   return {
     phase: 'title', stageIndex: 0, waveIndex: 0, items: [], offer: [], wave: null, pendingNewItem: null,
     deckComposition: standardDeckComposition(), rites: [], revelations: [], revelationOffer: [], extraTableauRows: 0,
-    oracleLevels: defaultOracleLevels(), oracleOffer: [],
+    oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null,
   }
 }
 
@@ -877,6 +943,7 @@ export function beginRun(params: ShidasuParams, seed?: number): RunState {
     extraTableauRows: 0,
     oracleLevels: defaultOracleLevels(),
     oracleOffer: [],
+    currentGreatMisfortuneSuit: null,
   }
 }
 
@@ -884,16 +951,15 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
   const wave = run.wave
   if (!wave || wave.status !== 'ended') return run
 
-  const target = params.stages[run.stageIndex].targets[run.waveIndex]
+  const target = waveTarget(params, run.stageIndex, run.waveIndex)
   if (wave.score < target) {
     return { ...run, phase: 'gameOver' }
   }
 
-  const isLastWave = run.waveIndex === params.flow.wavesPerStage - 1
-  const isLastStage = run.stageIndex === params.stages.length - 1
-
-  if (isLastWave) {
-    return { ...run, phase: isLastStage ? 'allClear' : 'stageClear' }
+  // 大凶(各サイクルの最終ウェーブ)クリア時のみ、護符等の選択を後回しにして続行確認を挟む。
+  // それ以外(小凶・中凶のボスウェーブを含む通常のウェーブクリア)は、すべて同じitemSelectへ進む。
+  if (isBossWave(params, run.waveIndex) && bossTierOf(run.stageIndex) === 2) {
+    return { ...run, phase: 'continueChoice' }
   }
   return { ...run, phase: 'itemSelect', offer: rollItemOffer(run.items, rand), pendingNewItem: null }
 }
@@ -919,17 +985,20 @@ function enterRevelationSelect(
   run: RunState,
   newItems: ItemId[],
   newRites: RiteId[],
-  newWaveIndex: number,
   seed: number | undefined,
   rand: () => number
 ): RunState {
-  const { wave, deckComposition } = startWave(params, run.stageIndex, newWaveIndex, newItems, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels)
+  const newLocation = nextWaveLocation(params, run)
+  const newGreatMisfortuneSuit = nextGreatMisfortuneSuit(run, newLocation, rand)
+  const { wave, deckComposition } = startWave(params, newLocation.stageIndex, newLocation.waveIndex, newItems, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels)
   return {
     ...run,
     phase: 'revelationSelect',
     items: newItems,
     rites: newRites,
-    waveIndex: newWaveIndex,
+    stageIndex: newLocation.stageIndex,
+    waveIndex: newLocation.waveIndex,
+    currentGreatMisfortuneSuit: newGreatMisfortuneSuit,
     offer: [],
     pendingNewItem: null,
     wave,
@@ -960,7 +1029,7 @@ export function pickItem(params: ShidasuParams, run: RunState, itemId: ItemId, s
   const newItems = [...run.items, itemId]
   const rolledRite = rollRite(run.rites, rand)
   const newRites = rolledRite ? [...run.rites, rolledRite] : run.rites
-  return enterRevelationSelect(params, run, newItems, newRites, run.waveIndex + 1, seed, rand)
+  return enterRevelationSelect(params, run, newItems, newRites, seed, rand)
 }
 
 export function confirmItemSwap(params: ShidasuParams, run: RunState, oldItemId: ItemId, seed?: number, rand: () => number = Math.random): RunState {
@@ -970,7 +1039,7 @@ export function confirmItemSwap(params: ShidasuParams, run: RunState, oldItemId:
   const newItems = [...remaining, run.pendingNewItem]
   const rolledRite = rollRite(run.rites, rand)
   const newRites = rolledRite ? [...run.rites, rolledRite] : run.rites
-  return enterRevelationSelect(params, run, newItems, newRites, run.waveIndex + 1, seed, rand)
+  return enterRevelationSelect(params, run, newItems, newRites, seed, rand)
 }
 
 export function cancelItemSwap(run: RunState): RunState {
@@ -980,7 +1049,7 @@ export function cancelItemSwap(run: RunState): RunState {
 
 export function skipItemSelect(params: ShidasuParams, run: RunState, seed?: number, rand: () => number = Math.random): RunState {
   if (run.phase !== 'itemSelect') return run
-  return enterRevelationSelect(params, run, run.items, run.rites, run.waveIndex + 1, seed, rand)
+  return enterRevelationSelect(params, run, run.items, run.rites, seed, rand)
 }
 
 // 所持中の天啓を1つ使用する(消費される)。プレイ中・天啓選択画面のどちらでも動作し、
@@ -1059,18 +1128,19 @@ export function skipOracleSelect(run: RunState): RunState {
   return { ...run, phase: 'playing', oracleOffer: [] }
 }
 
-export function advanceStage(params: ShidasuParams, run: RunState, seed?: number): RunState {
-  if (run.phase !== 'stageClear') return run
-  const newStageIndex = run.stageIndex + 1
-  const { wave, deckComposition } = startWave(params, newStageIndex, 0, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels)
-  return {
-    ...run,
-    phase: 'playing',
-    stageIndex: newStageIndex,
-    waveIndex: 0,
-    wave,
-    deckComposition,
-  }
+// 大凶クリア後の続行確認画面('continueChoice'フェーズ)で「続ける」を選んだ場合。
+// 通常のウェーブクリアと同じくitemSelectへ進む(以後のステージ繰り上がり・大凶スート抽選は
+// pickItem等が呼ぶenterRevelationSelectが担う)。所持中の護符・秘儀・天啓・神託レベルは
+// このrunをそのまま引き継ぐため、リセットされない。
+export function continueAfterGreatMisfortune(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
+  if (run.phase !== 'continueChoice') return run
+  return { ...run, phase: 'itemSelect', offer: rollItemOffer(run.items, rand), pendingNewItem: null }
+}
+
+// 大凶クリア後の続行確認画面で「やめる」を選んだ場合。結果画面(allClear)へ遷移する。
+export function stopAfterGreatMisfortune(run: RunState): RunState {
+  if (run.phase !== 'continueChoice') return run
+  return { ...run, phase: 'allClear' }
 }
 
 export function restartRun(params: ShidasuParams, seed?: number): RunState {
@@ -1079,17 +1149,19 @@ export function restartRun(params: ShidasuParams, seed?: number): RunState {
 
 export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: number, rand: () => number = Math.random): RunState {
   if (run.phase !== 'playing' || !run.wave) return run
-  const stage = params.stages[run.stageIndex]
-  const target = stage.targets[run.waveIndex]
-  const { wave, deckComposition } = playCard(params, run.wave, stage.modifier, run.items, target, colIndex, run.deckComposition, rand)
+  const target = waveTarget(params, run.stageIndex, run.waveIndex)
+  const modifier = stageModifierFor(params, run)
+  const scoreLock = bossScoreLockFor(params, run)
+  const { wave, deckComposition } = playCard(params, run.wave, modifier, run.items, target, colIndex, run.deckComposition, rand, scoreLock)
   return { ...run, wave, deckComposition }
 }
 
 export function applyDrawStock(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
   if (run.phase !== 'playing' || !run.wave) return run
-  const stage = params.stages[run.stageIndex]
-  const target = stage.targets[run.waveIndex]
-  const { wave, deckComposition } = drawStock(params, run.wave, run.items, target, run.deckComposition, stage.modifier, rand)
+  const target = waveTarget(params, run.stageIndex, run.waveIndex)
+  const modifier = stageModifierFor(params, run)
+  const scoreLock = bossScoreLockFor(params, run)
+  const { wave, deckComposition } = drawStock(params, run.wave, run.items, target, run.deckComposition, modifier, rand, scoreLock)
   return { ...run, wave, deckComposition }
 }
 
@@ -1099,7 +1171,7 @@ export function applyDrawStock(params: ShidasuParams, run: RunState, rand: () =>
 // ウェーブ中1回のみ発動する。発動条件を満たさなければ通常通り手詰まり終了とする。
 export function applyStuckCheck(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
   if (run.phase !== 'playing' || !run.wave) return run
-  const modifier = params.stages[run.stageIndex].modifier
+  const modifier = stageModifierFor(params, run)
   const wave = run.wave
   if (!isStuck(modifier, wave, run.rites)) return run
 
@@ -1125,8 +1197,9 @@ export function applyStuckCheck(params: ShidasuParams, run: RunState, rand: () =
   }
 
   if (resetWave.stock.length > 0) {
-    const stageTarget = params.stages[run.stageIndex].targets[run.waveIndex]
-    const drawResult = drawStock(params, resetWave, run.items, stageTarget, run.deckComposition, modifier, rand)
+    const stageTarget = waveTarget(params, run.stageIndex, run.waveIndex)
+    const scoreLock = bossScoreLockFor(params, run)
+    const drawResult = drawStock(params, resetWave, run.items, stageTarget, run.deckComposition, modifier, rand, scoreLock)
     return { ...run, wave: drawResult.wave, deckComposition: drawResult.deckComposition }
   }
 

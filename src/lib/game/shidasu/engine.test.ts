@@ -17,7 +17,9 @@ import {
   confirmItemSwap,
   cancelItemSwap,
   skipItemSelect,
-  advanceStage,
+  continueAfterGreatMisfortune,
+  stopAfterGreatMisfortune,
+  waveTarget,
   restartRun,
   applyPlayCard,
   applyDrawStock,
@@ -1953,8 +1955,8 @@ describe('resolveWaveEnd', () => {
     expect(next.phase).toBe('gameOver')
   })
 
-  test('ウェーブ1・2クリアならitemSelectになりofferにプール内の未所持アイテムが入る', () => {
-    const run = endedRun({ waveIndex: 0 }, DEFAULT_PARAMS.stages[0].targets[0])
+  test('ウェーブ1・2クリア(通しウェーブ1・2)ならitemSelectになりofferにプール内の未所持アイテムが入る', () => {
+    const run = endedRun({ waveIndex: 0 }, waveTarget(DEFAULT_PARAMS, 0, 0))
     const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
     expect(next.phase).toBe('itemSelect')
     expect(next.offer).toHaveLength(3)
@@ -1962,35 +1964,80 @@ describe('resolveWaveEnd', () => {
     expect(new Set(next.offer).size).toBe(3) // 重複なし
   })
 
-  test('最終ウェーブクリア・次ステージありならstageClearになる', () => {
-    const run = endedRun({ waveIndex: 2 }, DEFAULT_PARAMS.stages[0].targets[2])
-    const next = resolveWaveEnd(DEFAULT_PARAMS, run)
-    expect(next.phase).toBe('stageClear')
+  test('小凶(stageIndex0の3ウェーブ目)クリアもitemSelectになる(stageClearは廃止)', () => {
+    const run = endedRun({ waveIndex: 2, stageIndex: 0 }, waveTarget(DEFAULT_PARAMS, 0, 2))
+    const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
+    expect(next.phase).toBe('itemSelect')
   })
 
-  test('最終ステージの最終ウェーブクリアならallClearになる', () => {
-    const lastStage = DEFAULT_PARAMS.stages.length - 1
-    const run = endedRun({ waveIndex: 2, stageIndex: lastStage }, DEFAULT_PARAMS.stages[lastStage].targets[2])
+  test('中凶(stageIndex1の3ウェーブ目)クリアもitemSelectになる', () => {
+    const run = endedRun({ waveIndex: 2, stageIndex: 1 }, waveTarget(DEFAULT_PARAMS, 1, 2))
+    const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
+    expect(next.phase).toBe('itemSelect')
+  })
+
+  test('大凶(stageIndex2の3ウェーブ目)クリアはcontinueChoiceになる', () => {
+    const run = endedRun({ waveIndex: 2, stageIndex: 2 }, waveTarget(DEFAULT_PARAMS, 2, 2))
     const next = resolveWaveEnd(DEFAULT_PARAMS, run)
-    expect(next.phase).toBe('allClear')
+    expect(next.phase).toBe('continueChoice')
+  })
+
+  test('2周目の大凶(stageIndex5の3ウェーブ目)クリアもcontinueChoiceになる(サイクルが無限に続く)', () => {
+    const run = endedRun({ waveIndex: 2, stageIndex: 5 }, waveTarget(DEFAULT_PARAMS, 5, 2))
+    const next = resolveWaveEnd(DEFAULT_PARAMS, run)
+    expect(next.phase).toBe('continueChoice')
   })
 })
 
-describe('pickItem / advanceStage / restartRun', () => {
+describe('pickItem / continueAfterGreatMisfortune / restartRun', () => {
   test('pickItemでアイテムが追加され次ウェーブが始まる(revelationSelectフェーズを経由する)', () => {
     const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', waveIndex: 0, offer: ['bridge'] }
     const next = pickItem(DEFAULT_PARAMS, run, 'bridge', 2)
     expect(next.phase).toBe('revelationSelect')
     expect(next.items).toEqual(['bridge'])
     expect(next.waveIndex).toBe(1)
+    expect(next.stageIndex).toBe(0)
   })
 
-  test('advanceStageで次ステージのウェーブ0から始まる', () => {
-    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'stageClear', stageIndex: 0 }
-    const next = advanceStage(DEFAULT_PARAMS, run, 2)
-    expect(next.phase).toBe('playing')
+  test('小凶(stageIndex0)の3ウェーブ目クリア後、pickItemでstageIndex1・waveIndex0へ繰り上がる', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', stageIndex: 0, waveIndex: 2, offer: ['bridge'] }
+    const next = pickItem(DEFAULT_PARAMS, run, 'bridge', 2)
     expect(next.stageIndex).toBe(1)
     expect(next.waveIndex).toBe(0)
+    expect(next.currentGreatMisfortuneSuit).toBeNull()
+  })
+
+  test('中凶(stageIndex1)の3ウェーブ目クリア後、pickItemでstageIndex2(大凶)・waveIndex0へ繰り上がり、対象スートが確定する', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', stageIndex: 1, waveIndex: 2, offer: ['bridge'] }
+    const next = pickItem(DEFAULT_PARAMS, run, 'bridge', 2, createRng(3))
+    expect(next.stageIndex).toBe(2)
+    expect(next.waveIndex).toBe(0)
+    expect(next.currentGreatMisfortuneSuit).not.toBeNull()
+    expect(['♠', '♥', '♦', '♣']).toContain(next.currentGreatMisfortuneSuit)
+  })
+
+  test('continueAfterGreatMisfortuneでitemSelectへ進む。所持護符・秘儀・天啓・神託レベルは維持される', () => {
+    const run: RunState = {
+      ...beginRun(DEFAULT_PARAMS, 1),
+      phase: 'continueChoice',
+      stageIndex: 2,
+      waveIndex: 2,
+      items: ['bridge'],
+      rites: ['uruz'],
+      oracleLevels: { ...defaultOracleLevels(), suit: 3 },
+    }
+    const next = continueAfterGreatMisfortune(DEFAULT_PARAMS, run, createRng(1))
+    expect(next.phase).toBe('itemSelect')
+    expect(next.offer).toHaveLength(3)
+    expect(next.items).toEqual(['bridge'])
+    expect(next.rites).toEqual(['uruz'])
+    expect(next.oracleLevels.suit).toBe(3)
+  })
+
+  test('stopAfterGreatMisfortuneでallClearへ進む', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'continueChoice' }
+    const next = stopAfterGreatMisfortune(run)
+    expect(next.phase).toBe('allClear')
   })
 
   test('restartRunでステージ0・ウェーブ0・アイテムなしに戻る', () => {
