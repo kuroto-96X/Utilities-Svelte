@@ -21,6 +21,8 @@ import {
   continueAfterGreatMisfortune,
   stopAfterGreatMisfortune,
   waveTarget,
+  stageModifierFor,
+  bossScoreLockFor,
   restartRun,
   applyPlayCard,
   applyDrawStock,
@@ -37,7 +39,7 @@ import {
 import { ITEM_POOL } from './items'
 import { isFace, chainContinuesPattern } from './patterns'
 import type { Card, WaveState, RunState, ItemId } from './types'
-import { DEFAULT_PARAMS } from './params'
+import { DEFAULT_PARAMS, type ShidasuParams } from './params'
 import { createRng, standardDeckComposition } from './deck'
 import { card } from './testHelpers'
 import { defaultOracleLevels } from './oracles'
@@ -1261,6 +1263,61 @@ describe('playCard', () => {
       const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
       expect(next.lastGain?.points).toBeGreaterThan(0)
     })
+
+    test('scoreLockがkind:oddComboで、effectiveComboが奇数なら獲得点が0になる', () => {
+      // 列を単一にすると全消しボーナス(clearBonus)が別枠で加算されscoreの比較が崩れるため、
+      // 他のロック系テストと同様にダミー列を残して全消しにならないようにする(計画のスニペットの
+      // tableauは単一列だったが、既存のcombo/suitロックテストと同じ2列パターンに合わせて修正した)
+      const oddWave = baseWave({
+        foundation: card(0, '♠', 5),
+        tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+        combo: 0, // このプレイでnewCombo=1、baseComboCount=0によりeffectiveCombo=1(奇数)
+      })
+      const { wave: next } = playCard(DEFAULT_PARAMS, oddWave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'oddCombo' })
+      expect(next.score).toBe(oddWave.score)
+      expect(next.lastGain?.points).toBe(0)
+    })
+
+    test('scoreLockがkind:oddComboで、effectiveComboが偶数なら通常通り得点する', () => {
+      const wave = baseWave({
+        foundation: card(0, '♠', 5),
+        tableau: [[card(1, '♣', 6)]],
+        combo: 1, // このプレイでnewCombo=2、effectiveCombo=2(偶数)
+      })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'oddCombo' })
+      expect(next.lastGain?.points).toBeGreaterThan(0)
+    })
+
+    test('scoreLockがkind:faceで、絵札(非ワイルド)を取ると獲得点が0になる', () => {
+      // 列を単一にすると全消しボーナス(clearBonus)が別枠で加算されscoreの比較が崩れるため、
+      // 他のロック系テストと同様にダミー列を残して全消しにならないようにする(計画のスニペットの
+      // tableauは単一列だったが、既存のcombo/suitロックテストと同じ2列パターンに合わせて修正した)
+      const wave = baseWave({
+        foundation: card(0, '♠', 12), // Q
+        tableau: [[card(1, '♠', 13)], [card(2, '♦', 2)]], // K、ランク差1で取れる、かつ絵札
+      })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'face' })
+      expect(next.score).toBe(wave.score)
+      expect(next.lastGain?.points).toBe(0)
+    })
+
+    test('scoreLockがkind:faceで、絵札以外を取ると通常通り得点する', () => {
+      const wave = baseWave({
+        foundation: card(0, '♠', 5),
+        tableau: [[card(1, '♣', 6)]], // 絵札ではない
+      })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'face' })
+      expect(next.lastGain?.points).toBeGreaterThan(0)
+    })
+
+    test('scoreLockがkind:faceで、ワイルドを取ると絵札扱いされず通常通り得点する', () => {
+      const wave = baseWave({
+        foundation: card(0, '♠', 5),
+        tableau: [[card(1, '★', 0, true)]],
+      })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'face' })
+      expect(next.lastGain?.points).toBeGreaterThan(0)
+    })
   })
 })
 
@@ -2030,6 +2087,11 @@ describe('createInitialRun / beginRun', () => {
     expect(waveTarget(custom, 0, 1, 'fool')).toBe(2000) // 1000 × 2^1
     expect(waveTarget(custom, 0, 0, 'moon')).toBe(3000) // 3000 × 1.1^0
   })
+
+  test('beginRunのcurrentBossKindは、ステージ0(小凶)に属する候補からランダムに選ばれる', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    expect(['noLoop', 'faceLock']).toContain(run.currentBossKind)
+  })
 })
 
 describe('resolveWaveEnd', () => {
@@ -2082,6 +2144,47 @@ describe('resolveWaveEnd', () => {
   })
 })
 
+describe('stageModifierFor / bossScoreLockFor', () => {
+  function runWith(overrides: Partial<RunState>): RunState {
+    return { ...beginRun(DEFAULT_PARAMS, 1), waveIndex: 2, ...overrides }
+  }
+
+  test('currentBossKindがnoLoopのボスウェーブではnoLoopが返る', () => {
+    const run = runWith({ currentBossKind: 'noLoop' })
+    expect(stageModifierFor(DEFAULT_PARAMS, run)).toBe('noLoop')
+  })
+
+  test('currentBossKindがfaceLockのボスウェーブではfaceLockが返る', () => {
+    const run = runWith({ currentBossKind: 'faceLock' })
+    expect(stageModifierFor(DEFAULT_PARAMS, run)).toBe('faceLock')
+  })
+
+  test('ボスウェーブでなければcurrentBossKindに関わらずnoneが返る', () => {
+    const run = runWith({ currentBossKind: 'noLoop', waveIndex: 0 })
+    expect(stageModifierFor(DEFAULT_PARAMS, run)).toBe('none')
+  })
+
+  test('currentBossKindがlowComboならkind:comboのscoreLockが返る', () => {
+    const run = runWith({ currentBossKind: 'lowCombo' })
+    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'combo', maxCombo: DEFAULT_PARAMS.bosses.lowCombo.maxCombo })
+  })
+
+  test('currentBossKindがoddComboならkind:oddComboのscoreLockが返る', () => {
+    const run = runWith({ currentBossKind: 'oddCombo' })
+    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'oddCombo' })
+  })
+
+  test('currentBossKindがsuitかつcurrentGreatMisfortuneSuitが確定していればkind:suitのscoreLockが返る', () => {
+    const run = runWith({ currentBossKind: 'suit', currentGreatMisfortuneSuit: '♠' })
+    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'suit', suit: '♠' })
+  })
+
+  test('currentBossKindがfaceならkind:faceのscoreLockが返る', () => {
+    const run = runWith({ currentBossKind: 'face' })
+    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'face' })
+  })
+})
+
 describe('pickItem / continueAfterGreatMisfortune / restartRun', () => {
   test('pickItemでアイテムが追加され次ウェーブが始まる(revelationSelectフェーズを経由する)', () => {
     const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', waveIndex: 0, offer: ['bridge'] }
@@ -2098,6 +2201,43 @@ describe('pickItem / continueAfterGreatMisfortune / restartRun', () => {
     expect(next.stageIndex).toBe(1)
     expect(next.waveIndex).toBe(0)
     expect(next.currentGreatMisfortuneSuit).toBeNull()
+  })
+
+  test('小凶(stageIndex0)クリア後、次のcurrentBossKindは中凶に属する候補(lowCombo/oddCombo)からランダムに選ばれる', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', stageIndex: 0, waveIndex: 2, offer: ['bridge'] }
+    const next = pickItem(DEFAULT_PARAMS, run, 'bridge', 2, createRng(3))
+    expect(['lowCombo', 'oddCombo']).toContain(next.currentBossKind)
+  })
+
+  test('中凶(stageIndex1)クリア後、次のcurrentBossKindは大凶に属する候補(suit/face)からランダムに選ばれ、suitの場合のみcurrentGreatMisfortuneSuitが確定する', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', stageIndex: 1, waveIndex: 2, offer: ['bridge'] }
+    const next = pickItem(DEFAULT_PARAMS, run, 'bridge', 2, createRng(3))
+    expect(['suit', 'face']).toContain(next.currentBossKind)
+    if (next.currentBossKind === 'suit') {
+      expect(next.currentGreatMisfortuneSuit).not.toBeNull()
+    } else {
+      expect(next.currentGreatMisfortuneSuit).toBeNull()
+    }
+  })
+
+  test('同じステージ内(waveIndexが進むだけ)ではcurrentBossKindが維持される', () => {
+    const started = beginRun(DEFAULT_PARAMS, 1)
+    const run: RunState = { ...started, phase: 'itemSelect', waveIndex: 0, offer: ['bridge'] }
+    const next = pickItem(DEFAULT_PARAMS, run, 'bridge', 2)
+    expect(next.currentBossKind).toBe(started.currentBossKind)
+  })
+
+  test('候補プールが1件のみの階級では、必ずその1件が選ばれる(フィルタが正しく機能する)', () => {
+    const customParams: ShidasuParams = {
+      ...DEFAULT_PARAMS,
+      bosses: {
+        ...DEFAULT_PARAMS.bosses,
+        oddCombo: { ...DEFAULT_PARAMS.bosses.oddCombo, tier: 'shoukyou' }, // 中凶からoddComboを一時的に除外
+      },
+    }
+    const run: RunState = { ...beginRun(customParams, 1), phase: 'itemSelect', stageIndex: 0, waveIndex: 2, offer: ['bridge'] }
+    const next = pickItem(customParams, run, 'bridge', 2, createRng(3))
+    expect(next.currentBossKind).toBe('lowCombo') // 中凶の候補がlowComboのみになったため必ずこれが選ばれる
   })
 
   test('中凶(stageIndex1)の3ウェーブ目クリア後、pickItemでstageIndex2(大凶)・waveIndex0へ繰り上がり、対象スートが確定する', () => {

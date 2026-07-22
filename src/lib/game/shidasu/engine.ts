@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, BossKind, BossTierKey } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
 import { isFace, chainContinuesPattern, evaluateChainBonus, analyzeSuitColor, countSameRankBefore, countSameRankForWildPlay, fmtMultiplier } from './patterns'
@@ -293,7 +293,28 @@ function resolveHealingRestoration(
 // 中凶・大凶ボスウェーブによる得点ロック。isPlayable(取得可否)には一切影響せず、
 // 獲得点(基礎点・チェーンボーナス・列一掃ボーナス等を含めた総額)だけを0にする。
 // 既存のStageModifier(取得を禁止する型)とは別の仕組みとして扱う。
-export type BossScoreLock = { kind: 'combo'; maxCombo: number } | { kind: 'suit'; suit: Suit } | null
+export type BossScoreLock =
+  | { kind: 'combo'; maxCombo: number }
+  | { kind: 'suit'; suit: Suit }
+  | { kind: 'oddCombo' }
+  | { kind: 'face' }
+  | null
+
+// scoreLockの種別ごとの無得点化条件を判定する共通ヘルパー。playCard/drawStockの両方から使う。
+function isBossScoreLocked(scoreLock: NonNullable<BossScoreLock>, effectiveCombo: number, card: Card): boolean {
+  switch (scoreLock.kind) {
+    case 'combo': return effectiveCombo <= scoreLock.maxCombo
+    case 'suit': return !card.wild && card.suit === scoreLock.suit
+    case 'oddCombo': return effectiveCombo % 2 === 1
+    case 'face': return !card.wild && isFace(card)
+  }
+}
+
+// 無得点になった際にlastGain.partsへ積むメッセージ。小凶由来はStageModifierで別途扱うため、
+// ここではscoreLock(中凶・大凶)由来の2種のみ対象。
+function bossScoreLockMessage(scoreLock: NonNullable<BossScoreLock>): string {
+  return scoreLock.kind === 'combo' || scoreLock.kind === 'oddCombo' ? '中凶: 獲得点0' : '大凶: 獲得点0'
+}
 
 export function playCard(
   params: ShidasuParams,
@@ -471,12 +492,9 @@ export function playCard(
   const mannazFactor = wave.mannazActiveThisWave ? 1 + mannazWeightSum(items, params) * params.rites.mannaz.x : 1
   if (mannazFactor !== 1) parts.push(`マンナズ×${fmtMultiplier(mannazFactor)}`)
   let gained = Math.floor(itemResult.value * multiplier * mannazFactor)
-  if (scoreLock) {
-    const locked = scoreLock.kind === 'combo' ? effectiveCombo <= scoreLock.maxCombo : (!card.wild && card.suit === scoreLock.suit)
-    if (locked) {
-      parts.push(scoreLock.kind === 'combo' ? '中凶: 獲得点0' : '大凶: 獲得点0')
-      gained = 0
-    }
+  if (scoreLock && isBossScoreLocked(scoreLock, effectiveCombo, card)) {
+    parts.push(bossScoreLockMessage(scoreLock))
+    gained = 0
   }
 
   const scoreAfterGained = wave.score + gained
@@ -757,12 +775,9 @@ export function drawStock(
       const mannazFactor = wave.mannazActiveThisWave ? 1 + mannazWeightSum(items, params) * params.rites.mannaz.x : 1
       if (mannazFactor !== 1) parts.push(`マンナズ×${fmtMultiplier(mannazFactor)}`)
       naiveGained = Math.floor(itemResult.value * multiplier * mannazFactor)
-      if (scoreLock) {
-        const locked = scoreLock.kind === 'combo' ? effectiveCombo <= scoreLock.maxCombo : (!drawnCard.wild && drawnCard.suit === scoreLock.suit)
-        if (locked) {
-          parts.push(scoreLock.kind === 'combo' ? '中凶: 獲得点0' : '大凶: 獲得点0')
-          naiveGained = 0
-        }
+      if (scoreLock && isBossScoreLocked(scoreLock, effectiveCombo, drawnCard)) {
+        parts.push(bossScoreLockMessage(scoreLock))
+        naiveGained = 0
       }
       naiveParts = parts
       naiveCombo = newCombo
@@ -866,22 +881,28 @@ export function bossTierOf(stageIndex: number): 0 | 1 | 2 {
   return (stageIndex % 3) as 0 | 1 | 2
 }
 
-// そのウェーブで適用されるisPlayable用の修飾子を返す(小凶ボスウェーブ=noLoop、それ以外=none)。
-// 中凶・大凶の制約はisPlayableの可否には影響しないため、ここでは扱わない(bossScoreLockForを使う)。
+// そのウェーブで適用されるisPlayable用の修飾子を返す(currentBossKindがnoLoop/faceLockの
+// ボスウェーブでのみ有効。中凶・大凶相当のkindはisPlayableの可否には影響しないため、
+// ここでは扱わない=bossScoreLockForを使う)。
 export function stageModifierFor(params: ShidasuParams, run: RunState): StageModifier {
-  if (isBossWave(params, run.waveIndex) && bossTierOf(run.stageIndex) === 0) return 'noLoop'
+  if (!isBossWave(params, run.waveIndex)) return 'none'
+  if (run.currentBossKind === 'noLoop') return 'noLoop'
+  if (run.currentBossKind === 'faceLock') return 'faceLock'
   return 'none'
 }
 
-// そのウェーブで適用される得点ロックを返す(中凶=nコンボ以下無得点、大凶=対象スート無得点)。
-// 大凶で対象スートが未確定(currentGreatMisfortuneSuitがnull)の場合はロック無しとして扱う
-// (実際には大凶ステージ突入時に必ず確定させるため、通常はnullにならない)。
+// そのウェーブで適用される得点ロックを返す。currentBossKindの値そのものが挙動を決める。
+// suitで対象スートが未確定(currentGreatMisfortuneSuitがnull)の場合はロック無しとして扱う
+// (実際にはsuitが選ばれた瞬間に必ず確定させるため、通常はnullにならない)。
 export function bossScoreLockFor(params: ShidasuParams, run: RunState): BossScoreLock {
   if (!isBossWave(params, run.waveIndex)) return null
-  const tier = bossTierOf(run.stageIndex)
-  if (tier === 1) return { kind: 'combo', maxCombo: params.bossTiers.chuukyou.maxCombo }
-  if (tier === 2 && run.currentGreatMisfortuneSuit) return { kind: 'suit', suit: run.currentGreatMisfortuneSuit }
-  return null
+  switch (run.currentBossKind) {
+    case 'lowCombo': return { kind: 'combo', maxCombo: params.bosses.lowCombo.maxCombo }
+    case 'oddCombo': return { kind: 'oddCombo' }
+    case 'suit': return run.currentGreatMisfortuneSuit ? { kind: 'suit', suit: run.currentGreatMisfortuneSuit } : null
+    case 'face': return { kind: 'face' }
+    default: return null
+  }
 }
 
 // ラン開始からの通しウェーブ番号(1始まり)から目標スコアを算出する。
@@ -893,12 +914,23 @@ export function waveTarget(params: ShidasuParams, stageIndex: number, waveIndex:
 }
 
 const GREAT_MISFORTUNE_SUITS: Suit[] = ['♠', '♥', '♦', '♣']
+const BOSS_TIER_KEYS: BossTierKey[] = ['shoukyou', 'chuukyou', 'taikyou']
+const BOSS_KINDS: BossKind[] = ['noLoop', 'faceLock', 'lowCombo', 'oddCombo', 'suit', 'face']
 
 // 大凶ステージの対象スートを、既存のrand(シード連動PRNG)を使って抽選する。
 // 将来「ラン開始時にシードを指定してステージ構成を再現する」機能に対応できるよう、
 // Math.random()を直接使わずこの関数経由で必ずrandを通すこと。
 function rollGreatMisfortuneSuit(rand: () => number): Suit {
   return GREAT_MISFORTUNE_SUITS[Math.floor(rand() * GREAT_MISFORTUNE_SUITS.length)]
+}
+
+// stageIndexが属する階級(bossTierOf)に現在割り当てられている候補群の中から、randで1つ抽選する。
+// 候補が1件も無い階級は管理画面のバリデーションで基本的に発生しないが、念のためnullを返す。
+function rollBossKindForStage(params: ShidasuParams, stageIndex: number, rand: () => number): BossKind | null {
+  const tierKey = BOSS_TIER_KEYS[bossTierOf(stageIndex)]
+  const candidates = BOSS_KINDS.filter(kind => params.bosses[kind].tier === tierKey)
+  if (candidates.length === 0) return null
+  return candidates[Math.floor(rand() * candidates.length)]
 }
 
 // 現在のstageIndexから次のウェーブの(stageIndex, waveIndex)を算出する。
@@ -911,15 +943,29 @@ function nextWaveLocation(params: ShidasuParams, run: RunState): { stageIndex: n
   return { stageIndex: run.stageIndex, waveIndex: nextWaveIndex }
 }
 
-// 次のウェーブ位置に応じたcurrentGreatMisfortuneSuitを算出する。同じステージ内に留まる場合は
-// 現在の値を維持し、新しいステージに入る場合は小凶・中凶ならnullに、大凶ならrandで新規抽選する。
-function nextGreatMisfortuneSuit(
+// 次のウェーブ位置に応じたcurrentBossKindを算出する。同じステージ内に留まる場合は現在の値を
+// 維持し、新しいステージに入る場合はそのステージの階級に属する候補群からrandで新規抽選する。
+function nextBossKind(
+  params: ShidasuParams,
   run: RunState,
   newLocation: { stageIndex: number; waveIndex: number },
   rand: () => number
+): BossKind | null {
+  if (newLocation.stageIndex === run.stageIndex) return run.currentBossKind
+  return rollBossKindForStage(params, newLocation.stageIndex, rand)
+}
+
+// 次のウェーブ位置・次のcurrentBossKindに応じたcurrentGreatMisfortuneSuitを算出する。
+// 同じステージ内に留まる場合は現在の値を維持し、新しいステージに入る場合はnewBossKindが
+// 'suit'のときのみrandで新規抽選し、それ以外はnullにする。
+function nextGreatMisfortuneSuit(
+  run: RunState,
+  newLocation: { stageIndex: number; waveIndex: number },
+  newBossKind: BossKind | null,
+  rand: () => number
 ): Suit | null {
   if (newLocation.stageIndex === run.stageIndex) return run.currentGreatMisfortuneSuit
-  return bossTierOf(newLocation.stageIndex) === 2 ? rollGreatMisfortuneSuit(rand) : null
+  return newBossKind === 'suit' ? rollGreatMisfortuneSuit(rand) : null
 }
 
 export function isStuck(modifier: StageModifier, wave: WaveState, rites: RiteId[] = []): boolean {
@@ -943,11 +989,14 @@ export function createInitialRun(): RunState {
     phase: 'title', stageIndex: 0, waveIndex: 0, items: [], offer: [], wave: null, pendingNewItem: null,
     deckComposition: standardDeckComposition(), rites: [], revelations: [], revelationOffer: [], extraTableauRows: 0,
     oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null, spreadId: 'fool',
+    currentBossKind: null,
   }
 }
 
 export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadId = 'fool'): RunState {
   const initialExtraTableauRows = params.spreads[spreadId].initialExtraTableauRows
+  const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
+  const initialBossKind = rollBossKindForStage(params, 0, rand)
   const { wave, deckComposition } = startWave(params, 0, 0, [], standardDeckComposition(), seed, initialExtraTableauRows, defaultOracleLevels())
   return {
     phase: 'playing',
@@ -966,6 +1015,7 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
     oracleOffer: [],
     currentGreatMisfortuneSuit: null,
     spreadId,
+    currentBossKind: initialBossKind,
   }
 }
 
@@ -1011,7 +1061,8 @@ function enterRevelationSelect(
   rand: () => number
 ): RunState {
   const newLocation = nextWaveLocation(params, run)
-  const newGreatMisfortuneSuit = nextGreatMisfortuneSuit(run, newLocation, rand)
+  const newBossKind = nextBossKind(params, run, newLocation, rand)
+  const newGreatMisfortuneSuit = nextGreatMisfortuneSuit(run, newLocation, newBossKind, rand)
   const { wave, deckComposition } = startWave(params, newLocation.stageIndex, newLocation.waveIndex, newItems, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels)
   return {
     ...run,
@@ -1021,6 +1072,7 @@ function enterRevelationSelect(
     stageIndex: newLocation.stageIndex,
     waveIndex: newLocation.waveIndex,
     currentGreatMisfortuneSuit: newGreatMisfortuneSuit,
+    currentBossKind: newBossKind,
     offer: [],
     pendingNewItem: null,
     wave,
