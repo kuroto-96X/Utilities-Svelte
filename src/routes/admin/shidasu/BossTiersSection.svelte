@@ -5,17 +5,7 @@
 </script>
 
 <section class="bg-white border border-slate-200 rounded-xl p-4">
-  <h2 class="font-semibold text-slate-700 text-sm mb-3">ボス・目標スコア</h2>
-  <div class="grid grid-cols-2 gap-3 mb-4">
-    <label class="text-xs text-slate-500">
-      目標スコア基礎値(waveTargetBase)
-      <input type="number" min="1" step="1" bind:value={config.scoring.waveTargetBase} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-    </label>
-    <label class="text-xs text-slate-500">
-      目標スコア倍率(waveTargetMultiplier)
-      <input type="number" min="1" step="0.01" bind:value={config.scoring.waveTargetMultiplier} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-    </label>
-  </div>
+  <h2 class="font-semibold text-slate-700 text-sm mb-3">ボス</h2>
   <div class="grid grid-cols-3 gap-3">
     <label class="text-xs text-slate-500">
       小凶の名前

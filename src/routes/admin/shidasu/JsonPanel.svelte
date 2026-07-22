@@ -18,6 +18,9 @@
     const shoukyou = bossTiers?.shoukyou as Record<string, unknown> | undefined
     const chuukyou = bossTiers?.chuukyou as Record<string, unknown> | undefined
     const taikyou = bossTiers?.taikyou as Record<string, unknown> | undefined
+    const spreads = v.spreads as Record<string, unknown> | undefined
+    const fool = spreads?.fool as Record<string, unknown> | undefined
+    const moon = spreads?.moon as Record<string, unknown> | undefined
     return (
       typeof v.layout === 'object' && v.layout !== null &&
       typeof v.scoring === 'object' && v.scoring !== null &&
@@ -26,6 +29,15 @@
       typeof chuukyou?.name === 'string' &&
       typeof chuukyou?.maxCombo === 'number' &&
       typeof taikyou?.name === 'string' &&
+      typeof v.spreads === 'object' && v.spreads !== null &&
+      typeof fool?.name === 'string' &&
+      typeof fool?.initialExtraTableauRows === 'number' &&
+      typeof fool?.waveTargetBase === 'number' &&
+      typeof fool?.waveTargetMultiplier === 'number' &&
+      typeof moon?.name === 'string' &&
+      typeof moon?.initialExtraTableauRows === 'number' &&
+      typeof moon?.waveTargetBase === 'number' &&
+      typeof moon?.waveTargetMultiplier === 'number' &&
       typeof v.items === 'object' && v.items !== null &&
       typeof v.flow === 'object' && v.flow !== null &&
       typeof v.ui === 'object' && v.ui !== null &&
@@ -37,7 +49,7 @@
     try {
       const parsed = JSON.parse(jsonText)
       if (!isValidShidasuParams(parsed)) {
-        jsonError = '必須項目(layout/scoring/bossTiers/items/flow/ui)が不足しています'
+        jsonError = '必須項目(layout/scoring/bossTiers/spreads/items/flow/ui)が不足しています'
         return
       }
       onApply(parsed)

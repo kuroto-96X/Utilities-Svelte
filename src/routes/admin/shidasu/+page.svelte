@@ -6,6 +6,7 @@
   import ScoringSection from './ScoringSection.svelte'
   import RoleBonusSection from './RoleBonusSection.svelte'
   import BossTiersSection from './BossTiersSection.svelte'
+  import SpreadsSection from './SpreadsSection.svelte'
   import FlowUiSection from './FlowUiSection.svelte'
   import JsonPanel from './JsonPanel.svelte'
 
@@ -22,8 +23,10 @@
 
   let hasValidationError = $derived.by(() => {
     if (!config) return false
-    if (!Number.isFinite(config.scoring.waveTargetBase) || config.scoring.waveTargetBase <= 0) return true
-    if (!Number.isFinite(config.scoring.waveTargetMultiplier) || config.scoring.waveTargetMultiplier <= 1) return true
+    if (!Number.isFinite(config.spreads.fool.waveTargetBase) || config.spreads.fool.waveTargetBase <= 0) return true
+    if (!Number.isFinite(config.spreads.fool.waveTargetMultiplier) || config.spreads.fool.waveTargetMultiplier <= 1) return true
+    if (!Number.isFinite(config.spreads.moon.waveTargetBase) || config.spreads.moon.waveTargetBase <= 0) return true
+    if (!Number.isFinite(config.spreads.moon.waveTargetMultiplier) || config.spreads.moon.waveTargetMultiplier <= 1) return true
     if (!Number.isFinite(config.bossTiers.chuukyou.maxCombo) || config.bossTiers.chuukyou.maxCombo < 0) return true
     // 場札(cols×rows)配布後にfoundation用の1枚が残らないと山札が尽きてゲームが起動できない
     if (config.layout.cols < 1 || config.layout.rows < 1) return true
@@ -115,6 +118,8 @@
       <RoleBonusSection {config} />
 
       <BossTiersSection {config} />
+
+      <SpreadsSection {config} />
 
       <ItemsSection {config} />
 
