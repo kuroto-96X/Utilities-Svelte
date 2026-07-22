@@ -23,8 +23,10 @@
 
   let hasValidationError = $derived.by(() => {
     if (!config) return false
+    if (!Number.isFinite(config.spreads.fool.initialExtraTableauRows)) return true
     if (!Number.isFinite(config.spreads.fool.waveTargetBase) || config.spreads.fool.waveTargetBase <= 0) return true
     if (!Number.isFinite(config.spreads.fool.waveTargetMultiplier) || config.spreads.fool.waveTargetMultiplier <= 1) return true
+    if (!Number.isFinite(config.spreads.moon.initialExtraTableauRows)) return true
     if (!Number.isFinite(config.spreads.moon.waveTargetBase) || config.spreads.moon.waveTargetBase <= 0) return true
     if (!Number.isFinite(config.spreads.moon.waveTargetMultiplier) || config.spreads.moon.waveTargetMultiplier <= 1) return true
     if (!Number.isFinite(config.bossTiers.chuukyou.maxCombo) || config.bossTiers.chuukyou.maxCombo < 0) return true

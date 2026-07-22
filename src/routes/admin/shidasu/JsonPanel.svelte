@@ -31,10 +31,12 @@
       typeof taikyou?.name === 'string' &&
       typeof v.spreads === 'object' && v.spreads !== null &&
       typeof fool?.name === 'string' &&
+      typeof fool?.desc === 'string' &&
       typeof fool?.initialExtraTableauRows === 'number' &&
       typeof fool?.waveTargetBase === 'number' &&
       typeof fool?.waveTargetMultiplier === 'number' &&
       typeof moon?.name === 'string' &&
+      typeof moon?.desc === 'string' &&
       typeof moon?.initialExtraTableauRows === 'number' &&
       typeof moon?.waveTargetBase === 'number' &&
       typeof moon?.waveTargetMultiplier === 'number' &&
