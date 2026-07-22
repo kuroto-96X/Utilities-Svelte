@@ -19,9 +19,10 @@
       大凶の名前
       <input type="text" bind:value={config.bossTiers.taikyou.name} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
     </label>
-    <label class="text-xs text-slate-500 col-span-3">
-      中凶: n以下のコンボで無得点(maxCombo)
-      <input type="number" min="0" step="1" bind:value={config.bossTiers.chuukyou.maxCombo} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-    </label>
   </div>
+  <p class="text-xs text-slate-400 mt-3">
+    各階級のボス制約候補(名前・パラメータ・説明文・階級の割り当て)は
+    <a href="/admin/shidasu-bosses" class="text-teal-600 hover:underline">ボス候補パラメータ設定ページ</a>
+    で編集します。
+  </p>
 </section>
