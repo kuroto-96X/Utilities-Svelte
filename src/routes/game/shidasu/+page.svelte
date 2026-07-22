@@ -42,15 +42,14 @@
   let wave = $derived(run.wave)
   let currentModifier = $derived(stageModifierFor(params, run))
 
-  // 次のボス(小凶→中凶→大凶)の情報を返す。nextStageIndexは次に迎えるステージ番号
-  // (現在ボスウェーブ中ならその次のサイクルの小凶、それ以外なら現在のステージ自身)。
+  // 現在のステージのボス(小凶→中凶→大凶)の情報を返す。ステージ内の3ウェーブは
+  // 常に同じボス階級を共有し、ボスウェーブ(3ウェーブ目)でのみ実際に制約が発動する
+  // (どちらの表示にするかはstageRow側のisBossWave分岐が担い、ここでは扱わない)。
   let upcomingBossInfo = $derived.by(() => {
-    const nextStageIndex = isBossWave(params, run.waveIndex) ? run.stageIndex + 1 : run.stageIndex
-    const tier = bossTierOf(nextStageIndex)
+    const tier = bossTierOf(run.stageIndex)
     if (tier === 0) return { label: params.bossTiers.shoukyou.name, detail: 'A⇔Kループ禁止' }
     if (tier === 1) return { label: params.bossTiers.chuukyou.name, detail: `${params.bossTiers.chuukyou.maxCombo}コンボ以下で無得点` }
-    const suit = tier === bossTierOf(run.stageIndex) ? run.currentGreatMisfortuneSuit : null
-    return { label: params.bossTiers.taikyou.name, detail: suit ? `${suit}で無得点` : '対象スート未確定' }
+    return { label: params.bossTiers.taikyou.name, detail: run.currentGreatMisfortuneSuit ? `${run.currentGreatMisfortuneSuit}で無得点` : '対象スート未確定' }
   })
 
   function modifierLabel(modifier: StageModifier): string {
