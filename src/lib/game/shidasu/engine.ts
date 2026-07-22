@@ -998,7 +998,7 @@ export function createInitialRun(): RunState {
     phase: 'title', stageIndex: 0, waveIndex: 0, items: [], offer: [], wave: null, pendingNewItem: null,
     deckComposition: standardDeckComposition(), rites: [], revelations: [], revelationOffer: [], extraTableauRows: 0,
     oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null, spreadId: 'fool',
-    currentBossKind: null,
+    currentBossKind: null, currency: 0,
   }
 }
 
@@ -1025,6 +1025,7 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
     currentGreatMisfortuneSuit: null,
     spreadId,
     currentBossKind: initialBossKind,
+    currency: params.currency.initialAmount,
   }
 }
 
@@ -1037,12 +1038,16 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
     return { ...run, phase: 'gameOver' }
   }
 
+  const earned = params.currency.waveClearAmount
+    + (isBossWave(params, run.waveIndex) ? params.currency.bossBonus[BOSS_TIER_KEYS[bossTierOf(run.stageIndex)]] : 0)
+  const runWithCurrency = { ...run, currency: run.currency + earned }
+
   // 大凶(各サイクルの最終ウェーブ)クリア時のみ、護符等の選択を後回しにして続行確認を挟む。
   // それ以外(小凶・中凶のボスウェーブを含む通常のウェーブクリア)は、すべて同じitemSelectへ進む。
   if (isBossWave(params, run.waveIndex) && bossTierOf(run.stageIndex) === 2) {
-    return { ...run, phase: 'continueChoice' }
+    return { ...runWithCurrency, phase: 'continueChoice' }
   }
-  return { ...run, phase: 'itemSelect', offer: rollItemOffer(run.items, rand), pendingNewItem: null }
+  return { ...runWithCurrency, phase: 'itemSelect', offer: rollItemOffer(run.items, rand), pendingNewItem: null }
 }
 
 // 秘儀を1つ使用する。効果を適用し、所持からその秘儀を1個削除する。
