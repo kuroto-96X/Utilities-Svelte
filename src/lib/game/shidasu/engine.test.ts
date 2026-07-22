@@ -2142,6 +2142,41 @@ describe('resolveWaveEnd', () => {
     const next = resolveWaveEnd(DEFAULT_PARAMS, run)
     expect(next.phase).toBe('continueChoice')
   })
+
+  test('beginRun直後、currencyは初期所持数になる', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    expect(run.currency).toBe(DEFAULT_PARAMS.currency.initialAmount)
+  })
+
+  test('目標未達(gameOver)ではcurrencyは増えない', () => {
+    const run = endedRun({}, 0)
+    const next = resolveWaveEnd(DEFAULT_PARAMS, run)
+    expect(next.currency).toBe(run.currency)
+  })
+
+  test('通常Wave(ボスWave以外)クリアでcurrencyがwaveClearAmount分増える', () => {
+    const run = endedRun({ waveIndex: 0 }, waveTarget(DEFAULT_PARAMS, 0, 0))
+    const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
+    expect(next.currency).toBe(run.currency + DEFAULT_PARAMS.currency.waveClearAmount)
+  })
+
+  test('小凶ボスWave(stageIndex0の3ウェーブ目)クリアでwaveClearAmount+shoukyouボーナス分増える', () => {
+    const run = endedRun({ waveIndex: 2, stageIndex: 0 }, waveTarget(DEFAULT_PARAMS, 0, 2))
+    const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
+    expect(next.currency).toBe(run.currency + DEFAULT_PARAMS.currency.waveClearAmount + DEFAULT_PARAMS.currency.bossBonus.shoukyou)
+  })
+
+  test('中凶ボスWave(stageIndex1の3ウェーブ目)クリアでwaveClearAmount+chuukyouボーナス分増える', () => {
+    const run = endedRun({ waveIndex: 2, stageIndex: 1 }, waveTarget(DEFAULT_PARAMS, 1, 2))
+    const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
+    expect(next.currency).toBe(run.currency + DEFAULT_PARAMS.currency.waveClearAmount + DEFAULT_PARAMS.currency.bossBonus.chuukyou)
+  })
+
+  test('大凶ボスWave(stageIndex2の3ウェーブ目)クリアでwaveClearAmount+taikyouボーナス分増える', () => {
+    const run = endedRun({ waveIndex: 2, stageIndex: 2 }, waveTarget(DEFAULT_PARAMS, 2, 2))
+    const next = resolveWaveEnd(DEFAULT_PARAMS, run)
+    expect(next.currency).toBe(run.currency + DEFAULT_PARAMS.currency.waveClearAmount + DEFAULT_PARAMS.currency.bossBonus.taikyou)
+  })
 })
 
 describe('stageModifierFor / bossScoreLockFor', () => {
@@ -2265,6 +2300,18 @@ describe('pickItem / continueAfterGreatMisfortune / restartRun', () => {
     expect(next.items).toEqual(['bridge'])
     expect(next.rites).toEqual(['uruz'])
     expect(next.oracleLevels.suit).toBe(3)
+  })
+
+  test('continueAfterGreatMisfortuneを経てもcurrencyは保持される(リセットされない)', () => {
+    const run: RunState = {
+      ...beginRun(DEFAULT_PARAMS, 1),
+      phase: 'continueChoice',
+      stageIndex: 2,
+      waveIndex: 2,
+      currency: 999,
+    }
+    const next = continueAfterGreatMisfortune(DEFAULT_PARAMS, run, createRng(1))
+    expect(next.currency).toBe(999)
   })
 
   test('stopAfterGreatMisfortuneでallClearへ進む', () => {
@@ -2402,6 +2449,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null, spreadId: 'fool', currentBossKind: 'noLoop',
+      currency: DEFAULT_PARAMS.currency.initialAmount,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
     expect(next.wave!.status).toBe('playing') // 手詰まりが解消されている
@@ -2427,6 +2475,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null, spreadId: 'fool', currentBossKind: 'noLoop',
+      currency: DEFAULT_PARAMS.currency.initialAmount,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run)
     expect(next.wave!.status).toBe('ended')
@@ -2446,6 +2495,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null, spreadId: 'fool', currentBossKind: 'noLoop',
+      currency: DEFAULT_PARAMS.currency.initialAmount,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run)
     expect(next.wave!.status).toBe('ended')
@@ -2466,6 +2516,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null, spreadId: 'fool', currentBossKind: 'noLoop',
+      currency: DEFAULT_PARAMS.currency.initialAmount,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run)
     expect(next.wave!.status).toBe('ended')
@@ -2487,6 +2538,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null, spreadId: 'fool', currentBossKind: 'noLoop',
+      currency: DEFAULT_PARAMS.currency.initialAmount,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
     expect(next.wave!.tableau[1].length).toBeGreaterThan(0) // 治癒によって列1が復活している
@@ -2507,6 +2559,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null, spreadId: 'fool', currentBossKind: 'noLoop',
+      currency: DEFAULT_PARAMS.currency.initialAmount,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
     expect(next.wave!.tableau[1].length).toBeGreaterThan(0) // 治癒によって列1は復活している
