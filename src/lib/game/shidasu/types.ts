@@ -5,6 +5,12 @@ export type StageModifier = 'none' | 'noLoop' | 'faceLock'
 // スプレッド: ラン開始時にプレイヤーが選ぶ固有ルールセット。大アルカナから命名する。
 // fool(愚者)=特殊ルールなしの基本スプレッド、moon(月)=場札が常に1行少ない状態で始まる
 export type SpreadId = 'fool' | 'moon'
+// ボスウェーブの制約候補。挙動(kind)そのものはコードに紐づく固定値で、
+// どの階級(小凶/中凶/大凶)に属するかはparams.bosses[kind].tierとして管理画面から変更できる。
+// noLoop/faceLock=小凶向け(isPlayableの可否制約)、lowCombo/oddCombo=中凶向け、suit/face=大凶向け(得点ロック)
+// という想定だが、実際にどの階級で抽選されるかはtierの値のみが決める。
+export type BossKind = 'noLoop' | 'faceLock' | 'lowCombo' | 'oddCombo' | 'suit' | 'face'
+export type BossTierKey = 'shoukyou' | 'chuukyou' | 'taikyou'
 export type Rarity = 'C' | 'U' | 'R'
 export type RoleName = 'flush' | 'royalSet' | 'sameRank' | 'completeRun' | 'columnSweep' | 'suit' | 'color' | 'stair'
 export type ItemId =
@@ -212,4 +218,8 @@ export interface RunState {
   currentGreatMisfortuneSuit: Suit | null
   // ラン開始時に選ばれたスプレッド。ラン全体を通して不変(タイトル画面に戻って選び直すまで固定)
   spreadId: SpreadId
+  // 現在のステージのボスウェーブで適用される候補。ステージ突入時(そのステージのウェーブ0を
+  // 配る時点)にそのステージの階級(bossTierOf(stageIndex))に属する候補群からrandで1つ抽選し、
+  // そのステージの3ウェーブ間(表示・実際の判定とも)固定で使い回す。titleフェーズではnull
+  currentBossKind: BossKind | null
 }

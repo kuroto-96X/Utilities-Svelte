@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/params.ts
 import shidasuConfigJson from './shidasu.config.json'
-import type { Rarity } from './types'
+import type { Rarity, BossTierKey } from './types'
 
 export interface ShidasuParams {
   layout: {
@@ -28,8 +28,18 @@ export interface ShidasuParams {
   // 読みやすさのため名前付きキーで持つ(shoukyou=小凶,chuukyou=中凶,taikyou=大凶)
   bossTiers: {
     shoukyou: { name: string }
-    chuukyou: { name: string; maxCombo: number }
+    chuukyou: { name: string }
     taikyou: { name: string }
+  }
+  // ボス制約の候補プール。どの階級(tier)に属するかは管理画面から変更できる。
+  // 挙動そのもの(kindごとの実際のロジック)はengine.tsに固定で紐づく。
+  bosses: {
+    noLoop: { name: string; tier: BossTierKey; desc: string }
+    faceLock: { name: string; tier: BossTierKey; desc: string }
+    lowCombo: { name: string; tier: BossTierKey; desc: string; maxCombo: number }
+    oddCombo: { name: string; tier: BossTierKey; desc: string }
+    suit: { name: string; tier: BossTierKey; desc: string }
+    face: { name: string; tier: BossTierKey; desc: string }
   }
   // スプレッド(ラン開始時に選ぶ固有ルールセット)ごとの設定。目標スコア算出式
   // target(n) = waveTargetBase × waveTargetMultiplier^(n-1) の基礎値・倍率(nは通しウェーブ番号、1始まり)と、
@@ -213,8 +223,16 @@ export const DEFAULT_PARAMS: ShidasuParams = {
   },
   bossTiers: {
     shoukyou: { name: '小凶' },
-    chuukyou: { name: '中凶', maxCombo: 2 },
+    chuukyou: { name: '中凶' },
     taikyou: { name: '大凶' },
+  },
+  bosses: {
+    noLoop: { name: '頑迷', tier: 'shoukyou', desc: 'A⇔Kループ禁止' },
+    faceLock: { name: '偽善', tier: 'shoukyou', desc: '絵札はコンボ2以上でのみ取れる' },
+    lowCombo: { name: '憤慨', tier: 'chuukyou', desc: '{maxCombo}コンボ以下で無得点', maxCombo: 2 },
+    oddCombo: { name: '口論', tier: 'chuukyou', desc: 'コンボが奇数のとき無得点' },
+    suit: { name: '裏切り', tier: 'taikyou', desc: '特定のスートで無得点' },
+    face: { name: '詐欺', tier: 'taikyou', desc: '絵札(J・Q・K)で無得点' },
   },
   spreads: {
     fool: { name: '愚者', desc: '特殊ルールなし', initialExtraTableauRows: 0, waveTargetBase: 2000, waveTargetMultiplier: 1.5 },
