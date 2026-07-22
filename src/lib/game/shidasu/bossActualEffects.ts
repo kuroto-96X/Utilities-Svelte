@@ -1,4 +1,3 @@
-// src/lib/game/shidasu/bossActualEffects.ts
 import type { BossKind } from './types'
 
 // 各ボス候補の実際の実装ロジックを、開発者向けに要約したもの(監査用)。
