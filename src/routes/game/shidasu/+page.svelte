@@ -122,7 +122,8 @@
     // continueAfterGreatMisfortuneはphaseを'itemSelect'にするだけでrun.waveは
     // 大凶撃破時のまま(status:'ended')なので、afterAction()を呼ぶとresolveWaveEndが
     // 同じ「終了済みウェーブ」を再評価し、'continueChoice'へ巻き戻ってしまう
-    // (handlePickItemが上限到達時にafterAction()を呼ばないのと同じ理由)。
+    // (ショップフェーズ中の操作がafterAction()を呼ばないのと同じ理由:
+    //  waveの手詰まりチェック・終了判定はプレイ中フェーズのみが対象のため)。
     run = continueAfterGreatMisfortune(params, run)
   }
 
@@ -240,6 +241,8 @@
     run = sellOracle(params, run, roleName)
   }
 
+  // sourceが'individual'/'pack'(ショップでの購入・福袋の中身選択)はwaveの進行に関与しないため
+  // afterAction()を呼ばない。'held'(保有天啓をプレイ中に使用)のみwave進行に影響するため必要。
   let pendingRevelationTarget = $state<
     | { revelationId: RevelationId; source: 'individual'; slotIndex: number }
     | { revelationId: RevelationId; source: 'pack' }
