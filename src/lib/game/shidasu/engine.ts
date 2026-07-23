@@ -1111,6 +1111,87 @@ export function finishShop(params: ShidasuParams, run: RunState, seed?: number):
   return { ...run, phase: 'playing', wave, deckComposition, shop: null }
 }
 
+// バラ売り護符購入。所持上限(maxItems)到達時・通貨不足時・売り切れ時は何もしない(スワップは発生しない)。
+export function buyIndividualItem(params: ShidasuParams, run: RunState, slotIndex: number): RunState {
+  if (run.phase !== 'shop' || !run.shop) return run
+  const slot = run.shop.individual[slotIndex]
+  if (!slot || slot.sold || slot.kind !== 'item') return run
+  const itemId = slot.id as ItemId
+  if (run.items.length >= params.items.maxItems) return run
+  const price = itemBuyPrice(params, itemId)
+  if (run.currency < price) return run
+  const individual = run.shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
+  return { ...run, currency: run.currency - price, items: [...run.items, itemId], shop: { ...run.shop, individual } }
+}
+
+// バラ売り秘儀購入。所持上限3到達時・通貨不足時・売り切れ時は何もしない。
+export function buyIndividualRite(params: ShidasuParams, run: RunState, slotIndex: number): RunState {
+  if (run.phase !== 'shop' || !run.shop) return run
+  const slot = run.shop.individual[slotIndex]
+  if (!slot || slot.sold || slot.kind !== 'rite') return run
+  const riteId = slot.id as RiteId
+  if (run.rites.length >= 3) return run
+  const price = riteBuyPrice(params)
+  if (run.currency < price) return run
+  const individual = run.shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
+  return { ...run, currency: run.currency - price, rites: [...run.rites, riteId], shop: { ...run.shop, individual } }
+}
+
+// バラ売り天啓・即使う。プレビューウェーブ(run.wave)に即座に効果を適用する。天啓・神託合算上限とは無関係に常に購入可。
+export function buyIndividualRevelationUse(params: ShidasuParams, run: RunState, slotIndex: number, targetCol: number | null, rand: () => number = Math.random): RunState {
+  if (run.phase !== 'shop' || !run.shop || !run.wave) return run
+  const slot = run.shop.individual[slotIndex]
+  if (!slot || slot.sold || slot.kind !== 'revelation') return run
+  const revelationId = slot.id as RevelationId
+  if (!canUseRevelation(params, run.wave, revelationId)) return run
+  const price = revelationBuyPrice(params)
+  if (run.currency < price) return run
+  const { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
+  const extraTableauRows = revelationId === 'kyo' ? run.extraTableauRows + params.revelations.kyo.n : run.extraTableauRows
+  const individual = run.shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
+  return { ...run, currency: run.currency - price, wave, deckComposition, extraTableauRows, shop: { ...run.shop, individual } }
+}
+
+// バラ売り天啓・温存。天啓・神託合算上限2到達時はブロックする(スワップは発生しない)。
+export function buyIndividualRevelationHold(params: ShidasuParams, run: RunState, slotIndex: number): RunState {
+  if (run.phase !== 'shop' || !run.shop) return run
+  const slot = run.shop.individual[slotIndex]
+  if (!slot || slot.sold || slot.kind !== 'revelation') return run
+  if (run.revelations.length + run.oracles.length >= 2) return run
+  const revelationId = slot.id as RevelationId
+  const price = revelationBuyPrice(params)
+  if (run.currency < price) return run
+  const individual = run.shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
+  return { ...run, currency: run.currency - price, revelations: [...run.revelations, revelationId], shop: { ...run.shop, individual } }
+}
+
+// バラ売り神託・即使う。役レベル+1をrun/wave両方に反映する(pickOracleFromOfferと同じ同期が必要)。上限とは無関係に常に購入可。
+export function buyIndividualOracleUse(params: ShidasuParams, run: RunState, slotIndex: number): RunState {
+  if (run.phase !== 'shop' || !run.shop) return run
+  const slot = run.shop.individual[slotIndex]
+  if (!slot || slot.sold || slot.kind !== 'oracle') return run
+  const roleName = slot.id as RoleName
+  const price = oracleBuyPrice(params)
+  if (run.currency < price) return run
+  const oracleLevels = { ...run.oracleLevels, [roleName]: run.oracleLevels[roleName] + 1 }
+  const wave = run.wave ? { ...run.wave, oracleLevels } : run.wave
+  const individual = run.shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
+  return { ...run, currency: run.currency - price, oracleLevels, wave, shop: { ...run.shop, individual } }
+}
+
+// バラ売り神託・温存。天啓・神託合算上限2到達時はブロックする。
+export function buyIndividualOracleHold(params: ShidasuParams, run: RunState, slotIndex: number): RunState {
+  if (run.phase !== 'shop' || !run.shop) return run
+  const slot = run.shop.individual[slotIndex]
+  if (!slot || slot.sold || slot.kind !== 'oracle') return run
+  if (run.revelations.length + run.oracles.length >= 2) return run
+  const roleName = slot.id as RoleName
+  const price = oracleBuyPrice(params)
+  if (run.currency < price) return run
+  const individual = run.shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
+  return { ...run, currency: run.currency - price, oracles: [...run.oracles, roleName], shop: { ...run.shop, individual } }
+}
+
 export function pickItem(params: ShidasuParams, run: RunState, itemId: ItemId, seed?: number, rand: () => number = Math.random): RunState {
   if (run.phase !== 'itemSelect') return run
   if (run.items.length >= params.items.maxItems) {
