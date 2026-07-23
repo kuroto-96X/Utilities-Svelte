@@ -1246,35 +1246,41 @@ export function closePackItemSelect(run: RunState): RunState {
   return { ...run, phase: 'shop', offer: [], pendingNewItem: null, offerPickRemaining: 0 }
 }
 
-export function pickItem(params: ShidasuParams, run: RunState, itemId: ItemId, seed?: number, rand: () => number = Math.random): RunState {
-  if (run.phase !== 'itemSelect') return run
-  if (run.items.length >= params.items.maxItems) {
-    return { ...run, pendingNewItem: itemId }
+function resolvePackRitePick(run: RunState, newRites: RiteId[], pickedId: RiteId): RunState {
+  const idx = run.riteOffer.indexOf(pickedId)
+  const riteOffer = idx === -1 ? run.riteOffer : [...run.riteOffer.slice(0, idx), ...run.riteOffer.slice(idx + 1)]
+  const offerPickRemaining = run.offerPickRemaining - 1
+  if (offerPickRemaining <= 0) {
+    return { ...run, phase: 'shop', rites: newRites, riteOffer: [], pendingNewRite: null, offerPickRemaining: 0 }
   }
-  const newItems = [...run.items, itemId]
-  const rolledRite = rollRite(run.rites, rand)
-  const newRites = rolledRite ? [...run.rites, rolledRite] : run.rites
-  return enterRevelationSelect(params, run, newItems, newRites, seed, rand)
+  return { ...run, rites: newRites, riteOffer, pendingNewRite: null, offerPickRemaining }
 }
 
-export function confirmItemSwap(params: ShidasuParams, run: RunState, oldItemId: ItemId, seed?: number, rand: () => number = Math.random): RunState {
-  if (run.phase !== 'itemSelect' || run.pendingNewItem === null) return run
-  const idx = run.items.indexOf(oldItemId)
-  const remaining = idx === -1 ? [...run.items] : [...run.items.slice(0, idx), ...run.items.slice(idx + 1)]
-  const newItems = [...remaining, run.pendingNewItem]
-  const rolledRite = rollRite(run.rites, rand)
-  const newRites = rolledRite ? [...run.rites, rolledRite] : run.rites
-  return enterRevelationSelect(params, run, newItems, newRites, seed, rand)
+// 秘儀の福袋(riteSelect)から1つ選ぶ。所持上限3到達時はpendingNewRiteにセットしてスワップ待ちにする。
+export function pickPackRite(run: RunState, riteId: RiteId): RunState {
+  if (run.phase !== 'riteSelect' || !run.riteOffer.includes(riteId)) return run
+  if (run.rites.length >= 3) {
+    return { ...run, pendingNewRite: riteId }
+  }
+  return resolvePackRitePick(run, [...run.rites, riteId], riteId)
 }
 
-export function cancelItemSwap(run: RunState): RunState {
-  if (run.phase !== 'itemSelect') return run
-  return { ...run, pendingNewItem: null }
+export function confirmPackRiteSwap(run: RunState, oldRiteId: RiteId): RunState {
+  if (run.phase !== 'riteSelect' || run.pendingNewRite === null) return run
+  const idx = run.rites.indexOf(oldRiteId)
+  const remaining = idx === -1 ? [...run.rites] : [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)]
+  const newRites = [...remaining, run.pendingNewRite]
+  return resolvePackRitePick(run, newRites, run.pendingNewRite)
 }
 
-export function skipItemSelect(params: ShidasuParams, run: RunState, seed?: number, rand: () => number = Math.random): RunState {
-  if (run.phase !== 'itemSelect') return run
-  return enterRevelationSelect(params, run, run.items, run.rites, seed, rand)
+export function cancelPackRiteSwap(run: RunState): RunState {
+  if (run.phase !== 'riteSelect') return run
+  return { ...run, pendingNewRite: null }
+}
+
+export function closePackRiteSelect(run: RunState): RunState {
+  if (run.phase !== 'riteSelect') return run
+  return { ...run, phase: 'shop', riteOffer: [], pendingNewRite: null, offerPickRemaining: 0 }
 }
 
 // 所持中の天啓を1つ使用する(消費される)。プレイ中・天啓選択画面のどちらでも動作し、

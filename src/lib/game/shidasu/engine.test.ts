@@ -14,10 +14,6 @@ import {
   createInitialRun,
   beginRun,
   resolveWaveEnd,
-  pickItem,
-  confirmItemSwap,
-  cancelItemSwap,
-  skipItemSelect,
   continueAfterGreatMisfortune,
   stopAfterGreatMisfortune,
   waveTarget,
@@ -46,6 +42,10 @@ import {
   confirmPackItemSwap,
   cancelPackItemSwap,
   closePackItemSelect,
+  pickPackRite,
+  confirmPackRiteSwap,
+  cancelPackRiteSwap,
+  closePackRiteSelect,
 } from './engine'
 import { isFace, chainContinuesPattern } from './patterns'
 import type { Card, WaveState, RunState, ItemId, ShopIndividualSlot } from './types'
@@ -2527,6 +2527,79 @@ describe('buyPack / pickPackItem(護符の福袋)', () => {
   })
 })
 
+describe('buyPack / pickPackRite(秘儀の福袋)', () => {
+  function shopRunWithRitePack(overrides: Partial<RunState> = {}): RunState {
+    return {
+      ...createInitialRun(),
+      phase: 'shop',
+      currency: 999,
+      shop: { individual: [], packs: [{ packKind: 'rite', offerCount: 3, pickCount: 1, sold: false }] },
+      ...overrides,
+    }
+  }
+
+  test('buyPackでriteSelectへ遷移し候補が提示される', () => {
+    const run = shopRunWithRitePack()
+    const result = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    expect(result.phase).toBe('riteSelect')
+    expect(result.riteOffer).toHaveLength(3)
+    expect(result.offerPickRemaining).toBe(1)
+  })
+
+  test('pickPackRiteで選ぶと所持に追加されshopへ戻る', () => {
+    const run = shopRunWithRitePack()
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const picked = pickPackRite(opened, opened.riteOffer[0])
+    expect(picked.rites).toEqual([opened.riteOffer[0]])
+    expect(picked.phase).toBe('shop')
+  })
+
+  test('所持上限3到達時はpendingNewRiteにセットされスワップ待ちになる', () => {
+    const run = shopRunWithRitePack({ rites: ['raidho', 'jera', 'wunjo'] })
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const newRiteId = opened.riteOffer[0]
+    const picked = pickPackRite(opened, newRiteId)
+    expect(picked.pendingNewRite).toBe(newRiteId)
+    expect(picked.rites).toEqual(['raidho', 'jera', 'wunjo'])
+  })
+
+  test('confirmPackRiteSwapで入れ替えが確定する', () => {
+    const run = shopRunWithRitePack({ rites: ['raidho', 'jera', 'wunjo'] })
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const newRiteId = opened.riteOffer[0]
+    const picked = pickPackRite(opened, newRiteId)
+    const confirmed = confirmPackRiteSwap(picked, 'jera')
+    expect(confirmed.rites).toContain(newRiteId)
+    expect(confirmed.rites).not.toContain('jera')
+    expect(confirmed.rites).toHaveLength(3)
+    expect(confirmed.pendingNewRite).toBeNull()
+  })
+
+  test('cancelPackRiteSwapでpendingNewRiteがクリアされる', () => {
+    const run = shopRunWithRitePack({ rites: ['raidho', 'jera', 'wunjo'] })
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const picked = pickPackRite(opened, opened.riteOffer[0])
+    const cancelled = cancelPackRiteSwap(picked)
+    expect(cancelled.pendingNewRite).toBeNull()
+    expect(cancelled.rites).toEqual(['raidho', 'jera', 'wunjo'])
+  })
+
+  test('closePackRiteSelectで残り選択を放棄してshopへ戻る', () => {
+    const run = shopRunWithRitePack()
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const closed = closePackRiteSelect(opened)
+    expect(closed.phase).toBe('shop')
+    expect(closed.riteOffer).toEqual([])
+  })
+
+  test('秘儀の福袋購入では秘儀の自動抽選(rollRite)が発生しない(福袋外の護符購入等でrollRiteが呼ばれていた旧仕様の撤廃確認)', () => {
+    const run = shopRunWithRitePack()
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const picked = pickPackRite(opened, opened.riteOffer[0])
+    expect(picked.rites).toHaveLength(1)
+  })
+})
+
 describe('applyPlayCard / applyDrawStock / applyStuckCheck', () => {
   test('applyPlayCardはrun.waveを更新する', () => {
     const run = beginRun(DEFAULT_PARAMS, 1)
@@ -3104,24 +3177,6 @@ describe('約束・暗雲', () => {
 })
 
 describe('天啓選択フェーズ', () => {
-  test('護符選択(pickItem)を解決すると、revelationSelectフェーズへ遷移しrevelationOfferが3件セットされる', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
-    const itemSelectRun: RunState = { ...run, phase: 'itemSelect', offer: ['bridge', 'grace'] }
-    const next = pickItem(DEFAULT_PARAMS, itemSelectRun, 'bridge', 2, createRng(1))
-    expect(next.phase).toBe('revelationSelect')
-    expect(next.revelationOffer).toHaveLength(3)
-    expect(next.items).toContain('bridge')
-    expect(next.wave).not.toBeNull()
-  })
-
-  test('skipItemSelectを解決してもrevelationSelectフェーズへ遷移する', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
-    const itemSelectRun: RunState = { ...run, phase: 'itemSelect', offer: ['bridge'] }
-    const next = skipItemSelect(DEFAULT_PARAMS, itemSelectRun, 2, createRng(1))
-    expect(next.phase).toBe('revelationSelect')
-    expect(next.revelationOffer).toHaveLength(3)
-  })
-
   test('useRevelationFromOffer: 対象選択不要な天啓(心)を使用すると、実際のウェーブが配られoracleSelectへ遷移する。所持には加わらない', () => {
     const run = beginRun(DEFAULT_PARAMS, 1)
     const revSelectRun: RunState = { ...run, phase: 'revelationSelect', revelationOffer: ['shin', 'kou', 'tei'] }
