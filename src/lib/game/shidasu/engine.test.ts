@@ -52,6 +52,10 @@ import {
   cancelPackOracleSwap,
   closePackOracleSelect,
   useOracle,
+  sellItem,
+  sellRite,
+  sellRevelation,
+  sellOracle,
 } from './engine'
 import { isFace, chainContinuesPattern } from './patterns'
 import type { Card, WaveState, RunState, ItemId, ShopIndividualSlot } from './types'
@@ -60,7 +64,7 @@ import { createRng, standardDeckComposition } from './deck'
 import { card } from './testHelpers'
 import { defaultOracleLevels } from './oracles'
 import { ITEM_POOL } from './items'
-import { itemBuyPrice, riteBuyPrice, revelationBuyPrice, packPrice } from './shop'
+import { itemBuyPrice, riteBuyPrice, revelationBuyPrice, packPrice, itemSellPrice, riteSellPrice, revelationSellPrice, oracleSellPrice } from './shop'
 
 describe('isFace / rankLabel', () => {
   test('J/Q/Kはisface、それ以外はfalse', () => {
@@ -2798,6 +2802,64 @@ describe('useRite', () => {
     const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: ['uruz', 'uruz'] }
     const next = useRite(DEFAULT_PARAMS, run, 'uruz', createRng(1))
     expect(next.rites).toEqual(['uruz'])
+  })
+
+  test('shopフェーズでも使用できる(SHOP_FLOW_PHASESに含まれるため)', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'shop', wave, rites: ['raidho'] }
+    const result = useRite(DEFAULT_PARAMS, run, 'raidho', createRng(1))
+    expect(result.rites).toEqual([])
+  })
+
+  test('riteSelectフェーズでも使用できる', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'riteSelect', wave, rites: ['raidho'] }
+    const result = useRite(DEFAULT_PARAMS, run, 'raidho', createRng(1))
+    expect(result.rites).toEqual([])
+  })
+})
+
+describe('sellItem / sellRite / sellRevelation / sellOracle(所持品売却)', () => {
+  test('sellItemは所持から削除し、売却額分だけ通貨が増える(playing/shopどちらでも可)', () => {
+    const itemId = ITEM_POOL.find(id => DEFAULT_PARAMS.talismans[id].rarity === 'U')!
+    const playingRun: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, items: [itemId] }
+    const result = sellItem(DEFAULT_PARAMS, playingRun, itemId)
+    expect(result.items).toEqual([])
+    expect(result.currency).toBe(10 + itemSellPrice(DEFAULT_PARAMS, itemId))
+
+    const shopRun: RunState = { ...createInitialRun(), phase: 'shop', currency: 10, items: [itemId] }
+    expect(sellItem(DEFAULT_PARAMS, shopRun, itemId).items).toEqual([])
+  })
+
+  test('所持していないアイテムは売却できない', () => {
+    const run: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, items: [] }
+    expect(sellItem(DEFAULT_PARAMS, run, 'bridge')).toBe(run)
+  })
+
+  test('sellRiteは所持から削除し通貨が増える', () => {
+    const run: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, rites: ['raidho'] }
+    const result = sellRite(DEFAULT_PARAMS, run, 'raidho')
+    expect(result.rites).toEqual([])
+    expect(result.currency).toBe(10 + riteSellPrice(DEFAULT_PARAMS))
+  })
+
+  test('sellRevelationは所持から削除し通貨が増える', () => {
+    const run: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, revelations: ['kaku'] }
+    const result = sellRevelation(DEFAULT_PARAMS, run, 'kaku')
+    expect(result.revelations).toEqual([])
+    expect(result.currency).toBe(10 + revelationSellPrice(DEFAULT_PARAMS))
+  })
+
+  test('sellOracleは所持から削除し通貨が増える', () => {
+    const run: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, oracles: ['flush'] }
+    const result = sellOracle(DEFAULT_PARAMS, run, 'flush')
+    expect(result.oracles).toEqual([])
+    expect(result.currency).toBe(10 + oracleSellPrice(DEFAULT_PARAMS))
+  })
+
+  test('playing/shop以外のフェーズでは売却できない', () => {
+    const run: RunState = { ...createInitialRun(), phase: 'itemSelect', currency: 10, items: ['bridge'] }
+    expect(sellItem(DEFAULT_PARAMS, run, 'bridge')).toBe(run)
   })
 })
 

@@ -1067,7 +1067,7 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
 // 秘儀を1つ使用する。効果を適用し、所持からその秘儀を1個削除する。
 // 使用条件(canUseRite)を満たさない場合、または所持していない場合は何もしない。
 export function useRite(params: ShidasuParams, run: RunState, riteId: RiteId, rand: () => number = Math.random): RunState {
-  if ((run.phase !== 'playing' && run.phase !== 'revelationSelect') || !run.wave || run.wave.status !== 'playing') return run
+  if ((run.phase !== 'playing' && !SHOP_FLOW_PHASES.includes(run.phase)) || !run.wave || run.wave.status !== 'playing') return run
   if (!canUseRite(params, run.wave, riteId)) return run
   const idx = run.rites.indexOf(riteId)
   if (idx === -1) return run
@@ -1417,6 +1417,42 @@ export function useOracle(run: RunState, roleName: RoleName): RunState {
   const oracleLevels = { ...run.oracleLevels, [roleName]: run.oracleLevels[roleName] + 1 }
   const wave = run.wave ? { ...run.wave, oracleLevels } : run.wave
   return { ...run, oracles, oracleLevels, wave }
+}
+
+// 所持中の護符を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
+export function sellItem(params: ShidasuParams, run: RunState, itemId: ItemId): RunState {
+  if (run.phase !== 'playing' && run.phase !== 'shop') return run
+  const idx = run.items.indexOf(itemId)
+  if (idx === -1) return run
+  const items = [...run.items.slice(0, idx), ...run.items.slice(idx + 1)]
+  return { ...run, items, currency: run.currency + itemSellPrice(params, itemId) }
+}
+
+// 所持中の秘儀を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
+export function sellRite(params: ShidasuParams, run: RunState, riteId: RiteId): RunState {
+  if (run.phase !== 'playing' && run.phase !== 'shop') return run
+  const idx = run.rites.indexOf(riteId)
+  if (idx === -1) return run
+  const rites = [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)]
+  return { ...run, rites, currency: run.currency + riteSellPrice(params) }
+}
+
+// 所持中の天啓を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
+export function sellRevelation(params: ShidasuParams, run: RunState, revelationId: RevelationId): RunState {
+  if (run.phase !== 'playing' && run.phase !== 'shop') return run
+  const idx = run.revelations.indexOf(revelationId)
+  if (idx === -1) return run
+  const revelations = [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
+  return { ...run, revelations, currency: run.currency + revelationSellPrice(params) }
+}
+
+// 所持中の神託を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
+export function sellOracle(params: ShidasuParams, run: RunState, roleName: RoleName): RunState {
+  if (run.phase !== 'playing' && run.phase !== 'shop') return run
+  const idx = run.oracles.indexOf(roleName)
+  if (idx === -1) return run
+  const oracles = [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)]
+  return { ...run, oracles, currency: run.currency + oracleSellPrice(params) }
 }
 
 // 大凶クリア後の続行確認画面('continueChoice'フェーズ)で「続ける」を選んだ場合。
