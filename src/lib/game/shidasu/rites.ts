@@ -1,6 +1,7 @@
 // src/lib/game/shidasu/rites.ts
 import type { RiteId } from './types'
 import type { ShidasuParams } from './params'
+import { rollOffer } from './deck'
 
 // rollRiteは重み付けなしの完全均等抽選。エルダー・フサルク全24種が対象。
 export const RITE_POOL: RiteId[] = [
@@ -30,4 +31,10 @@ export function riteDesc(id: RiteId, params: ShidasuParams): string {
 export function rollRite(currentRites: RiteId[], rand: () => number = Math.random): RiteId | null {
   if (currentRites.length >= 3) return null
   return RITE_POOL[Math.floor(rand() * RITE_POOL.length)]
+}
+
+// 秘儀の福袋('riteSelect'フェーズ)用オファー抽選。RITE_POOLは24種で重複を考慮しないため
+// (所持中の秘儀を除外しない=既に持っている秘儀も再度候補に含まれる、既存rollRiteと同じ仕様)。
+export function rollRiteOffer(rand: () => number = Math.random, count = 3): RiteId[] {
+  return rollOffer(RITE_POOL, count, rand)
 }
