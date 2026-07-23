@@ -15,6 +15,7 @@ describe('rollRiteOffer', () => {
     const offer = rollRiteOffer(createRng(1), 7)
     expect(offer).toHaveLength(7)
     expect(new Set(offer).size).toBe(7)
+    offer.forEach(id => expect(RITE_POOL).toContain(id))
   })
 })
 
