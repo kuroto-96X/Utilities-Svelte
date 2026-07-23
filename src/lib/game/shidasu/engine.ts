@@ -1354,27 +1354,69 @@ export function useRevelation(
   return { ...run, wave, deckComposition, revelations, extraTableauRows }
 }
 
-// 神託選択画面のオファーから1つ選ぶと、対応する役のレベルが+1され、即座にplayingへ遷移する。
-// 天啓と異なり所持・ウェーブ再配布の概念は無く、実ウェーブは変更しない。paramsに依存する処理が
-// 無いため(useRevelationFromOffer等と異なりparamsを使う効果適用が無い)、引数に含めない。
-// 既に配られている実ウェーブ(finishRevelationSelectで確定済み)のwave.oracleLevelsは
-// デッキ内容と違い「配布時に固定される値」ではなく、得点計算の都度参照される値のため、
-// run.oracleLevels側だけでなくwave.oracleLevels側も同じ新しい値に更新する。これを怠ると、
-// 常時表示エリア(run.oracleLevels参照)ではレベルが上がって見えるのに、選んだそのウェーブの
-// 実際のプレイ(wave.oracleLevels参照)には反映されない(次のウェーブまで効果が遅延する)
-// 不整合が起きる。
-export function pickOracleFromOffer(run: RunState, roleName: RoleName): RunState {
-  if (run.phase !== 'oracleSelect') return run
-  if (!run.oracleOffer.includes(roleName)) return run
-  const oracleLevels = { ...run.oracleLevels, [roleName]: run.oracleLevels[roleName] + 1 }
-  const wave = run.wave ? { ...run.wave, oracleLevels } : run.wave
-  return { ...run, phase: 'playing', oracleLevels, oracleOffer: [], wave }
+function resolvePackOraclePick(run: RunState, pickedRole: RoleName): RunState {
+  const idx = run.oracleOffer.indexOf(pickedRole)
+  const oracleOffer = idx === -1 ? run.oracleOffer : [...run.oracleOffer.slice(0, idx), ...run.oracleOffer.slice(idx + 1)]
+  const offerPickRemaining = run.offerPickRemaining - 1
+  if (offerPickRemaining <= 0) {
+    return { ...run, phase: 'shop', oracleOffer: [], pendingNewOracle: null, offerPickRemaining: 0 }
+  }
+  return { ...run, oracleOffer, pendingNewOracle: null, offerPickRemaining }
 }
 
-// 神託を選ばずに神託選択画面を終了する。
-export function skipOracleSelect(run: RunState): RunState {
+// 神託の福袋(oracleSelect)から1つ選び、その場で使用する(役レベル+1、所持には加わらない、上限とは無関係)。
+// run.oracleLevelsだけでなくwave.oracleLevelsも同期する。得点計算時にwave.oracleLevelsが参照されるため、
+// 同期を怠ると効果が次のウェーブまで反映されない不整合が起きる。
+export function pickPackOracleUse(run: RunState, roleName: RoleName): RunState {
+  if (run.phase !== 'oracleSelect' || !run.oracleOffer.includes(roleName)) return run
+  const oracleLevels = { ...run.oracleLevels, [roleName]: run.oracleLevels[roleName] + 1 }
+  const wave = run.wave ? { ...run.wave, oracleLevels } : run.wave
+  return resolvePackOraclePick({ ...run, oracleLevels, wave }, roleName)
+}
+
+// 神託の福袋から1つ選び、温存する(所持に加える)。天啓・神託合算上限2到達時はpendingNewOracleにセットしスワップ待ちにする。
+export function pickPackOracleHold(run: RunState, roleName: RoleName): RunState {
+  if (run.phase !== 'oracleSelect' || !run.oracleOffer.includes(roleName)) return run
+  if (run.revelations.length + run.oracles.length >= 2) {
+    return { ...run, pendingNewOracle: roleName }
+  }
+  return resolvePackOraclePick({ ...run, oracles: [...run.oracles, roleName] }, roleName)
+}
+
+// スワップ待ち中、targetで指定した所持中の天啓または神託と入れ替えて確定する。
+export function confirmPackOracleSwap(run: RunState, target: HeldRevelationOrOracleRef): RunState {
+  if (run.phase !== 'oracleSelect' || run.pendingNewOracle === null) return run
+  const newRole = run.pendingNewOracle
+  if (target.kind === 'oracle') {
+    const idx = run.oracles.indexOf(target.id)
+    const remaining = idx === -1 ? run.oracles : [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)]
+    return resolvePackOraclePick({ ...run, oracles: [...remaining, newRole], pendingNewOracle: null }, newRole)
+  }
+  const idx = run.revelations.indexOf(target.id)
+  const revelations = idx === -1 ? run.revelations : [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
+  return resolvePackOraclePick({ ...run, revelations, oracles: [...run.oracles, newRole], pendingNewOracle: null }, newRole)
+}
+
+export function cancelPackOracleSwap(run: RunState): RunState {
   if (run.phase !== 'oracleSelect') return run
-  return { ...run, phase: 'playing', oracleOffer: [] }
+  return { ...run, pendingNewOracle: null }
+}
+
+export function closePackOracleSelect(run: RunState): RunState {
+  if (run.phase !== 'oracleSelect') return run
+  return { ...run, phase: 'shop', oracleOffer: [], pendingNewOracle: null, offerPickRemaining: 0 }
+}
+
+// 所持中の神託を1つ消費する。playingフェーズでのみ呼べる(ショップ内フェーズでは呼べない)。
+// run/wave両方のoracleLevelsを同期する。盤面への直接効果は無い。
+export function useOracle(run: RunState, roleName: RoleName): RunState {
+  if (run.phase !== 'playing') return run
+  const idx = run.oracles.indexOf(roleName)
+  if (idx === -1) return run
+  const oracles = [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)]
+  const oracleLevels = { ...run.oracleLevels, [roleName]: run.oracleLevels[roleName] + 1 }
+  const wave = run.wave ? { ...run.wave, oracleLevels } : run.wave
+  return { ...run, oracles, oracleLevels, wave }
 }
 
 // 大凶クリア後の続行確認画面('continueChoice'フェーズ)で「続ける」を選んだ場合。

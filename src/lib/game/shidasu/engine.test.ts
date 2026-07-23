@@ -26,8 +26,6 @@ import {
   forceStockTop,
   useRite,
   useRevelation,
-  pickOracleFromOffer,
-  skipOracleSelect,
   buyIndividualItem,
   buyIndividualRite,
   buyIndividualRevelationUse,
@@ -48,6 +46,12 @@ import {
   confirmPackRevelationSwap,
   cancelPackRevelationSwap,
   closePackRevelationSelect,
+  pickPackOracleUse,
+  pickPackOracleHold,
+  confirmPackOracleSwap,
+  cancelPackOracleSwap,
+  closePackOracleSelect,
+  useOracle,
 } from './engine'
 import { isFace, chainContinuesPattern } from './patterns'
 import type { Card, WaveState, RunState, ItemId, ShopIndividualSlot } from './types'
@@ -3278,54 +3282,102 @@ describe('useRevelation(所持天啓の使用、playing/shopフロー両対応)'
   })
 })
 
-describe('神託選択フェーズ', () => {
-  test('pickOracleFromOffer: オファーから選ぶと対応する役のレベルが+1され、即座にplayingへ遷移する', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
-    const oracleSelectRun: RunState = { ...run, phase: 'oracleSelect', oracleOffer: ['suit', 'color', 'stair'] }
-    const next = pickOracleFromOffer(oracleSelectRun, 'suit')
-    expect(next.phase).toBe('playing')
-    expect(next.oracleLevels.suit).toBe(2)
-    expect(next.oracleLevels.color).toBe(1)
-    expect(next.oracleOffer).toEqual([])
+describe('神託の福袋(oracleSelect)', () => {
+  function shopRunWithOraclePack(overrides: Partial<RunState> = {}): RunState {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    return {
+      ...createInitialRun(),
+      phase: 'shop',
+      currency: 999,
+      wave,
+      shop: { individual: [], packs: [{ packKind: 'oracle', offerCount: 3, pickCount: 1, sold: false }] },
+      ...overrides,
+    }
+  }
+
+  test('buyPackでoracleSelectへ遷移し候補が提示される', () => {
+    const run = shopRunWithOraclePack()
+    const result = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    expect(result.phase).toBe('oracleSelect')
+    expect(result.oracleOffer).toHaveLength(3)
   })
 
-  test('pickOracleFromOffer: 既に配られている実ウェーブ(wave.oracleLevels)にも即座に反映される(次のウェーブまで遅延しない)', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
-    const oracleSelectRun: RunState = { ...run, phase: 'oracleSelect', oracleOffer: ['suit', 'color', 'stair'] }
-    const next = pickOracleFromOffer(oracleSelectRun, 'suit')
-    expect(next.wave).not.toBeNull()
-    expect(next.wave?.oracleLevels.suit).toBe(2)
-    expect(next.wave?.oracleLevels.color).toBe(1)
+  test('pickPackOracleUseで即使うと役レベルが+1され、run/wave両方に反映される', () => {
+    const run = shopRunWithOraclePack()
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const role = opened.oracleOffer[0]
+    const before = opened.oracleLevels[role]
+    const result = pickPackOracleUse(opened, role)
+    expect(result.oracleLevels[role]).toBe(before + 1)
+    expect(result.wave!.oracleLevels[role]).toBe(before + 1)
+    expect(result.oracles).toEqual([])
+    expect(result.phase).toBe('shop')
   })
 
-  test('pickOracleFromOffer: オファーに含まれない役は無視される', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
-    const oracleSelectRun: RunState = { ...run, phase: 'oracleSelect', oracleOffer: ['suit', 'color', 'stair'] }
-    const next = pickOracleFromOffer(oracleSelectRun, 'flush')
-    expect(next).toBe(oracleSelectRun)
+  test('pickPackOracleHoldで温存すると所持に追加される', () => {
+    const run = shopRunWithOraclePack()
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const role = opened.oracleOffer[0]
+    const result = pickPackOracleHold(opened, role)
+    expect(result.oracles).toEqual([role])
   })
 
-  test('pickOracleFromOffer: 同じ役を複数回選ぶとレベルが積み上がる', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
-    const oracleSelectRun: RunState = { ...run, phase: 'oracleSelect', oracleOffer: ['suit', 'color', 'stair'], oracleLevels: { ...run.oracleLevels, suit: 3 } }
-    const next = pickOracleFromOffer(oracleSelectRun, 'suit')
-    expect(next.oracleLevels.suit).toBe(4)
+  test('温存時、天啓・神託合算上限2到達時はpendingNewOracleにセットされスワップ待ちになる', () => {
+    const run = shopRunWithOraclePack({ revelations: ['kaku'], oracles: ['flush'] })
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const role = opened.oracleOffer.includes('stair') ? 'stair' : opened.oracleOffer[0]
+    const result = pickPackOracleHold(opened, role)
+    expect(result.pendingNewOracle).toBe(role)
   })
 
-  test('skipOracleSelect: 何も選ばず終了すると、レベルを変えずplayingへ遷移する', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
-    const oracleSelectRun: RunState = { ...run, phase: 'oracleSelect', oracleOffer: ['suit', 'color', 'stair'] }
-    const next = skipOracleSelect(oracleSelectRun)
-    expect(next.phase).toBe('playing')
-    expect(next.oracleLevels).toEqual(run.oracleLevels)
+  test('confirmPackOracleSwapで所持中の神託・天啓いずれとも入れ替えできる', () => {
+    const run = shopRunWithOraclePack({ revelations: ['kaku'], oracles: ['flush'] })
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const role = opened.oracleOffer[0]
+    const picked = pickPackOracleHold(opened, role)
+    const confirmed = confirmPackOracleSwap(picked, { kind: 'revelation', id: 'kaku' })
+    expect(confirmed.oracles).toEqual(['flush', role])
+    expect(confirmed.revelations).toEqual([])
+    expect(confirmed.pendingNewOracle).toBeNull()
   })
 
-  test('神託のレベルは新しいウェーブに引き継がれ、得点計算に反映される', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
-    const oracleSelectRun: RunState = { ...run, phase: 'oracleSelect', oracleOffer: ['suit', 'color', 'stair'] }
-    const afterPick = pickOracleFromOffer(oracleSelectRun, 'suit')
-    expect(afterPick.oracleLevels.suit).toBe(2)
-    const { wave } = startWave(DEFAULT_PARAMS, 0, 1, afterPick.items, afterPick.deckComposition, 5, afterPick.extraTableauRows, afterPick.oracleLevels)
-    expect(wave.oracleLevels.suit).toBe(2)
+  test('cancelPackOracleSwapでpendingNewOracleがクリアされる', () => {
+    const run = shopRunWithOraclePack({ revelations: ['kaku'], oracles: ['flush'] })
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const picked = pickPackOracleHold(opened, opened.oracleOffer[0])
+    const cancelled = cancelPackOracleSwap(picked)
+    expect(cancelled.pendingNewOracle).toBeNull()
+  })
+
+  test('closePackOracleSelectで残り選択を放棄してshopへ戻る', () => {
+    const run = shopRunWithOraclePack()
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const closed = closePackOracleSelect(opened)
+    expect(closed.phase).toBe('shop')
+    expect(closed.oracleOffer).toEqual([])
+  })
+})
+
+describe('useOracle(所持神託の消費、playingフェーズ限定)', () => {
+  test('playingフェーズで使用でき、役レベルが+1されrun/wave両方に反映される', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, oracles: ['flush'] }
+    const before = run.oracleLevels.flush
+    const result = useOracle(run, 'flush')
+    expect(result.oracleLevels.flush).toBe(before + 1)
+    expect(result.wave!.oracleLevels.flush).toBe(before + 1)
+    expect(result.oracles).toEqual([])
+  })
+
+  test('所持していない神託は使用できない', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, oracles: [] }
+    expect(useOracle(run, 'flush')).toBe(run)
+  })
+
+  test('shopフェーズでは使用できない(spec §6の通りplayingフェーズ限定)', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'shop', wave, oracles: ['flush'] }
+    expect(useOracle(run, 'flush')).toBe(run)
   })
 })
