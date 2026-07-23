@@ -3,11 +3,16 @@
   import { loadParams } from '$lib/game/shidasu/params'
   import {
     createInitialRun, beginRun, applyPlayCard, applyDrawStock, applyStuckCheck,
-    resolveWaveEnd, pickItem, confirmItemSwap, cancelItemSwap, skipItemSelect,
-    continueAfterGreatMisfortune, stopAfterGreatMisfortune, startWave, forceStockTop, useRite,
-    useRevelation, useRevelationFromOffer, pickRevelationFromOffer, skipRevelationSelect,
-    pickOracleFromOffer, skipOracleSelect,
+    resolveWaveEnd, continueAfterGreatMisfortune, stopAfterGreatMisfortune, startWave, forceStockTop, useRite,
+    useRevelation,
     waveTarget, stageModifierFor, isBossWave,
+    finishShop, buyIndividualItem, buyIndividualRite, buyIndividualRevelationUse, buyIndividualRevelationHold,
+    buyIndividualOracleUse, buyIndividualOracleHold, buyPack,
+    pickPackItem, confirmPackItemSwap, cancelPackItemSwap, closePackItemSelect,
+    pickPackRite, confirmPackRiteSwap, cancelPackRiteSwap, closePackRiteSelect,
+    pickPackRevelationUse, pickPackRevelationHold, confirmPackRevelationSwap, cancelPackRevelationSwap, closePackRevelationSelect,
+    pickPackOracleUse, pickPackOracleHold, confirmPackOracleSwap, cancelPackOracleSwap, closePackOracleSelect,
+    useOracle, sellItem, sellRite, sellRevelation, sellOracle,
   } from '$lib/game/shidasu/engine'
   import { bossName, bossDesc } from '$lib/game/shidasu/bosses'
   import { itemDesc, itemName } from '$lib/game/shidasu/items'
@@ -15,7 +20,11 @@
   import { revelationNeedsTarget } from '$lib/game/shidasu/revelationEffects'
   import { oracleName, oracleDesc } from '$lib/game/shidasu/oracles'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
-  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId } from '$lib/game/shidasu/types'
+  import {
+    itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice,
+    oracleBuyPrice, oracleSellPrice, packPrice,
+  } from '$lib/game/shidasu/shop'
+  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
   import RoleStatusPanel from './RoleStatusPanel.svelte'
@@ -109,26 +118,6 @@
     afterAction()
   }
 
-  function handlePickItem(id: ItemId) {
-    run = pickItem(params, run, id)
-    if (run.phase === 'itemSelect') return // 上限到達時: 交換対象選択待ちのため、まだウェーブは進んでいない
-    afterAction()
-  }
-
-  function handleSkipItem() {
-    run = skipItemSelect(params, run)
-    afterAction()
-  }
-
-  function handleConfirmSwap(oldItemId: ItemId) {
-    run = confirmItemSwap(params, run, oldItemId)
-    afterAction()
-  }
-
-  function handleCancelSwap() {
-    run = cancelItemSwap(run)
-  }
-
   function handleContinueAfterGreatMisfortune() {
     // continueAfterGreatMisfortuneはphaseを'itemSelect'にするだけでrun.waveは
     // 大凶撃破時のまま(status:'ended')なので、afterAction()を呼ぶとresolveWaveEndが
@@ -151,35 +140,136 @@
     handleDraw()
   }
 
-  let pendingRevelationTarget = $state<{ revelationId: RevelationId; source: 'offer' | 'held' } | null>(null)
+  function handleFinishShop() {
+    run = finishShop(params, run)
+  }
 
-  function revelationHandlerFor(source: 'offer' | 'held') {
-    return (revelationId: RevelationId) => {
-      if (revelationNeedsTarget(revelationId)) {
-        pendingRevelationTarget = { revelationId, source }
-        return
-      }
-      if (source === 'offer') {
-        run = useRevelationFromOffer(params, run, revelationId, null)
-        afterAction()
-      } else {
-        run = useRevelation(params, run, revelationId, null)
-        if (run.phase === 'playing') afterAction()
-      }
+  function handleBuyIndividualItem(slotIndex: number) {
+    run = buyIndividualItem(params, run, slotIndex)
+  }
+
+  function handleBuyIndividualRite(slotIndex: number) {
+    run = buyIndividualRite(params, run, slotIndex)
+  }
+
+  function handleBuyIndividualRevelationHold(slotIndex: number) {
+    run = buyIndividualRevelationHold(params, run, slotIndex)
+  }
+
+  function handleBuyIndividualOracleUse(slotIndex: number) {
+    run = buyIndividualOracleUse(params, run, slotIndex)
+  }
+
+  function handleBuyIndividualOracleHold(slotIndex: number) {
+    run = buyIndividualOracleHold(params, run, slotIndex)
+  }
+
+  function handleBuyPack(slotIndex: number) {
+    run = buyPack(params, run, slotIndex)
+  }
+
+  function handlePickPackItem(itemId: ItemId) {
+    run = pickPackItem(params, run, itemId)
+  }
+  function handleConfirmPackItemSwap(oldItemId: ItemId) {
+    run = confirmPackItemSwap(run, oldItemId)
+  }
+  function handleCancelPackItemSwap() {
+    run = cancelPackItemSwap(run)
+  }
+  function handleClosePackItemSelect() {
+    run = closePackItemSelect(run)
+  }
+
+  function handlePickPackRite(riteId: RiteId) {
+    run = pickPackRite(run, riteId)
+  }
+  function handleConfirmPackRiteSwap(oldRiteId: RiteId) {
+    run = confirmPackRiteSwap(run, oldRiteId)
+  }
+  function handleCancelPackRiteSwap() {
+    run = cancelPackRiteSwap(run)
+  }
+  function handleClosePackRiteSelect() {
+    run = closePackRiteSelect(run)
+  }
+
+  function handlePickPackRevelationHold(revelationId: RevelationId) {
+    run = pickPackRevelationHold(run, revelationId)
+  }
+  function handleConfirmPackRevelationSwap(target: HeldRevelationOrOracleRef) {
+    run = confirmPackRevelationSwap(run, target)
+  }
+  function handleCancelPackRevelationSwap() {
+    run = cancelPackRevelationSwap(run)
+  }
+  function handleClosePackRevelationSelect() {
+    run = closePackRevelationSelect(run)
+  }
+
+  function handlePickPackOracleUse(roleName: RoleName) {
+    run = pickPackOracleUse(run, roleName)
+  }
+  function handlePickPackOracleHold(roleName: RoleName) {
+    run = pickPackOracleHold(run, roleName)
+  }
+  function handleConfirmPackOracleSwap(target: HeldRevelationOrOracleRef) {
+    run = confirmPackOracleSwap(run, target)
+  }
+  function handleCancelPackOracleSwap() {
+    run = cancelPackOracleSwap(run)
+  }
+  function handleClosePackOracleSelect() {
+    run = closePackOracleSelect(run)
+  }
+
+  function handleUseOracle(roleName: RoleName) {
+    run = useOracle(run, roleName)
+  }
+
+  function handleSellItem(itemId: ItemId) {
+    run = sellItem(params, run, itemId)
+  }
+  function handleSellRite(riteId: RiteId) {
+    run = sellRite(params, run, riteId)
+  }
+  function handleSellRevelation(revelationId: RevelationId) {
+    run = sellRevelation(params, run, revelationId)
+  }
+  function handleSellOracle(roleName: RoleName) {
+    run = sellOracle(params, run, roleName)
+  }
+
+  let pendingRevelationTarget = $state<
+    | { revelationId: RevelationId; source: 'individual'; slotIndex: number }
+    | { revelationId: RevelationId; source: 'pack' }
+    | { revelationId: RevelationId; source: 'held' }
+    | null
+  >(null)
+
+  function handleBuyIndividualRevelationUse(slotIndex: number, revelationId: RevelationId) {
+    if (revelationNeedsTarget(revelationId)) {
+      pendingRevelationTarget = { revelationId, source: 'individual', slotIndex }
+      return
     }
+    run = buyIndividualRevelationUse(params, run, slotIndex, null)
   }
 
-  const handleRevelationOfferUse = revelationHandlerFor('offer')
-  const handleUseRevelationClick = revelationHandlerFor('held')
-
-  function handleRevelationOfferAcquire(revelationId: RevelationId) {
-    run = pickRevelationFromOffer(params, run, revelationId)
-    afterAction()
+  function handlePickPackRevelationUse(revelationId: RevelationId) {
+    if (revelationNeedsTarget(revelationId)) {
+      pendingRevelationTarget = { revelationId, source: 'pack' }
+      return
+    }
+    run = pickPackRevelationUse(params, run, revelationId, null)
   }
 
-  function handleSkipRevelationSelect() {
-    run = skipRevelationSelect(params, run)
-    afterAction()
+  function handleUseRevelationClick(revelationId: RevelationId) {
+    if (revelationNeedsTarget(revelationId)) {
+      pendingRevelationTarget = { revelationId, source: 'held' }
+      return
+    }
+    run = useRevelation(params, run, revelationId, null)
+    if (run.phase === 'playing') afterAction()
   }
 
   function handleCancelRevelationTarget() {
@@ -188,13 +278,14 @@
 
   function handleTargetColumn(colIndex: number) {
     if (!pendingRevelationTarget) return
-    const { revelationId, source } = pendingRevelationTarget
+    const target = pendingRevelationTarget
     pendingRevelationTarget = null
-    if (source === 'offer') {
-      run = useRevelationFromOffer(params, run, revelationId, colIndex)
-      afterAction()
+    if (target.source === 'individual') {
+      run = buyIndividualRevelationUse(params, run, target.slotIndex, colIndex)
+    } else if (target.source === 'pack') {
+      run = pickPackRevelationUse(params, run, target.revelationId, colIndex)
     } else {
-      run = useRevelation(params, run, revelationId, colIndex)
+      run = useRevelation(params, run, target.revelationId, colIndex)
       if (run.phase === 'playing') afterAction()
     }
   }
@@ -203,16 +294,6 @@
     if (!wave || !pendingRevelationTarget) return false
     if (pendingRevelationTarget.revelationId === 'aya') return true
     return wave.tableau[colIndex].length > 0
-  }
-
-  function handlePickOracle(roleName: RoleName) {
-    run = pickOracleFromOffer(run, roleName)
-    afterAction()
-  }
-
-  function handleSkipOracleSelect() {
-    run = skipOracleSelect(run)
-    afterAction()
   }
 </script>
 
