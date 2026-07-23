@@ -24,6 +24,17 @@ describe('rollItemOffer', () => {
     const offer = rollItemOffer([...ITEM_POOL], createRng(1))
     expect(offer).toEqual([])
   })
+
+  test('countを指定すればその件数まで返す', () => {
+    const offer = rollItemOffer([], createRng(1), 5)
+    expect(offer).toHaveLength(5)
+    expect(new Set(offer).size).toBe(5)
+  })
+
+  test('countを省略すれば従来通り3件になる', () => {
+    const offer = rollItemOffer([], createRng(1))
+    expect(offer).toHaveLength(3)
+  })
 })
 
 describe('ITEM_POOL / itemName / itemDesc', () => {
