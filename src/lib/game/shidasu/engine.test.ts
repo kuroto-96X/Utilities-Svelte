@@ -3330,7 +3330,7 @@ describe('神託の福袋(oracleSelect)', () => {
     expect(result.pendingNewOracle).toBe(role)
   })
 
-  test('confirmPackOracleSwapで所持中の神託・天啓いずれとも入れ替えできる', () => {
+  test('confirmPackOracleSwapで所持中の天啓と入れ替えできる(合算枠のため天啓側も対象になる)', () => {
     const run = shopRunWithOraclePack({ revelations: ['kaku'], oracles: ['flush'] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const role = opened.oracleOffer[0]
@@ -3338,6 +3338,17 @@ describe('神託の福袋(oracleSelect)', () => {
     const confirmed = confirmPackOracleSwap(picked, { kind: 'revelation', id: 'kaku' })
     expect(confirmed.oracles).toEqual(['flush', role])
     expect(confirmed.revelations).toEqual([])
+    expect(confirmed.pendingNewOracle).toBeNull()
+  })
+
+  test('confirmPackOracleSwapで所持中の神託と入れ替えできる', () => {
+    const run = shopRunWithOraclePack({ revelations: ['kaku'], oracles: ['flush'] })
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const role = opened.oracleOffer[0]
+    const picked = pickPackOracleHold(opened, role)
+    const confirmed = confirmPackOracleSwap(picked, { kind: 'oracle', id: 'flush' })
+    expect(confirmed.oracles).toEqual([role])
+    expect(confirmed.revelations).toEqual(['kaku'])
     expect(confirmed.pendingNewOracle).toBeNull()
   })
 
