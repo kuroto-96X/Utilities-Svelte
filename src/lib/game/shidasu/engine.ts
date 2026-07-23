@@ -1283,6 +1283,58 @@ export function closePackRiteSelect(run: RunState): RunState {
   return { ...run, phase: 'shop', riteOffer: [], pendingNewRite: null, offerPickRemaining: 0 }
 }
 
+function resolvePackRevelationPick(run: RunState, pickedId: RevelationId): RunState {
+  const idx = run.revelationOffer.indexOf(pickedId)
+  const revelationOffer = idx === -1 ? run.revelationOffer : [...run.revelationOffer.slice(0, idx), ...run.revelationOffer.slice(idx + 1)]
+  const offerPickRemaining = run.offerPickRemaining - 1
+  if (offerPickRemaining <= 0) {
+    return { ...run, phase: 'shop', revelationOffer: [], pendingNewRevelation: null, offerPickRemaining: 0 }
+  }
+  return { ...run, revelationOffer, pendingNewRevelation: null, offerPickRemaining }
+}
+
+// 天啓の福袋(revelationSelect)から1つ選び、その場で使用する(所持には加わらない、上限とは無関係)。
+export function pickPackRevelationUse(params: ShidasuParams, run: RunState, revelationId: RevelationId, targetCol: number | null, rand: () => number = Math.random): RunState {
+  if (run.phase !== 'revelationSelect' || !run.wave || !run.revelationOffer.includes(revelationId)) return run
+  if (!canUseRevelation(params, run.wave, revelationId)) return run
+  const { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
+  const extraTableauRows = revelationId === 'kyo' ? run.extraTableauRows + params.revelations.kyo.n : run.extraTableauRows
+  return resolvePackRevelationPick({ ...run, wave, deckComposition, extraTableauRows }, revelationId)
+}
+
+// 天啓の福袋から1つ選び、温存する(所持に加える)。天啓・神託合算上限2到達時はpendingNewRevelationにセットしスワップ待ちにする。
+export function pickPackRevelationHold(run: RunState, revelationId: RevelationId): RunState {
+  if (run.phase !== 'revelationSelect' || !run.revelationOffer.includes(revelationId)) return run
+  if (run.revelations.length + run.oracles.length >= 2) {
+    return { ...run, pendingNewRevelation: revelationId }
+  }
+  return resolvePackRevelationPick({ ...run, revelations: [...run.revelations, revelationId] }, revelationId)
+}
+
+// スワップ待ち中、targetで指定した所持中の天啓または神託と入れ替えて確定する。
+export function confirmPackRevelationSwap(run: RunState, target: HeldRevelationOrOracleRef): RunState {
+  if (run.phase !== 'revelationSelect' || run.pendingNewRevelation === null) return run
+  const newId = run.pendingNewRevelation
+  if (target.kind === 'revelation') {
+    const idx = run.revelations.indexOf(target.id)
+    const revelations = idx === -1 ? run.revelations : [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1), newId]
+    return resolvePackRevelationPick({ ...run, revelations, pendingNewRevelation: null }, newId)
+  }
+  const idx = run.oracles.indexOf(target.id)
+  const oracles = idx === -1 ? run.oracles : [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)]
+  return resolvePackRevelationPick({ ...run, oracles, revelations: [...run.revelations, newId], pendingNewRevelation: null }, newId)
+}
+
+export function cancelPackRevelationSwap(run: RunState): RunState {
+  if (run.phase !== 'revelationSelect') return run
+  return { ...run, pendingNewRevelation: null }
+}
+
+export function closePackRevelationSelect(run: RunState): RunState {
+  if (run.phase !== 'revelationSelect') return run
+  return { ...run, phase: 'shop', revelationOffer: [], pendingNewRevelation: null, offerPickRemaining: 0 }
+}
+
 // 所持中の天啓を1つ使用する(消費される)。プレイ中・天啓選択画面のどちらでも動作し、
 // フェーズは変えない(秘儀のuseRiteと同じ位置づけ)。
 export function useRevelation(
@@ -1292,7 +1344,7 @@ export function useRevelation(
   targetCol: number | null,
   rand: () => number = Math.random
 ): RunState {
-  if ((run.phase !== 'playing' && run.phase !== 'revelationSelect') || !run.wave || run.wave.status !== 'playing') return run
+  if ((run.phase !== 'playing' && !SHOP_FLOW_PHASES.includes(run.phase)) || !run.wave || run.wave.status !== 'playing') return run
   const idx = run.revelations.indexOf(revelationId)
   if (idx === -1) return run
   if (!canUseRevelation(params, run.wave, revelationId)) return run
@@ -1300,40 +1352,6 @@ export function useRevelation(
   const extraTableauRows = revelationId === 'kyo' ? run.extraTableauRows + params.revelations.kyo.n : run.extraTableauRows
   const revelations = [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
   return { ...run, wave, deckComposition, revelations, extraTableauRows }
-}
-
-// 天啓選択画面のオファーから選んだものをその場で使用する(所持には加わらない)。
-// 使用後、実際のウェーブを配り直してプレイ画面へ進む。
-export function useRevelationFromOffer(
-  params: ShidasuParams,
-  run: RunState,
-  revelationId: RevelationId,
-  targetCol: number | null,
-  seed?: number,
-  rand: () => number = Math.random
-): RunState {
-  if (run.phase !== 'revelationSelect' || !run.wave) return run
-  if (!run.revelationOffer.includes(revelationId)) return run
-  if (!canUseRevelation(params, run.wave, revelationId)) return run
-  const { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
-  const extraTableauRows = revelationId === 'kyo' ? run.extraTableauRows + params.revelations.kyo.n : run.extraTableauRows
-  return finishRevelationSelect(params, { ...run, deckComposition, extraTableauRows }, seed, rand)
-}
-
-// 天啓選択画面のオファーから選んだものを所持へ加える(所持上限2に達している間は何もしない)。
-// 実際のウェーブを配り直してプレイ画面へ進む。
-export function pickRevelationFromOffer(params: ShidasuParams, run: RunState, revelationId: RevelationId, seed?: number, rand: () => number = Math.random): RunState {
-  if (run.phase !== 'revelationSelect') return run
-  if (!run.revelationOffer.includes(revelationId)) return run
-  if (run.revelations.length >= 2) return run
-  const revelations = [...run.revelations, revelationId]
-  return finishRevelationSelect(params, { ...run, revelations }, seed, rand)
-}
-
-// 天啓を使用・獲得せずに天啓選択画面を終了する。
-export function skipRevelationSelect(params: ShidasuParams, run: RunState, seed?: number, rand: () => number = Math.random): RunState {
-  if (run.phase !== 'revelationSelect') return run
-  return finishRevelationSelect(params, run, seed, rand)
 }
 
 // 神託選択画面のオファーから1つ選ぶと、対応する役のレベルが+1され、即座にplayingへ遷移する。

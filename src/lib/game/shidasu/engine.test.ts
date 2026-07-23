@@ -26,9 +26,6 @@ import {
   forceStockTop,
   useRite,
   useRevelation,
-  useRevelationFromOffer,
-  pickRevelationFromOffer,
-  skipRevelationSelect,
   pickOracleFromOffer,
   skipOracleSelect,
   buyIndividualItem,
@@ -46,6 +43,11 @@ import {
   confirmPackRiteSwap,
   cancelPackRiteSwap,
   closePackRiteSelect,
+  pickPackRevelationUse,
+  pickPackRevelationHold,
+  confirmPackRevelationSwap,
+  cancelPackRevelationSwap,
+  closePackRevelationSelect,
 } from './engine'
 import { isFace, chainContinuesPattern } from './patterns'
 import type { Card, WaveState, RunState, ItemId, ShopIndividualSlot } from './types'
@@ -3176,94 +3178,107 @@ describe('約束・暗雲', () => {
   })
 })
 
-describe('天啓選択フェーズ', () => {
-  test('useRevelationFromOffer: 対象選択不要な天啓(心)を使用すると、実際のウェーブが配られoracleSelectへ遷移する。所持には加わらない', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
-    const revSelectRun: RunState = { ...run, phase: 'revelationSelect', revelationOffer: ['shin', 'kou', 'tei'] }
-    const next = useRevelationFromOffer(DEFAULT_PARAMS, revSelectRun, 'shin', null, 3)
-    expect(next.phase).toBe('oracleSelect')
-    expect(next.revelations).toEqual([])
-    expect(next.revelationOffer).toEqual([])
+describe('天啓の福袋(revelationSelect)', () => {
+  function shopRunWithRevelationPack(overrides: Partial<RunState> = {}): RunState {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    return {
+      ...createInitialRun(),
+      phase: 'shop',
+      currency: 999,
+      wave,
+      shop: { individual: [], packs: [{ packKind: 'revelation', offerCount: 3, pickCount: 1, sold: false }] },
+      ...overrides,
+    }
+  }
+
+  test('buyPackでrevelationSelectへ遷移し候補が提示される', () => {
+    const run = shopRunWithRevelationPack()
+    const result = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    expect(result.phase).toBe('revelationSelect')
+    expect(result.revelationOffer).toHaveLength(3)
   })
 
-  test('useRevelationFromOffer: オファーに含まれない天啓は無視される', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
-    const revSelectRun: RunState = { ...run, phase: 'revelationSelect', revelationOffer: ['shin', 'kou', 'tei'] }
-    const next = useRevelationFromOffer(DEFAULT_PARAMS, revSelectRun, 'bi', null, 3)
-    expect(next).toBe(revSelectRun)
+  test('pickPackRevelationUseで即使うと、プレビューウェーブに効果が適用され所持には加わらない', () => {
+    const run = shopRunWithRevelationPack()
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const target = opened.revelationOffer.includes('kaku') ? 'kaku' : opened.revelationOffer[0]
+    const result = pickPackRevelationUse(DEFAULT_PARAMS, opened, target, null, createRng(2))
+    expect(result.revelations).toEqual([])
+    expect(result.phase).toBe('shop')
   })
 
-  test('pickRevelationFromOffer: オファーから獲得すると所持に加わり、revelationSelectを終了してoracleSelectへ遷移する', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
-    const revSelectRun: RunState = { ...run, phase: 'revelationSelect', revelationOffer: ['shin', 'kou', 'tei'] }
-    const next = pickRevelationFromOffer(DEFAULT_PARAMS, revSelectRun, 'shin', 3)
-    expect(next.phase).toBe('oracleSelect')
-    expect(next.revelations).toEqual(['shin'])
+  test('pickPackRevelationHoldで温存すると所持に追加される', () => {
+    const run = shopRunWithRevelationPack()
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const result = pickPackRevelationHold(opened, opened.revelationOffer[0])
+    expect(result.revelations).toEqual([opened.revelationOffer[0]])
+    expect(result.phase).toBe('shop')
   })
 
-  test('pickRevelationFromOffer: 所持数が上限2の間は何もしない', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
-    const revSelectRun: RunState = { ...run, phase: 'revelationSelect', revelationOffer: ['shin', 'kou', 'tei'], revelations: ['bi', 'ki'] }
-    const next = pickRevelationFromOffer(DEFAULT_PARAMS, revSelectRun, 'shin', 3)
-    expect(next).toBe(revSelectRun)
+  test('温存時、天啓・神託合算上限2到達時はpendingNewRevelationにセットされスワップ待ちになる', () => {
+    const run = shopRunWithRevelationPack({ revelations: ['kaku'], oracles: ['flush'] })
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const target = opened.revelationOffer[0]
+    const result = pickPackRevelationHold(opened, target)
+    expect(result.pendingNewRevelation).toBe(target)
+    expect(result.revelations).toEqual(['kaku'])
   })
 
-  test('skipRevelationSelect: 何も選ばず終了すると、実際のウェーブが配られoracleSelectへ遷移する', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
-    const revSelectRun: RunState = { ...run, phase: 'revelationSelect', revelationOffer: ['shin', 'kou', 'tei'] }
-    const next = skipRevelationSelect(DEFAULT_PARAMS, revSelectRun, 3)
-    expect(next.phase).toBe('oracleSelect')
+  test('confirmPackRevelationSwapで所持中の天啓と入れ替えできる', () => {
+    const run = shopRunWithRevelationPack({ revelations: ['kaku'], oracles: ['flush'] })
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const target = opened.revelationOffer[0]
+    const picked = pickPackRevelationHold(opened, target)
+    const confirmed = confirmPackRevelationSwap(picked, { kind: 'revelation', id: 'kaku' })
+    expect(confirmed.revelations).toEqual([target])
+    expect(confirmed.oracles).toEqual(['flush'])
+    expect(confirmed.pendingNewRevelation).toBeNull()
   })
 
-  test('useRevelation: 所持中の天啓を使用すると1個消費され、revelationSelect中でもplaying中でもフェーズは変わらない', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
-    const playingRun: RunState = { ...run, revelations: ['shin', 'shin'] }
-    const next = useRevelation(DEFAULT_PARAMS, playingRun, 'shin', null)
-    expect(next.phase).toBe('playing')
-    expect(next.revelations).toEqual(['shin'])
-
-    const revSelectRun: RunState = { ...run, phase: 'revelationSelect', revelations: ['bi'] }
-    const next2 = useRevelation(DEFAULT_PARAMS, revSelectRun, 'bi', null)
-    expect(next2.phase).toBe('revelationSelect')
-    expect(next2.revelations).toEqual([])
+  test('confirmPackRevelationSwapで所持中の神託と入れ替えできる(合算枠のため神託側も対象になる)', () => {
+    const run = shopRunWithRevelationPack({ revelations: ['kaku'], oracles: ['flush'] })
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const target = opened.revelationOffer[0]
+    const picked = pickPackRevelationHold(opened, target)
+    const confirmed = confirmPackRevelationSwap(picked, { kind: 'oracle', id: 'flush' })
+    expect(confirmed.revelations).toEqual(['kaku', target])
+    expect(confirmed.oracles).toEqual([])
   })
 
-  test('useRevelation: 所持していない天啓は無視される', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
-    const next = useRevelation(DEFAULT_PARAMS, run, 'shin', null)
-    expect(next).toBe(run)
+  test('cancelPackRevelationSwapでpendingNewRevelationがクリアされる', () => {
+    const run = shopRunWithRevelationPack({ revelations: ['kaku'], oracles: ['flush'] })
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const picked = pickPackRevelationHold(opened, opened.revelationOffer[0])
+    const cancelled = cancelPackRevelationSwap(picked)
+    expect(cancelled.pendingNewRevelation).toBeNull()
   })
 
-  test('虚(kyo)を使用すると、extraTableauRowsが恒久的に増え、以後のstartWaveの配布行数に反映される', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
-    // beginRunで配られた直後のウェーブは山札が十分残っているため、canUseRevelation('kyo')の
-    // 「山札が(列数×n)枚以上」という条件を素の状態のまま満たす。
-    const playingRun: RunState = { ...run, revelations: ['kyo'] }
-    const next = useRevelation(DEFAULT_PARAMS, playingRun, 'kyo', null)
-    expect(next.extraTableauRows).toBe(DEFAULT_PARAMS.revelations.kyo.n)
-    const { wave } = startWave(DEFAULT_PARAMS, 0, 1, next.items, next.deckComposition, 5, next.extraTableauRows)
-    wave.tableau.forEach(col => expect(col).toHaveLength(DEFAULT_PARAMS.layout.rows + next.extraTableauRows))
+  test('closePackRevelationSelectで残り選択を放棄してshopへ戻る', () => {
+    const run = shopRunWithRevelationPack()
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const closed = closePackRevelationSelect(opened)
+    expect(closed.phase).toBe('shop')
+    expect(closed.revelationOffer).toEqual([])
+  })
+})
+
+describe('useRevelation(所持天啓の使用、playing/shopフロー両対応)', () => {
+  test('playingフェーズで使用でき、所持から1個減る', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['kaku'] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'kaku', null, createRng(1))
+    expect(result.revelations).toEqual([])
   })
 
-  test('useRite: revelationSelectフェーズ中でも秘儀を使用できる', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
-    const revSelectRun: RunState = { ...run, phase: 'revelationSelect', rites: ['uruz'] }
-    const next = useRite(DEFAULT_PARAMS, revSelectRun, 'uruz', createRng(1))
-    expect(next.rites).toEqual([])
-    expect(next.phase).toBe('revelationSelect')
+  test('shopフェーズでも使用できる(SHOP_FLOW_PHASESに含まれるため)', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'shop', wave, revelations: ['kaku'] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'kaku', null, createRng(1))
+    expect(result.revelations).toEqual([])
   })
 })
 
 describe('神託選択フェーズ', () => {
-  test('天啓選択画面を終了すると、oracleSelectフェーズへ遷移しoracleOfferが3件セットされる', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
-    const revSelectRun: RunState = { ...run, phase: 'revelationSelect', revelationOffer: ['shin', 'kou', 'tei'] }
-    const next = skipRevelationSelect(DEFAULT_PARAMS, revSelectRun, 3, createRng(1))
-    expect(next.phase).toBe('oracleSelect')
-    expect(next.oracleOffer).toHaveLength(3)
-    expect(next.wave).not.toBeNull()
-  })
-
   test('pickOracleFromOffer: オファーから選ぶと対応する役のレベルが+1され、即座にplayingへ遷移する', () => {
     const run = beginRun(DEFAULT_PARAMS, 1)
     const oracleSelectRun: RunState = { ...run, phase: 'oracleSelect', oracleOffer: ['suit', 'color', 'stair'] }
