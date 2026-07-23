@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, BossKind, BossTierKey } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, BossKind, BossTierKey, RunPhase, HeldRevelationOrOracleRef } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
 import { isFace, chainContinuesPattern, evaluateChainBonus, analyzeSuitColor, countSameRankBefore, countSameRankForWildPlay, fmtMultiplier } from './patterns'
@@ -7,10 +7,11 @@ import { rollItemOffer } from './items'
 import { applyDirectEffects, type DirectEffectContext } from './directEffects'
 import { applyItemEffects, type ItemEffectContext } from './itemEffects'
 import { applyRiteEffect, canUseRite } from './riteEffects'
-import { rollRite } from './rites'
+import { rollRite, rollRiteOffer } from './rites'
 import { rollRevelationOffer } from './revelations'
 import { applyRevelationEffect, canUseRevelation } from './revelationEffects'
 import { rollOracleOffer, defaultOracleLevels } from './oracles'
+import { rollShop, itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice, oracleBuyPrice, oracleSellPrice, packPrice } from './shop'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
 
@@ -942,6 +943,10 @@ function rollBossKindForStage(params: ShidasuParams, stageIndex: number, rand: (
   return candidates[Math.floor(rand() * candidates.length)]
 }
 
+// 秘儀・天啓・神託の使用がショップ滞在中(shop本体および福袋の各中身選択画面)でも
+// 行えるようにするためのフェーズ集合。useRite/useRevelationのガードで使う。
+const SHOP_FLOW_PHASES: RunPhase[] = ['shop', 'itemSelect', 'riteSelect', 'revelationSelect', 'oracleSelect']
+
 // 現在のstageIndexから次のウェーブの(stageIndex, waveIndex)を算出する。
 // waveIndexがwavesPerStageに達したら次のステージ(stageIndex+1・waveIndex0)へ繰り上がる。
 function nextWaveLocation(params: ShidasuParams, run: RunState): { stageIndex: number; waveIndex: number } {
@@ -1038,7 +1043,7 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
   }
 }
 
-export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
+export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () => number = Math.random, seed?: number): RunState {
   const wave = run.wave
   if (!wave || wave.status !== 'ended') return run
 
@@ -1051,12 +1056,12 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
     + (isBossWave(params, run.waveIndex) ? params.currency.bossBonus[BOSS_TIER_KEYS[bossTierOf(run.stageIndex)]] : 0)
   const runWithCurrency = { ...run, currency: run.currency + earned }
 
-  // 大凶(各サイクルの最終ウェーブ)クリア時のみ、護符等の選択を後回しにして続行確認を挟む。
-  // それ以外(小凶・中凶のボスウェーブを含む通常のウェーブクリア)は、すべて同じitemSelectへ進む。
+  // 大凶(各サイクルの最終ウェーブ)クリア時のみ、ショップ突入を後回しにして続行確認を挟む。
+  // それ以外(小凶・中凶のボスウェーブを含む通常のウェーブクリア)は、すべて同じショップへ進む。
   if (isBossWave(params, run.waveIndex) && bossTierOf(run.stageIndex) === 2) {
     return { ...runWithCurrency, phase: 'continueChoice' }
   }
-  return { ...runWithCurrency, phase: 'itemSelect', offer: rollItemOffer(run.items, rand), pendingNewItem: null }
+  return enterShop(params, runWithCurrency, seed, rand)
 }
 
 // 秘儀を1つ使用する。効果を適用し、所持からその秘儀を1個削除する。
@@ -1071,27 +1076,17 @@ export function useRite(params: ShidasuParams, run: RunState, riteId: RiteId, ra
   return { ...run, wave, rites }
 }
 
-// 護符選択解決後、天啓選択画面(プレビュー用ウェーブ)へ遷移する共通処理。
-// この時点でのdeckComposition・extraTableauRowsから、通常のウェーブ開始と同じロジックで
-// プレビュー用のウェーブを配る(天啓・秘儀のターゲットとして使うためだけの仮のウェーブで、
-// 天啓選択画面を終えると改めて実際のウェーブを配り直す。詳細はfinishRevelationSelect)。
-function enterRevelationSelect(
-  params: ShidasuParams,
-  run: RunState,
-  newItems: ItemId[],
-  newRites: RiteId[],
-  seed: number | undefined,
-  rand: () => number
-): RunState {
+// Waveクリア確定後(resolveWaveEnd)・大凶続行後(continueAfterGreatMisfortune)に呼ぶ。
+// 次ウェーブ位置・ボス種別・大凶対象スートを確定し、天啓ターゲット用のプレビューウェーブを配布した上で
+// ショップの商品構成を抽選し、phase: 'shop'へ遷移する。
+function enterShop(params: ShidasuParams, run: RunState, seed: number | undefined, rand: () => number): RunState {
   const newLocation = nextWaveLocation(params, run)
   const newBossKind = nextBossKind(params, run, newLocation, rand)
   const newGreatMisfortuneSuit = nextGreatMisfortuneSuit(run, newLocation, newBossKind, rand)
-  const { wave, deckComposition } = startWave(params, newLocation.stageIndex, newLocation.waveIndex, newItems, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels)
-  return {
+  const { wave, deckComposition } = startWave(params, newLocation.stageIndex, newLocation.waveIndex, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels)
+  const next: RunState = {
     ...run,
-    phase: 'revelationSelect',
-    items: newItems,
-    rites: newRites,
+    phase: 'shop',
     stageIndex: newLocation.stageIndex,
     waveIndex: newLocation.waveIndex,
     currentGreatMisfortuneSuit: newGreatMisfortuneSuit,
@@ -1100,22 +1095,20 @@ function enterRevelationSelect(
     pendingNewItem: null,
     wave,
     deckComposition,
-    revelationOffer: rollRevelationOffer(rand),
+    revelationOffer: [],
+    oracleOffer: [],
+    riteOffer: [],
+    offerPickRemaining: 0,
   }
+  return { ...next, shop: rollShop(next, rand) }
 }
 
-// 天啓選択画面を終了し、その時点のdeckComposition・extraTableauRowsから実際のウェーブを
-// 新しく配り直してプレイ画面へ進む。
-function finishRevelationSelect(params: ShidasuParams, run: RunState, seed?: number, rand: () => number = Math.random): RunState {
+// ショップを終了し、その時点のdeckComposition・extraTableauRows(ショップ滞在中の天啓「即使う」等で
+// 更新されている可能性がある)から実際のウェーブを配り直してプレイ画面へ進む。「次のWaveへ」ボタンから呼ぶ。
+export function finishShop(params: ShidasuParams, run: RunState, seed?: number): RunState {
+  if (run.phase !== 'shop') return run
   const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels)
-  return {
-    ...run,
-    phase: 'oracleSelect',
-    wave,
-    deckComposition,
-    revelationOffer: [],
-    oracleOffer: rollOracleOffer(rand),
-  }
+  return { ...run, phase: 'playing', wave, deckComposition, shop: null }
 }
 
 export function pickItem(params: ShidasuParams, run: RunState, itemId: ItemId, seed?: number, rand: () => number = Math.random): RunState {
@@ -1226,12 +1219,11 @@ export function skipOracleSelect(run: RunState): RunState {
 }
 
 // 大凶クリア後の続行確認画面('continueChoice'フェーズ)で「続ける」を選んだ場合。
-// 通常のウェーブクリアと同じくitemSelectへ進む(以後のステージ繰り上がり・大凶スート抽選は
-// pickItem等が呼ぶenterRevelationSelectが担う)。所持中の護符・秘儀・天啓・神託レベルは
-// このrunをそのまま引き継ぐため、リセットされない。
-export function continueAfterGreatMisfortune(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
+// 通常のウェーブクリアと同じくショップへ進む(ステージ繰り上がり・大凶スート抽選もenterShopが担う)。
+// 所持中の護符・秘儀・天啓・神託レベルはこのrunをそのまま引き継ぐため、リセットされない。
+export function continueAfterGreatMisfortune(params: ShidasuParams, run: RunState, rand: () => number = Math.random, seed?: number): RunState {
   if (run.phase !== 'continueChoice') return run
-  return { ...run, phase: 'itemSelect', offer: rollItemOffer(run.items, rand), pendingNewItem: null }
+  return enterShop(params, run, seed, rand)
 }
 
 // 大凶クリア後の続行確認画面で「やめる」を選んだ場合。結果画面(allClear)へ遷移する。

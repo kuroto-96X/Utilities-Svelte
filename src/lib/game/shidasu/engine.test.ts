@@ -36,7 +36,6 @@ import {
   pickOracleFromOffer,
   skipOracleSelect,
 } from './engine'
-import { ITEM_POOL } from './items'
 import { isFace, chainContinuesPattern } from './patterns'
 import type { Card, WaveState, RunState, ItemId } from './types'
 import { DEFAULT_PARAMS, type ShidasuParams } from './params'
@@ -2126,37 +2125,35 @@ describe('resolveWaveEnd', () => {
     }
   }
 
-  test('目標未達ならgameOverになる', () => {
-    const run = endedRun({}, 0)
-    const next = resolveWaveEnd(DEFAULT_PARAMS, run)
-    expect(next.phase).toBe('gameOver')
-  })
-
-  test('ウェーブ1・2クリア(通しウェーブ1・2)ならitemSelectになりofferにプール内の未所持アイテムが入る', () => {
+  test('目標スコア以上でクリアした場合、ショップ画面(shop)へ遷移しバラ売り3枠・福袋2枠が確定する', () => {
     const run = endedRun({ waveIndex: 0 }, waveTarget(DEFAULT_PARAMS, 0, 0))
-    const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
-    expect(next.phase).toBe('itemSelect')
-    expect(next.offer).toHaveLength(3)
-    next.offer.forEach(id => expect(ITEM_POOL).toContain(id))
-    expect(new Set(next.offer).size).toBe(3) // 重複なし
+    const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
+    expect(result.phase).toBe('shop')
+    expect(result.shop).not.toBeNull()
+    expect(result.shop!.individual).toHaveLength(3)
+    expect(result.shop!.packs).toHaveLength(2)
   })
 
-  test('小凶(stageIndex0の3ウェーブ目)クリアもitemSelectになる(stageClearは廃止)', () => {
-    const run = endedRun({ waveIndex: 2, stageIndex: 0 }, waveTarget(DEFAULT_PARAMS, 0, 2))
-    const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
-    expect(next.phase).toBe('itemSelect')
+  test('ショップ突入時、次のウェーブ位置・ボス種別・プレビューウェーブが確定する(既存のenterRevelationSelect相当)', () => {
+    const run = endedRun({ waveIndex: 0 }, waveTarget(DEFAULT_PARAMS, 0, 0))
+    const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
+    expect(result.waveIndex).toBe(run.waveIndex + 1)
+    expect(result.wave).not.toBeNull()
+    expect(result.wave!.status).toBe('playing')
   })
 
-  test('中凶(stageIndex1の3ウェーブ目)クリアもitemSelectになる', () => {
-    const run = endedRun({ waveIndex: 2, stageIndex: 1 }, waveTarget(DEFAULT_PARAMS, 1, 2))
-    const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
-    expect(next.phase).toBe('itemSelect')
+  test('目標スコア未達の場合はgameOverへ遷移しshopはnullのまま', () => {
+    const run = endedRun({}, 0)
+    const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
+    expect(result.phase).toBe('gameOver')
+    expect(result.shop).toBeNull()
   })
 
-  test('大凶(stageIndex2の3ウェーブ目)クリアはcontinueChoiceになる', () => {
-    const run = endedRun({ waveIndex: 2, stageIndex: 2 }, waveTarget(DEFAULT_PARAMS, 2, 2))
-    const next = resolveWaveEnd(DEFAULT_PARAMS, run)
-    expect(next.phase).toBe('continueChoice')
+  test('大凶ボスWaveクリア時はcontinueChoiceへ遷移しshopはnullのまま', () => {
+    const run = endedRun({ waveIndex: DEFAULT_PARAMS.flow.wavesPerStage - 1, stageIndex: 2 }, waveTarget(DEFAULT_PARAMS, 2, DEFAULT_PARAMS.flow.wavesPerStage - 1))
+    const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
+    expect(result.phase).toBe('continueChoice')
+    expect(result.shop).toBeNull()
   })
 
   test('2周目の大凶(stageIndex5の3ウェーブ目)クリアもcontinueChoiceになる(サイクルが無限に続く)', () => {
@@ -2306,34 +2303,16 @@ describe('pickItem / continueAfterGreatMisfortune / restartRun', () => {
     expect(['♠', '♥', '♦', '♣']).toContain(next.currentGreatMisfortuneSuit)
   })
 
-  test('continueAfterGreatMisfortuneでitemSelectへ進む。所持護符・秘儀・天啓・神託レベルは維持される', () => {
-    const run: RunState = {
-      ...beginRun(DEFAULT_PARAMS, 1),
-      phase: 'continueChoice',
-      stageIndex: 2,
-      waveIndex: 2,
-      items: ['bridge'],
-      rites: ['uruz'],
-      oracleLevels: { ...defaultOracleLevels(), suit: 3 },
-    }
-    const next = continueAfterGreatMisfortune(DEFAULT_PARAMS, run, createRng(1))
-    expect(next.phase).toBe('itemSelect')
-    expect(next.offer).toHaveLength(3)
-    expect(next.items).toEqual(['bridge'])
-    expect(next.rites).toEqual(['uruz'])
-    expect(next.oracleLevels.suit).toBe(3)
+  test('continueAfterGreatMisfortuneはcontinueChoiceからshopへ遷移する', () => {
+    const run: RunState = { ...createInitialRun(), phase: 'continueChoice', stageIndex: 2, waveIndex: 2, wave: startWave(DEFAULT_PARAMS, 2, 2, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave }
+    const result = continueAfterGreatMisfortune(DEFAULT_PARAMS, run, createRng(3))
+    expect(result.phase).toBe('shop')
+    expect(result.shop).not.toBeNull()
   })
 
-  test('continueAfterGreatMisfortuneを経てもcurrencyは保持される(リセットされない)', () => {
-    const run: RunState = {
-      ...beginRun(DEFAULT_PARAMS, 1),
-      phase: 'continueChoice',
-      stageIndex: 2,
-      waveIndex: 2,
-      currency: 999,
-    }
-    const next = continueAfterGreatMisfortune(DEFAULT_PARAMS, run, createRng(1))
-    expect(next.currency).toBe(999)
+  test('continueChoice以外のフェーズでは何もしない', () => {
+    const run = { ...createInitialRun(), phase: 'playing' as const }
+    expect(continueAfterGreatMisfortune(DEFAULT_PARAMS, run, createRng(3))).toBe(run)
   })
 
   test('stopAfterGreatMisfortuneでallClearへ進む', () => {
