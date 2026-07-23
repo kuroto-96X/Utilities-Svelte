@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/shop.ts
-import type { RunState, ItemId, RoleName, ShopState, ShopIndividualSlot, ShopPackSlot, ShopSlotKind, PackOfferCount } from './types'
+import type { RunState, ItemId, ShopState, ShopIndividualSlot, ShopPackSlot, ShopSlotKind, PackOfferCount } from './types'
 import type { ShidasuParams } from './params'
 import { ITEM_POOL } from './items'
 import { RITE_POOL } from './rites'
