@@ -2092,6 +2092,28 @@ describe('createInitialRun / beginRun', () => {
     const run = beginRun(DEFAULT_PARAMS, 1)
     expect(['noLoop', 'faceLock']).toContain(run.currentBossKind)
   })
+
+  test('createInitialRunはショップ用フィールドを初期値で持つ', () => {
+    const run = createInitialRun()
+    expect(run.oracles).toEqual([])
+    expect(run.shop).toBeNull()
+    expect(run.offerPickRemaining).toBe(0)
+    expect(run.riteOffer).toEqual([])
+    expect(run.pendingNewRite).toBeNull()
+    expect(run.pendingNewRevelation).toBeNull()
+    expect(run.pendingNewOracle).toBeNull()
+  })
+
+  test('beginRunはショップ用フィールドを初期値で持つ', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    expect(run.oracles).toEqual([])
+    expect(run.shop).toBeNull()
+    expect(run.offerPickRemaining).toBe(0)
+    expect(run.riteOffer).toEqual([])
+    expect(run.pendingNewRite).toBeNull()
+    expect(run.pendingNewRevelation).toBeNull()
+    expect(run.pendingNewOracle).toBeNull()
+  })
 })
 
 describe('resolveWaveEnd', () => {

@@ -999,6 +999,8 @@ export function createInitialRun(): RunState {
     deckComposition: standardDeckComposition(), rites: [], revelations: [], revelationOffer: [], extraTableauRows: 0,
     oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null, spreadId: 'fool',
     currentBossKind: null, currency: 0,
+    oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
+    pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
   }
 }
 
@@ -1026,6 +1028,13 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
     spreadId,
     currentBossKind: initialBossKind,
     currency: params.currency.initialAmount,
+    oracles: [],
+    shop: null,
+    offerPickRemaining: 0,
+    riteOffer: [],
+    pendingNewRite: null,
+    pendingNewRevelation: null,
+    pendingNewOracle: null,
   }
 }
 
