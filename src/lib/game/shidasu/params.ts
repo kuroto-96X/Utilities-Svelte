@@ -63,6 +63,19 @@ export interface ShidasuParams {
       taikyou: number
     }
   }
+  shop: {
+    itemPrice: Record<Rarity, { buy: number; sell: number }>
+    ritePrice: { buy: number; sell: number }
+    revelationPrice: { buy: number; sell: number }
+    oraclePrice: { buy: number; sell: number }
+    // 護符/秘儀/天啓は3-1・5-1・7-2の3パターン、神託は3-1・5-1のみ(7-2は無し)
+    packPrice: {
+      item: { threeOne: number; fiveOne: number; sevenTwo: number }
+      rite: { threeOne: number; fiveOne: number; sevenTwo: number }
+      revelation: { threeOne: number; fiveOne: number; sevenTwo: number }
+      oracle: { threeOne: number; fiveOne: number }
+    }
+  }
   talismans: {
     bridge: { name: string; m: number; rarity: Rarity; desc: string }
     grace: { name: string; m: number; rarity: Rarity; desc: string }
@@ -258,6 +271,18 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     initialAmount: 5,
     waveClearAmount: 5,
     bossBonus: { shoukyou: 5, chuukyou: 10, taikyou: 15 },
+  },
+  shop: {
+    itemPrice: { C: { buy: 8, sell: 4 }, U: { buy: 16, sell: 8 }, R: { buy: 30, sell: 15 } },
+    ritePrice: { buy: 12, sell: 6 },
+    revelationPrice: { buy: 18, sell: 9 },
+    oraclePrice: { buy: 15, sell: 7 },
+    packPrice: {
+      item: { threeOne: 20, fiveOne: 30, sevenTwo: 50 },
+      rite: { threeOne: 20, fiveOne: 30, sevenTwo: 50 },
+      revelation: { threeOne: 25, fiveOne: 38, sevenTwo: 63 },
+      oracle: { threeOne: 22, fiveOne: 33 },
+    },
   },
   talismans: {
     bridge: { name: '架橋', m: 2, rarity: 'C', desc: '階段・同スート・同色の成立に必要な枚数を{m}枚緩和' },

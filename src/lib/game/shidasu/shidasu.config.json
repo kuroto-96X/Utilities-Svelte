@@ -47,6 +47,18 @@
     "waveClearAmount": 5,
     "bossBonus": { "shoukyou": 5, "chuukyou": 10, "taikyou": 15 }
   },
+  "shop": {
+    "itemPrice": { "C": { "buy": 8, "sell": 4 }, "U": { "buy": 16, "sell": 8 }, "R": { "buy": 30, "sell": 15 } },
+    "ritePrice": { "buy": 12, "sell": 6 },
+    "revelationPrice": { "buy": 18, "sell": 9 },
+    "oraclePrice": { "buy": 15, "sell": 7 },
+    "packPrice": {
+      "item": { "threeOne": 20, "fiveOne": 30, "sevenTwo": 50 },
+      "rite": { "threeOne": 20, "fiveOne": 30, "sevenTwo": 50 },
+      "revelation": { "threeOne": 25, "fiveOne": 38, "sevenTwo": 63 },
+      "oracle": { "threeOne": 22, "fiveOne": 33 }
+    }
+  },
   "talismans": {
     "bridge": {
       "name": "架橋",
