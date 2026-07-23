@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { createDeck, createRng, shuffle, standardDeckComposition } from './deck'
+import { createDeck, createRng, rollOffer, shuffle, standardDeckComposition } from './deck'
 
 function idGen() {
   let n = 0
@@ -87,5 +87,36 @@ describe('standardDeckComposition', () => {
       const ranks = composition.filter(c => c.suit === suit).map(c => c.rank).sort((a, b) => a - b)
       expect(ranks).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
     })
+  })
+})
+
+describe('rollOffer', () => {
+  test('countで指定した件数を返す(プールがcountを超える場合)', () => {
+    const result = rollOffer([1, 2, 3, 4, 5], 3, createRng(1))
+    expect(result).toHaveLength(3)
+  })
+
+  test('プールがcount未満なら全件を返す', () => {
+    const result = rollOffer([1, 2], 3, createRng(1))
+    expect(result).toHaveLength(2)
+    expect(new Set(result)).toEqual(new Set([1, 2]))
+  })
+
+  test('重複を含まない非復元抽出になる', () => {
+    const result = rollOffer([1, 2, 3, 4, 5], 5, createRng(1))
+    expect(new Set(result).size).toBe(5)
+  })
+
+  test('同じシードなら同じ結果になる(再現性)', () => {
+    const a = rollOffer([1, 2, 3, 4, 5], 3, createRng(7))
+    const b = rollOffer([1, 2, 3, 4, 5], 3, createRng(7))
+    expect(a).toEqual(b)
+  })
+
+  test('元の配列を書き換えない', () => {
+    const pool = [1, 2, 3, 4, 5]
+    const copy = [...pool]
+    rollOffer(pool, 3, createRng(1))
+    expect(pool).toEqual(copy)
   })
 })

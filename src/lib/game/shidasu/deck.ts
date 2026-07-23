@@ -41,6 +41,14 @@ export function shuffleInPlace<T>(arr: T[], rand: () => number = Math.random): v
   }
 }
 
+// count個を重複なく無作為抽出する共通ヘルパー。福袋・バラ売り・各種オファー抽選はすべてこれを経由する。
+// プールがcount未満の場合は全件を返す(呼び出し側でエラー扱いにはしない)。
+export function rollOffer<T>(pool: T[], count: number, rand: () => number = Math.random): T[] {
+  const arr = [...pool]
+  shuffleInPlace(arr, rand)
+  return arr.slice(0, count)
+}
+
 export function shuffle(deck: Card[], rand: () => number = Math.random): Card[] {
   const arr = deck.map(c => ({ ...c }))
   shuffleInPlace(arr, rand)
