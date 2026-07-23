@@ -188,7 +188,40 @@ export interface WaveState {
   oracleLevels: Record<RoleName, number>
 }
 
-export type RunPhase = 'title' | 'playing' | 'itemSelect' | 'revelationSelect' | 'oracleSelect' | 'continueChoice' | 'allClear' | 'gameOver'
+export type RunPhase = 'title' | 'playing' | 'shop' | 'itemSelect' | 'riteSelect' | 'revelationSelect' | 'oracleSelect' | 'continueChoice' | 'allClear' | 'gameOver'
+
+export type ShopSlotKind = 'item' | 'rite' | 'revelation' | 'oracle'
+
+// バラ売り枠: shop突入時に種類と個体が1つ確定し、以後入れ替わらない。購入するとsoldがtrueになるだけで
+// 配列自体(枠の並び)は変化しない。idはkindに応じてItemId | RiteId | RevelationId | RoleNameのいずれか。
+export interface ShopIndividualSlot {
+  kind: ShopSlotKind
+  id: string
+  sold: boolean
+}
+
+export type PackOfferCount = 3 | 5 | 7
+export type PackPickCount = 1 | 2
+
+// 福袋枠: shop突入時にパターン(kind×offerCount×pickCount)が1つ確定し、以後入れ替わらない。
+// 購入時にofferCount択からpickCount個を選ぶ中身選択画面(itemSelect等)へ遷移する。
+export interface ShopPackSlot {
+  packKind: ShopSlotKind
+  offerCount: PackOfferCount
+  pickCount: PackPickCount
+  sold: boolean
+}
+
+export interface ShopState {
+  individual: ShopIndividualSlot[]
+  packs: ShopPackSlot[]
+}
+
+// 福袋の天啓・神託パックで上限到達時にスワップ対象を指定するための判別共用体。
+// 天啓・神託は合算枠(上限2)を共有するため、スワップ対象がどちらの配列に属するかを明示する必要がある。
+export type HeldRevelationOrOracleRef =
+  | { kind: 'revelation'; id: RevelationId }
+  | { kind: 'oracle'; id: RoleName }
 
 export interface RunState {
   phase: RunPhase
@@ -225,4 +258,18 @@ export interface RunState {
   // ラン単位で保持する通貨(星片)の所持数。continueChoiceを挟んでもリセットされず、
   // beginRun(新しいラン開始)のときのみ初期値に戻る
   currency: number
+  // 温存中の神託(合算上限2をrevelationsと共有)。同じ役を複数所持できる
+  oracles: RoleName[]
+  // 現在のショップの商品構成。'shop'フェーズおよびそこから派生する福袋中身選択フェーズの間のみ非null
+  shop: ShopState | null
+  // 福袋購入後、あと何個選べば中身選択画面が終了するか(0ならその画面にいない)
+  offerPickRemaining: number
+  // 秘儀の福袋('riteSelect'フェーズ)で提示中のオファー。それ以外のフェーズでは空配列
+  riteOffer: RiteId[]
+  // 秘儀の福袋中身選択で上限到達時、選ばれたが未確定の秘儀(スワップ待ち)。待機中でなければnull
+  pendingNewRite: RiteId | null
+  // 天啓の福袋中身選択で温存を選び上限到達時、選ばれたが未確定の天啓(スワップ待ち)。待機中でなければnull
+  pendingNewRevelation: RevelationId | null
+  // 神託の福袋中身選択で温存を選び上限到達時、選ばれたが未確定の神託(スワップ待ち)。待機中でなければnull
+  pendingNewOracle: RoleName | null
 }
