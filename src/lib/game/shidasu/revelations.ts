@@ -1,7 +1,7 @@
 // src/lib/game/shidasu/revelations.ts
 import type { RevelationId } from './types'
 import type { ShidasuParams } from './params'
-import { shuffleInPlace } from './deck'
+import { rollOffer } from './deck'
 
 // rollRevelationOfferは重み付けなしの完全均等抽選。効果が実装済みの12種のみが対象。
 export const REVELATION_POOL: RevelationId[] = [
@@ -28,8 +28,6 @@ export function revelationDesc(id: RevelationId, params: ShidasuParams): string 
 // 天啓プールから均等ランダムに3つ選ぶ(所持数に関わらず重複除外しない、秘儀のrollRiteと同じ方式。
 // ただしrollRiteと異なり、常に3つ返す(所持上限による抽選中断は無い。上限時の「獲得」不可判定は
 // 呼び出し側=engine.tsのpickRevelationFromOfferで行う))。
-export function rollRevelationOffer(rand: () => number = Math.random): RevelationId[] {
-  const pool = [...REVELATION_POOL]
-  shuffleInPlace(pool, rand)
-  return pool.slice(0, 3)
+export function rollRevelationOffer(rand: () => number = Math.random, count = 3): RevelationId[] {
+  return rollOffer(REVELATION_POOL, count, rand)
 }
