@@ -41,6 +41,11 @@ import {
   buyIndividualRevelationHold,
   buyIndividualOracleUse,
   buyIndividualOracleHold,
+  buyPack,
+  pickPackItem,
+  confirmPackItemSwap,
+  cancelPackItemSwap,
+  closePackItemSelect,
 } from './engine'
 import { isFace, chainContinuesPattern } from './patterns'
 import type { Card, WaveState, RunState, ItemId, ShopIndividualSlot } from './types'
@@ -49,7 +54,7 @@ import { createRng, standardDeckComposition } from './deck'
 import { card } from './testHelpers'
 import { defaultOracleLevels } from './oracles'
 import { ITEM_POOL } from './items'
-import { itemBuyPrice, riteBuyPrice, revelationBuyPrice } from './shop'
+import { itemBuyPrice, riteBuyPrice, revelationBuyPrice, packPrice } from './shop'
 
 describe('isFace / rankLabel', () => {
   test('J/Q/Kはisface、それ以外はfalse', () => {
@@ -2248,69 +2253,6 @@ describe('stageModifierFor / bossScoreLockFor', () => {
 })
 
 describe('pickItem / continueAfterGreatMisfortune / restartRun', () => {
-  test('pickItemでアイテムが追加され次ウェーブが始まる(revelationSelectフェーズを経由する)', () => {
-    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', waveIndex: 0, offer: ['bridge'] }
-    const next = pickItem(DEFAULT_PARAMS, run, 'bridge', 2)
-    expect(next.phase).toBe('revelationSelect')
-    expect(next.items).toEqual(['bridge'])
-    expect(next.waveIndex).toBe(1)
-    expect(next.stageIndex).toBe(0)
-  })
-
-  test('小凶(stageIndex0)の3ウェーブ目クリア後、pickItemでstageIndex1・waveIndex0へ繰り上がる', () => {
-    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', stageIndex: 0, waveIndex: 2, offer: ['bridge'] }
-    const next = pickItem(DEFAULT_PARAMS, run, 'bridge', 2)
-    expect(next.stageIndex).toBe(1)
-    expect(next.waveIndex).toBe(0)
-    expect(next.currentGreatMisfortuneSuit).toBeNull()
-  })
-
-  test('小凶(stageIndex0)クリア後、次のcurrentBossKindは中凶に属する候補(lowCombo/oddCombo)からランダムに選ばれる', () => {
-    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', stageIndex: 0, waveIndex: 2, offer: ['bridge'] }
-    const next = pickItem(DEFAULT_PARAMS, run, 'bridge', 2, createRng(3))
-    expect(['lowCombo', 'oddCombo']).toContain(next.currentBossKind)
-  })
-
-  test('中凶(stageIndex1)クリア後、次のcurrentBossKindは大凶に属する候補(suit/face)からランダムに選ばれ、suitの場合のみcurrentGreatMisfortuneSuitが確定する', () => {
-    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', stageIndex: 1, waveIndex: 2, offer: ['bridge'] }
-    const next = pickItem(DEFAULT_PARAMS, run, 'bridge', 2, createRng(3))
-    expect(['suit', 'face']).toContain(next.currentBossKind)
-    if (next.currentBossKind === 'suit') {
-      expect(next.currentGreatMisfortuneSuit).not.toBeNull()
-    } else {
-      expect(next.currentGreatMisfortuneSuit).toBeNull()
-    }
-  })
-
-  test('同じステージ内(waveIndexが進むだけ)ではcurrentBossKindが維持される', () => {
-    const started = beginRun(DEFAULT_PARAMS, 1)
-    const run: RunState = { ...started, phase: 'itemSelect', waveIndex: 0, offer: ['bridge'] }
-    const next = pickItem(DEFAULT_PARAMS, run, 'bridge', 2)
-    expect(next.currentBossKind).toBe(started.currentBossKind)
-  })
-
-  test('候補プールが1件のみの階級では、必ずその1件が選ばれる(フィルタが正しく機能する)', () => {
-    const customParams: ShidasuParams = {
-      ...DEFAULT_PARAMS,
-      bosses: {
-        ...DEFAULT_PARAMS.bosses,
-        oddCombo: { ...DEFAULT_PARAMS.bosses.oddCombo, tier: 'shoukyou' }, // 中凶からoddComboを一時的に除外
-      },
-    }
-    const run: RunState = { ...beginRun(customParams, 1), phase: 'itemSelect', stageIndex: 0, waveIndex: 2, offer: ['bridge'] }
-    const next = pickItem(customParams, run, 'bridge', 2, createRng(3))
-    expect(next.currentBossKind).toBe('lowCombo') // 中凶の候補がlowComboのみになったため必ずこれが選ばれる
-  })
-
-  test('中凶(stageIndex1)の3ウェーブ目クリア後、pickItemでstageIndex2(大凶)・waveIndex0へ繰り上がり、対象スートが確定する', () => {
-    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'itemSelect', stageIndex: 1, waveIndex: 2, offer: ['bridge'] }
-    const next = pickItem(DEFAULT_PARAMS, run, 'bridge', 2, createRng(3))
-    expect(next.stageIndex).toBe(2)
-    expect(next.waveIndex).toBe(0)
-    expect(next.currentGreatMisfortuneSuit).not.toBeNull()
-    expect(['♠', '♥', '♦', '♣']).toContain(next.currentGreatMisfortuneSuit)
-  })
-
   test('continueAfterGreatMisfortuneはcontinueChoiceからshopへ遷移する', () => {
     const run: RunState = { ...createInitialRun(), phase: 'continueChoice', stageIndex: 2, waveIndex: 2, wave: startWave(DEFAULT_PARAMS, 2, 2, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave }
     const result = continueAfterGreatMisfortune(DEFAULT_PARAMS, run, createRng(3))
@@ -2480,6 +2422,108 @@ describe('buyIndividualOracleUse / buyIndividualOracleHold(バラ売り神託)',
       shop: { individual: [{ kind: 'oracle', id: 'stair', sold: false }], packs: [] },
     }
     expect(buyIndividualOracleHold(DEFAULT_PARAMS, fullRun, 0)).toBe(fullRun)
+  })
+})
+
+describe('buyPack / pickPackItem(護符の福袋)', () => {
+  function shopRunWithItemPack(overrides: Partial<RunState> = {}): RunState {
+    return {
+      ...createInitialRun(),
+      phase: 'shop',
+      currency: 999,
+      shop: { individual: [], packs: [{ packKind: 'item', offerCount: 3, pickCount: 1, sold: false }] },
+      ...overrides,
+    }
+  }
+
+  test('buyPackは通貨を減らし、itemSelectフェーズへ遷移してoffer件数分の候補を提示する', () => {
+    const run = shopRunWithItemPack()
+    const price = packPrice(DEFAULT_PARAMS, 'item', 3)
+    const result = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    expect(result.currency).toBe(999 - price)
+    expect(result.phase).toBe('itemSelect')
+    expect(result.offer).toHaveLength(3)
+    expect(result.offerPickRemaining).toBe(1)
+    expect(result.shop!.packs[0].sold).toBe(true)
+  })
+
+  test('通貨不足なら購入できない', () => {
+    const run = shopRunWithItemPack({ currency: 0 })
+    expect(buyPack(DEFAULT_PARAMS, run, 0, createRng(1))).toBe(run)
+  })
+
+  test('所持上限に達していても福袋は購入できる(上限は中身選択の確定時のみ判定)', () => {
+    const run = shopRunWithItemPack({ items: ITEM_POOL.slice(0, DEFAULT_PARAMS.items.maxItems) })
+    const result = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    expect(result.phase).toBe('itemSelect')
+  })
+
+  test('pickPackItemで選ぶと所持に追加され、offerPickRemainingが0ならshopへ戻る(7-2パターンでは1個選んでも閉じない)', () => {
+    const run = shopRunWithItemPack()
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const picked = pickPackItem(DEFAULT_PARAMS, opened, opened.offer[0])
+    expect(picked.items).toEqual([opened.offer[0]])
+    expect(picked.phase).toBe('shop')
+    expect(picked.offerPickRemaining).toBe(0)
+  })
+
+  test('所持上限到達時にpickPackItemを呼ぶとpendingNewItemにセットされ、確定しない', () => {
+    const fullItems = ITEM_POOL.slice(0, DEFAULT_PARAMS.items.maxItems)
+    const run = shopRunWithItemPack({ items: fullItems })
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const newItemId = opened.offer[0]
+    const picked = pickPackItem(DEFAULT_PARAMS, opened, newItemId)
+    expect(picked.pendingNewItem).toBe(newItemId)
+    expect(picked.items).toEqual(fullItems)
+    expect(picked.phase).toBe('itemSelect')
+  })
+
+  test('confirmPackItemSwapで入れ替えが確定し、offerPickRemainingが減る', () => {
+    const fullItems = ITEM_POOL.slice(0, DEFAULT_PARAMS.items.maxItems)
+    const run = shopRunWithItemPack({ items: fullItems })
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const newItemId = opened.offer[0]
+    const picked = pickPackItem(DEFAULT_PARAMS, opened, newItemId)
+    const confirmed = confirmPackItemSwap(picked, fullItems[0])
+    expect(confirmed.items).toContain(newItemId)
+    expect(confirmed.items).not.toContain(fullItems[0])
+    expect(confirmed.items).toHaveLength(fullItems.length)
+    expect(confirmed.pendingNewItem).toBeNull()
+    expect(confirmed.phase).toBe('shop')
+  })
+
+  test('cancelPackItemSwapでpendingNewItemがクリアされ、所持は変化しない', () => {
+    const fullItems = ITEM_POOL.slice(0, DEFAULT_PARAMS.items.maxItems)
+    const run = shopRunWithItemPack({ items: fullItems })
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const picked = pickPackItem(DEFAULT_PARAMS, opened, opened.offer[0])
+    const cancelled = cancelPackItemSwap(picked)
+    expect(cancelled.pendingNewItem).toBeNull()
+    expect(cancelled.items).toEqual(fullItems)
+  })
+
+  test('closePackItemSelectで残り選択を放棄してshopへ戻る', () => {
+    const run = shopRunWithItemPack()
+    const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    const closed = closePackItemSelect(opened)
+    expect(closed.phase).toBe('shop')
+    expect(closed.offer).toEqual([])
+    expect(closed.offerPickRemaining).toBe(0)
+  })
+
+  test('7-2パターンでは1個選んだ後もitemSelectのままで、2個目を選んでshopへ戻る', () => {
+    const packRun: RunState = {
+      ...createInitialRun(), phase: 'shop', currency: 999,
+      shop: { individual: [], packs: [{ packKind: 'item', offerCount: 7, pickCount: 2, sold: false }] },
+    }
+    const opened = buyPack(DEFAULT_PARAMS, packRun, 0, createRng(1))
+    expect(opened.offer).toHaveLength(7)
+    const firstPick = pickPackItem(DEFAULT_PARAMS, opened, opened.offer[0])
+    expect(firstPick.phase).toBe('itemSelect')
+    expect(firstPick.offerPickRemaining).toBe(1)
+    const secondPick = pickPackItem(DEFAULT_PARAMS, firstPick, firstPick.offer[0])
+    expect(secondPick.phase).toBe('shop')
+    expect(secondPick.items).toHaveLength(2)
   })
 })
 

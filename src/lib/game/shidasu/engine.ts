@@ -1192,6 +1192,60 @@ export function buyIndividualOracleHold(params: ShidasuParams, run: RunState, sl
   return { ...run, currency: run.currency - price, oracles: [...run.oracles, roleName], shop: { ...run.shop, individual } }
 }
 
+// 福袋購入。上限とは無関係に常に成立する(通貨不足・売り切れ・shop以外のフェーズでのみブロック)。
+// 購入したパターンに応じて対応する中身選択フェーズへ遷移し、offerPickRemainingをpickCountにセットする。
+export function buyPack(params: ShidasuParams, run: RunState, slotIndex: number, rand: () => number = Math.random): RunState {
+  if (run.phase !== 'shop' || !run.shop) return run
+  const slot = run.shop.packs[slotIndex]
+  if (!slot || slot.sold) return run
+  const price = packPrice(params, slot.packKind, slot.offerCount)
+  if (run.currency < price) return run
+  const packs = run.shop.packs.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
+  const base: RunState = { ...run, currency: run.currency - price, shop: { ...run.shop, packs }, offerPickRemaining: slot.pickCount }
+  if (slot.packKind === 'item') return { ...base, phase: 'itemSelect', offer: rollItemOffer(run.items, rand, slot.offerCount) }
+  if (slot.packKind === 'rite') return { ...base, phase: 'riteSelect', riteOffer: rollRiteOffer(rand, slot.offerCount) }
+  if (slot.packKind === 'revelation') return { ...base, phase: 'revelationSelect', revelationOffer: rollRevelationOffer(rand, slot.offerCount) }
+  return { ...base, phase: 'oracleSelect', oracleOffer: rollOracleOffer(rand, slot.offerCount) }
+}
+
+function resolvePackItemPick(run: RunState, newItems: ItemId[], pickedId: ItemId): RunState {
+  const offer = run.offer.filter(id => id !== pickedId)
+  const offerPickRemaining = run.offerPickRemaining - 1
+  if (offerPickRemaining <= 0) {
+    return { ...run, phase: 'shop', items: newItems, offer: [], pendingNewItem: null, offerPickRemaining: 0 }
+  }
+  return { ...run, items: newItems, offer, pendingNewItem: null, offerPickRemaining }
+}
+
+// 護符の福袋(itemSelect)から1つ選ぶ。所持上限到達時はpendingNewItemにセットしてスワップ待ちにする。
+export function pickPackItem(params: ShidasuParams, run: RunState, itemId: ItemId): RunState {
+  if (run.phase !== 'itemSelect' || !run.offer.includes(itemId)) return run
+  if (run.items.length >= params.items.maxItems) {
+    return { ...run, pendingNewItem: itemId }
+  }
+  return resolvePackItemPick(run, [...run.items, itemId], itemId)
+}
+
+// スワップ待ち中に既存の護符と入れ替えて確定する。
+export function confirmPackItemSwap(run: RunState, oldItemId: ItemId): RunState {
+  if (run.phase !== 'itemSelect' || run.pendingNewItem === null) return run
+  const idx = run.items.indexOf(oldItemId)
+  const remaining = idx === -1 ? [...run.items] : [...run.items.slice(0, idx), ...run.items.slice(idx + 1)]
+  const newItems = [...remaining, run.pendingNewItem]
+  return resolvePackItemPick(run, newItems, run.pendingNewItem)
+}
+
+export function cancelPackItemSwap(run: RunState): RunState {
+  if (run.phase !== 'itemSelect') return run
+  return { ...run, pendingNewItem: null }
+}
+
+// 残りの選択を放棄してshopへ戻る。
+export function closePackItemSelect(run: RunState): RunState {
+  if (run.phase !== 'itemSelect') return run
+  return { ...run, phase: 'shop', offer: [], pendingNewItem: null, offerPickRemaining: 0 }
+}
+
 export function pickItem(params: ShidasuParams, run: RunState, itemId: ItemId, seed?: number, rand: () => number = Math.random): RunState {
   if (run.phase !== 'itemSelect') return run
   if (run.items.length >= params.items.maxItems) {
