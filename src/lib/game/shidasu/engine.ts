@@ -1317,8 +1317,8 @@ export function confirmPackRevelationSwap(run: RunState, target: HeldRevelationO
   const newId = run.pendingNewRevelation
   if (target.kind === 'revelation') {
     const idx = run.revelations.indexOf(target.id)
-    const revelations = idx === -1 ? run.revelations : [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1), newId]
-    return resolvePackRevelationPick({ ...run, revelations, pendingNewRevelation: null }, newId)
+    const remaining = idx === -1 ? run.revelations : [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
+    return resolvePackRevelationPick({ ...run, revelations: [...remaining, newId], pendingNewRevelation: null }, newId)
   }
   const idx = run.oracles.indexOf(target.id)
   const oracles = idx === -1 ? run.oracles : [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)]
