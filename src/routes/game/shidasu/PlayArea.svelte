@@ -1,12 +1,13 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
   import { getPlayableColumns, isPlayable, remainingCount } from '$lib/game/shidasu/engine'
-  import type { WaveState, StageModifier, ItemId, RiteId, RevelationId } from '$lib/game/shidasu/types'
+  import type { WaveState, StageModifier, ItemId, RiteId, RevelationId, Card } from '$lib/game/shidasu/types'
   import type { ShidasuParams } from '$lib/game/shidasu/params'
   import { canUseRite } from '$lib/game/shidasu/riteEffects'
   import { riteDesc } from '$lib/game/shidasu/rites'
   import { canUseRevelation } from '$lib/game/shidasu/revelationEffects'
   import { revelationDesc } from '$lib/game/shidasu/revelations'
+  import { nextChainSlotPosition } from '$lib/game/shidasu/chainLayout'
   import CardFace from './CardFace.svelte'
   import SuitCountPanel from './SuitCountPanel.svelte'
 
@@ -42,6 +43,66 @@
     onTargetColumn?: (colIndex: number) => void
     chainAreaExtra?: Snippet
   } = $props()
+
+  let tableauEl: HTMLDivElement | undefined = $state()
+  let chainAreaEl: HTMLDivElement | undefined = $state()
+
+  interface PlayingAnimation {
+    card: Card
+    colIndex: number
+    rowIndex: number
+    phase: 'up' | 'warp' | 'left'
+    left: number
+    top: number
+    transitionMs: number
+  }
+
+  let playingAnimation = $state<PlayingAnimation | null>(null)
+
+  const ANIMATION_UP_MS = 150
+  const ANIMATION_LEFT_MS = 200
+
+  function startPlayCardAnimation(colIndex: number, rowIndex: number, card: Card) {
+    if (playingAnimation) return
+    if (!tableauEl || !chainAreaEl) {
+      onPlayCard(colIndex, rowIndex)
+      return
+    }
+    const cardEl = tableauEl.querySelector<HTMLElement>(`[data-drop-col="${colIndex}"][data-drop-row="${rowIndex}"]`)
+    if (!cardEl) {
+      onPlayCard(colIndex, rowIndex)
+      return
+    }
+    const cardRect = cardEl.getBoundingClientRect()
+    const chainRect = chainAreaEl.getBoundingClientRect()
+    const slot = nextChainSlotPosition(wave.chain.length, params.ui.chainCardOffsetX, params.ui.chainCardsPerRow)
+    const targetLeft = chainRect.left + slot.left
+    const targetTop = chainRect.top + slot.top
+    const warpLeft = chainRect.right + 200
+
+    playingAnimation = {
+      card, colIndex, rowIndex,
+      phase: 'up',
+      left: cardRect.left, top: -100,
+      transitionMs: ANIMATION_UP_MS,
+    }
+
+    setTimeout(() => {
+      if (!playingAnimation) return
+      playingAnimation = { ...playingAnimation, phase: 'warp', left: warpLeft, top: targetTop, transitionMs: 0 }
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (!playingAnimation) return
+          playingAnimation = { ...playingAnimation, phase: 'left', left: targetLeft, top: targetTop, transitionMs: ANIMATION_LEFT_MS }
+        })
+      })
+    }, ANIMATION_UP_MS)
+
+    setTimeout(() => {
+      playingAnimation = null
+      onPlayCard(colIndex, rowIndex)
+    }, ANIMATION_UP_MS + ANIMATION_LEFT_MS)
+  }
 
   function chunk<T>(arr: T[], size: number): T[][] {
     const result: T[][] = []
@@ -104,14 +165,15 @@
 <SuitCountPanel {wave} />
 
 <div class="px-3 pt-1">
-  <div class="grid gap-1" style="grid-template-columns: repeat({params.layout.cols}, minmax(0, 1fr));">
+  <div bind:this={tableauEl} class="grid gap-1" style="grid-template-columns: repeat({params.layout.cols}, minmax(0, 1fr));">
     {#each wave.tableau as col, ci (ci)}
       <div class="relative" style="min-height: 10.5rem;">
         {#each col as card, ri (card.id)}
           {@const isTop = ri === col.length - 1}
           {@const isSelectable = columnTargetMode ? isTop : (isTop || wave.playFromAnywhereActiveThisWave)}
+          {@const isAnimatingThisCard = playingAnimation?.colIndex === ci && playingAnimation?.rowIndex === ri}
           <div
-            class="absolute left-0 right-0 {dropTarget && dropTarget !== 'stockTop' && dropTarget.col === ci && dropTarget.row === ri ? 'ring-4 ring-sky-400 rounded-lg' : ''}"
+            class="absolute left-0 right-0 {dropTarget && dropTarget !== 'stockTop' && dropTarget.col === ci && dropTarget.row === ri ? 'ring-4 ring-sky-400 rounded-lg' : ''} {isAnimatingThisCard ? 'invisible' : ''}"
             style="top:{ri * 18}px; z-index:{ri};"
             data-drop-col={ci}
             data-drop-row={ri}
@@ -121,8 +183,9 @@
               {@const isCardPlayable = !columnTargetMode && isPlayable(modifier, wave, card)}
               <button
                 type="button"
-                onclick={() => (columnTargetMode ? (isTargetable && onTargetColumn?.(ci)) : onPlayCard(ci, ri))}
-                class="w-full text-left {columnTargetMode ? (isTargetable ? 'ring-2 ring-fuchsia-400 shadow-lg -translate-y-0.5' : '') : (isCardPlayable ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : '')} transition-transform"
+                disabled={playingAnimation !== null}
+                onclick={() => (columnTargetMode ? (isTargetable && onTargetColumn?.(ci)) : startPlayCardAnimation(ci, ri, card))}
+                class="w-full text-left {columnTargetMode ? (isTargetable ? 'ring-2 ring-fuchsia-400 shadow-lg -translate-y-0.5' : '') : (isCardPlayable ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : '')} transition-transform disabled:cursor-not-allowed"
               >
                 <CardFace {card} covered={false} />
               </button>
@@ -155,7 +218,7 @@
   <button
     type="button"
     onclick={onDraw}
-    disabled={wave.stock.length === 0 || !allowDraw}
+    disabled={wave.stock.length === 0 || !allowDraw || playingAnimation !== null}
     data-drop-stock
     style="aspect-ratio: 2 / 3; margin-top:20px;"
     class="w-16 shrink-0 rounded-lg border-2 flex flex-col items-center justify-center font-black active:scale-95 transition-transform {dropTarget === 'stockTop' ? 'ring-4 ring-sky-400' : ''} {wave.stock.length > 0 ? 'bg-emerald-700 border-emerald-500 text-amber-50' : 'bg-emerald-900 border-emerald-800 text-emerald-700'}"
@@ -170,7 +233,7 @@
       <CardFace card={nextCard} covered={false} />
     </div>
   {/if}
-  <div class="overflow-x-auto min-w-0">
+  <div bind:this={chainAreaEl} class="overflow-x-auto min-w-0">
     {#if chainAreaExtra}
       {@render chainAreaExtra()}
     {:else}
@@ -196,7 +259,7 @@
 {#if rites.length > 0}
   <div class="px-4 pb-4 flex items-center gap-2">
     {#each rites as riteId, i (i)}
-      {@const usable = canUseRite(params, wave, riteId)}
+      {@const usable = canUseRite(params, wave, riteId) && playingAnimation === null}
       <button
         type="button"
         onclick={() => onUseRite?.(riteId)}
@@ -212,7 +275,7 @@
 {#if revelations.length > 0}
   <div class="px-4 pb-4 flex items-center gap-2">
     {#each revelations as revelationId, i (i)}
-      {@const usable = canUseRevelation(params, wave, revelationId)}
+      {@const usable = canUseRevelation(params, wave, revelationId) && playingAnimation === null}
       <button
         type="button"
         onclick={() => onUseRevelationClick?.(revelationId)}
@@ -221,5 +284,14 @@
         class="w-10 h-10 rounded-lg border-2 flex items-center justify-center text-lg font-black transition-transform active:scale-95 {usable ? 'bg-indigo-900 border-indigo-500 text-indigo-100 hover:bg-indigo-800' : 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'}"
       >{params.revelations[revelationId].name}</button>
     {/each}
+  </div>
+{/if}
+
+{#if playingAnimation}
+  <div
+    class="fixed pointer-events-none z-[100] ease-out"
+    style="left:{playingAnimation.left}px; top:{playingAnimation.top}px; width:64px; transition-property:left,top; transition-duration:{playingAnimation.transitionMs}ms;"
+  >
+    <CardFace card={playingAnimation.card} covered={false} />
   </div>
 {/if}
