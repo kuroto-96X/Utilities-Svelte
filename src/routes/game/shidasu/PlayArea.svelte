@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
-  import { onDestroy } from 'svelte'
+  import { onDestroy, tick } from 'svelte'
   import { getPlayableColumns, isPlayable, remainingCount } from '$lib/game/shidasu/engine'
   import type { WaveState, StageModifier, ItemId, RiteId, RevelationId, Card, PlayCardResult, ScoreGain, BonusGain } from '$lib/game/shidasu/types'
   import type { ShidasuParams } from '$lib/game/shidasu/params'
@@ -9,6 +9,7 @@
   import { canUseRevelation } from '$lib/game/shidasu/revelationEffects'
   import { revelationDesc } from '$lib/game/shidasu/revelations'
   import { nextChainSlotPosition } from '$lib/game/shidasu/chainLayout'
+  import { runningTotalsFromScoreParts, type ScorePart } from '$lib/game/shidasu/scoreParts'
   import CardFace from './CardFace.svelte'
   import SuitCountPanel from './SuitCountPanel.svelte'
 
@@ -69,7 +70,108 @@
   onDestroy(() => {
     clearTimeout(animationTimer1)
     clearTimeout(animationTimer2)
+    clearTimeout(scoreRevealTimer)
   })
+
+  const SCORE_PART_REVEAL_MS = 280
+  const SCORE_FLY_UP_MS = 200
+  const SCORE_FLY_TO_SCORE_MS = 250
+  const SCORE_FLY_UP_DISTANCE_PX = 40
+  const SCORE_FLY_UP_SCALE = 1.5
+
+  interface ScoreRevealState {
+    parts: ScorePart[]
+    runningTotals: number[]
+    revealedCount: number
+    totalGain: number
+    flyPhase: 'none' | 'up' | 'toScore'
+    flyLeft: number
+    flyTop: number
+    flyScale: number
+    flyTransitionMs: number
+  }
+
+  let scoreReveal = $state<ScoreRevealState | null>(null)
+  let displayedScore = $state(wave.score)
+  let scoreNumberEl: HTMLDivElement | undefined = $state()
+  let totalGainEl: HTMLSpanElement | undefined = $state()
+
+  let scoreRevealTimer: ReturnType<typeof setTimeout> | undefined
+
+  function startScoreReveal(lastGain: ScoreGain | null, lastBonusGains: BonusGain[]) {
+    const allParts = [...(lastGain?.parts ?? []), ...lastBonusGains.flatMap(g => g.parts)]
+    if (allParts.length === 0) {
+      displayedScore = wave.score
+      return
+    }
+    const runningTotals = runningTotalsFromScoreParts(allParts)
+    const totalGain = (lastGain?.points ?? 0) + lastBonusGains.reduce((sum, g) => sum + g.points, 0)
+    clearTimeout(scoreRevealTimer)
+    scoreReveal = {
+      parts: allParts,
+      runningTotals,
+      revealedCount: 1,
+      totalGain,
+      flyPhase: 'none',
+      flyLeft: 0,
+      flyTop: 0,
+      flyScale: 1,
+      flyTransitionMs: 0,
+    }
+    if (allParts.length === 1) {
+      // パーツが1つだけの地味なプレイは、DOMの初回描画を待ってから即座に飛び込みアニメへ進む
+      // (bind:thisで参照するtotalGainElが、直前のscoreReveal代入によってまだDOMに描画されていない
+      // 可能性があるため、tick()でSvelteの描画反映を待つ)
+      tick().then(() => startScoreFly())
+    } else {
+      scoreRevealTimer = setTimeout(revealNextScorePart, SCORE_PART_REVEAL_MS)
+    }
+  }
+
+  function revealNextScorePart() {
+    if (!scoreReveal) return
+    if (scoreReveal.revealedCount < scoreReveal.parts.length) {
+      scoreReveal = { ...scoreReveal, revealedCount: scoreReveal.revealedCount + 1 }
+      scoreRevealTimer = setTimeout(revealNextScorePart, SCORE_PART_REVEAL_MS)
+    } else {
+      startScoreFly()
+    }
+  }
+
+  function startScoreFly() {
+    if (!scoreReveal || !totalGainEl || !scoreNumberEl) {
+      finishScoreReveal()
+      return
+    }
+    const fromRect = totalGainEl.getBoundingClientRect()
+    const toRect = scoreNumberEl.getBoundingClientRect()
+    scoreReveal = { ...scoreReveal, flyPhase: 'up', flyLeft: fromRect.left, flyTop: fromRect.top, flyScale: 1, flyTransitionMs: 0 }
+    // transitionMs:0でのスタイル変更をブラウザが実際に描画へ反映してから次のtransitionを開始するために
+    // 2段rAFが必要。1段のrAFだけだと同一フレーム内でスタイル変更がバッチ処理され、transitionが
+    // 発生しないブラウザがある(カード移動アニメのワープ処理と同じ理由)。
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!scoreReveal) return
+        scoreReveal = {
+          ...scoreReveal,
+          flyLeft: fromRect.left,
+          flyTop: fromRect.top - SCORE_FLY_UP_DISTANCE_PX,
+          flyScale: SCORE_FLY_UP_SCALE,
+          flyTransitionMs: SCORE_FLY_UP_MS,
+        }
+      })
+    })
+    scoreRevealTimer = setTimeout(() => {
+      if (!scoreReveal) return
+      scoreReveal = { ...scoreReveal, flyPhase: 'toScore', flyLeft: toRect.left, flyTop: toRect.top, flyScale: 1, flyTransitionMs: SCORE_FLY_TO_SCORE_MS }
+      scoreRevealTimer = setTimeout(finishScoreReveal, SCORE_FLY_TO_SCORE_MS)
+    }, SCORE_FLY_UP_MS)
+  }
+
+  function finishScoreReveal() {
+    displayedScore = wave.score
+    scoreReveal = null
+  }
 
   function startPlayCardAnimation(colIndex: number, rowIndex: number, card: Card) {
     if (playingAnimation) return
@@ -120,7 +222,7 @@
     animationTimer2 = setTimeout(() => {
       playingAnimation = null
       const result = onPlayCard(colIndex, rowIndex)
-      void result
+      if (result) startScoreReveal(result.lastGain, result.lastBonusGains)
     }, ANIMATION_UP_MS + ANIMATION_LEFT_MS)
   }
 
@@ -153,8 +255,8 @@
     <div class="mt-2 flex items-end justify-between">
       <div>
         <div class="text-xs text-emerald-300/70 tracking-widest">SCORE / TARGET</div>
-        <div class="text-xl font-black text-amber-50 tabular-nums">
-          {wave.score} <span class="text-sm text-emerald-300/70">/ {target}</span>
+        <div bind:this={scoreNumberEl} class="text-xl font-black text-amber-50 tabular-nums">
+          {displayedScore} <span class="text-sm text-emerald-300/70">/ {target}</span>
         </div>
       </div>
       <div class="text-right transition-transform origin-bottom-right {comboScale[displayComboTier]}">
@@ -168,13 +270,20 @@
   <div class="mt-1 h-1.5 rounded-full bg-emerald-900 overflow-hidden">
     <div class="h-full bg-gradient-to-r from-yellow-500 to-yellow-300 transition-all duration-300" style="width:{Math.min(100, (wave.score / target) * 100)}%"></div>
   </div>
-  {#if wave.lastGain || wave.lastBonusGains.length > 0}
+  {#if scoreReveal}
+    <div class="text-right text-sm h-5">
+      {#if scoreReveal.flyPhase === 'none'}
+        <span bind:this={totalGainEl} class="text-yellow-300 font-black">+{Math.round(scoreReveal.runningTotals[scoreReveal.revealedCount - 1])}</span>
+        <span class="text-emerald-200 text-xs ml-2">{scoreReveal.parts.slice(0, scoreReveal.revealedCount).map(p => p.text).join(' ')}</span>
+      {/if}
+    </div>
+  {:else if wave.lastGain || wave.lastBonusGains.length > 0}
     {@const totalPoints = (wave.lastGain?.points ?? 0) + wave.lastBonusGains.reduce((sum, g) => sum + g.points, 0)}
     {@const allParts = [...(wave.lastGain?.parts ?? []), ...wave.lastBonusGains.flatMap(g => g.parts)]}
     <div class="text-right text-sm h-5">
       <span class="text-yellow-300 font-black">+{totalPoints}</span>
       {#if allParts.length > 0}
-        <span class="text-emerald-200 text-xs ml-2">{allParts.join(' ')}</span>
+        <span class="text-emerald-200 text-xs ml-2">{allParts.map(p => p.text).join(' ')}</span>
       {/if}
     </div>
   {:else}
@@ -204,7 +313,7 @@
               {@const isCardPlayable = !columnTargetMode && isPlayable(modifier, wave, card)}
               <button
                 type="button"
-                disabled={playingAnimation !== null}
+                disabled={playingAnimation !== null || scoreReveal !== null}
                 onclick={() => (columnTargetMode ? (isTargetable && onTargetColumn?.(ci)) : startPlayCardAnimation(ci, ri, card))}
                 class="w-full text-left {columnTargetMode ? (isTargetable ? 'ring-2 ring-fuchsia-400 shadow-lg -translate-y-0.5' : '') : (isCardPlayable ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : '')} transition-transform disabled:cursor-not-allowed"
               >
@@ -239,7 +348,7 @@
   <button
     type="button"
     onclick={onDraw}
-    disabled={wave.stock.length === 0 || !allowDraw || playingAnimation !== null}
+    disabled={wave.stock.length === 0 || !allowDraw || playingAnimation !== null || scoreReveal !== null}
     data-drop-stock
     style="aspect-ratio: 2 / 3; margin-top:20px;"
     class="w-16 shrink-0 rounded-lg border-2 flex flex-col items-center justify-center font-black active:scale-95 transition-transform {dropTarget === 'stockTop' ? 'ring-4 ring-sky-400' : ''} {wave.stock.length > 0 ? 'bg-emerald-700 border-emerald-500 text-amber-50' : 'bg-emerald-900 border-emerald-800 text-emerald-700'}"
@@ -280,7 +389,7 @@
 {#if rites.length > 0}
   <div class="px-4 pb-4 flex items-center gap-2">
     {#each rites as riteId, i (i)}
-      {@const usable = canUseRite(params, wave, riteId) && playingAnimation === null}
+      {@const usable = canUseRite(params, wave, riteId) && playingAnimation === null && scoreReveal === null}
       <button
         type="button"
         onclick={() => onUseRite?.(riteId)}
@@ -296,7 +405,7 @@
 {#if revelations.length > 0}
   <div class="px-4 pb-4 flex items-center gap-2">
     {#each revelations as revelationId, i (i)}
-      {@const usable = canUseRevelation(params, wave, revelationId) && playingAnimation === null}
+      {@const usable = canUseRevelation(params, wave, revelationId) && playingAnimation === null && scoreReveal === null}
       <button
         type="button"
         onclick={() => onUseRevelationClick?.(revelationId)}
@@ -315,4 +424,11 @@
   >
     <CardFace card={playingAnimation.card} covered={false} />
   </div>
+{/if}
+
+{#if scoreReveal && scoreReveal.flyPhase !== 'none'}
+  <div
+    class="fixed pointer-events-none z-[100] ease-out text-yellow-300 font-black text-lg"
+    style="left:{scoreReveal.flyLeft}px; top:{scoreReveal.flyTop}px; transform: scale({scoreReveal.flyScale}); transition-property: left, top, transform; transition-duration:{scoreReveal.flyTransitionMs}ms;"
+  >+{scoreReveal.totalGain}</div>
 {/if}
