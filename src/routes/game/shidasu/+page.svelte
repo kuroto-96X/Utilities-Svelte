@@ -320,13 +320,36 @@
 {/snippet}
 
 {#snippet itemBadges()}
-  <div class="flex-1 flex flex-wrap gap-1 justify-end">
-    {#each [...new Set(run.items)] as id (id)}
-      {@const n = run.items.filter(x => x === id).length}
-      <span class="text-xs bg-emerald-900 text-yellow-200/90 border border-yellow-600/40 rounded px-1.5 py-0.5" title={itemDesc(id, params)}>
-        {itemName(id, params)}{n > 1 ? `×${n}` : ''}
-      </span>
-    {/each}
+  <div class="flex-1 flex flex-col gap-1 items-end">
+    <div class="flex flex-wrap gap-1 justify-end">
+      {#each [...new Set(run.items)] as id (id)}
+        {@const n = run.items.filter(x => x === id).length}
+        <span class="text-xs bg-emerald-900 text-yellow-200/90 border border-yellow-600/40 rounded px-1.5 py-0.5" title={itemDesc(id, params)}>
+          {itemName(id, params)}{n > 1 ? `×${n}` : ''}
+        </span>
+      {/each}
+    </div>
+    {#if run.revelations.length > 0}
+      <div class="flex flex-wrap gap-1 justify-end">
+        {#each run.revelations as id, i (i)}
+          <span class="text-xs bg-indigo-900 text-indigo-200/90 border border-indigo-600/40 rounded px-1.5 py-0.5 flex items-center gap-1" title={revelationDesc(id, params)}>
+            {revelationName(id, params)}
+            <button onclick={() => handleSellRevelation(id)} class="text-indigo-300/70 underline">売</button>
+          </span>
+        {/each}
+      </div>
+    {/if}
+    {#if run.oracles.length > 0}
+      <div class="flex flex-wrap gap-1 justify-end">
+        {#each run.oracles as roleName, i (i)}
+          <span class="text-xs bg-purple-900 text-purple-200/90 border border-purple-600/40 rounded px-1.5 py-0.5 flex items-center gap-1" title={oracleDesc(roleName, params)}>
+            {oracleName(roleName, params)}
+            <button onclick={() => handleUseOracle(roleName)} class="text-purple-300/70 underline">使</button>
+            <button onclick={() => handleSellOracle(roleName)} class="text-purple-300/70 underline">売</button>
+          </span>
+        {/each}
+      </div>
+    {/if}
   </div>
 {/snippet}
 
@@ -340,9 +363,22 @@
 {#snippet revelationSelectExtra()}
   {#if pendingRevelationTarget}
     {@render revelationTargetPrompt()}
+  {:else if run.pendingNewRevelation}
+    <div class="text-xs w-full">
+      <div class="text-yellow-300 font-black mb-2">天啓・神託は合計2個まで。入れ替える対象を選んでください</div>
+      <div class="flex flex-col gap-1.5">
+        {#each run.revelations as id (id)}
+          <button onclick={() => handleConfirmPackRevelationSwap({ kind: 'revelation', id })} class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-lg px-2 py-1.5 text-emerald-100">{revelationName(id, params)}</button>
+        {/each}
+        {#each run.oracles as roleName (roleName)}
+          <button onclick={() => handleConfirmPackRevelationSwap({ kind: 'oracle', id: roleName })} class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-lg px-2 py-1.5 text-emerald-100">{oracleName(roleName, params)}</button>
+        {/each}
+      </div>
+      <button onclick={handleCancelPackRevelationSwap} class="mt-2 text-emerald-300/70 underline">キャンセル</button>
+    </div>
   {:else}
     <div class="text-xs w-full">
-      <div class="text-emerald-300/70 mb-2">天啓を1つ選ぶ</div>
+      <div class="text-emerald-300/70 mb-2">天啓福袋・残り{run.offerPickRemaining}個選べます</div>
       <div class="flex flex-col gap-1.5">
         {#each run.revelationOffer as id (id)}
           <div class="bg-emerald-900/80 border border-yellow-500/40 rounded-lg px-2 py-1.5 text-left">
@@ -350,19 +386,19 @@
             <div class="text-emerald-100/80 text-[11px] mt-0.5">{revelationDesc(id, params)}</div>
             <div class="flex gap-1.5 mt-1.5">
               <button
-                onclick={() => handleRevelationOfferUse(id)}
+                onclick={() => handlePickPackRevelationUse(id)}
                 class="flex-1 bg-indigo-700 text-white rounded px-2 py-1 active:scale-95 transition-transform"
               >使用</button>
               <button
-                onclick={() => handleRevelationOfferAcquire(id)}
-                disabled={run.revelations.length >= 2}
+                onclick={() => handlePickPackRevelationHold(id)}
+                disabled={run.revelations.length + run.oracles.length >= 2}
                 class="flex-1 bg-slate-700 text-white rounded px-2 py-1 active:scale-95 transition-transform disabled:opacity-30 disabled:cursor-not-allowed"
-              >獲得</button>
+              >温存</button>
             </div>
           </div>
         {/each}
       </div>
-      <button onclick={handleSkipRevelationSelect} class="mt-2 text-emerald-300/70 underline">使用・獲得しない</button>
+      <button onclick={handleClosePackRevelationSelect} class="mt-2 text-emerald-300/70 underline">選択を終える</button>
     </div>
   {/if}
 {/snippet}
@@ -434,17 +470,121 @@
   <RoleStatusPanel {params} oracleLevels={run.oracleLevels} />
 {/if}
 
-{#if run.phase === 'itemSelect'}
+{#if run.phase === 'shop' && run.shop && !pendingRevelationTarget}
+  <div class="fixed inset-0 z-50 bg-emerald-950/90 backdrop-blur-sm flex items-center justify-center p-6">
+    <div class="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-bold text-slate-800">ショップ</h2>
+        <p class="text-sm text-teal-700 font-semibold">{params.currency.symbol}{run.currency}</p>
+      </div>
+
+      <div class="space-y-2">
+        <p class="text-xs text-slate-500">バラ売り</p>
+        <div class="grid grid-cols-3 gap-2">
+          {#each run.shop.individual as slot, i}
+            <div class="border border-slate-200 rounded-lg p-2 text-xs space-y-1">
+              <p class="font-semibold">{slot.kind}: {slot.id}</p>
+              {#if slot.sold}
+                <p class="text-slate-400">売り切れ</p>
+              {:else if slot.kind === 'item'}
+                <button onclick={() => handleBuyIndividualItem(i)} disabled={run.items.length >= params.items.maxItems || run.currency < itemBuyPrice(params, slot.id as ItemId)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                  購入({itemBuyPrice(params, slot.id as ItemId)})
+                </button>
+              {:else if slot.kind === 'rite'}
+                <button onclick={() => handleBuyIndividualRite(i)} disabled={run.rites.length >= 3 || run.currency < riteBuyPrice(params)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                  購入({riteBuyPrice(params)})
+                </button>
+              {:else if slot.kind === 'revelation'}
+                <button onclick={() => handleBuyIndividualRevelationUse(i, slot.id as RevelationId)} disabled={run.currency < revelationBuyPrice(params)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                  即使う({revelationBuyPrice(params)})
+                </button>
+                <button onclick={() => handleBuyIndividualRevelationHold(i)} disabled={run.revelations.length + run.oracles.length >= 2 || run.currency < revelationBuyPrice(params)} class="w-full px-2 py-1 rounded bg-slate-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                  温存({revelationBuyPrice(params)})
+                </button>
+              {:else if slot.kind === 'oracle'}
+                <button onclick={() => handleBuyIndividualOracleUse(i)} disabled={run.currency < oracleBuyPrice(params)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                  即使う({oracleBuyPrice(params)})
+                </button>
+                <button onclick={() => handleBuyIndividualOracleHold(i)} disabled={run.revelations.length + run.oracles.length >= 2 || run.currency < oracleBuyPrice(params)} class="w-full px-2 py-1 rounded bg-slate-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                  温存({oracleBuyPrice(params)})
+                </button>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <p class="text-xs text-slate-500">福袋</p>
+        <div class="grid grid-cols-2 gap-2">
+          {#each run.shop.packs as slot, i}
+            <div class="border border-slate-200 rounded-lg p-2 text-xs space-y-1">
+              <p class="font-semibold">{slot.packKind} {slot.offerCount}択{slot.pickCount}</p>
+              {#if slot.sold}
+                <p class="text-slate-400">売り切れ</p>
+              {:else}
+                <button onclick={() => handleBuyPack(i)} disabled={run.currency < packPrice(params, slot.packKind, slot.offerCount)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                  購入({packPrice(params, slot.packKind, slot.offerCount)})
+                </button>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <p class="text-xs text-slate-500">所持品(売却可)</p>
+        <div class="flex flex-wrap gap-1">
+          {#each run.items as itemId}
+            <button onclick={() => handleSellItem(itemId)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{itemId} 売({itemSellPrice(params, itemId)})</button>
+          {/each}
+          {#each run.rites as riteId}
+            <button onclick={() => handleSellRite(riteId)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{riteId} 売({riteSellPrice(params)})</button>
+          {/each}
+          {#each run.revelations as revelationId}
+            <button onclick={() => handleSellRevelation(revelationId)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{revelationId} 売({revelationSellPrice(params)})</button>
+          {/each}
+          {#each run.oracles as roleName}
+            <button onclick={() => handleSellOracle(roleName)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{roleName} 売({oracleSellPrice(params)})</button>
+          {/each}
+        </div>
+      </div>
+
+      <button onclick={handleFinishShop} class="w-full px-4 py-2 rounded-lg bg-teal-700 text-white font-semibold">次のWaveへ</button>
+    </div>
+  </div>
+{:else if run.phase === 'riteSelect'}
+  <div class="fixed inset-0 z-50 bg-emerald-950/90 backdrop-blur-sm flex items-center justify-center p-6">
+    <div class="bg-white rounded-2xl p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto space-y-3">
+      <h2 class="text-lg font-bold text-slate-800">秘儀福袋(残り{run.offerPickRemaining}個選べます)</h2>
+      {#if run.pendingNewRite}
+        <p class="text-sm text-slate-600">所持枠が満杯です。入れ替える秘儀を選んでください。</p>
+        <div class="space-y-1">
+          {#each run.rites as riteId}
+            <button onclick={() => handleConfirmPackRiteSwap(riteId)} class="w-full text-left px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-sm">{riteId}</button>
+          {/each}
+        </div>
+        <button onclick={handleCancelPackRiteSwap} class="text-xs text-slate-500 underline">キャンセル</button>
+      {:else}
+        <div class="space-y-1">
+          {#each run.riteOffer as riteId}
+            <button onclick={() => handlePickPackRite(riteId)} class="w-full text-left px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-sm">{riteId}</button>
+          {/each}
+        </div>
+        <button onclick={handleClosePackRiteSelect} class="text-xs text-slate-500 underline">選択を終える</button>
+      {/if}
+    </div>
+  </div>
+{:else if run.phase === 'itemSelect'}
   <div class="fixed inset-0 z-50 bg-emerald-950/90 backdrop-blur-sm flex items-center justify-center p-6">
     <div class="w-full max-w-sm flex flex-col items-center text-center">
-      <div class="text-yellow-300 text-xs tracking-widest mb-1">WAVE {run.waveIndex + 1} CLEAR</div>
-      <div class="text-2xl font-black text-amber-50 mb-4">{run.wave?.score ?? 0} 点</div>
+      <div class="text-yellow-300 text-xs tracking-widest mb-1">護符福袋</div>
+      <div class="text-emerald-100/70 text-sm mb-4">残り{run.offerPickRemaining}個選べます</div>
       {#if run.pendingNewItem === null}
-        <div class="text-emerald-100/70 text-sm mb-4">アイテムを1つ選ぶ</div>
         <div class="flex flex-col gap-3 w-full">
           {#each run.offer as id (id)}
             <button
-              onclick={() => handlePickItem(id)}
+              onclick={() => handlePickPackItem(id)}
               class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
             >
               <div class="font-black text-yellow-300">{itemName(id, params)}</div>
@@ -452,10 +592,10 @@
             </button>
           {/each}
           <button
-            onclick={handleSkipItem}
+            onclick={handleClosePackItemSelect}
             class="text-center text-emerald-200/70 border border-emerald-700/60 rounded-xl px-4 py-2 active:scale-[0.98] transition-transform"
           >
-            取得しない
+            選択を終える
           </button>
         </div>
       {:else}
@@ -463,7 +603,7 @@
         <div class="flex flex-col gap-3 w-full">
           {#each run.items as id, i (i)}
             <button
-              onclick={() => handleConfirmSwap(id)}
+              onclick={() => handleConfirmPackItemSwap(id)}
               class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
             >
               <div class="font-black text-yellow-300">{itemName(id, params)}</div>
@@ -471,7 +611,7 @@
             </button>
           {/each}
           <button
-            onclick={handleCancelSwap}
+            onclick={handleCancelPackItemSwap}
             class="text-center text-emerald-200/70 border border-emerald-700/60 rounded-xl px-4 py-2 active:scale-[0.98] transition-transform"
           >
             戻る
@@ -483,25 +623,50 @@
 {:else if run.phase === 'oracleSelect'}
   <div class="fixed inset-0 z-50 bg-emerald-950/90 backdrop-blur-sm flex items-center justify-center p-6">
     <div class="w-full max-w-sm flex flex-col items-center text-center">
-      <div class="text-yellow-300 text-xs tracking-widest mb-1">ORACLE</div>
-      <div class="text-emerald-100/70 text-sm mb-4">神託を1つ選ぶ</div>
-      <div class="flex flex-col gap-3 w-full">
-        {#each run.oracleOffer as roleName (roleName)}
+      <div class="text-yellow-300 text-xs tracking-widest mb-1">神託福袋</div>
+      <div class="text-emerald-100/70 text-sm mb-4">残り{run.offerPickRemaining}個選べます</div>
+      {#if run.pendingNewOracle}
+        <div class="text-emerald-100/70 text-sm mb-4">天啓・神託は合計2個まで。入れ替える対象を選ぶ</div>
+        <div class="flex flex-col gap-3 w-full">
+          {#each run.revelations as id (id)}
+            <button
+              onclick={() => handleConfirmPackOracleSwap({ kind: 'revelation', id })}
+              class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
+            >{revelationName(id, params)}</button>
+          {/each}
+          {#each run.oracles as roleName (roleName)}
+            <button
+              onclick={() => handleConfirmPackOracleSwap({ kind: 'oracle', id: roleName })}
+              class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
+            >{oracleName(roleName, params)}</button>
+          {/each}
           <button
-            onclick={() => handlePickOracle(roleName)}
-            class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
+            onclick={handleCancelPackOracleSwap}
+            class="text-center text-emerald-200/70 border border-emerald-700/60 rounded-xl px-4 py-2 active:scale-[0.98] transition-transform"
           >
-            <div class="font-black text-yellow-300">{oracleName(roleName, params)}</div>
-            <div class="text-xs text-emerald-100/80 mt-0.5">{oracleDesc(roleName, params)}</div>
+            戻る
           </button>
-        {/each}
-        <button
-          onclick={handleSkipOracleSelect}
-          class="text-center text-emerald-200/70 border border-emerald-700/60 rounded-xl px-4 py-2 active:scale-[0.98] transition-transform"
-        >
-          選ばない
-        </button>
-      </div>
+        </div>
+      {:else}
+        <div class="flex flex-col gap-3 w-full">
+          {#each run.oracleOffer as roleName (roleName)}
+            <div class="bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 text-left">
+              <div class="font-black text-yellow-300">{oracleName(roleName, params)}</div>
+              <div class="text-xs text-emerald-100/80 mt-0.5">{oracleDesc(roleName, params)}</div>
+              <div class="flex gap-2 mt-2">
+                <button onclick={() => handlePickPackOracleUse(roleName)} class="flex-1 bg-indigo-700 text-white rounded px-2 py-1 active:scale-95 transition-transform">即使う</button>
+                <button onclick={() => handlePickPackOracleHold(roleName)} disabled={run.revelations.length + run.oracles.length >= 2} class="flex-1 bg-slate-700 text-white rounded px-2 py-1 active:scale-95 transition-transform disabled:opacity-30 disabled:cursor-not-allowed">温存</button>
+              </div>
+            </div>
+          {/each}
+          <button
+            onclick={handleClosePackOracleSelect}
+            class="text-center text-emerald-200/70 border border-emerald-700/60 rounded-xl px-4 py-2 active:scale-[0.98] transition-transform"
+          >
+            選択を終える
+          </button>
+        </div>
+      {/if}
     </div>
   </div>
 {:else if run.phase === 'continueChoice'}
