@@ -94,9 +94,15 @@
     playingAnimation = {
       card, colIndex, rowIndex,
       phase: 'up',
-      left: cardRect.left, top: -100,
-      transitionMs: ANIMATION_UP_MS,
+      left: cardRect.left, top: cardRect.top,
+      transitionMs: 0,
     }
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!playingAnimation) return
+        playingAnimation = { ...playingAnimation, top: -100, transitionMs: ANIMATION_UP_MS }
+      })
+    })
 
     animationTimer1 = setTimeout(() => {
       if (!playingAnimation) return
@@ -183,6 +189,7 @@
       <div class="relative" style="min-height: 10.5rem;">
         {#each col as card, ri (card.id)}
           {@const isTop = ri === col.length - 1}
+          {@const isExposedByAnimation = playingAnimation !== null && playingAnimation.colIndex === ci && ri === col.length - 2}
           {@const isSelectable = columnTargetMode ? isTop : (isTop || wave.playFromAnywhereActiveThisWave)}
           {@const isAnimatingThisCard = playingAnimation?.colIndex === ci && playingAnimation?.rowIndex === ri}
           <div
@@ -203,7 +210,7 @@
                 <CardFace {card} covered={false} />
               </button>
             {:else}
-              <CardFace {card} covered={true} />
+              <CardFace {card} covered={!isExposedByAnimation} />
             {/if}
           </div>
         {/each}
