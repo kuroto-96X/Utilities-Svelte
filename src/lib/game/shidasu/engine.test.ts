@@ -65,6 +65,7 @@ import { card } from './testHelpers'
 import { defaultOracleLevels } from './oracles'
 import { ITEM_POOL } from './items'
 import { itemBuyPrice, riteBuyPrice, revelationBuyPrice, packPrice, itemSellPrice, riteSellPrice, revelationSellPrice, oracleSellPrice } from './shop'
+import { addPart } from './scoreParts'
 
 describe('isFace / rankLabel', () => {
   test('J/Q/Kはisface、それ以外はfalse', () => {
@@ -1485,7 +1486,7 @@ describe('drawStock', () => {
   test('山札を引くとlastGainがクリアされる(得点は山札からは発生しないため)', () => {
     const wave = makeWave({
       stock: [card(1, '★', 0, true)],
-      lastGain: { points: 100, parts: ['同スート+100'] },
+      lastGain: { points: 100, parts: [addPart('同スート', 100)] },
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, [], 1000000, standardDeckComposition())
     expect(next.lastGain).toBeNull()
@@ -1655,8 +1656,8 @@ describe('drawStock', () => {
       chain: [card(3, '♥', 1)],
       linked: false,
       score: 100,
-      lastGain: { points: 888, parts: ['古い内訳'] },
-      lastBonusGains: [{ label: '古い', points: 999, parts: ['古い'] }],
+      lastGain: { points: 888, parts: [{ label: '古い内訳', kind: 'add', amount: 0, text: '古い内訳' }] },
+      lastBonusGains: [{ label: '古い', points: 999, parts: [{ label: '古い', kind: 'add', amount: 0, text: '古い' }] }],
     })
     const result = drawStock(DEFAULT_PARAMS, wave, ['arrogance'], 100 + 2 * x, standardDeckComposition())
     expect(result.wave.stock).toHaveLength(0)
