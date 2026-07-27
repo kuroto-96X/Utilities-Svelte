@@ -65,7 +65,7 @@ import { card } from './testHelpers'
 import { defaultOracleLevels } from './oracles'
 import { ITEM_POOL } from './items'
 import { itemBuyPrice, riteBuyPrice, revelationBuyPrice, packPrice, itemSellPrice, riteSellPrice, revelationSellPrice, oracleSellPrice } from './shop'
-import { addPart } from './scoreParts'
+import { addPart, finalScoreFromScoreParts } from './scoreParts'
 
 describe('isFace / rankLabel', () => {
   test('J/Q/Kはisface、それ以外はfalse', () => {
@@ -380,6 +380,27 @@ describe('playCard', () => {
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.lastGain?.parts[0].text).toBe(`基礎点+${scoring.basePoint}`)
     expect(next.lastGain?.parts.map(p => p.text)).toContain('コンボ倍率×1.1')
+  })
+
+  test('lastGain.partsから再計算した仮合計は、実際に付与されたlastGain.pointsと一致する(パターン成立あり)', () => {
+    const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    expect(next.lastGain).not.toBeNull()
+    expect(finalScoreFromScoreParts(next.lastGain!.parts)).toBe(next.lastGain!.points)
+  })
+
+  test('lastGain.partsから再計算した仮合計は、護符を複数所持している場合も実際のlastGain.pointsと一致する', () => {
+    const wave = baseWave({
+      tableau: [
+        [card(9, '♠', 1), card(1, '♣', 6)],
+        [card(2, '♦', 2)],
+      ],
+      combo: 3,
+    })
+    const items: ItemId[] = ['springBreeze', 'courage', 'calm']
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
+    expect(next.lastGain).not.toBeNull()
+    expect(finalScoreFromScoreParts(next.lastGain!.parts)).toBe(next.lastGain!.points)
   })
 
   test('コンボ2(倍率1+0.2=1.2)で加点される(パターン不一致の場合)', () => {
