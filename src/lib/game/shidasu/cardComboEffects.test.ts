@@ -10,7 +10,7 @@ describe('applyItemEffects (グループ2+3: カード単体属性・コンボ�
   test('springBreeze: ♣を取った時のみgainedにnを加算し、内訳に「春風+n」が入る', () => {
     const withClub = applyItemEffects('gained', 100, ['springBreeze'], ctx({ card: card(1, '♣', 5) }), params)
     expect(withClub.value).toBe(100 + params.talismans.springBreeze.n)
-    expect(withClub.parts).toEqual([`春風+${params.talismans.springBreeze.n}`])
+    expect(withClub.parts.map(p => p.text)).toEqual([`春風+${params.talismans.springBreeze.n}`])
     const withoutClub = applyItemEffects('gained', 100, ['springBreeze'], ctx({ card: card(1, '♥', 5) }), params)
     expect(withoutClub.value).toBe(100)
     expect(withoutClub.parts).toEqual([])
@@ -70,7 +70,7 @@ describe('applyItemEffects (グループ2+3: カード単体属性・コンボ�
     const result = applyItemEffects('gained', 100, ['courage'], ctx({ combo: 5 }), params)
     const factor = 1 + 5 * params.talismans.courage.x
     expect(result.value).toBe(100 * factor)
-    expect(result.parts).toEqual([`勇気×${factor}`])
+    expect(result.parts.map(p => p.text)).toEqual([`勇気×${factor}`])
   })
 
   test('daybreak: コンボ数がc以下の時のみx倍', () => {
@@ -105,9 +105,9 @@ describe('applyItemEffects (グループ2+3: カード単体属性・コンボ�
     const below = applyItemEffects('gained', 100, ['morningMist'], ctx({ combo: params.talismans.morningMist.c - 1 }), params)
     const belowFactor = 1 / params.talismans.morningMist.x
     expect(below.value).toBe(100 * belowFactor)
-    expect(below.parts).toEqual([`朝霧×${Math.round(belowFactor * 100) / 100}`])
+    expect(below.parts.map(p => p.text)).toEqual([`朝霧×${Math.round(belowFactor * 100) / 100}`])
     const aboveOrEqual = applyItemEffects('gained', 100, ['morningMist'], ctx({ combo: params.talismans.morningMist.c }), params)
     expect(aboveOrEqual.value).toBe(100 * params.talismans.morningMist.x)
-    expect(aboveOrEqual.parts).toEqual([`朝霧×${params.talismans.morningMist.x}`])
+    expect(aboveOrEqual.parts.map(p => p.text)).toEqual([`朝霧×${params.talismans.morningMist.x}`])
   })
 })

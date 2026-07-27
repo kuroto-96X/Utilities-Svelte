@@ -101,7 +101,7 @@ describe('applyDirectEffects', () => {
     }
     const result = applyDirectEffects('resetDirect', ['composure'], ctx, DEFAULT_PARAMS)
     expect(result.value).toBe(DEFAULT_PARAMS.talismans.composure.n)
-    expect(result.parts).toContain(`沈着+${DEFAULT_PARAMS.talismans.composure.n}`)
+    expect(result.parts.map(p => p.text)).toContain(`沈着+${DEFAULT_PARAMS.talismans.composure.n}`)
   })
 
   test('発動しなかった護符はpartsに含まれない', () => {
@@ -133,7 +133,7 @@ describe('applyDirectEffects', () => {
     }
     const result = applyDirectEffects('resetDirect', ['composure', 'clarity'], ctx, DEFAULT_PARAMS)
     expect(result.value).toBe(DEFAULT_PARAMS.talismans.composure.n + DEFAULT_PARAMS.talismans.clarity.n)
-    expect(result.parts).toContain(`沈着+${DEFAULT_PARAMS.talismans.composure.n}`)
-    expect(result.parts).toContain(`冷静+${DEFAULT_PARAMS.talismans.clarity.n}`)
+    expect(result.parts.map(p => p.text)).toContain(`沈着+${DEFAULT_PARAMS.talismans.composure.n}`)
+    expect(result.parts.map(p => p.text)).toContain(`冷静+${DEFAULT_PARAMS.talismans.clarity.n}`)
   })
 })

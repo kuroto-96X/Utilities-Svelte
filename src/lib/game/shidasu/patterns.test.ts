@@ -423,14 +423,14 @@ describe('evaluateChainBonus', () => {
   test('実カード2枚(3枚未満)ではまだ同スートボーナスは付かない', () => {
     const chainBefore = [card(1, '♠', 5)]
     const result = evaluateChainBonus(scoring, chainBefore, card(2, '♠', 6))
-    expect(result.parts.some(p => p.startsWith('同スート'))).toBe(false)
+    expect(result.parts.some(p => p.text.startsWith('同スート'))).toBe(false)
   })
 
   test('実カード3枚以上になった瞬間から同スートボーナスが付く', () => {
     const chainBefore = [card(1, '♠', 5), card(2, '♠', 6)]
     const result = evaluateChainBonus(scoring, chainBefore, card(3, '♠', 7))
     expect(result.bonus).toBe(scoring.suitBonus)
-    expect(result.parts).toEqual([`同スート+${scoring.suitBonus}`])
+    expect(result.parts.map(p => p.text)).toEqual([`同スート+${scoring.suitBonus}`])
   })
 
   test('新たに加えたカード自身がワイルドの場合も母数に含める(3枚以上なら同スートボーナスが付く)', () => {
@@ -438,97 +438,97 @@ describe('evaluateChainBonus', () => {
     const result = evaluateChainBonus(scoring, chainBefore, card(3, '★', 0, true))
     // ワイルド自身も母数に含めるため、実カード2枚+ワイルド1枚=3枚として同スートボーナスが成立する
     // (ワイルドをプレイすると同ランクボーナスも同時に発生するため、部分一致で検証する)
-    expect(result.parts).toContain(`同スート+${scoring.suitBonus}`)
+    expect(result.parts.map(p => p.text)).toContain(`同スート+${scoring.suitBonus}`)
   })
 
   test('3枚全てワイルドでも母数を満たせば都合よく同スートボーナスが成立する', () => {
     const chainBefore = [card(1, '★', 0, true), card(2, '★', 0, true)]
     const result = evaluateChainBonus(scoring, chainBefore, card(3, '★', 0, true))
-    expect(result.parts).toContain(`同スート+${scoring.suitBonus}`)
+    expect(result.parts.map(p => p.text)).toContain(`同スート+${scoring.suitBonus}`)
   })
 
   test('コンボ中に一度スートが崩れたら、以降同スートが来てもsuitBonusは付かない', () => {
     const chainBefore = [card(1, '♠', 5), card(2, '♥', 6), card(3, '♠', 7)] // 1枚目→2枚目でスート崩壊済み、3枚目は直前(2枚目...)
     const result = evaluateChainBonus(scoring, chainBefore, card(4, '♠', 8))
-    expect(result.parts.some(p => p.startsWith('同スート'))).toBe(false)
+    expect(result.parts.some(p => p.text.startsWith('同スート'))).toBe(false)
   })
 
   test('基本ルールでは階段は既定のstairMinLen(5)未満だとstairBonusが付かない', () => {
     const chainBefore = [card(1, '♠', 5), card(2, '♣', 6)]
     const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 7))
     // 5→6→7で長さ3、既定のstairMinLen(5)未満のためstairBonusは付かない
-    expect(result.parts.some(p => p.startsWith('階段'))).toBe(false)
+    expect(result.parts.some(p => p.text.startsWith('階段'))).toBe(false)
   })
 
   test('階段が既定のstairMinLen(5)以上続けばstairBonusが付く', () => {
     const chainBefore = [card(1, '♠', 3), card(2, '♣', 4), card(3, '♦', 5), card(4, '♠', 6)]
     const result = evaluateChainBonus(scoring, chainBefore, card(5, '♣', 7))
-    expect(result.parts).toContain(`階段5 +${scoring.stairBonus}`)
+    expect(result.parts.map(p => p.text)).toContain(`階段5 +${scoring.stairBonus}`)
   })
 
   test('stairMinLenを明示的に指定すると(架橋の護符相当)その値で判定される', () => {
     const chainBefore = [card(1, '♠', 5), card(2, '♣', 6)]
     const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 7), 3)
-    expect(result.parts).toContain(`階段3 +${scoring.stairBonus}`)
+    expect(result.parts.map(p => p.text)).toContain(`階段3 +${scoring.stairBonus}`)
   })
 
   test('ワイルドで橋渡しされた階段もstairBonusの対象になる', () => {
     const chainBefore = [card(1, '♠', 5), card(2, '★', 0, true)]
     const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 7), 3)
     // 5→(ワイルド=6扱い)→7で長さ3、stairMinLen=3(架橋の護符相当)で成立
-    expect(result.parts).toContain(`階段3 +${scoring.stairBonus}`)
+    expect(result.parts.map(p => p.text)).toContain(`階段3 +${scoring.stairBonus}`)
   })
 
   test('直近4枚で4スート揃うとflushBonusが付く', () => {
     const chainBefore = [card(1, '♦', 3), card(2, '♠', 5), card(3, '♣', 9)]
     const result = evaluateChainBonus(scoring, chainBefore, card(4, '♥', 2))
-    expect(result.parts).toContain(`フラッシュ+${scoring.flushBonus}`)
+    expect(result.parts.map(p => p.text)).toContain(`フラッシュ+${scoring.flushBonus}`)
   })
 
   test('直近3枚でJQK揃うとroyalSetBonusが付く', () => {
     const chainBefore = [card(1, '♠', 13), card(2, '♥', 11)]
     const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 12))
-    expect(result.parts).toContain(`ロイヤル+${scoring.royalSetBonus}`)
+    expect(result.parts.map(p => p.text)).toContain(`ロイヤル+${scoring.royalSetBonus}`)
   })
 
   test('同ランクが既に2枚あれば sameRankBonusUnit×2 が付く', () => {
     const chainBefore = [card(1, '♠', 5), card(2, '♥', 5)]
     const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 5))
-    expect(result.parts).toContain(`同ランク+${scoring.sameRankBonusUnit * 2}`)
+    expect(result.parts.map(p => p.text)).toContain(`同ランク+${scoring.sameRankBonusUnit * 2}`)
   })
 
   test('チェーン内にワイルドが含まれる場合、同ランクボーナスにワイルドの枚数分も加算される', () => {
     const chainBefore = [card(1, '♠', 5), card(2, '★', 0, true)]
     const result = evaluateChainBonus(scoring, chainBefore, card(3, '♥', 5))
     // 実カード1枚(5)+ワイルド1枚 = 2枚扱い
-    expect(result.parts).toContain(`同ランク+${scoring.sameRankBonusUnit * 2}`)
+    expect(result.parts.map(p => p.text)).toContain(`同ランク+${scoring.sameRankBonusUnit * 2}`)
   })
 
   test('ワイルド自身をプレイした場合、既発生の最大同ランク数+1枚として同ランクボーナスが発生する', () => {
     const chainBefore = [card(1, '♠', 5), card(2, '♥', 5), card(3, '♦', 3), card(4, '♣', 3)]
     // 5が2枚・3が2枚 → 既発生の最大枚数は2、ワイルドは2+1=3枚分として発生
     const result = evaluateChainBonus(scoring, chainBefore, card(5, '★', 0, true))
-    expect(result.parts).toContain(`同ランク+${scoring.sameRankBonusUnit * 3}`)
+    expect(result.parts.map(p => p.text)).toContain(`同ランク+${scoring.sameRankBonusUnit * 3}`)
   })
 
   test('チェーン内に同ランクの重複が無い状態でワイルドをプレイすると2枚分として発生する', () => {
     const chainBefore = [card(1, '♠', 5), card(2, '♥', 3), card(3, '♦', 7)] // 全て異なるランク
     const result = evaluateChainBonus(scoring, chainBefore, card(4, '★', 0, true))
-    expect(result.parts).toContain(`同ランク+${scoring.sameRankBonusUnit * 2}`)
+    expect(result.parts.map(p => p.text)).toContain(`同ランク+${scoring.sameRankBonusUnit * 2}`)
   })
 
   test('13ランクが揃った瞬間にcompleteRunBonusが付く(同スートでなければ追加ボーナスなし)', () => {
     const chainBefore = Array.from({ length: 12 }, (_, i) => card(i + 1, i % 2 === 0 ? '♠' : '♥', (i + 1) as Card['rank']))
     const result = evaluateChainBonus(scoring, chainBefore, card(13, '♦', 13))
-    expect(result.parts).toContain(`コンプリートラン+${scoring.completeRunBonus}`)
-    expect(result.parts.some(p => p.includes('コンプリートラン(同スート)'))).toBe(false)
+    expect(result.parts.map(p => p.text)).toContain(`コンプリートラン+${scoring.completeRunBonus}`)
+    expect(result.parts.some(p => p.text.includes('コンプリートラン(同スート)'))).toBe(false)
   })
 
   test('13ランクが全て同じスートで揃うとcompleteRunSuitBonusも追加で付く', () => {
     const chainBefore = Array.from({ length: 12 }, (_, i) => card(i + 1, '♠', (i + 1) as Card['rank']))
     const result = evaluateChainBonus(scoring, chainBefore, card(13, '♠', 13))
-    expect(result.parts).toContain(`コンプリートラン+${scoring.completeRunBonus}`)
-    expect(result.parts).toContain(`コンプリートラン(同スート)+${scoring.completeRunSuitBonus}`)
+    expect(result.parts.map(p => p.text)).toContain(`コンプリートラン+${scoring.completeRunBonus}`)
+    expect(result.parts.map(p => p.text)).toContain(`コンプリートラン(同スート)+${scoring.completeRunSuitBonus}`)
   })
 
   test('roleFiredの各要素は実際の加点額(amount)を持つ', () => {
@@ -559,7 +559,7 @@ describe('evaluateChainBonus', () => {
     // 実カード2枚(同スート)のみ。既定のsuitColorMinLen(3)では不成立だが、2を渡すと成立する。
     const chainBefore = [card(20, '♠', 3)]
     const result = evaluateChainBonus(DEFAULT_PARAMS.scoring, chainBefore, card(21, '♠', 4), undefined, undefined, 2)
-    expect(result.parts).toContain(`同スート+${DEFAULT_PARAMS.scoring.suitBonus}`)
+    expect(result.parts.map(p => p.text)).toContain(`同スート+${DEFAULT_PARAMS.scoring.suitBonus}`)
   })
 
   test('同スート・階段が同時成立すると、patternFiredCountが2になる', () => {
@@ -567,8 +567,8 @@ describe('evaluateChainBonus', () => {
     // stairMinLenを3に指定して3枚でも階段ボーナスが成立するようにする。
     const chainBefore = [card(20, '♠', 3), card(21, '♠', 4)]
     const result = evaluateChainBonus(DEFAULT_PARAMS.scoring, chainBefore, card(22, '♠', 5), 3)
-    expect(result.parts).toContain(`同スート+${DEFAULT_PARAMS.scoring.suitBonus}`)
-    expect(result.parts.some(p => p.startsWith('階段'))).toBe(true)
+    expect(result.parts.map(p => p.text)).toContain(`同スート+${DEFAULT_PARAMS.scoring.suitBonus}`)
+    expect(result.parts.some(p => p.text.startsWith('階段'))).toBe(true)
     expect(result.patternFiredCount).toBe(2)
   })
 

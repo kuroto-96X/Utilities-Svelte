@@ -19,8 +19,8 @@ describe('applyItemEffects', () => {
     expect(order1.value).not.toBe(order2.value)
     expect(order1.value).toBe((1000 + params.talismans.purify.n) * (1 + 4 * params.talismans.temperance.x))
     expect(order2.value).toBe(1000 * (1 + 4 * params.talismans.temperance.x) + params.talismans.purify.n)
-    expect(order1.parts).toEqual([`浄化+${params.talismans.purify.n}`, `節制×${1 + 4 * params.talismans.temperance.x}`])
-    expect(order2.parts).toEqual([`節制×${1 + 4 * params.talismans.temperance.x}`, `浄化+${params.talismans.purify.n}`])
+    expect(order1.parts.map(p => p.text)).toEqual([`浄化+${params.talismans.purify.n}`, `節制×${1 + 4 * params.talismans.temperance.x}`])
+    expect(order2.parts.map(p => p.text)).toEqual([`節制×${1 + 4 * params.talismans.temperance.x}`, `浄化+${params.talismans.purify.n}`])
   })
 
   test('gainedチャンネルの護符はclearBonusチャンネル計算には適用されない', () => {

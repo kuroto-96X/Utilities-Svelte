@@ -377,8 +377,8 @@ describe('playCard', () => {
   test('lastGain.partsの先頭に基礎点の内訳が入り、コンボ1(倍率1.1)でもコンボ倍率の内訳が表示される', () => {
     const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
-    expect(next.lastGain?.parts[0]).toBe(`基礎点+${scoring.basePoint}`)
-    expect(next.lastGain?.parts).toContain('コンボ倍率×1.1')
+    expect(next.lastGain?.parts[0].text).toBe(`基礎点+${scoring.basePoint}`)
+    expect(next.lastGain?.parts.map(p => p.text)).toContain('コンボ倍率×1.1')
   })
 
   test('コンボ2(倍率1+0.2=1.2)で加点される(パターン不一致の場合)', () => {
@@ -401,7 +401,7 @@ describe('playCard', () => {
     expect(next.combo).toBe(2)
     // 6→7は階段方向+1・長さ2(既定stairMinLen=5未満でボーナスなし)、スート♣→♦で色も違う→パターンボーナス0
     expect(next.score).toBe(afterFirst.score + Math.floor(scoring.basePoint * 1.2))
-    expect(next.lastGain?.parts).toContain('コンボ倍率×1.2')
+    expect(next.lastGain?.parts.map(p => p.text)).toContain('コンボ倍率×1.2')
   })
 
   test('基本ルール: 列の全カードを1コンボで空にすると列一掃ボーナスが加算される(1列目)', () => {
@@ -412,7 +412,7 @@ describe('playCard', () => {
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.columnsEmptiedThisCombo).toBe(1)
     expect(next.score).toBe(Math.floor((scoring.basePoint + scoring.columnSweepBonus * 1) * 1.1))
-    expect(next.lastGain?.parts).toContain(`列一掃+${scoring.columnSweepBonus}`)
+    expect(next.lastGain?.parts.map(p => p.text)).toContain(`列一掃+${scoring.columnSweepBonus}`)
   })
 
   test('基本ルール: 列が現在の連続コンボ開始時点で全カードでなければ(=既に一部消化済みなら)列一掃ボーナスは付かない', () => {
@@ -422,7 +422,7 @@ describe('playCard', () => {
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     expect(next.columnsEmptiedThisCombo).toBe(0)
-    expect(next.lastGain?.parts.some(p => p.startsWith('列一掃'))).toBe(false)
+    expect(next.lastGain?.parts.some(p => p.text.startsWith('列一掃'))).toBe(false)
   })
 
   test('寛容の護符所持時: 列一掃の条件が「残りrows-talismans.grace.m枚以下から1コンボで空に」に緩和される', () => {
@@ -432,7 +432,7 @@ describe('playCard', () => {
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['grace'], 1000000, 0, standardDeckComposition())
     expect(next.columnsEmptiedThisCombo).toBe(1)
-    expect(next.lastGain?.parts).toContain(`列一掃+${scoring.columnSweepBonus}`)
+    expect(next.lastGain?.parts.map(p => p.text)).toContain(`列一掃+${scoring.columnSweepBonus}`)
   })
 
   test('寛容の護符: 列一掃ボーナスに必要な枚数がtalismans.grace.m枚緩和される', () => {
@@ -444,7 +444,7 @@ describe('playCard', () => {
       comboStreakColumnLengths: [relaxedLen],
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
-    expect(next.lastGain?.parts.some(p => p.startsWith('列一掃'))).toBe(true)
+    expect(next.lastGain?.parts.some(p => p.text.startsWith('列一掃'))).toBe(true)
   })
 
   test('暗雲の護符所持時: 配布行数が増えていても、その行数分を1コンボで空にすれば列一掃ボーナスが成立する(バグ回帰テスト)', () => {
@@ -457,7 +457,7 @@ describe('playCard', () => {
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
     expect(next.columnsEmptiedThisCombo).toBe(1)
-    expect(next.lastGain?.parts).toContain(`列一掃+${scoring.columnSweepBonus}`)
+    expect(next.lastGain?.parts.map(p => p.text)).toContain(`列一掃+${scoring.columnSweepBonus}`)
   })
 
   test('同じコンボ内で2列目を空にすると列一掃ボーナスが列数倍になる', () => {
@@ -469,7 +469,7 @@ describe('playCard', () => {
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 1, standardDeckComposition())
     expect(next.columnsEmptiedThisCombo).toBe(2)
-    expect(next.lastGain?.parts).toContain(`列一掃+${scoring.columnSweepBonus * 2}`)
+    expect(next.lastGain?.parts.map(p => p.text)).toContain(`列一掃+${scoring.columnSweepBonus * 2}`)
   })
 
   test('場札が0枚になったら全消しボーナス(clearBonus+残り山札×clearBonusPerStock)が加算されendReason=fullClear', () => {
@@ -496,12 +496,12 @@ describe('playCard', () => {
     const expectedClearBonus = scoring.clearBonus + 2 * scoring.clearBonusPerStock
     const expectedPlayGain = Math.floor((scoring.basePoint + scoring.columnSweepBonus * 1) * 1.1)
     expect(next.lastGain?.points).toBe(expectedPlayGain)
-    expect(next.lastGain?.parts).not.toContain(`全消しボーナス+${expectedClearBonus}`)
+    expect(next.lastGain?.parts.map(p => p.text)).not.toContain(`全消しボーナス+${expectedClearBonus}`)
     expect(next.lastBonusGains).toHaveLength(1)
     expect(next.lastBonusGains[0].label).toBe('全消しボーナス')
     expect(next.lastBonusGains[0].points).toBe(expectedClearBonus)
-    expect(next.lastBonusGains[0].parts).toContain(`基礎+${scoring.clearBonus}`)
-    expect(next.lastBonusGains[0].parts).toContain(`山札残数+${2 * scoring.clearBonusPerStock}`)
+    expect(next.lastBonusGains[0].parts.map(p => p.text)).toContain(`基礎+${scoring.clearBonus}`)
+    expect(next.lastBonusGains[0].parts.map(p => p.text)).toContain(`山札残数+${2 * scoring.clearBonusPerStock}`)
     expect(next.score).toBe(expectedPlayGain + expectedClearBonus)
   })
 
@@ -519,7 +519,7 @@ describe('playCard', () => {
     expect(next.lastBonusGains).toHaveLength(1)
     expect(next.lastBonusGains[0].label).toBe('護符による直接加算')
     expect(next.lastBonusGains[0].points).toBe(expectedBonus)
-    expect(next.lastBonusGains[0].parts).toContain(`流星+${expectedBonus}`)
+    expect(next.lastBonusGains[0].parts.map(p => p.text)).toContain(`流星+${expectedBonus}`)
     // 回帰防止: 流星の加算額がlastGainとlastBonusGainsの両方に二重計上されていないことを確認する。
     const bonusTotal = next.lastBonusGains.reduce((sum, g) => sum + g.points, 0)
     expect((next.lastGain?.points ?? 0) + bonusTotal).toBe(next.score - wave.score)
@@ -535,7 +535,7 @@ describe('playCard', () => {
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 100000000, 0, standardDeckComposition())
     expect(next.combo).toBe(c + 1)
-    expect(next.lastBonusGains.some(g => g.parts.some(p => p.startsWith('流星')))).toBe(true)
+    expect(next.lastBonusGains.some(g => g.parts.some(p => p.text.startsWith('流星')))).toBe(true)
   })
 
   test('流星の護符: 既に閾値以上の状態が続いている間は再発動しない', () => {
@@ -548,7 +548,7 @@ describe('playCard', () => {
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 100000000, 0, standardDeckComposition())
     expect(next.combo).toBe(c + 1)
-    expect(next.lastBonusGains.some(g => g.parts.some(p => p.startsWith('流星')))).toBe(false)
+    expect(next.lastBonusGains.some(g => g.parts.some(p => p.text.startsWith('流星')))).toBe(false)
   })
 
   test('スコアが目標に達したらendReason=targetでstatus=ended', () => {
@@ -610,7 +610,7 @@ describe('playCard', () => {
       tableau: [[card(9, '♠', 1), card(1, '♦', 6)], [card(2, '♥', 2)]],
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
-    expect(next.lastGain?.parts.some(p => p.startsWith('階段'))).toBe(false)
+    expect(next.lastGain?.parts.some(p => p.text.startsWith('階段'))).toBe(false)
   })
 
   test('架橋の護符を持っていれば、階段成立に必要な最小連続枚数がstairRelaxedMinLen(3)に緩和される', () => {
@@ -620,7 +620,7 @@ describe('playCard', () => {
       tableau: [[card(9, '♠', 1), card(1, '♦', 6)], [card(2, '♥', 2)]],
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['bridge'], 1000000, 0, standardDeckComposition())
-    expect(next.lastGain?.parts).toContain(`階段3 +${scoring.stairBonus}`)
+    expect(next.lastGain?.parts.map(p => p.text)).toContain(`階段3 +${scoring.stairBonus}`)
   })
 
   test('架橋の護符: 階段成立に必要な枚数がm枚緩和される(既定m=2で5→3)', () => {
@@ -634,7 +634,7 @@ describe('playCard', () => {
       tableau: [[card(1, '♥', 5)], [card(2, '♦', 2)]],
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
-    expect(next.lastGain?.parts.some(p => p.startsWith('階段'))).toBe(true)
+    expect(next.lastGain?.parts.some(p => p.text.startsWith('階段'))).toBe(true)
   })
 
   test('架橋の護符: 同スート成立に必要な枚数もm枚緩和される(既定m=2で3→1)', () => {
@@ -648,7 +648,7 @@ describe('playCard', () => {
       tableau: [[card(1, '♠', 6)], [card(2, '♦', 2)]],
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
-    expect(next.lastGain?.parts).toContain(`同スート+${DEFAULT_PARAMS.scoring.suitBonus}`)
+    expect(next.lastGain?.parts.map(p => p.text)).toContain(`同スート+${DEFAULT_PARAMS.scoring.suitBonus}`)
   })
 
   test('gainedチャンネルの護符(springBreeze)は♣を取った時、得点に加算される', () => {
@@ -1078,8 +1078,8 @@ describe('playCard', () => {
       sowiloBoostedRole: null,
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
-    expect(next.lastGain?.parts).toContain(`コンプリートラン+${scoring.completeRunBonus * DEFAULT_PARAMS.rites.sowilo.x}`)
-    expect(next.lastGain?.parts).toContain(`コンプリートラン(同スート)+${scoring.completeRunSuitBonus * DEFAULT_PARAMS.rites.sowilo.x}`)
+    expect(next.lastGain?.parts.map(p => p.text)).toContain(`コンプリートラン+${scoring.completeRunBonus * DEFAULT_PARAMS.rites.sowilo.x}`)
+    expect(next.lastGain?.parts.map(p => p.text)).toContain(`コンプリートラン(同スート)+${scoring.completeRunSuitBonus * DEFAULT_PARAMS.rites.sowilo.x}`)
     expect(next.sowiloBoostedRole).toBe('completeRun')
   })
 
@@ -1152,7 +1152,7 @@ describe('playCard', () => {
       tableau: [[card(1, '♠', 6)], [card(2, '♦', 2)]],
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
-    expect(next.lastGain?.parts).toContain(`高潔+${DEFAULT_PARAMS.talismans.nobility.n}`)
+    expect(next.lastGain?.parts.map(p => p.text)).toContain(`高潔+${DEFAULT_PARAMS.talismans.nobility.n}`)
   })
 
   // playCard/drawStockのitemEffectCtx.playCountInChain計算式そのものを外部から観測して
@@ -1668,7 +1668,7 @@ describe('drawStock', () => {
     expect(result.wave.lastBonusGains).toHaveLength(1)
     const gain = result.wave.lastBonusGains[0]
     expect(gain?.points).toBe(2 * x)
-    expect(gain?.parts).toContain(`慢心+${2 * x}`)
+    expect(gain?.parts.map(p => p.text)).toContain(`慢心+${2 * x}`)
   })
 
   test('誠実(パターン継続時の直接加算)でスコアが目標に達したら即座にendReason=targetとなりウェーブが終了する', () => {
@@ -1840,7 +1840,7 @@ describe('drawStock', () => {
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition(), 'none')
     const remainingTableau = 2
     const expected = remainingTableau * DEFAULT_PARAMS.talismans.arrogance.x
-    expect(next.lastBonusGains.some(g => g.label === '護符による直接加算' && g.parts.includes(`慢心+${expected}`))).toBe(true)
+    expect(next.lastBonusGains.some(g => g.label === '護符による直接加算' && g.parts.map(p => p.text).includes(`慢心+${expected}`))).toBe(true)
     // 回帰防止: lastGainとlastBonusGainsの合計が実際のスコア増分と一致することを確認する(二重計上防止)。
     const bonusTotal = next.lastBonusGains.reduce((sum, g) => sum + g.points, 0)
     expect((next.lastGain?.points ?? 0) + bonusTotal).toBe(next.score - wave.score)
@@ -1861,8 +1861,8 @@ describe('drawStock', () => {
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition(), 'none')
     const entry = next.lastBonusGains.find(g => g.label === '護符による直接加算')
     expect(entry).toBeDefined()
-    expect(entry?.parts).toContain(`沈着+${DEFAULT_PARAMS.talismans.composure.n}`)
-    expect(entry?.parts).toContain(`冷静+${DEFAULT_PARAMS.talismans.clarity.n}`)
+    expect(entry?.parts.map(p => p.text)).toContain(`沈着+${DEFAULT_PARAMS.talismans.composure.n}`)
+    expect(entry?.parts.map(p => p.text)).toContain(`冷静+${DEFAULT_PARAMS.talismans.clarity.n}`)
     // 回帰防止: lastGainとlastBonusGainsの合計が実際のスコア増分と一致することを確認する(二重計上防止)。
     const bonusTotal = next.lastBonusGains.reduce((sum, g) => sum + g.points, 0)
     expect((next.lastGain?.points ?? 0) + bonusTotal).toBe(next.score - wave.score)
@@ -1881,7 +1881,7 @@ describe('drawStock', () => {
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition(), 'none')
     expect(next.lastDrawEffect).toBe('pattern')
-    expect(next.lastBonusGains.some(g => g.label === '護符による直接加算' && g.parts.includes(`誠実+${DEFAULT_PARAMS.talismans.sincerity.n}`))).toBe(true)
+    expect(next.lastBonusGains.some(g => g.label === '護符による直接加算' && g.parts.map(p => p.text).includes(`誠実+${DEFAULT_PARAMS.talismans.sincerity.n}`))).toBe(true)
     // 回帰防止: lastGainとlastBonusGainsの合計が実際のスコア増分と一致することを確認する(二重計上防止)。
     const bonusTotal = next.lastBonusGains.reduce((sum, g) => sum + g.points, 0)
     expect((next.lastGain?.points ?? 0) + bonusTotal).toBe(next.score - wave.score)
@@ -1905,7 +1905,7 @@ describe('drawStock', () => {
     // 誠実の直接加算がlastBonusGainsにも別枠で入っていることを確認する。
     expect(next.lastGain).not.toBeNull()
     expect(next.lastGain?.points).toBeGreaterThan(0)
-    expect(next.lastBonusGains.some(g => g.label === '護符による直接加算' && g.parts.includes(`誠実+${DEFAULT_PARAMS.talismans.sincerity.n}`))).toBe(true)
+    expect(next.lastBonusGains.some(g => g.label === '護符による直接加算' && g.parts.map(p => p.text).includes(`誠実+${DEFAULT_PARAMS.talismans.sincerity.n}`))).toBe(true)
     const bonusTotal = next.lastBonusGains.reduce((sum, g) => sum + g.points, 0)
     expect((next.lastGain?.points ?? 0) + bonusTotal).toBe(next.score - wave.score)
   })
@@ -3012,7 +3012,7 @@ describe('drawStock (素朴の得点ルール変更)', () => {
     expect(next.score).toBe(0) // 得点はロックされる
     expect(next.lastGain).not.toBeNull() // メッセージは欠落しない
     expect(next.lastGain?.points).toBe(0)
-    expect(next.lastGain?.parts).toContain('中凶: 獲得点0')
+    expect(next.lastGain?.parts.map(p => p.text)).toContain('中凶: 獲得点0')
   })
 
   test('素朴を持たない場合は、パターン継続めくりで得点もコンボ加算も発生しない(既存挙動)', () => {
@@ -3161,7 +3161,7 @@ describe('drawStock (素朴の得点ルール変更)', () => {
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition())
     expect(next.lastDrawEffect).toBe('pattern')
-    expect(next.lastGain?.parts.some(p => p.startsWith('序章'))).toBe(false)
+    expect(next.lastGain?.parts.some(p => p.text.startsWith('序章'))).toBe(false)
   })
 
   test('幕間は山札めくり(素朴)の獲得点計算では発動しない(isPlayActionガード)', () => {
@@ -3184,7 +3184,7 @@ describe('drawStock (素朴の得点ルール変更)', () => {
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition())
     expect(next.lastDrawEffect).toBe('pattern')
-    expect(next.lastGain?.parts.some(p => p.startsWith('幕間'))).toBe(false)
+    expect(next.lastGain?.parts.some(p => p.text.startsWith('幕間'))).toBe(false)
   })
 })
 
