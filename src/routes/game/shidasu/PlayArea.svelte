@@ -83,6 +83,8 @@
   const PART_FLYIN_LAND_SCALE = 12 / 14
   const TOTAL_PULSE_SCALE = 2.6
   const TOTAL_PULSE_MS = 300
+  const SCORE_NUMBER_PULSE_SCALE = 1.3
+  const SCORE_NUMBER_PULSE_MS = 200
   const SCORE_FLY_UP_MS = 200
   const SCORE_FLY_TO_SCORE_MS = 250
   const SCORE_FLY_UP_DISTANCE_PX = 40
@@ -115,11 +117,28 @@
   let partFlyIn = $state<PartFlyInState | null>(null)
   let displayedScore = $state(wave.score)
   let scoreNumberEl: HTMLDivElement | undefined = $state()
+  let scoreNumberScale = $state(1)
+  let scoreNumberTransitionMs = $state(0)
   let totalGainEl: HTMLSpanElement | undefined = $state()
   let breakdownRowEl: HTMLSpanElement | undefined = $state()
   let noPlayableHintEl: HTMLDivElement | undefined = $state()
 
   let scoreRevealTimer: ReturnType<typeof setTimeout> | undefined
+
+  let previousDisplayedScore = displayedScore
+  $effect(() => {
+    const current = displayedScore
+    if (current === previousDisplayedScore) return
+    previousDisplayedScore = current
+    scoreNumberScale = SCORE_NUMBER_PULSE_SCALE
+    scoreNumberTransitionMs = 0
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scoreNumberScale = 1
+        scoreNumberTransitionMs = SCORE_NUMBER_PULSE_MS
+      })
+    })
+  })
 
   function startScoreReveal(lastGain: ScoreGain | null, lastBonusGains: BonusGain[]) {
     const allParts = [...(lastGain?.parts ?? []), ...lastBonusGains.flatMap(g => g.parts)]
@@ -322,7 +341,11 @@
     <div class="mt-2 flex items-end justify-between">
       <div>
         <div class="text-xs text-emerald-300/70 tracking-widest">SCORE / TARGET</div>
-        <div bind:this={scoreNumberEl} class="text-xl font-black text-amber-50 tabular-nums">
+        <div
+          bind:this={scoreNumberEl}
+          class="text-xl font-black text-amber-50 tabular-nums ease-out"
+          style="transform: scale({scoreNumberScale}); transition-property: transform; transition-duration:{scoreNumberTransitionMs}ms;"
+        >
           {displayedScore} <span class="text-sm text-emerald-300/70">/ {target}</span>
         </div>
       </div>
@@ -416,7 +439,7 @@
   </div>
   <div
     bind:this={noPlayableHintEl}
-    class="text-center text-emerald-300/80 text-xs mt-16 animate-pulse {playableCols.size === 0 && wave.stock.length > 0 && remainingCards > 0 ? '' : 'invisible'}"
+    class="text-center text-emerald-300/80 text-xs mt-16 animate-pulse {playableCols.size === 0 && wave.stock.length > 0 && remainingCards > 0 && scoreReveal === null && partFlyIn === null ? '' : 'invisible'}"
   >取れる札がない → 山札をめくろう</div>
 </div>
 
@@ -514,6 +537,6 @@
 {#if partFlyIn}
   <div
     class="fixed pointer-events-none z-[110] ease-out text-emerald-200 text-sm font-bold"
-    style="left:{partFlyIn.left}px; top:{partFlyIn.top}px; transform: translate(-50%, -50%) scale({partFlyIn.scale}); transition-property: left, top, transform; transition-duration:{partFlyIn.transitionMs}ms;"
+    style="left:{partFlyIn.left}px; top:{partFlyIn.top}px; transform: translate({partFlyIn.phase === 'center' ? '-50%' : '0%'}, -50%) scale({partFlyIn.scale}); transition-property: left, top, transform; transition-duration:{partFlyIn.transitionMs}ms;"
   >{partFlyIn.text}</div>
 {/if}
