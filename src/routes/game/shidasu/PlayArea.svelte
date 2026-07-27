@@ -73,11 +73,11 @@
     clearTimeout(scoreRevealTimer)
   })
 
-  const PART_FLYIN_CENTER_MS = 150
-  const PART_FLYIN_MOVE_MS = 130
+  const PART_FLYIN_CENTER_MS = 300
+  const PART_FLYIN_MOVE_MS = 260
   const PART_FLYIN_SCALE = 2
-  const TOTAL_PULSE_SCALE = 1.3
-  const TOTAL_PULSE_MS = 150
+  const TOTAL_PULSE_SCALE = 2.6
+  const TOTAL_PULSE_MS = 300
   const SCORE_FLY_UP_MS = 200
   const SCORE_FLY_TO_SCORE_MS = 250
   const SCORE_FLY_UP_DISTANCE_PX = 40
@@ -111,7 +111,8 @@
   let displayedScore = $state(wave.score)
   let scoreNumberEl: HTMLDivElement | undefined = $state()
   let totalGainEl: HTMLSpanElement | undefined = $state()
-  let breakdownRowEl: HTMLDivElement | undefined = $state()
+  let breakdownRowEl: HTMLSpanElement | undefined = $state()
+  let noPlayableHintEl: HTMLDivElement | undefined = $state()
 
   let scoreRevealTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -146,25 +147,27 @@
   // index番目のパーツを、画面中央に拡大表示してから内訳行(breakdownRowEl)へ移動させる。
   function startPartFlyIn(index: number) {
     const part = scoreReveal?.parts[index]
-    if (!scoreReveal || !part || !breakdownRowEl) {
+    if (!scoreReveal || !part || !breakdownRowEl || !noPlayableHintEl) {
       if (scoreReveal) landPart(index)
       return
     }
+    const hintRect = noPlayableHintEl.getBoundingClientRect()
     partFlyIn = {
       text: part.text,
       phase: 'center',
-      left: window.innerWidth / 2,
-      top: window.innerHeight / 2,
+      left: hintRect.left + hintRect.width / 2,
+      top: hintRect.top + hintRect.height / 2,
       scale: PART_FLYIN_SCALE,
       transitionMs: 0,
     }
     scoreRevealTimer = setTimeout(() => {
-      if (!partFlyIn || !breakdownRowEl) return
+      if (!partFlyIn || !breakdownRowEl || !scoreReveal) return
       const rowRect = breakdownRowEl.getBoundingClientRect()
+      const landX = scoreReveal.revealedCount === 0 ? rowRect.left : rowRect.right
       partFlyIn = {
         ...partFlyIn,
         phase: 'toRow',
-        left: rowRect.left + rowRect.width / 2,
+        left: landX,
         top: rowRect.top + rowRect.height / 2,
         scale: 1,
         transitionMs: PART_FLYIN_MOVE_MS,
@@ -334,8 +337,8 @@
       : isLastLanded
         ? Math.floor(scoreReveal.runningTotals[scoreReveal.revealedCount - 1])
         : Math.round(scoreReveal.runningTotals[scoreReveal.revealedCount - 1])}
-    <div bind:this={breakdownRowEl} class="flex items-center justify-between text-sm h-5">
-      <span class="text-emerald-200 text-xs">{scoreReveal.parts.slice(0, scoreReveal.revealedCount).map(p => p.text).join(' ')}</span>
+    <div class="flex items-center justify-between text-sm h-5">
+      <span bind:this={breakdownRowEl} class="text-emerald-200 text-xs">{scoreReveal.parts.slice(0, scoreReveal.revealedCount).map(p => p.text).join(' ')}</span>
       <span
         bind:this={totalGainEl}
         class="text-yellow-300 font-black inline-block ease-out"
@@ -405,6 +408,7 @@
     {/each}
   </div>
   <div
+    bind:this={noPlayableHintEl}
     class="text-center text-emerald-300/80 text-xs mt-16 animate-pulse {playableCols.size === 0 && wave.stock.length > 0 && remainingCards > 0 ? '' : 'invisible'}"
   >取れる札がない → 山札をめくろう</div>
 </div>
