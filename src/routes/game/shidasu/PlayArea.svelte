@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
+  import { onDestroy } from 'svelte'
   import { getPlayableColumns, isPlayable, remainingCount } from '$lib/game/shidasu/engine'
   import type { WaveState, StageModifier, ItemId, RiteId, RevelationId, Card } from '$lib/game/shidasu/types'
   import type { ShidasuParams } from '$lib/game/shidasu/params'
@@ -62,8 +63,18 @@
   const ANIMATION_UP_MS = 150
   const ANIMATION_LEFT_MS = 200
 
+  let animationTimer1: ReturnType<typeof setTimeout> | undefined
+  let animationTimer2: ReturnType<typeof setTimeout> | undefined
+
+  onDestroy(() => {
+    clearTimeout(animationTimer1)
+    clearTimeout(animationTimer2)
+  })
+
   function startPlayCardAnimation(colIndex: number, rowIndex: number, card: Card) {
     if (playingAnimation) return
+    clearTimeout(animationTimer1)
+    clearTimeout(animationTimer2)
     if (!tableauEl || !chainAreaEl) {
       onPlayCard(colIndex, rowIndex)
       return
@@ -87,9 +98,11 @@
       transitionMs: ANIMATION_UP_MS,
     }
 
-    setTimeout(() => {
+    animationTimer1 = setTimeout(() => {
       if (!playingAnimation) return
       playingAnimation = { ...playingAnimation, phase: 'warp', left: warpLeft, top: targetTop, transitionMs: 0 }
+      // transitionMs:0でのスタイル変更をブラウザが実際に描画へ反映してから次のtransitionを開始するために2段rAFが必要。
+      // 1段のrAFだけだと同一フレーム内でスタイル変更がバッチ処理され、ワープにならずtransitionしてしまうブラウザがある。
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (!playingAnimation) return
@@ -98,7 +111,7 @@
       })
     }, ANIMATION_UP_MS)
 
-    setTimeout(() => {
+    animationTimer2 = setTimeout(() => {
       playingAnimation = null
       onPlayCard(colIndex, rowIndex)
     }, ANIMATION_UP_MS + ANIMATION_LEFT_MS)
