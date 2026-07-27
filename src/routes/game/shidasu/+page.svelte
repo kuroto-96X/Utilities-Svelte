@@ -17,7 +17,7 @@
   import { bossName, bossDesc } from '$lib/game/shidasu/bosses'
   import { itemDesc, itemName } from '$lib/game/shidasu/items'
   import { revelationDesc, revelationName } from '$lib/game/shidasu/revelations'
-  import { revelationNeedsTarget } from '$lib/game/shidasu/revelationEffects'
+  import { revelationNeedsTarget, canUseRevelation } from '$lib/game/shidasu/revelationEffects'
   import { oracleName, oracleDesc } from '$lib/game/shidasu/oracles'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
   import {
@@ -107,9 +107,8 @@
   }
 
   function handleUseRite(riteId: RiteId) {
-    if ((run.phase !== 'playing' && run.phase !== 'revelationSelect') || run.wave?.status !== 'playing') return
     run = useRite(params, run, riteId)
-    afterAction()
+    if (run.phase === 'playing') afterAction()
   }
 
   function handleDraw() {
@@ -495,7 +494,7 @@
                   購入({riteBuyPrice(params)})
                 </button>
               {:else if slot.kind === 'revelation'}
-                <button onclick={() => handleBuyIndividualRevelationUse(i, slot.id as RevelationId)} disabled={run.currency < revelationBuyPrice(params)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                <button onclick={() => handleBuyIndividualRevelationUse(i, slot.id as RevelationId)} disabled={run.currency < revelationBuyPrice(params) || !wave || !canUseRevelation(params, wave, slot.id as RevelationId)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
                   即使う({revelationBuyPrice(params)})
                 </button>
                 <button onclick={() => handleBuyIndividualRevelationHold(i)} disabled={run.revelations.length + run.oracles.length >= 2 || run.currency < revelationBuyPrice(params)} class="w-full px-2 py-1 rounded bg-slate-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">
@@ -539,9 +538,11 @@
             <button onclick={() => handleSellItem(itemId)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{itemId} 売({itemSellPrice(params, itemId)})</button>
           {/each}
           {#each run.rites as riteId}
+            <button onclick={() => handleUseRite(riteId)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{riteId} 使用</button>
             <button onclick={() => handleSellRite(riteId)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{riteId} 売({riteSellPrice(params)})</button>
           {/each}
           {#each run.revelations as revelationId}
+            <button onclick={() => handleUseRevelationClick(revelationId)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{revelationId} 使用</button>
             <button onclick={() => handleSellRevelation(revelationId)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{revelationId} 売({revelationSellPrice(params)})</button>
           {/each}
           {#each run.oracles as roleName}

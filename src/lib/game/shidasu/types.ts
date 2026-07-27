@@ -183,8 +183,8 @@ export interface WaveState {
   mannazActiveThisWave: boolean
   // エワズ用: そのウェーブが終わるまで、場札の許容ランク差を2まで拡張するか
   ehwazActiveThisWave: boolean
-  // 神託用: ウェーブ開始時点の各役のレベル(ラン全体で持続。ウェーブ中は不変)。
-  // 得点計算時、各役の基礎点にこのレベルを乗算する(patterns.ts・engine.ts参照)
+  // 神託用: 各役のレベル(ラン全体で持続)。useOracleでプレイ中いつでも加算されうるため、
+  // ウェーブ中も変化しうる。得点計算時、各役の基礎点にこのレベルを乗算する(patterns.ts・engine.ts参照)
   oracleLevels: Record<RoleName, number>
 }
 

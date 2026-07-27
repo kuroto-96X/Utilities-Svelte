@@ -1165,7 +1165,7 @@ export function buyIndividualRevelationHold(params: ShidasuParams, run: RunState
   return { ...run, currency: run.currency - price, revelations: [...run.revelations, revelationId], shop: { ...run.shop, individual } }
 }
 
-// バラ売り神託・即使う。役レベル+1をrun/wave両方に反映する(pickOracleFromOfferと同じ同期が必要)。上限とは無関係に常に購入可。
+// バラ売り神託・即使う。役レベル+1をrun/wave両方に反映する(pickPackOracleUseと同じ同期が必要)。上限とは無関係に常に購入可。
 export function buyIndividualOracleUse(params: ShidasuParams, run: RunState, slotIndex: number): RunState {
   if (run.phase !== 'shop' || !run.shop) return run
   const slot = run.shop.individual[slotIndex]
