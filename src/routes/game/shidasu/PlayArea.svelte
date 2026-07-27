@@ -73,7 +73,11 @@
     clearTimeout(scoreRevealTimer)
   })
 
-  const SCORE_PART_REVEAL_MS = 280
+  const PART_FLYIN_CENTER_MS = 150
+  const PART_FLYIN_MOVE_MS = 130
+  const PART_FLYIN_SCALE = 2
+  const TOTAL_PULSE_SCALE = 1.3
+  const TOTAL_PULSE_MS = 150
   const SCORE_FLY_UP_MS = 200
   const SCORE_FLY_TO_SCORE_MS = 250
   const SCORE_FLY_UP_DISTANCE_PX = 40
@@ -84,6 +88,8 @@
     runningTotals: number[]
     revealedCount: number
     totalGain: number
+    totalScale: number
+    totalTransitionMs: number
     flyPhase: 'none' | 'up' | 'toScore'
     flyLeft: number
     flyTop: number
@@ -91,10 +97,21 @@
     flyTransitionMs: number
   }
 
+  interface PartFlyInState {
+    text: string
+    phase: 'center' | 'toRow'
+    left: number
+    top: number
+    scale: number
+    transitionMs: number
+  }
+
   let scoreReveal = $state<ScoreRevealState | null>(null)
+  let partFlyIn = $state<PartFlyInState | null>(null)
   let displayedScore = $state(wave.score)
   let scoreNumberEl: HTMLDivElement | undefined = $state()
   let totalGainEl: HTMLSpanElement | undefined = $state()
+  let breakdownRowEl: HTMLDivElement | undefined = $state()
 
   let scoreRevealTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -110,29 +127,69 @@
     scoreReveal = {
       parts: allParts,
       runningTotals,
-      revealedCount: 1,
+      revealedCount: 0,
       totalGain,
+      totalScale: 1,
+      totalTransitionMs: 0,
       flyPhase: 'none',
       flyLeft: 0,
       flyTop: 0,
       flyScale: 1,
       flyTransitionMs: 0,
     }
-    if (allParts.length === 1) {
-      // パーツが1つだけの地味なプレイは、DOMの初回描画を待ってから即座に飛び込みアニメへ進む
-      // (bind:thisで参照するtotalGainElが、直前のscoreReveal代入によってまだDOMに描画されていない
-      // 可能性があるため、tick()でSvelteの描画反映を待つ)
-      tick().then(() => startScoreFly())
-    } else {
-      scoreRevealTimer = setTimeout(revealNextScorePart, SCORE_PART_REVEAL_MS)
-    }
+    // 内訳行(breakdownRowEl)がDOMに描画されるのを待ってから、1つ目のパーツの拡大表示を開始する。
+    // 直前のscoreReveal代入だけではSvelteの描画がまだ反映されていない可能性があるため、
+    // tick()で描画反映を待つ(既存のカード移動アニメ・SCORE飛び込みアニメと同じ考え方)。
+    tick().then(() => startPartFlyIn(0))
   }
 
-  function revealNextScorePart() {
+  // index番目のパーツを、画面中央に拡大表示してから内訳行(breakdownRowEl)へ移動させる。
+  function startPartFlyIn(index: number) {
+    const part = scoreReveal?.parts[index]
+    if (!scoreReveal || !part || !breakdownRowEl) {
+      if (scoreReveal) landPart(index)
+      return
+    }
+    partFlyIn = {
+      text: part.text,
+      phase: 'center',
+      left: window.innerWidth / 2,
+      top: window.innerHeight / 2,
+      scale: PART_FLYIN_SCALE,
+      transitionMs: 0,
+    }
+    scoreRevealTimer = setTimeout(() => {
+      if (!partFlyIn || !breakdownRowEl) return
+      const rowRect = breakdownRowEl.getBoundingClientRect()
+      partFlyIn = {
+        ...partFlyIn,
+        phase: 'toRow',
+        left: rowRect.left + rowRect.width / 2,
+        top: rowRect.top + rowRect.height / 2,
+        scale: 1,
+        transitionMs: PART_FLYIN_MOVE_MS,
+      }
+      scoreRevealTimer = setTimeout(() => landPart(index), PART_FLYIN_MOVE_MS)
+    }, PART_FLYIN_CENTER_MS)
+  }
+
+  // index番目のパーツを内訳行に確定表示し、合計値の強調(パルス)を行う。
+  // 次のパーツがあれば続けてstartPartFlyInを呼び、無ければSCOREへの飛び込み演出へ進む。
+  function landPart(index: number) {
     if (!scoreReveal) return
-    if (scoreReveal.revealedCount < scoreReveal.parts.length) {
-      scoreReveal = { ...scoreReveal, revealedCount: scoreReveal.revealedCount + 1 }
-      scoreRevealTimer = setTimeout(revealNextScorePart, SCORE_PART_REVEAL_MS)
+    partFlyIn = null
+    scoreReveal = { ...scoreReveal, revealedCount: index + 1, totalScale: TOTAL_PULSE_SCALE, totalTransitionMs: 0 }
+    // transitionMs:0でのスタイル変更をブラウザが実際に描画へ反映してから次のtransitionを開始するために
+    // 2段rAFが必要。1段のrAFだけだと同一フレーム内でスタイル変更がバッチ処理され、
+    // 拡大→元のサイズへの戻りがtransitionせず一瞬で切り替わってしまうブラウザがある。
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!scoreReveal) return
+        scoreReveal = { ...scoreReveal, totalScale: 1, totalTransitionMs: TOTAL_PULSE_MS }
+      })
+    })
+    if (index + 1 < scoreReveal.parts.length) {
+      startPartFlyIn(index + 1)
     } else {
       startScoreFly()
     }
@@ -271,22 +328,30 @@
     <div class="h-full bg-gradient-to-r from-yellow-500 to-yellow-300 transition-all duration-300" style="width:{Math.min(100, (wave.score / target) * 100)}%"></div>
   </div>
   {#if scoreReveal}
-    <div class="text-right text-sm h-5">
-      {#if scoreReveal.flyPhase === 'none'}
-        {@const isLastPart = scoreReveal.revealedCount === scoreReveal.parts.length}
-        {@const displayedRunningTotal = isLastPart ? Math.floor(scoreReveal.runningTotals[scoreReveal.revealedCount - 1]) : Math.round(scoreReveal.runningTotals[scoreReveal.revealedCount - 1])}
-        <span bind:this={totalGainEl} class="text-yellow-300 font-black">+{displayedRunningTotal}</span>
-        <span class="text-emerald-200 text-xs ml-2">{scoreReveal.parts.slice(0, scoreReveal.revealedCount).map(p => p.text).join(' ')}</span>
-      {/if}
+    {@const isLastLanded = scoreReveal.revealedCount === scoreReveal.parts.length}
+    {@const currentTotal = scoreReveal.revealedCount === 0
+      ? 0
+      : isLastLanded
+        ? Math.floor(scoreReveal.runningTotals[scoreReveal.revealedCount - 1])
+        : Math.round(scoreReveal.runningTotals[scoreReveal.revealedCount - 1])}
+    <div bind:this={breakdownRowEl} class="flex items-center justify-between text-sm h-5">
+      <span class="text-emerald-200 text-xs">{scoreReveal.parts.slice(0, scoreReveal.revealedCount).map(p => p.text).join(' ')}</span>
+      <span
+        bind:this={totalGainEl}
+        class="text-yellow-300 font-black inline-block ease-out"
+        style="transform: scale({scoreReveal.totalScale}); transition-property: transform; transition-duration:{scoreReveal.totalTransitionMs}ms;"
+      >+{currentTotal}</span>
     </div>
   {:else if wave.lastGain || wave.lastBonusGains.length > 0}
     {@const totalPoints = (wave.lastGain?.points ?? 0) + wave.lastBonusGains.reduce((sum, g) => sum + g.points, 0)}
     {@const allParts = [...(wave.lastGain?.parts ?? []), ...wave.lastBonusGains.flatMap(g => g.parts)]}
-    <div class="text-right text-sm h-5">
-      <span class="text-yellow-300 font-black">+{totalPoints}</span>
+    <div class="flex items-center justify-between text-sm h-5">
       {#if allParts.length > 0}
-        <span class="text-emerald-200 text-xs ml-2">{allParts.map(p => p.text).join(' ')}</span>
+        <span class="text-emerald-200 text-xs">{allParts.map(p => p.text).join(' ')}</span>
+      {:else}
+        <span></span>
       {/if}
+      <span class="text-yellow-300 font-black">+{totalPoints}</span>
     </div>
   {:else}
     <div class="h-5"></div>
@@ -433,4 +498,11 @@
     class="fixed pointer-events-none z-[100] ease-out text-yellow-300 font-black text-lg"
     style="left:{scoreReveal.flyLeft}px; top:{scoreReveal.flyTop}px; transform: scale({scoreReveal.flyScale}); transition-property: left, top, transform; transition-duration:{scoreReveal.flyTransitionMs}ms;"
   >+{scoreReveal.totalGain}</div>
+{/if}
+
+{#if partFlyIn}
+  <div
+    class="fixed pointer-events-none z-[110] ease-out text-emerald-200 text-sm font-bold"
+    style="left:{partFlyIn.left}px; top:{partFlyIn.top}px; transform: translate(-50%, -50%) scale({partFlyIn.scale}); transition-property: left, top, transform; transition-duration:{partFlyIn.transitionMs}ms;"
+  >{partFlyIn.text}</div>
 {/if}
