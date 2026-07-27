@@ -483,7 +483,7 @@
         <div class="grid grid-cols-3 gap-2">
           {#each run.shop.individual as slot, i}
             <div class="border border-slate-200 rounded-lg p-2 text-xs space-y-1">
-              <p class="font-semibold">
+              <p class="font-semibold text-slate-800">
                 {#if slot.kind === 'item'}
                   {itemName(slot.id as ItemId, params)}
                 {:else if slot.kind === 'rite'}
@@ -529,7 +529,7 @@
         <div class="grid grid-cols-2 gap-2">
           {#each run.shop.packs as slot, i}
             <div class="border border-slate-200 rounded-lg p-2 text-xs space-y-1">
-              <p class="font-semibold">{slot.packKind} {slot.offerCount}択{slot.pickCount}</p>
+              <p class="font-semibold text-slate-800">{slot.packKind} {slot.offerCount}択{slot.pickCount}</p>
               {#if slot.sold}
                 <p class="text-slate-400">売り切れ</p>
               {:else}
