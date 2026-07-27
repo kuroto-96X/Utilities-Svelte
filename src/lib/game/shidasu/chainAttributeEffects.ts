@@ -1,6 +1,7 @@
 // src/lib/game/shidasu/chainAttributeEffects.ts
 import type { Card, ItemId, Suit } from './types'
-import { isRed, isFace, analyzeSuitColor, analyzeStair, stairUsesKALoop, fmtMultiplier } from './patterns'
+import { isRed, isFace, analyzeSuitColor, analyzeStair, stairUsesKALoop } from './patterns'
+import { addPart, multiplyPart } from './scoreParts'
 import type { ItemEffect } from './itemEffects'
 
 function chainHasNoFace(chain: Card[]): boolean {
@@ -50,34 +51,34 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
   calm: {
     channel: 'gained',
     effect: (v, ctx, p) =>
-      chainHasNoFace(ctx.chain) ? { value: v + p.talismans.calm.n, part: `平穏+${p.talismans.calm.n}` } : { value: v, part: null },
+      chainHasNoFace(ctx.chain) ? { value: v + p.talismans.calm.n, part: addPart('平穏', p.talismans.calm.n) } : { value: v, part: null },
   },
   serenity: {
     channel: 'gained',
     effect: (v, ctx, p) => {
       if (!chainHasNoFace(ctx.chain)) return { value: v, part: null }
       const factor = p.talismans.serenity.x
-      return { value: v * factor, part: `安寧×${fmtMultiplier(factor)}` }
+      return { value: v * factor, part: multiplyPart('安寧', factor) }
     },
   },
   destiny: {
     channel: 'gained',
     effect: (v, ctx, p) =>
-      chainIsFaceOnly(ctx.chain) ? { value: v + p.talismans.destiny.n, part: `運命+${p.talismans.destiny.n}` } : { value: v, part: null },
+      chainIsFaceOnly(ctx.chain) ? { value: v + p.talismans.destiny.n, part: addPart('運命', p.talismans.destiny.n) } : { value: v, part: null },
   },
   fate: {
     channel: 'gained',
     effect: (v, ctx, p) => {
       if (!chainIsFaceOnly(ctx.chain)) return { value: v, part: null }
       const factor = p.talismans.fate.x
-      return { value: v * factor, part: `宿命×${fmtMultiplier(factor)}` }
+      return { value: v * factor, part: multiplyPart('宿命', factor) }
     },
   },
   relief: {
     channel: 'gained',
     effect: (v, ctx, p) =>
       ctx.card.wild || (ctx.card.rank >= 1 && ctx.card.rank <= 10)
-        ? { value: v + p.talismans.relief.n, part: `安堵+${p.talismans.relief.n}` }
+        ? { value: v + p.talismans.relief.n, part: addPart('安堵', p.talismans.relief.n) }
         : { value: v, part: null },
   },
   verdantGreen: {
@@ -85,7 +86,7 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
     effect: (v, ctx, p) => {
       if (!chainSuitExclusive(ctx.chain, '♣')) return { value: v, part: null }
       const factor = p.talismans.verdantGreen.x
-      return { value: v * factor, part: `深緑×${fmtMultiplier(factor)}` }
+      return { value: v * factor, part: multiplyPart('深緑', factor) }
     },
   },
   gem: {
@@ -93,7 +94,7 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
     effect: (v, ctx, p) => {
       if (!chainSuitExclusive(ctx.chain, '♦')) return { value: v, part: null }
       const factor = p.talismans.gem.x
-      return { value: v * factor, part: `宝石×${fmtMultiplier(factor)}` }
+      return { value: v * factor, part: multiplyPart('宝石', factor) }
     },
   },
   resolve: {
@@ -101,7 +102,7 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
     effect: (v, ctx, p) => {
       if (!chainSuitExclusive(ctx.chain, '♠')) return { value: v, part: null }
       const factor = p.talismans.resolve.x
-      return { value: v * factor, part: `真剣×${fmtMultiplier(factor)}` }
+      return { value: v * factor, part: multiplyPart('真剣', factor) }
     },
   },
   grail: {
@@ -109,7 +110,7 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
     effect: (v, ctx, p) => {
       if (!chainSuitExclusive(ctx.chain, '♥')) return { value: v, part: null }
       const factor = p.talismans.grail.x
-      return { value: v * factor, part: `聖杯×${fmtMultiplier(factor)}` }
+      return { value: v * factor, part: multiplyPart('聖杯', factor) }
     },
   },
   moonlight: {
@@ -117,7 +118,7 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
     effect: (v, ctx, p) => {
       if (!chainColorExclusive(ctx.chain, false)) return { value: v, part: null }
       const factor = p.talismans.moonlight.x
-      return { value: v * factor, part: `月光×${fmtMultiplier(factor)}` }
+      return { value: v * factor, part: multiplyPart('月光', factor) }
     },
   },
   sunlight: {
@@ -125,7 +126,7 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
     effect: (v, ctx, p) => {
       if (!chainColorExclusive(ctx.chain, true)) return { value: v, part: null }
       const factor = p.talismans.sunlight.x
-      return { value: v * factor, part: `陽光×${fmtMultiplier(factor)}` }
+      return { value: v * factor, part: multiplyPart('陽光', factor) }
     },
   },
   crown: {
@@ -134,7 +135,7 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
       const count = countRankInChain(ctx.chain, 13)
       if (count === 0) return { value: v, part: null }
       const factor = 1 + count * p.talismans.crown.x
-      return { value: v * factor, part: `王冠×${fmtMultiplier(factor)}` }
+      return { value: v * factor, part: multiplyPart('王冠', factor) }
     },
   },
   cloverLeaf: {
@@ -143,7 +144,7 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
       const count = countSuitInChain(ctx.chain, '♣')
       if (count === 0) return { value: v, part: null }
       const add = count * p.talismans.cloverLeaf.n
-      return { value: v + add, part: `青葉+${add}` }
+      return { value: v + add, part: addPart('青葉', add) }
     },
   },
   coin: {
@@ -152,7 +153,7 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
       const count = countSuitInChain(ctx.chain, '♦')
       if (count === 0) return { value: v, part: null }
       const add = count * p.talismans.coin.n
-      return { value: v + add, part: `硬貨+${add}` }
+      return { value: v + add, part: addPart('硬貨', add) }
     },
   },
   blade: {
@@ -161,7 +162,7 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
       const count = countSuitInChain(ctx.chain, '♠')
       if (count === 0) return { value: v, part: null }
       const add = count * p.talismans.blade.n
-      return { value: v + add, part: `武器+${add}` }
+      return { value: v + add, part: addPart('武器', add) }
     },
   },
   chalice: {
@@ -170,20 +171,20 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
       const count = countSuitInChain(ctx.chain, '♥')
       if (count === 0) return { value: v, part: null }
       const add = count * p.talismans.chalice.n
-      return { value: v + add, part: `献杯+${add}` }
+      return { value: v + add, part: addPart('献杯', add) }
     },
   },
   balance: {
     channel: 'gained',
     effect: (v, ctx, p) =>
-      redBlackBalanced(ctx.chain) ? { value: v + p.talismans.balance.n, part: `均衡+${p.talismans.balance.n}` } : { value: v, part: null },
+      redBlackBalanced(ctx.chain) ? { value: v + p.talismans.balance.n, part: addPart('均衡', p.talismans.balance.n) } : { value: v, part: null },
   },
   harmony: {
     channel: 'gained',
     effect: (v, ctx, p) => {
       if (!redBlackBalanced(ctx.chain)) return { value: v, part: null }
       const factor = p.talismans.harmony.x
-      return { value: v * factor, part: `調和×${fmtMultiplier(factor)}` }
+      return { value: v * factor, part: multiplyPart('調和', factor) }
     },
   },
   nobility: {
@@ -191,7 +192,7 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
     effect: (v, ctx, p) => {
       const { suitHeld } = analyzeSuitColor(ctx.chain)
       if (ctx.chain.length < ctx.effectiveSuitColorMinLen || !suitHeld) return { value: v, part: null }
-      return { value: v + p.talismans.nobility.n, part: `高潔+${p.talismans.nobility.n}` }
+      return { value: v + p.talismans.nobility.n, part: addPart('高潔', p.talismans.nobility.n) }
     },
   },
   tenacity: {
@@ -200,7 +201,7 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
       const { suitHeld } = analyzeSuitColor(ctx.chain)
       if (ctx.chain.length < ctx.effectiveSuitColorMinLen || !suitHeld) return { value: v, part: null }
       const factor = 1 + ctx.chain.length * p.talismans.tenacity.x
-      return { value: v * factor, part: `執念×${fmtMultiplier(factor)}` }
+      return { value: v * factor, part: multiplyPart('執念', factor) }
     },
   },
   determination: {
@@ -209,7 +210,7 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
       const stairInfo = analyzeStair(ctx.chain)
       if (!stairInfo.held || stairInfo.dir === 0 || stairInfo.len < ctx.effectiveStairMinLen) return { value: v, part: null }
       const factor = 1 + stairInfo.len * p.talismans.determination.x
-      return { value: v * factor, part: `覚悟×${fmtMultiplier(factor)}` }
+      return { value: v * factor, part: multiplyPart('覚悟', factor) }
     },
   },
   cycle: {
@@ -220,7 +221,7 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
       const aToK = matches(ctx.previousFoundation, 1) && matches(ctx.card, 13)
       if (!kToA && !aToK) return { value: v, part: null }
       const factor = p.talismans.cycle.x
-      return { value: v * factor, part: `循環×${fmtMultiplier(factor)}` }
+      return { value: v * factor, part: multiplyPart('循環', factor) }
     },
   },
   reincarnation: {
@@ -230,7 +231,7 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
       const completeRunFired = ctx.chainBonus.roleFired.some(r => r.name === 'completeRun')
       if (!completeRunFired || !stairInfo.held || stairInfo.dir === 0 || !stairUsesKALoop(ctx.chain)) return { value: v, part: null }
       const factor = p.talismans.reincarnation.x
-      return { value: v * factor, part: `輪廻×${fmtMultiplier(factor)}` }
+      return { value: v * factor, part: multiplyPart('輪廻', factor) }
     },
   },
   majesty: {
@@ -241,7 +242,7 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
       const completeRunFired = ctx.chainBonus.roleFired.some(r => r.name === 'completeRun')
       if (!completeRunFired || !stairInfo.held || stairInfo.dir === 0 || !suitHeld) return { value: v, part: null }
       const factor = p.talismans.majesty.x
-      return { value: v * factor, part: `威光×${fmtMultiplier(factor)}` }
+      return { value: v * factor, part: multiplyPart('威光', factor) }
     },
   },
 }

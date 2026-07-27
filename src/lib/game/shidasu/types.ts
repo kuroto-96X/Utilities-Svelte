@@ -1,4 +1,5 @@
 // src/lib/game/shidasu/types.ts
+import type { ScorePart } from './scoreParts'
 export type Suit = '♠' | '♥' | '♦' | '♣' | '★'
 export type Rank = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13
 export type StageModifier = 'none' | 'noLoop' | 'faceLock'
@@ -85,7 +86,7 @@ export interface DeckCard {
 
 export interface ScoreGain {
   points: number
-  parts: string[]
+  parts: ScorePart[]
 }
 
 // 全消しボーナス・護符による直接加算など、通常のプレイ得点(ScoreGain/lastGain)とは
@@ -93,7 +94,7 @@ export interface ScoreGain {
 export interface BonusGain {
   label: string
   points: number
-  parts: string[]
+  parts: ScorePart[]
 }
 
 export type WaveStatus = 'playing' | 'ended'

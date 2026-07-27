@@ -2,7 +2,8 @@
 import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, BossKind, BossTierKey, RunPhase, HeldRevelationOrOracleRef } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
-import { isFace, chainContinuesPattern, evaluateChainBonus, analyzeSuitColor, countSameRankBefore, countSameRankForWildPlay, fmtMultiplier } from './patterns'
+import { isFace, chainContinuesPattern, evaluateChainBonus, analyzeSuitColor, countSameRankBefore, countSameRankForWildPlay } from './patterns'
+import { addPart, multiplyPart, lockPart, type ScorePart } from './scoreParts'
 import { rollItemOffer } from './items'
 import { applyDirectEffects, type DirectEffectContext } from './directEffects'
 import { applyItemEffects, type ItemEffectContext } from './itemEffects'
@@ -351,12 +352,12 @@ export function playCard(
   // イサ(凍結)発動中は加算自体を行わない
   const newCombo = wave.comboFrozenThisWave ? wave.combo : wave.combo + (items.includes('golden') ? 2 : 1)
   let base = params.scoring.basePoint
-  const parts = [`基礎点+${base}`]
+  const parts: ScorePart[] = [addPart('基礎点', base)]
 
   // 水鏡: 前のプレイで予約された役ボーナスの遅延複製を無条件で上乗せする
   if (items.includes('mirror') && wave.pendingRoleEcho) {
     base += wave.pendingRoleEcho.amount
-    parts.push(`水鏡(${wave.pendingRoleEcho.name})+${wave.pendingRoleEcho.amount}`)
+    parts.push(addPart(`水鏡(${wave.pendingRoleEcho.name})`, wave.pendingRoleEcho.amount))
   }
 
   const effectiveStairMinLen = items.includes('bridge') ? params.scoring.stairMinLen - params.talismans.bridge.m : params.scoring.stairMinLen
@@ -406,7 +407,7 @@ export function playCard(
   if (sweepQualifies) {
     const sweepGain = Math.floor(params.scoring.columnSweepBonus * oracleLevel('columnSweep') * newColumnsEmptied * roleBonusMultiplier('columnSweep'))
     base += sweepGain
-    parts.push(`列一掃+${sweepGain}`)
+    parts.push(addPart('列一掃', sweepGain))
     roleFired.push({ name: 'columnSweep', usedWild: false, amount: sweepGain })
   }
 
@@ -497,12 +498,12 @@ export function playCard(
 
   const comboMultiplierStep = params.scoring.comboMultiplierStep
   const multiplier = 1 + effectiveCombo * comboMultiplierStep
-  if (multiplier !== 1) parts.push(`コンボ倍率×${fmtMultiplier(multiplier)}`)
+  if (multiplier !== 1) parts.push(multiplyPart('コンボ倍率', multiplier))
   const mannazFactor = wave.mannazActiveThisWave ? 1 + mannazWeightSum(items, params) * params.rites.mannaz.x : 1
-  if (mannazFactor !== 1) parts.push(`マンナズ×${fmtMultiplier(mannazFactor)}`)
+  if (mannazFactor !== 1) parts.push(multiplyPart('マンナズ', mannazFactor))
   let gained = Math.floor(itemResult.value * multiplier * mannazFactor)
   if (scoreLock && isBossScoreLocked(scoreLock, effectiveCombo, card)) {
-    parts.push(bossScoreLockMessage(scoreLock))
+    parts.push(lockPart(bossScoreLockMessage(scoreLock)))
     gained = 0
   }
 
@@ -523,7 +524,7 @@ export function playCard(
     scoreAfterGained,
   }
   const milestoneResult = targetReachedOnGained
-    ? { value: 0, parts: [] as string[] }
+    ? { value: 0, parts: [] as ScorePart[] }
     : applyDirectEffects('comboMilestoneDirect', items, milestoneCtx, params)
 
   const newScore = scoreAfterGained + milestoneResult.value
@@ -583,8 +584,8 @@ export function playCard(
       label: '全消しボーナス',
       points: clearBonus,
       parts: [
-        `基礎+${params.scoring.clearBonus}`,
-        `山札残数+${wave.stock.length * params.scoring.clearBonusPerStock}`,
+        addPart('基礎', params.scoring.clearBonus),
+        addPart('山札残数', wave.stock.length * params.scoring.clearBonusPerStock),
         ...clearBonusResult.parts,
       ],
     }
@@ -668,7 +669,7 @@ export function drawStock(
   const patternContinues = wouldContinue || benevolenceFires
 
   let scoreAfterStockEmpty = wave.score
-  let stockEmptyResult: { value: number; parts: string[] } = { value: 0, parts: [] }
+  let stockEmptyResult: { value: number; parts: ScorePart[] } = { value: 0, parts: [] }
   if (newStock.length === 0) {
     const stockEmptyCtx: DirectEffectContext = {
       comboBeforeReset: 0,
@@ -723,19 +724,19 @@ export function drawStock(
     // パターン継続そのものの報酬である誠実の対象にはしない。
     const drawContinueResult = wouldContinue
       ? applyDirectEffects('drawContinueDirect', items, drawContinueCtx, params)
-      : { value: 0, parts: [] }
+      : { value: 0, parts: [] as ScorePart[] }
     const directGain = drawContinueResult.value
     const newDrawContinueCount = wouldContinue ? wave.drawContinueCountThisChain + 1 : wave.drawContinueCountThisChain
 
     let naiveGained = 0
-    let naiveParts: string[] = []
+    let naiveParts: ScorePart[] = []
     let naiveCombo = wave.combo
     let naiveRoleFiredThisChain = wave.roleFiredThisChain
     let naiveFlushActiveThisCombo = wave.flushActiveThisCombo
     if (wouldContinue && items.includes('naive')) {
       const newCombo = wave.comboFrozenThisWave ? wave.combo : wave.combo + (items.includes('golden') ? 2 : 1)
       let base = params.scoring.basePoint
-      const parts = [`基礎点+${base}`]
+      const parts: ScorePart[] = [addPart('基礎点', base)]
       // 神託: このパスは明星・ソウィロによる役倍率(roleBonusMultiplier)を通さない既存方針を維持しつつ、
       // 神託レベルは永続的な基礎点の一部として引き続き適用する
       const oracleLevel = (name: RoleName): number => wave.oracleLevels[name] ?? 1
@@ -780,12 +781,12 @@ export function drawStock(
 
       const comboMultiplierStep = params.scoring.comboMultiplierStep
       const multiplier = 1 + effectiveCombo * comboMultiplierStep
-      if (multiplier !== 1) parts.push(`コンボ倍率×${fmtMultiplier(multiplier)}`)
+      if (multiplier !== 1) parts.push(multiplyPart('コンボ倍率', multiplier))
       const mannazFactor = wave.mannazActiveThisWave ? 1 + mannazWeightSum(items, params) * params.rites.mannaz.x : 1
-      if (mannazFactor !== 1) parts.push(`マンナズ×${fmtMultiplier(mannazFactor)}`)
+      if (mannazFactor !== 1) parts.push(multiplyPart('マンナズ', mannazFactor))
       naiveGained = Math.floor(itemResult.value * multiplier * mannazFactor)
       if (scoreLock && isBossScoreLocked(scoreLock, effectiveCombo, drawnCard)) {
-        parts.push(bossScoreLockMessage(scoreLock))
+        parts.push(lockPart(bossScoreLockMessage(scoreLock)))
         naiveGained = 0
       }
       naiveParts = parts

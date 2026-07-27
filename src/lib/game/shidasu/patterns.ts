@@ -1,6 +1,7 @@
 // src/lib/game/shidasu/patterns.ts
 import type { Card, Suit, RoleName } from './types'
 import type { ShidasuParams } from './params'
+import { addPart, type ScorePart } from './scoreParts'
 
 export function isRed(card: Card): boolean {
   return card.suit === '♥' || card.suit === '♦'
@@ -145,7 +146,7 @@ export function checkCompleteRun(chainBefore: Card[], chainIncludingThis: Card[]
 
 export interface ChainBonusResult {
   bonus: number
-  parts: string[]
+  parts: ScorePart[]
   // 同スート/同色/階段のいずれかの「パターンボーナス」が成立したか
   patternFired: boolean
   // 成立したパターンボーナスの種類数(同スート/同色のいずれかで+1、階段でさらに+1。最大2)。瑠璃が参照する。
@@ -173,7 +174,7 @@ export function evaluateChainBonus(
   }
 
   let bonus = 0
-  const parts: string[] = []
+  const parts: ScorePart[] = []
   let patternFired = false
   let patternFiredCount = 0
   const roleFired: { name: RoleName; usedWild: boolean; amount: number }[] = []
@@ -185,13 +186,13 @@ export function evaluateChainBonus(
     if (suitHeld) {
       const suitGain = Math.floor(scoring.suitBonus * oracleLevel('suit'))
       bonus += suitGain
-      parts.push(`同スート+${suitGain}`)
+      parts.push(addPart('同スート', suitGain))
       patternFired = true
       patternFiredCount += 1
     } else if (colorHeld) {
       const colorGain = Math.floor(scoring.colorBonus * oracleLevel('color'))
       bonus += colorGain
-      parts.push(`同色+${colorGain}`)
+      parts.push(addPart('同色', colorGain))
       patternFired = true
       patternFiredCount += 1
     }
@@ -201,7 +202,7 @@ export function evaluateChainBonus(
   if (stairInfo.held && stairInfo.len >= stairMinLen) {
     const stairGain = Math.floor(scoring.stairBonus * oracleLevel('stair'))
     bonus += stairGain
-    parts.push(`階段${stairInfo.len} +${stairGain}`)
+    parts.push(addPart(`階段${stairInfo.len} `, stairGain))
     patternFired = true
     patternFiredCount += 1
   }
@@ -209,7 +210,7 @@ export function evaluateChainBonus(
   if (checkFlush(chainIncludingThis)) {
     const flushGain = Math.floor(scoring.flushBonus * oracleLevel('flush') * roleBonusMultiplier('flush'))
     bonus += flushGain
-    parts.push(`フラッシュ+${flushGain}`)
+    parts.push(addPart('フラッシュ', flushGain))
     const last4 = chainIncludingThis.slice(-4)
     const realSuits = new Set(last4.filter(c => !c.wild).map(c => c.suit))
     const flushUsedWild = ALL_SUITS_REAL.some(s => !realSuits.has(s))
@@ -219,7 +220,7 @@ export function evaluateChainBonus(
   if (checkRoyalSet(chainIncludingThis)) {
     const royalSetGain = Math.floor(scoring.royalSetBonus * oracleLevel('royalSet') * roleBonusMultiplier('royalSet'))
     bonus += royalSetGain
-    parts.push(`ロイヤル+${royalSetGain}`)
+    parts.push(addPart('ロイヤル', royalSetGain))
     const last3 = chainIncludingThis.slice(-3)
     const realRanks = new Set(last3.filter(c => !c.wild).map(c => c.rank))
     const requiredRanks: Card['rank'][] = [11, 12, 13]
@@ -231,7 +232,7 @@ export function evaluateChainBonus(
   if (sameRankCount > 0) {
     const sameRankGain = Math.floor(scoring.sameRankBonusUnit * sameRankCount * oracleLevel('sameRank') * roleBonusMultiplier('sameRank'))
     bonus += sameRankGain
-    parts.push(`同ランク+${sameRankGain}`)
+    parts.push(addPart('同ランク', sameRankGain))
     const sameRankUsedWild = card.wild || chainBefore.some(c => c.wild)
     roleFired.push({ name: 'sameRank', usedWild: sameRankUsedWild, amount: sameRankGain })
   }
@@ -239,7 +240,7 @@ export function evaluateChainBonus(
   if (checkCompleteRun(chainBefore, chainIncludingThis)) {
     const completeRunGain = Math.floor(scoring.completeRunBonus * oracleLevel('completeRun') * roleBonusMultiplier('completeRun'))
     bonus += completeRunGain
-    parts.push(`コンプリートラン+${completeRunGain}`)
+    parts.push(addPart('コンプリートラン', completeRunGain))
     const distinctRealNow = new Set(chainIncludingThis.filter(c => !c.wild).map(c => c.rank)).size
     const wildCountNow = chainIncludingThis.filter(c => c.wild).length
     const completeRunUsedWild = distinctRealNow < 13 && wildCountNow > 0
@@ -249,7 +250,7 @@ export function evaluateChainBonus(
     if (suitHeld) {
       const completeRunSuitGain = Math.floor(scoring.completeRunSuitBonus * oracleLevel('completeRun') * roleBonusMultiplier('completeRun'))
       bonus += completeRunSuitGain
-      parts.push(`コンプリートラン(同スート)+${completeRunSuitGain}`)
+      parts.push(addPart('コンプリートラン(同スート)', completeRunSuitGain))
       completeRunTotalGain += completeRunSuitGain
     }
     roleFired.push({ name: 'completeRun', usedWild: completeRunUsedWild, amount: completeRunTotalGain })
@@ -274,9 +275,4 @@ export function chainContinuesPattern(
   if (stairInfo.held && stairInfo.dir !== 0 && stairInfo.len >= stairMinLen) return true
 
   return false
-}
-
-// 護符の内訳表示用に倍率を丸めて整形する(浮動小数の誤差で末尾が長くなるのを防ぐ)
-export function fmtMultiplier(n: number): string {
-  return String(Math.round(n * 100) / 100)
 }

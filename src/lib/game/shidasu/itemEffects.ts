@@ -2,6 +2,7 @@
 import type { Card, ItemId } from './types'
 import type { ShidasuParams } from './params'
 import type { ChainBonusResult } from './patterns'
+import type { ScorePart } from './scoreParts'
 import { CLEAR_BONUS_EFFECTS } from './clearBonusEffects'
 import { CARD_COMBO_EFFECTS } from './cardComboEffects'
 import { CHAIN_ATTRIBUTE_EFFECTS } from './chainAttributeEffects'
@@ -44,7 +45,7 @@ export interface ItemEffectContext {
   mercyActiveNextCombo: boolean
 }
 
-export type ItemEffect = (value: number, ctx: ItemEffectContext, params: ShidasuParams) => { value: number; part: string | null }
+export type ItemEffect = (value: number, ctx: ItemEffectContext, params: ShidasuParams) => { value: number; part: ScorePart | null }
 
 const ITEM_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; effect: ItemEffect }>> = {
   ...CLEAR_BONUS_EFFECTS,
@@ -59,8 +60,8 @@ export function applyItemEffects(
   items: ItemId[],
   ctx: ItemEffectContext,
   params: ShidasuParams
-): { value: number; parts: string[] } {
-  const parts: string[] = []
+): { value: number; parts: ScorePart[] } {
+  const parts: ScorePart[] = []
   const value = items.reduce((v, id) => {
     const entry = ITEM_EFFECTS[id]
     if (!entry || entry.channel !== channel) return v

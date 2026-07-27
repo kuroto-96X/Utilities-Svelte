@@ -2,6 +2,7 @@
 import type { ItemId } from './types'
 import type { ShidasuParams } from './params'
 import { itemName } from './items'
+import { addPart, type ScorePart } from './scoreParts'
 
 export type DirectChannel = 'resetDirect' | 'stockEmptyDirect' | 'comboMilestoneDirect' | 'drawContinueDirect'
 
@@ -56,13 +57,13 @@ export function applyDirectEffects(
   items: ItemId[],
   ctx: DirectEffectContext,
   params: ShidasuParams
-): { value: number; parts: string[] } {
-  const parts: string[] = []
+): { value: number; parts: ScorePart[] } {
+  const parts: ScorePart[] = []
   const value = items.reduce((total, id) => {
     const entry = DIRECT_EFFECTS[id]
     if (!entry || entry.channel !== channel) return total
     const amount = entry.effect(ctx, params)
-    if (amount !== 0) parts.push(`${itemName(id, params)}+${amount}`)
+    if (amount !== 0) parts.push(addPart(itemName(id, params), amount))
     return total + amount
   }, 0)
   return { value, parts }
