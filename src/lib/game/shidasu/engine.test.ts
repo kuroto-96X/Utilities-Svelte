@@ -403,6 +403,23 @@ describe('playCard', () => {
     expect(finalScoreFromScoreParts(next.lastGain!.parts)).toBe(next.lastGain!.points)
   })
 
+  test('lastGain.partsから再計算した仮合計は、ボス得点ロック発動時(実際の得点0)も一致する', () => {
+    // ボス得点ロック発動によってlastGain.pointsが0になる状況を作る
+    const wave = makeWave({
+      stock: [card(1, '♠', 9)],
+      combo: 2, // このめくりでnewCombo=3、baseComboCount=0によりeffectiveCombo=3
+      chain: [card(2, '♠', 4), card(3, '♠', 5)],
+      linked: true,
+      score: 0,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['naive'], 1000000, standardDeckComposition(), 'none', Math.random, { kind: 'combo', maxCombo: 3, tierLabel: DEFAULT_PARAMS.bossTiers.chuukyou.name })
+    // ボス得点ロック発動により、lastGain.pointsが0になっている状況
+    expect(next.lastGain).not.toBeNull()
+    expect(next.lastGain!.points).toBe(0)
+    // この0の状態でも、partsから再計算した仮合計が一致することを検証
+    expect(finalScoreFromScoreParts(next.lastGain!.parts)).toBe(next.lastGain!.points)
+  })
+
   test('コンボ2(倍率1+0.2=1.2)で加点される(パターン不一致の場合)', () => {
     // 1枚目を取ってコンボ1にし、2枚目(パターン不一致)を取ってコンボ2にする
     // (列一掃・全消しボーナスが混ざらないよう、played対象の下にダミー札を積んでおく)
