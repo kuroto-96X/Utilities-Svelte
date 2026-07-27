@@ -2,7 +2,7 @@
   import type { Snippet } from 'svelte'
   import { onDestroy } from 'svelte'
   import { getPlayableColumns, isPlayable, remainingCount } from '$lib/game/shidasu/engine'
-  import type { WaveState, StageModifier, ItemId, RiteId, RevelationId, Card } from '$lib/game/shidasu/types'
+  import type { WaveState, StageModifier, ItemId, RiteId, RevelationId, Card, PlayCardResult, ScoreGain, BonusGain } from '$lib/game/shidasu/types'
   import type { ShidasuParams } from '$lib/game/shidasu/params'
   import { canUseRite } from '$lib/game/shidasu/riteEffects'
   import { riteDesc } from '$lib/game/shidasu/rites'
@@ -28,7 +28,7 @@
     modifier: StageModifier
     target: number
     items: ItemId[]
-    onPlayCard: (colIndex: number, rowIndex: number) => void
+    onPlayCard: (colIndex: number, rowIndex: number) => PlayCardResult | void
     onDraw: () => void
     dropTarget?: { col: number; row: number } | 'stockTop' | null
     headerExtra?: Snippet
@@ -119,7 +119,8 @@
 
     animationTimer2 = setTimeout(() => {
       playingAnimation = null
-      onPlayCard(colIndex, rowIndex)
+      const result = onPlayCard(colIndex, rowIndex)
+      void result
     }, ANIMATION_UP_MS + ANIMATION_LEFT_MS)
   }
 

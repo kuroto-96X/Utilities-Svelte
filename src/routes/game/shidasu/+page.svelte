@@ -25,7 +25,7 @@
     itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice,
     oracleBuyPrice, oracleSellPrice, packPrice,
   } from '$lib/game/shidasu/shop'
-  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, ShopSlotKind } from '$lib/game/shidasu/types'
+  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, ShopSlotKind, PlayCardResult } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
   import RoleStatusPanel from './RoleStatusPanel.svelte'
@@ -105,10 +105,11 @@
     afterAction()
   }
 
-  function handlePlayCard(colIndex: number, rowIndex: number) {
+  function handlePlayCard(colIndex: number, rowIndex: number): PlayCardResult | void {
     if (run.phase !== 'playing' || run.wave?.status !== 'playing') return
     run = applyPlayCard(params, run, colIndex, undefined, rowIndex)
     afterAction()
+    return { lastGain: run.wave?.lastGain ?? null, lastBonusGains: run.wave?.lastBonusGains ?? [] }
   }
 
   function handleUseRite(riteId: RiteId) {

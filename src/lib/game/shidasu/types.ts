@@ -97,6 +97,13 @@ export interface BonusGain {
   parts: ScorePart[]
 }
 
+// PlayArea.svelteのonPlayCardが、プレイ結果(得点内訳アニメーションに必要な情報)を
+// 呼び出し元へ同期的に返すための型。applyPlayCardが常に同期関数であることを前提にしている。
+export interface PlayCardResult {
+  lastGain: ScoreGain | null
+  lastBonusGains: BonusGain[]
+}
+
 export type WaveStatus = 'playing' | 'ended'
 export type WaveEndReason = 'target' | 'fullClear' | 'stuck' | null
 export type DrawEffect = 'wild' | 'pattern' | null
