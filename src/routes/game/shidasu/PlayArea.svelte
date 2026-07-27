@@ -352,13 +352,17 @@
       <div class="text-right transition-transform origin-bottom-right {comboScale[displayComboTier]}">
         <div class="text-xs text-emerald-300/70 tracking-widest">COMBO</div>
         <div class="text-3xl font-black italic tabular-nums leading-none {comboColor[displayComboTier]}">
-          ×{wave.combo}{#if wave.baseComboCount > 0}<span class="text-lg not-italic ml-1 text-emerald-300/80">+{wave.baseComboCount}</span>{/if}
+          {wave.combo}{#if wave.baseComboCount > 0}<span class="text-lg not-italic ml-1 text-emerald-300/80">+{wave.baseComboCount}</span>{/if}
         </div>
       </div>
     </div>
   {/if}
-  <div class="mt-1 h-1.5 rounded-full bg-emerald-900 overflow-hidden">
-    <div class="h-full bg-gradient-to-r from-yellow-500 to-yellow-300 transition-all duration-300" style="width:{Math.min(100, (wave.score / target) * 100)}%"></div>
+  <div class="mt-1 h-1.5 rounded-full bg-emerald-900 overflow-hidden relative">
+    <div class="absolute inset-y-0 left-0 h-full bg-yellow-300/30 transition-all duration-300" style="width:{Math.min(100, (displayedScore / target) * 100)}%"></div>
+    {#if scoreReveal}
+      {@const revealTotal = scoreReveal.revealedCount === 0 ? 0 : Math.round(scoreReveal.runningTotals[scoreReveal.revealedCount - 1])}
+      <div class="absolute inset-y-0 left-0 h-full bg-gradient-to-r from-yellow-500 to-yellow-300" style="width:{Math.min(100, ((displayedScore + revealTotal) / target) * 100)}%"></div>
+    {/if}
   </div>
   {#if scoreReveal}
     {@const isLastLanded = scoreReveal.revealedCount === scoreReveal.parts.length}
