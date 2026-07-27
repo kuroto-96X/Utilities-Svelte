@@ -471,6 +471,7 @@
     {wave} {params} modifier={currentModifier} {target} items={run.items}
     onPlayCard={handlePlayCard} onDraw={handleDraw}
     onScoreRevealDone={handleScoreRevealDone}
+    waveKey={`${run.stageIndex}-${run.waveIndex}`}
     headerExtra={stageRow} extraFooter={itemBadges}
     rites={run.rites} onUseRite={handleUseRite}
     revelations={run.revelations} onUseRevelationClick={handleUseRevelationClick}

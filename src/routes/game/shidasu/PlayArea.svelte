@@ -24,6 +24,7 @@
     onTargetColumn,
     chainAreaExtra,
     onScoreRevealDone,
+    waveKey,
   }: {
     wave: WaveState
     params: ShidasuParams
@@ -46,6 +47,7 @@
     onTargetColumn?: (colIndex: number) => void
     chainAreaExtra?: Snippet
     onScoreRevealDone?: () => void
+    waveKey?: string
   } = $props()
 
   let tableauEl: HTMLDivElement | undefined = $state()
@@ -116,6 +118,12 @@
   let scoreReveal = $state<ScoreRevealState | null>(null)
   let partFlyIn = $state<PartFlyInState | null>(null)
   let displayedScore = $state(wave.score)
+  let previousWaveKey = waveKey
+  $effect(() => {
+    if (waveKey === undefined || waveKey === previousWaveKey) return
+    previousWaveKey = waveKey
+    displayedScore = wave.score
+  })
   let scoreNumberEl: HTMLDivElement | undefined = $state()
   let scoreNumberScale = $state(1)
   let scoreNumberTransitionMs = $state(0)
@@ -421,7 +429,7 @@
           >
             {#if isSelectable}
               {@const isTargetable = columnTargetMode && canTargetColumn(ci)}
-              {@const isCardPlayable = !columnTargetMode && isPlayable(modifier, wave, card)}
+              {@const isCardPlayable = !columnTargetMode && wave.status === 'playing' && isPlayable(modifier, wave, card)}
               <button
                 type="button"
                 disabled={playingAnimation !== null || scoreReveal !== null}
