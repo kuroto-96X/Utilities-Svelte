@@ -108,8 +108,14 @@
   function handlePlayCard(colIndex: number, rowIndex: number): PlayCardResult | void {
     if (run.phase !== 'playing' || run.wave?.status !== 'playing') return
     run = applyPlayCard(params, run, colIndex, undefined, rowIndex)
-    afterAction()
     return { lastGain: run.wave?.lastGain ?? null, lastBonusGains: run.wave?.lastBonusGains ?? [] }
+  }
+
+  // PlayArea側の得点内訳アニメーション(パーツ拡大→移動→SCOREへの飛び込み)が完了した後に
+  // 呼ばれる。afterAction()をここに遅らせることで、Wave終了処理(画面遷移)が
+  // アニメーション完了前に割り込むのを防ぐ。
+  function handleScoreRevealDone() {
+    afterAction()
   }
 
   function handleUseRite(riteId: RiteId) {
@@ -464,6 +470,7 @@
   <PlayArea
     {wave} {params} modifier={currentModifier} {target} items={run.items}
     onPlayCard={handlePlayCard} onDraw={handleDraw}
+    onScoreRevealDone={handleScoreRevealDone}
     headerExtra={stageRow} extraFooter={itemBadges}
     rites={run.rites} onUseRite={handleUseRite}
     revelations={run.revelations} onUseRevelationClick={handleUseRevelationClick}

@@ -23,6 +23,7 @@
     canTargetColumn = () => true,
     onTargetColumn,
     chainAreaExtra,
+    onScoreRevealDone,
   }: {
     wave: WaveState
     params: ShidasuParams
@@ -44,6 +45,7 @@
     canTargetColumn?: (colIndex: number) => boolean
     onTargetColumn?: (colIndex: number) => void
     chainAreaExtra?: Snippet
+    onScoreRevealDone?: () => void
   } = $props()
 
   let tableauEl: HTMLDivElement | undefined = $state()
@@ -76,6 +78,9 @@
   const PART_FLYIN_CENTER_MS = 300
   const PART_FLYIN_MOVE_MS = 260
   const PART_FLYIN_SCALE = 2
+  // 拡大表示(partFlyInのtext-sm=14px相当)から内訳行(text-xs=12px相当)へ着地する際、
+  // 見た目の文字サイズが一致するようスケールを逆算する(14px * 0.857 ≒ 12px)。
+  const PART_FLYIN_LAND_SCALE = 12 / 14
   const TOTAL_PULSE_SCALE = 2.6
   const TOTAL_PULSE_MS = 300
   const SCORE_FLY_UP_MS = 200
@@ -120,6 +125,7 @@
     const allParts = [...(lastGain?.parts ?? []), ...lastBonusGains.flatMap(g => g.parts)]
     if (allParts.length === 0) {
       displayedScore = wave.score
+      onScoreRevealDone?.()
       return
     }
     const runningTotals = runningTotalsFromScoreParts(allParts)
@@ -169,7 +175,7 @@
         phase: 'toRow',
         left: landX,
         top: rowRect.top + rowRect.height / 2,
-        scale: 1,
+        scale: PART_FLYIN_LAND_SCALE,
         transitionMs: PART_FLYIN_MOVE_MS,
       }
       scoreRevealTimer = setTimeout(() => landPart(index), PART_FLYIN_MOVE_MS)
@@ -231,6 +237,7 @@
   function finishScoreReveal() {
     displayedScore = wave.score
     scoreReveal = null
+    onScoreRevealDone?.()
   }
 
   function startPlayCardAnimation(colIndex: number, rowIndex: number, card: Card) {
