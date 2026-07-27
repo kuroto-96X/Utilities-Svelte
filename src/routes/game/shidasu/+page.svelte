@@ -16,6 +16,7 @@
   } from '$lib/game/shidasu/engine'
   import { bossName, bossDesc } from '$lib/game/shidasu/bosses'
   import { itemDesc, itemName } from '$lib/game/shidasu/items'
+  import { riteName } from '$lib/game/shidasu/rites'
   import { revelationDesc, revelationName } from '$lib/game/shidasu/revelations'
   import { revelationNeedsTarget, canUseRevelation } from '$lib/game/shidasu/revelationEffects'
   import { oracleName, oracleDesc } from '$lib/game/shidasu/oracles'
@@ -482,7 +483,17 @@
         <div class="grid grid-cols-3 gap-2">
           {#each run.shop.individual as slot, i}
             <div class="border border-slate-200 rounded-lg p-2 text-xs space-y-1">
-              <p class="font-semibold">{slot.kind}: {slot.id}</p>
+              <p class="font-semibold">
+                {#if slot.kind === 'item'}
+                  {itemName(slot.id as ItemId, params)}
+                {:else if slot.kind === 'rite'}
+                  {riteName(slot.id as RiteId, params)}
+                {:else if slot.kind === 'revelation'}
+                  {revelationName(slot.id as RevelationId, params)}
+                {:else if slot.kind === 'oracle'}
+                  {oracleName(slot.id as RoleName, params)}
+                {/if}
+              </p>
               {#if slot.sold}
                 <p class="text-slate-400">売り切れ</p>
               {:else if slot.kind === 'item'}
@@ -535,18 +546,18 @@
         <p class="text-xs text-slate-500">所持品(売却可)</p>
         <div class="flex flex-wrap gap-1">
           {#each run.items as itemId}
-            <button onclick={() => handleSellItem(itemId)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{itemId} 売({itemSellPrice(params, itemId)})</button>
+            <button onclick={() => handleSellItem(itemId)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{itemName(itemId, params)} 売({itemSellPrice(params, itemId)})</button>
           {/each}
           {#each run.rites as riteId}
-            <button onclick={() => handleUseRite(riteId)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{riteId} 使用</button>
-            <button onclick={() => handleSellRite(riteId)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{riteId} 売({riteSellPrice(params)})</button>
+            <button onclick={() => handleUseRite(riteId)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{riteName(riteId, params)} 使用</button>
+            <button onclick={() => handleSellRite(riteId)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{riteName(riteId, params)} 売({riteSellPrice(params)})</button>
           {/each}
           {#each run.revelations as revelationId}
-            <button onclick={() => handleUseRevelationClick(revelationId)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{revelationId} 使用</button>
-            <button onclick={() => handleSellRevelation(revelationId)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{revelationId} 売({revelationSellPrice(params)})</button>
+            <button onclick={() => handleUseRevelationClick(revelationId)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{revelationName(revelationId, params)} 使用</button>
+            <button onclick={() => handleSellRevelation(revelationId)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{revelationName(revelationId, params)} 売({revelationSellPrice(params)})</button>
           {/each}
           {#each run.oracles as roleName}
-            <button onclick={() => handleSellOracle(roleName)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{roleName} 売({oracleSellPrice(params)})</button>
+            <button onclick={() => handleSellOracle(roleName)} class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{oracleName(roleName, params)} 売({oracleSellPrice(params)})</button>
           {/each}
         </div>
       </div>
