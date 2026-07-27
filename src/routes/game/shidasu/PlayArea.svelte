@@ -273,7 +273,9 @@
   {#if scoreReveal}
     <div class="text-right text-sm h-5">
       {#if scoreReveal.flyPhase === 'none'}
-        <span bind:this={totalGainEl} class="text-yellow-300 font-black">+{Math.round(scoreReveal.runningTotals[scoreReveal.revealedCount - 1])}</span>
+        {@const isLastPart = scoreReveal.revealedCount === scoreReveal.parts.length}
+        {@const displayedRunningTotal = isLastPart ? Math.floor(scoreReveal.runningTotals[scoreReveal.revealedCount - 1]) : Math.round(scoreReveal.runningTotals[scoreReveal.revealedCount - 1])}
+        <span bind:this={totalGainEl} class="text-yellow-300 font-black">+{displayedRunningTotal}</span>
         <span class="text-emerald-200 text-xs ml-2">{scoreReveal.parts.slice(0, scoreReveal.revealedCount).map(p => p.text).join(' ')}</span>
       {/if}
     </div>
