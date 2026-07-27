@@ -22,6 +22,29 @@
     if (!Number.isFinite(config.currency.bossBonus.shoukyou) || config.currency.bossBonus.shoukyou < 0) return true
     if (!Number.isFinite(config.currency.bossBonus.chuukyou) || config.currency.bossBonus.chuukyou < 0) return true
     if (!Number.isFinite(config.currency.bossBonus.taikyou) || config.currency.bossBonus.taikyou < 0) return true
+    if (!Number.isFinite(config.shop.itemPrice.C.buy) || config.shop.itemPrice.C.buy < 0) return true
+    if (!Number.isFinite(config.shop.itemPrice.C.sell) || config.shop.itemPrice.C.sell < 0) return true
+    if (!Number.isFinite(config.shop.itemPrice.U.buy) || config.shop.itemPrice.U.buy < 0) return true
+    if (!Number.isFinite(config.shop.itemPrice.U.sell) || config.shop.itemPrice.U.sell < 0) return true
+    if (!Number.isFinite(config.shop.itemPrice.R.buy) || config.shop.itemPrice.R.buy < 0) return true
+    if (!Number.isFinite(config.shop.itemPrice.R.sell) || config.shop.itemPrice.R.sell < 0) return true
+    if (!Number.isFinite(config.shop.ritePrice.buy) || config.shop.ritePrice.buy < 0) return true
+    if (!Number.isFinite(config.shop.ritePrice.sell) || config.shop.ritePrice.sell < 0) return true
+    if (!Number.isFinite(config.shop.revelationPrice.buy) || config.shop.revelationPrice.buy < 0) return true
+    if (!Number.isFinite(config.shop.revelationPrice.sell) || config.shop.revelationPrice.sell < 0) return true
+    if (!Number.isFinite(config.shop.oraclePrice.buy) || config.shop.oraclePrice.buy < 0) return true
+    if (!Number.isFinite(config.shop.oraclePrice.sell) || config.shop.oraclePrice.sell < 0) return true
+    if (!Number.isFinite(config.shop.packPrice.item.threeOne) || config.shop.packPrice.item.threeOne < 0) return true
+    if (!Number.isFinite(config.shop.packPrice.item.fiveOne) || config.shop.packPrice.item.fiveOne < 0) return true
+    if (!Number.isFinite(config.shop.packPrice.item.sevenTwo) || config.shop.packPrice.item.sevenTwo < 0) return true
+    if (!Number.isFinite(config.shop.packPrice.rite.threeOne) || config.shop.packPrice.rite.threeOne < 0) return true
+    if (!Number.isFinite(config.shop.packPrice.rite.fiveOne) || config.shop.packPrice.rite.fiveOne < 0) return true
+    if (!Number.isFinite(config.shop.packPrice.rite.sevenTwo) || config.shop.packPrice.rite.sevenTwo < 0) return true
+    if (!Number.isFinite(config.shop.packPrice.revelation.threeOne) || config.shop.packPrice.revelation.threeOne < 0) return true
+    if (!Number.isFinite(config.shop.packPrice.revelation.fiveOne) || config.shop.packPrice.revelation.fiveOne < 0) return true
+    if (!Number.isFinite(config.shop.packPrice.revelation.sevenTwo) || config.shop.packPrice.revelation.sevenTwo < 0) return true
+    if (!Number.isFinite(config.shop.packPrice.oracle.threeOne) || config.shop.packPrice.oracle.threeOne < 0) return true
+    if (!Number.isFinite(config.shop.packPrice.oracle.fiveOne) || config.shop.packPrice.oracle.fiveOne < 0) return true
     return false
   })
 
@@ -130,6 +153,120 @@
       <p class="text-xs text-slate-400">
         ボスボーナスはWaveクリア時の獲得数に加算されます(例: 小凶ボスWaveクリア時の獲得数 = Waveクリア時の獲得数 + 小凶ボスボーナス)。
       </p>
+    </section>
+
+    <section class="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
+      <h2 class="text-sm font-bold text-slate-700">ショップ価格設定</h2>
+
+      <div>
+        <p class="text-xs text-slate-500 mb-1">護符バラ売り(レアリティ別)</p>
+        <div class="grid grid-cols-3 gap-3">
+          <label class="text-xs text-slate-500">
+            C 購入額
+            <input type="number" step="1" bind:value={config.shop.itemPrice.C.buy} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            U 購入額
+            <input type="number" step="1" bind:value={config.shop.itemPrice.U.buy} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            R 購入額
+            <input type="number" step="1" bind:value={config.shop.itemPrice.R.buy} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            C 売却額
+            <input type="number" step="1" bind:value={config.shop.itemPrice.C.sell} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            U 売却額
+            <input type="number" step="1" bind:value={config.shop.itemPrice.U.sell} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            R 売却額
+            <input type="number" step="1" bind:value={config.shop.itemPrice.R.sell} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <p class="text-xs text-slate-500 mb-1">秘儀・天啓・神託バラ売り</p>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="text-xs text-slate-500">
+            秘儀 購入額
+            <input type="number" step="1" bind:value={config.shop.ritePrice.buy} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            秘儀 売却額
+            <input type="number" step="1" bind:value={config.shop.ritePrice.sell} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            天啓 購入額
+            <input type="number" step="1" bind:value={config.shop.revelationPrice.buy} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            天啓 売却額
+            <input type="number" step="1" bind:value={config.shop.revelationPrice.sell} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            神託 購入額
+            <input type="number" step="1" bind:value={config.shop.oraclePrice.buy} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            神託 売却額
+            <input type="number" step="1" bind:value={config.shop.oraclePrice.sell} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <p class="text-xs text-slate-500 mb-1">福袋価格(護符・秘儀・天啓は3-1/5-1/7-2、神託は3-1/5-1のみ)</p>
+        <div class="grid grid-cols-3 gap-3">
+          <label class="text-xs text-slate-500">
+            護符 3-1
+            <input type="number" step="1" bind:value={config.shop.packPrice.item.threeOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            護符 5-1
+            <input type="number" step="1" bind:value={config.shop.packPrice.item.fiveOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            護符 7-2
+            <input type="number" step="1" bind:value={config.shop.packPrice.item.sevenTwo} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            秘儀 3-1
+            <input type="number" step="1" bind:value={config.shop.packPrice.rite.threeOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            秘儀 5-1
+            <input type="number" step="1" bind:value={config.shop.packPrice.rite.fiveOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            秘儀 7-2
+            <input type="number" step="1" bind:value={config.shop.packPrice.rite.sevenTwo} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            天啓 3-1
+            <input type="number" step="1" bind:value={config.shop.packPrice.revelation.threeOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            天啓 5-1
+            <input type="number" step="1" bind:value={config.shop.packPrice.revelation.fiveOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            天啓 7-2
+            <input type="number" step="1" bind:value={config.shop.packPrice.revelation.sevenTwo} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            神託 3-1
+            <input type="number" step="1" bind:value={config.shop.packPrice.oracle.threeOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            神託 5-1
+            <input type="number" step="1" bind:value={config.shop.packPrice.oracle.fiveOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+        </div>
+      </div>
     </section>
   {:else if !error}
     <p class="text-slate-500 text-sm">読み込み中...</p>
