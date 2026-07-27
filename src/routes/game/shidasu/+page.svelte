@@ -25,12 +25,16 @@
     itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice,
     oracleBuyPrice, oracleSellPrice, packPrice,
   } from '$lib/game/shidasu/shop'
-  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef } from '$lib/game/shidasu/types'
+  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, ShopSlotKind } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
   import RoleStatusPanel from './RoleStatusPanel.svelte'
 
   const params = loadParams()
+
+  const SHOP_SLOT_KIND_LABEL: Record<ShopSlotKind, string> = {
+    item: '護符', rite: '秘儀', revelation: '天啓', oracle: '神託',
+  }
 
   // タイトル画面の高さをプレイ画面に揃えるための計測専用ダミーウェーブ(実際のゲームには使わない)
   const measurementWave = startWave(params, 0, 0, [], standardDeckComposition(), 1).wave
@@ -529,7 +533,7 @@
         <div class="grid grid-cols-2 gap-2">
           {#each run.shop.packs as slot, i}
             <div class="border border-slate-200 rounded-lg p-2 text-xs space-y-1">
-              <p class="font-semibold text-slate-800">{slot.packKind} {slot.offerCount}択{slot.pickCount}</p>
+              <p class="font-semibold text-slate-800">{SHOP_SLOT_KIND_LABEL[slot.packKind]}福袋 {slot.offerCount}択{slot.pickCount}</p>
               {#if slot.sold}
                 <p class="text-slate-400">売り切れ</p>
               {:else}
