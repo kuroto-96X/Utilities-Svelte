@@ -331,6 +331,16 @@
   })
   let chainEntries = $derived(wave.chain.map((c, i) => ({ card: c, origin: wave.chainOrigin[i] })))
   let chainRows = $derived(chunk(chainEntries, params.ui.chainCardsPerRow))
+  let progressBarLightPercent = $derived.by(() => {
+    const finalScore = scoreReveal ? displayedScore + scoreReveal.totalGain : displayedScore
+    return Math.min(100, (finalScore / target) * 100)
+  })
+  let progressBarDarkPercent = $derived.by(() => {
+    const revealTotal = scoreReveal
+      ? (scoreReveal.revealedCount === 0 ? 0 : Math.round(scoreReveal.runningTotals[scoreReveal.revealedCount - 1]))
+      : 0
+    return Math.min(100, ((displayedScore + revealTotal) / target) * 100)
+  })
 </script>
 
 <div class="px-4 pt-3">
@@ -358,8 +368,8 @@
     </div>
   {/if}
   <div class="mt-1 h-1.5 rounded-full bg-emerald-900 overflow-hidden relative">
-    <div class="absolute inset-y-0 left-0 h-full bg-yellow-300/30 transition-all duration-300" style="width:{Math.min(100, ((scoreReveal ? displayedScore + scoreReveal.totalGain : displayedScore) / target) * 100)}%"></div>
-    <div class="absolute inset-y-0 left-0 h-full bg-gradient-to-r from-yellow-500 to-yellow-300" style="width:{Math.min(100, ((displayedScore + (scoreReveal ? (scoreReveal.revealedCount === 0 ? 0 : Math.round(scoreReveal.runningTotals[scoreReveal.revealedCount - 1])) : 0)) / target) * 100)}%"></div>
+    <div class="absolute inset-y-0 left-0 h-full bg-yellow-300/30 transition-all duration-300" style="width:{progressBarLightPercent}%"></div>
+    <div class="absolute inset-y-0 left-0 h-full bg-gradient-to-r from-yellow-500 to-yellow-300" style="width:{progressBarDarkPercent}%"></div>
   </div>
   {#if scoreReveal}
     {@const isLastLanded = scoreReveal.revealedCount === scoreReveal.parts.length}
