@@ -358,11 +358,8 @@
     </div>
   {/if}
   <div class="mt-1 h-1.5 rounded-full bg-emerald-900 overflow-hidden relative">
-    <div class="absolute inset-y-0 left-0 h-full bg-yellow-300/30 transition-all duration-300" style="width:{Math.min(100, (displayedScore / target) * 100)}%"></div>
-    {#if scoreReveal}
-      {@const revealTotal = scoreReveal.revealedCount === 0 ? 0 : Math.round(scoreReveal.runningTotals[scoreReveal.revealedCount - 1])}
-      <div class="absolute inset-y-0 left-0 h-full bg-gradient-to-r from-yellow-500 to-yellow-300" style="width:{Math.min(100, ((displayedScore + revealTotal) / target) * 100)}%"></div>
-    {/if}
+    <div class="absolute inset-y-0 left-0 h-full bg-yellow-300/30 transition-all duration-300" style="width:{Math.min(100, ((scoreReveal ? displayedScore + scoreReveal.totalGain : displayedScore) / target) * 100)}%"></div>
+    <div class="absolute inset-y-0 left-0 h-full bg-gradient-to-r from-yellow-500 to-yellow-300" style="width:{Math.min(100, ((displayedScore + (scoreReveal ? (scoreReveal.revealedCount === 0 ? 0 : Math.round(scoreReveal.runningTotals[scoreReveal.revealedCount - 1])) : 0)) / target) * 100)}%"></div>
   </div>
   {#if scoreReveal}
     {@const isLastLanded = scoreReveal.revealedCount === scoreReveal.parts.length}
