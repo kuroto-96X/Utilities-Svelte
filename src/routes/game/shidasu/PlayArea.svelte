@@ -425,7 +425,7 @@
               <button
                 type="button"
                 disabled={playingAnimation !== null || scoreReveal !== null}
-                onclick={() => (columnTargetMode ? (isTargetable && onTargetColumn?.(ci)) : startPlayCardAnimation(ci, ri, card))}
+                onclick={() => (columnTargetMode ? (isTargetable && onTargetColumn?.(ci)) : (isCardPlayable && startPlayCardAnimation(ci, ri, card)))}
                 class="w-full text-left {columnTargetMode ? (isTargetable ? 'ring-2 ring-fuchsia-400 shadow-lg -translate-y-0.5' : '') : (isCardPlayable ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : '')} transition-transform disabled:cursor-not-allowed"
               >
                 <CardFace {card} covered={false} />
