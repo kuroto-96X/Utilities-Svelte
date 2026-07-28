@@ -131,7 +131,9 @@ export interface PlayCardResult {
 }
 
 export type WaveStatus = 'playing' | 'ended'
-export type WaveEndReason = 'target' | 'fullClear' | 'stuck' | null
+// 'previewDismissed'は本番Waveの終了理由ではなく、ショップ系フェーズでの天啓ターゲット選択用
+// プレビュー盤面(使い捨て)をコラム選択完了後に片付けアニメ経由で破棄するためのUI専用の値。
+export type WaveEndReason = 'target' | 'fullClear' | 'stuck' | 'previewDismissed' | null
 export type DrawEffect = 'wild' | 'pattern' | null
 export type ChainCardOrigin = 'play' | 'draw'
 
