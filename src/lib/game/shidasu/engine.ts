@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, BossKind, BossTierKey, RunPhase, HeldRevelationOrOracleRef } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, Star, StarRestriction } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
 import { isFace, chainContinuesPattern, evaluateChainBonus, analyzeSuitColor, countSameRankBefore, countSameRankForWildPlay } from './patterns'
@@ -925,23 +925,43 @@ export function waveTarget(params: ShidasuParams, stageIndex: number, waveIndex:
 }
 
 const GREAT_MISFORTUNE_SUITS: Suit[] = ['♠', '♥', '♦', '♣']
-const BOSS_TIER_KEYS: BossTierKey[] = ['shoukyou', 'chuukyou', 'taikyou']
-const BOSS_KINDS: BossKind[] = ['noLoop', 'faceLock', 'lowCombo', 'oddCombo', 'suit', 'face']
 
-// 大凶ステージの対象スートを、既存のrand(シード連動PRNG)を使って抽選する。
-// 将来「ラン開始時にシードを指定してステージ構成を再現する」機能に対応できるよう、
-// Math.random()を直接使わずこの関数経由で必ずrandを通すこと。
-function rollGreatMisfortuneSuit(rand: () => number): Suit {
-  return GREAT_MISFORTUNE_SUITS[Math.floor(rand() * GREAT_MISFORTUNE_SUITS.length)]
+// params.stars内の1エントリ(フラットなJSON表現)を、実行時に使うStarRestriction型へ変換する。
+function toStarRestriction(entry: ShidasuParams['stars'][number], rand: () => number): StarRestriction {
+  switch (entry.restrictionKind) {
+    case 'none': return null
+    case 'noLoop': return { kind: 'noLoop' }
+    case 'faceLock': return { kind: 'faceLock' }
+    case 'lowCombo': return { kind: 'lowCombo', maxCombo: entry.maxCombo ?? 2 }
+    case 'oddCombo': return { kind: 'oddCombo' }
+    case 'suit': return { kind: 'suit', suit: GREAT_MISFORTUNE_SUITS[Math.floor(rand() * GREAT_MISFORTUNE_SUITS.length)] }
+    case 'face': return { kind: 'face' }
+  }
 }
 
-// stageIndexが属する階級(bossTierOf)に現在割り当てられている候補群の中から、randで1つ抽選する。
-// 候補が1件も無い階級は管理画面のバリデーションで基本的に発生しないが、念のためnullを返す。
-function rollBossKindForStage(params: ShidasuParams, stageIndex: number, rand: () => number): BossKind | null {
-  const tierKey = BOSS_TIER_KEYS[bossTierOf(stageIndex)]
-  const candidates = BOSS_KINDS.filter(kind => params.bosses[kind].tier === tierKey)
-  if (candidates.length === 0) return null
-  return candidates[Math.floor(rand() * candidates.length)]
+// 指定したwaveSlot(1/2/3)に属する候補群からrandで1つ抽選し、Star型に変換する。
+// 候補が1件も無いwaveSlotは管理画面のバリデーションで基本的に発生しないが、念のため
+// エントリが見つからない場合は制限ルールなしのダミー星を返す。
+function rollStarForSlot(params: ShidasuParams, waveSlot: 1 | 2 | 3, rand: () => number): Star {
+  const candidates = params.stars.filter(s => s.waveSlot === waveSlot)
+  if (candidates.length === 0) {
+    return { id: `fallback-${waveSlot}`, name: '名もなき星', waveSlot, targetMultiplier: 1, reward: 0, restriction: null, sabotage: null }
+  }
+  const entry = candidates[Math.floor(rand() * candidates.length)]
+  return {
+    id: entry.id,
+    name: entry.name,
+    waveSlot: entry.waveSlot,
+    targetMultiplier: entry.targetMultiplier,
+    reward: entry.reward,
+    restriction: toStarRestriction(entry, rand),
+    sabotage: null,
+  }
+}
+
+// 新しいステージに入る際、waveSlot 1・2・3それぞれから1つずつ抽選し3Wave分をまとめて確定させる。
+function rollStageStars(params: ShidasuParams, rand: () => number): Star[] {
+  return [1, 2, 3].map(slot => rollStarForSlot(params, slot as 1 | 2 | 3, rand))
 }
 
 // 秘儀・天啓・神託の使用がショップ滞在中(shop本体および福袋の各中身選択画面)でも
