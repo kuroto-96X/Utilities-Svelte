@@ -60,7 +60,7 @@
 
   let previousPhaseForStageScreen = run.phase
   $effect(() => {
-    if (run.phase === 'shop' && previousPhaseForStageScreen !== 'shop') {
+    if (run.phase === 'shop' && previousPhaseForStageScreen !== 'shop' && previousPhaseForStageScreen !== 'title') {
       showStageScreen = false
     }
     previousPhaseForStageScreen = run.phase
@@ -131,7 +131,7 @@
 
   function handleStartWithSpread(spreadId: SpreadId) {
     run = beginRun(params, undefined, spreadId)
-    afterAction()
+    showStageScreen = true
   }
 
   function handlePlayCard(colIndex: number, rowIndex: number): PlayCardResult | void {
@@ -787,7 +787,7 @@
   </div>
 {/if}
 
-{#if run.phase === 'shop' && run.shop && !pendingRevelationTarget && showStageScreen}
+{#if run.phase === 'shop' && !pendingRevelationTarget && showStageScreen}
   {@const baseTarget = Math.floor(params.flow.stageTargetBase * params.flow.stageTargetMultiplier ** run.stageIndex)}
   <div class="fixed inset-0 z-50 bg-emerald-950/90 backdrop-blur-sm flex items-center justify-center p-6">
     <div class="bg-white rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto space-y-3">
