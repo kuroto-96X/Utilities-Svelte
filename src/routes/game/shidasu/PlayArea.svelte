@@ -120,6 +120,12 @@
   let scoreReveal = $state<ScoreRevealState | null>(null)
   let partFlyIn = $state<PartFlyInState | null>(null)
   let displayedScore = $state(wave.score)
+  // 捨て札常設UIの表示用スナップショット。wave.discardPileを直接参照すると、
+  // チェーンリセットアニメーション実行中でもengine側は既に移動後の内容に
+  // 更新済みのため、アニメーションが完了する前から移動後のカードが見えてしまう。
+  // そのため、アニメーション開始前の内容をここに固定し、アニメーション完了時に
+  // 最新のwave.discardPileへ同期し直す。
+  let displayedDiscardTop = $state(wave.discardPile[wave.discardPile.length - 1] as Card | undefined)
   let previousWaveKey = waveKey
   $effect(() => {
     if (waveKey === undefined || waveKey === previousWaveKey) return
@@ -137,13 +143,14 @@
   let stockButtonEl: HTMLButtonElement | undefined = $state()
   let discardPileEl: HTMLDivElement | undefined = $state()
 
-  const CLEANUP_GATHER_MS = 74
-  const CLEANUP_MOVE_MS = 50
+  const CLEANUP_GATHER_MS = 75
+  const CLEANUP_MOVE_MS = 75
 
-  interface CleanupCardPosition {
+  // 複数カードを1山にまとめてから1点へ移動させる、gather→moveの2フェーズ
+  // アニメーション共通の座標付きカード型。cleanupAnimation(Waveクリア後の片付け)・
+  // chainResetAnimation(チェーンリセット時の捨て札移動)の両方で使う。
+  interface GatherMoveCardPosition {
     card: Card
-    startLeft: number
-    startTop: number
     left: number
     top: number
   }
@@ -156,13 +163,7 @@
     left: number
     top: number
     transitionMs: number
-    gatherCards: CleanupCardPosition[]
-  }
-
-  interface ChainResetCardPosition {
-    card: Card
-    left: number
-    top: number
+    gatherCards: GatherMoveCardPosition[]
   }
 
   interface ChainResetAnimation {
@@ -170,7 +171,88 @@
     left: number
     top: number
     transitionMs: number
-    gatherCards: ChainResetCardPosition[]
+    gatherCards: GatherMoveCardPosition[]
+  }
+
+  // 「複数カードを1山にまとめてから移動先へ移動させる」gather→moveの2フェーズ
+  // アニメーションの共通制御ロジック。cleanupAnimation・chainResetAnimation両方から
+  // 呼ばれる。呼び出し元は現在の$state値の読み取り・更新(get/set)と、gather対象カード・
+  // 移動先座標・完了時コールバックを渡す。
+  //
+  // 実装上の注意点(いずれも過去の実装で踏んだ罠):
+  // - 対象カードが2枚以上のときのみ「まとめる」動きを見せ、gatherフェーズの待機
+  //   (GATHER_MSぶんのsetTimeout)を挟む。1枚だけの場合はまとめても見た目上動きが
+  //   ないため、待機せず直接moveフェーズへ進む。
+  // - transitionMs:0で位置を固定した直後、transitionMs付きで実際の移動を開始する
+  //   際は必ず2段のrequestAnimationFrameを挟む。1段だけだと同一フレーム内で
+  //   スタイル変更がバッチ処理され、transitionが発生しない(ワープする)ブラウザがある。
+  // - moveフェーズでもgatherCardsは空にせず、代表カード(一番上に見えていたカード)を
+  //   1件だけ残した配列にする。空にするとDOM要素が新規マウントされ、そのタイミングで
+  //   最終位置とtransitionを同時に設定すると同様にワープする。
+  function runGatherAndMoveAnimation<T extends { phase: 'gather' | 'move'; left: number; top: number; transitionMs: number; gatherCards: GatherMoveCardPosition[] }>(params: {
+    getAnimation: () => T | null
+    setAnimation: (next: T | null) => void
+    setTimer: (timer: ReturnType<typeof setTimeout> | undefined) => void
+    gatherCards: GatherMoveCardPosition[]
+    representativeCard: Card
+    gatherLeft: number
+    gatherTop: number
+    getMoveTarget: () => { left: number; top: number } | null
+    gatherMs: number
+    moveMs: number
+    // moveフェーズへの切り替えと同時(移動開始時点)に呼ばれる。移動完了を待たずに
+    // 更新したい状態(例: 元の位置の要素を隠すフラグ)があればここで行う。
+    onMoveStart?: () => void
+    onComplete: () => void
+  }) {
+    const { getAnimation, setAnimation, setTimer, gatherCards, representativeCard, gatherLeft, gatherTop, getMoveTarget, gatherMs, moveMs, onMoveStart, onComplete } = params
+
+    function moveToTarget() {
+      const current = getAnimation()
+      const moveTarget = getMoveTarget()
+      if (!current || !moveTarget) return
+      setAnimation({
+        ...current,
+        phase: 'move',
+        left: gatherLeft,
+        top: gatherTop,
+        transitionMs: 0,
+        gatherCards: [{ card: representativeCard, left: gatherLeft, top: gatherTop }],
+      })
+      onMoveStart?.()
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const c = getAnimation()
+          if (!c) return
+          setAnimation({
+            ...c,
+            gatherCards: c.gatherCards.map(card => ({ ...card, left: moveTarget.left, top: moveTarget.top })),
+            transitionMs: moveMs,
+          })
+        })
+      })
+      setTimer(setTimeout(() => {
+        setAnimation(null)
+        onComplete()
+      }, moveMs))
+    }
+
+    if (gatherCards.length > 1) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const current = getAnimation()
+          if (!current) return
+          setAnimation({
+            ...current,
+            gatherCards: current.gatherCards.map(card => ({ ...card, left: gatherLeft, top: gatherTop })),
+            transitionMs: gatherMs,
+          })
+          setTimer(setTimeout(moveToTarget, gatherMs))
+        })
+      })
+    } else {
+      moveToTarget()
+    }
   }
 
   let cleanupAnimation = $state<CleanupAnimation | null>(null)
@@ -199,14 +281,29 @@
       previousChainIds = currentChainIds
       return
     }
-    const resetCards = previousChainIds.length > currentChainIds.length
-      ? wave.chain.length > 0
+    // 通常のプレイ・山札捲りによるチェーン延長は、previousChainIdsの末尾に
+    // 1件追加しただけの配列と一致する(先頭からの並びが変わらない)。
+    // それ以外の変化(チェーンが短くなる、または同じ長さでも中身が入れ替わる)は
+    // すべてリセットとみなす。長さの比較だけでは「1枚→1枚」のリセットを
+    // 検知できないため、先頭からの一致を見る。
+    const isExtension = currentChainIds.length === previousChainIds.length + 1
+      && previousChainIds.every((id, i) => id === currentChainIds[i])
+    const resetCards = isExtension
+      ? []
+      : wave.chain.length > 0
         ? previousChainIds.filter(id => id !== wave.chain[wave.chain.length - 1].id)
         : previousChainIds
-      : []
     previousChainIds = currentChainIds
     if (resetCards.length === 0) return
     startChainResetAnimation(resetCards)
+  })
+
+  // chainResetAnimationが実行されていない間は、捨て札常設UIの表示を
+  // 常に最新のwave.discardPileへ追従させる(アニメーション中のみ、
+  // 上のeffect.preでの検知とstartChainResetAnimation側の更新で固定される)。
+  $effect(() => {
+    if (chainResetAnimation !== null) return
+    displayedDiscardTop = wave.discardPile[wave.discardPile.length - 1]
   })
 
   // Waveクリア確定後、場札の各列(左から右)→チェーン→捨て札の順に、
@@ -259,10 +356,13 @@
     const cardById = new Map(cards.map(c => [c.id, c]))
     if (cardEntries.some(entry => !cardById.has(entry.id))) return
 
-    const gatherLeft = cardEntries[0].el.getBoundingClientRect().left + cardEntries[0].el.getBoundingClientRect().width / 2
-    const gatherTop = cardEntries[0].el.getBoundingClientRect().top + cardEntries[0].el.getBoundingClientRect().height / 2
+    // 集約先・代表カードの基準は「一番上に見えていたカード」= resetCardIdsの末尾
+    // (wave.chainは先頭が最も古く、末尾が最新=最前面に描画されるカードのため)。
+    const topEntry = cardEntries[cardEntries.length - 1]
+    const gatherLeft = topEntry.el.getBoundingClientRect().left + topEntry.el.getBoundingClientRect().width / 2
+    const gatherTop = topEntry.el.getBoundingClientRect().top + topEntry.el.getBoundingClientRect().height / 2
 
-    const gatherCards: ChainResetCardPosition[] = cardEntries.map(entry => {
+    const gatherCards: GatherMoveCardPosition[] = cardEntries.map(entry => {
       const rect = entry.el.getBoundingClientRect()
       const card = cardById.get(entry.id)!
       return {
@@ -280,48 +380,24 @@
       gatherCards,
     }
 
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (!chainResetAnimation) return
-        chainResetAnimation = {
-          ...chainResetAnimation,
-          gatherCards: chainResetAnimation.gatherCards.map(c => ({ ...c, left: gatherLeft, top: gatherTop })),
-          transitionMs: CLEANUP_GATHER_MS,
-        }
-        chainResetTimer = setTimeout(() => {
-          if (!chainResetAnimation || !discardPileEl) return
-          // move フェーズでも gatherCards に代表カード(先頭カード)を1件だけ残す。
-          // 全カードを個別に残すと捨て札位置への収束が視覚的にごちゃつくため、
-          // 1山になった後は代表カード1枚の移動として表現する。
-          const representativeCard = chainResetAnimation.gatherCards[0]?.card
-          chainResetAnimation = {
-            ...chainResetAnimation,
-            phase: 'move',
-            left: gatherLeft,
-            top: gatherTop,
-            transitionMs: 0,
-            gatherCards: representativeCard ? [{ card: representativeCard, left: gatherLeft, top: gatherTop }] : [],
-          }
-          const toRect = discardPileEl.getBoundingClientRect()
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              if (!chainResetAnimation) return
-              chainResetAnimation = {
-                ...chainResetAnimation,
-                gatherCards: chainResetAnimation.gatherCards.map(c => ({
-                  ...c,
-                  left: toRect.left + toRect.width / 2,
-                  top: toRect.top + toRect.height / 2,
-                })),
-                transitionMs: CLEANUP_MOVE_MS,
-              }
-            })
-          })
-          chainResetTimer = setTimeout(() => {
-            chainResetAnimation = null
-          }, CLEANUP_MOVE_MS)
-        }, CLEANUP_GATHER_MS)
-      })
+    runGatherAndMoveAnimation({
+      getAnimation: () => chainResetAnimation,
+      setAnimation: next => { chainResetAnimation = next },
+      setTimer: timer => { chainResetTimer = timer },
+      gatherCards,
+      representativeCard: cardById.get(topEntry.id)!,
+      gatherLeft,
+      gatherTop,
+      getMoveTarget: () => {
+        if (!discardPileEl) return null
+        const toRect = discardPileEl.getBoundingClientRect()
+        return { left: toRect.left + toRect.width / 2, top: toRect.top + toRect.height / 2 }
+      },
+      gatherMs: CLEANUP_GATHER_MS,
+      moveMs: CLEANUP_MOVE_MS,
+      // chainResetAnimationがnullに戻ると同時に、後述のeffectが
+      // displayedDiscardTopを最新のwave.discardPileへ自動的に同期する。
+      onComplete: () => {},
     })
   }
 
@@ -331,7 +407,10 @@
       const col = wave.tableau[item.columnIndex]
       fromEl = tableauEl?.querySelector<HTMLElement>(`[data-drop-col="${item.columnIndex}"][data-drop-row="${col.length - 1}"]`) ?? null
     } else if (item.kind === 'chain') {
-      fromEl = chainAreaEl ?? null
+      // チェーンエリア全体の中心ではなく、一番上に見えているカード(チェーンの末尾要素)の
+      // 位置でまとめる。チェーンエリアが横に長い場合、中心とはずれた位置になるため。
+      const topCard = wave.chain[wave.chain.length - 1]
+      fromEl = (topCard && chainAreaEl?.querySelector<HTMLElement>(`[data-chain-card-id="${topCard.id}"]`)) ?? chainAreaEl ?? null
     } else {
       fromEl = discardPileEl ?? null
     }
@@ -344,11 +423,10 @@
       return
     }
     const fromRect = fromEl.getBoundingClientRect()
-    const toRect = stockButtonEl.getBoundingClientRect()
     const gatherLeft = fromRect.left + fromRect.width / 2
     const gatherTop = fromRect.top + fromRect.height / 2
 
-    let gatherCards: CleanupCardPosition[] = []
+    let gatherCards: GatherMoveCardPosition[] = []
     if (item.kind === 'column' && tableauEl) {
       const col = wave.tableau[item.columnIndex]
       gatherCards = col
@@ -358,13 +436,24 @@
           const cardRect = cardEl.getBoundingClientRect()
           return {
             card,
-            startLeft: cardRect.left + cardRect.width / 2,
-            startTop: cardRect.top + cardRect.height / 2,
             left: cardRect.left + cardRect.width / 2,
             top: cardRect.top + cardRect.height / 2,
           }
         })
-        .filter((entry): entry is CleanupCardPosition => entry !== null)
+        .filter((entry): entry is GatherMoveCardPosition => entry !== null)
+    } else if (item.kind === 'chain' && chainAreaEl) {
+      gatherCards = wave.chain
+        .map(card => {
+          const cardEl = chainAreaEl?.querySelector<HTMLElement>(`[data-chain-card-id="${card.id}"]`)
+          if (!cardEl) return null
+          const cardRect = cardEl.getBoundingClientRect()
+          return {
+            card,
+            left: cardRect.left + cardRect.width / 2,
+            top: cardRect.top + cardRect.height / 2,
+          }
+        })
+        .filter((entry): entry is GatherMoveCardPosition => entry !== null)
     }
 
     cleanupAnimation = {
@@ -377,64 +466,31 @@
       transitionMs: 0,
       gatherCards,
     }
-    function scheduleMoveToStock() {
-      cleanupTimer = setTimeout(() => {
-        if (!cleanupAnimation) return
-        // 単一オーバーレイへの切り替え(gatherCards:[]によりDOM要素が新規マウントされる)と
-        // 同時に山札の位置・transitionを設定すると、要素がいきなり最終位置に出現してしまい
-        // トランジションが発生しない(ワープしてしまう)。そのため、まず現在の集約位置のまま
-        // transitionMs:0で単一オーバーレイに切り替え、2段rAF後に山札の位置へtransitionMs付きで
-        // 変更する(既存のplayingAnimationのワープ処理と同じ理由・同じ手法)。
-        cleanupAnimation = {
-          ...cleanupAnimation,
-          phase: 'move',
-          left: gatherLeft,
-          top: gatherTop,
-          transitionMs: 0,
-          gatherCards: [],
-        }
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            if (!cleanupAnimation) return
-            cleanupAnimation = {
-              ...cleanupAnimation,
-              left: toRect.left + toRect.width / 2,
-              top: toRect.top + toRect.height / 2,
-              transitionMs: CLEANUP_MOVE_MS,
-            }
-          })
-        })
+
+    runGatherAndMoveAnimation({
+      getAnimation: () => cleanupAnimation,
+      setAnimation: next => { cleanupAnimation = next },
+      setTimer: timer => { cleanupTimer = timer },
+      gatherCards,
+      representativeCard: item.card,
+      gatherLeft,
+      gatherTop,
+      getMoveTarget: () => {
+        if (!stockButtonEl) return null
+        const rect = stockButtonEl.getBoundingClientRect()
+        return { left: rect.left + rect.width / 2, top: rect.top + rect.height / 2 }
+      },
+      gatherMs: CLEANUP_GATHER_MS,
+      moveMs: CLEANUP_MOVE_MS,
+      onMoveStart: () => {
         if (item.kind === 'column') {
           cleanedUpColumns = new Set([...cleanedUpColumns, item.columnIndex])
         } else if (item.kind === 'chain') {
           chainCleanedUp = true
         }
-        cleanupTimer = setTimeout(processNextCleanupItem, CLEANUP_MOVE_MS)
-      }, CLEANUP_GATHER_MS)
-    }
-
-    if (gatherCards.length > 0) {
-      // gatherCardsの初期位置(各カードの現在位置)をtransitionMs:0で表示した直後、
-      // 2段rAFで一番上のカードの位置(gatherLeft/gatherTop)へ全カード同時に移動させる。
-      // 1段のrAFだけだと同一フレーム内でスタイル変更がバッチ処理されtransitionが
-      // 発生しないブラウザがある(既存の他アニメーションと同じ理由)。
-      // moveフェーズへの切り替えタイマーは、rAFの内側(実際に移動アニメーションが
-      // 開始した直後)でセットすることで、集約アニメーションが完了しきってから
-      // moveフェーズへ切り替わるようにする。
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (!cleanupAnimation) return
-          cleanupAnimation = {
-            ...cleanupAnimation,
-            gatherCards: cleanupAnimation.gatherCards.map(c => ({ ...c, left: gatherLeft, top: gatherTop })),
-            transitionMs: CLEANUP_GATHER_MS,
-          }
-          scheduleMoveToStock()
-        })
-      })
-    } else {
-      scheduleMoveToStock()
-    }
+      },
+      onComplete: processNextCleanupItem,
+    })
   }
 
   let scoreRevealTimer: ReturnType<typeof setTimeout> | undefined
@@ -787,11 +843,13 @@
       <div class="text-xs">山札</div>
       <div class="text-lg tabular-nums">{wave.stock.length}</div>
     </button>
-    {#if wave.discardPile.length > 0}
-      <div bind:this={discardPileEl} class="w-16 {cleanupAnimation?.kind === 'discard' || chainResetAnimation !== null ? 'invisible' : ''}">
-        <CardFace card={wave.discardPile[wave.discardPile.length - 1]} covered={false} />
-      </div>
-    {/if}
+    <div bind:this={discardPileEl} class="w-16 {cleanupAnimation?.kind === 'discard' ? 'invisible' : ''}">
+      {#if displayedDiscardTop}
+        <CardFace card={displayedDiscardTop} covered={false} />
+      {:else}
+        <div class="w-full rounded-lg border-2 border-dashed border-emerald-800 flex items-center justify-center text-[10px] text-emerald-700" style="aspect-ratio: 2 / 3;">捨て札</div>
+      {/if}
+    </div>
   </div>
   {#if items.includes('guidance') && wave.stock.length > 0}
     {@const nextCard = wave.stock[wave.stock.length - 1]}
