@@ -18,6 +18,8 @@
 - Wave開始時、山札から場札へカードを配るアニメーション。これも別のサブプロジェクトとして今後別途扱う
 - 手詰まり(`stuck`)や全消し(`fullClear`)によるWave終了時の挙動。今回は`endReason === 'target'`(スコア到達によるクリア)のケースのみを対象とする
 
+このセクション(片付けアニメーション)の実装・レビュー・pushが完了したら、続けて上記の対象外項目のうち「チェーンリセット時の捨て札移動アニメーション」のセクションに着手する(その後「Wave開始時の配布アニメーション」)。それぞれ本ドキュメントと同様にbrainstorming→spec→plan→実装のサイクルを個別に回す。
+
 ## 発動タイミング
 
 現在、`+page.svelte`の`handleScoreRevealDone`(得点内訳アニメーション完了時に呼ばれる)は`afterAction()`を呼び、`afterAction()`内で`wave.status === 'ended'`かつ`endReason === 'target'`の場合、`clearDelayMs`(450ms)待ってから`resolveWaveEnd`(画面遷移)を実行している。
