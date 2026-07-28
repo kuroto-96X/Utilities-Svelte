@@ -794,7 +794,7 @@
       <CardFace card={nextCard} covered={false} />
     </div>
   {/if}
-  <div bind:this={chainAreaEl} class="overflow-x-auto min-w-0 {cleanupAnimation?.kind === 'chain' || chainCleanedUp ? 'invisible' : ''}">
+  <div bind:this={chainAreaEl} class="overflow-x-auto min-w-0 {cleanupAnimation?.kind === 'chain' || chainCleanedUp || chainResetAnimation !== null ? 'invisible' : ''}">
     {#if chainAreaExtra}
       {@render chainAreaExtra()}
     {:else}
