@@ -137,7 +137,7 @@
   let stockButtonEl: HTMLButtonElement | undefined = $state()
   let discardPileEl: HTMLDivElement | undefined = $state()
 
-  const CLEANUP_GATHER_MS = 37
+  const CLEANUP_GATHER_MS = 74
   const CLEANUP_MOVE_MS = 50
 
   interface CleanupCardPosition {
