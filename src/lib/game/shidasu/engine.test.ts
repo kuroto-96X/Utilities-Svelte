@@ -2360,10 +2360,28 @@ describe('rerollStageStars', () => {
     expect(result).toEqual(run)
   })
 
-  test('waveIndexが2(waveSlot 3)以外のとき、何も変化しない', () => {
+  test('waveIndexが0(Wave1がNEXT)のときも、Wave3(stageStars[2])が再抽選される', () => {
     const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop', waveIndex: 0, currency: 100 }
+    const originalStar = run.stageStars[2]
+    const result = rerollStageStars(DEFAULT_PARAMS, run, () => 0.9)
+    expect(result.currency).toBe(100 - DEFAULT_PARAMS.flow.rerollCost)
+    expect(result.stageStars[2]).not.toBe(originalStar)
+  })
+
+  test('waveIndexが3(Wave3クリア済み)のとき、何も変化しない', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop', waveIndex: 3, currency: 100 }
     const result = rerollStageStars(DEFAULT_PARAMS, run, () => 0.9)
     expect(result).toEqual(run)
+  })
+
+  test('候補が複数あるwaveSlotでは、リロール後の星が直前と異なる(重複除外)', () => {
+    const run = shopRunAtWave3(1000)
+    let current = run
+    for (let i = 0; i < 20; i++) {
+      const before = current.stageStars[2]
+      current = rerollStageStars(DEFAULT_PARAMS, current, () => 0.5)
+      expect(current.stageStars[2]).not.toBe(before)
+    }
   })
 
   test('phaseがshop以外のとき、何も変化しない', () => {

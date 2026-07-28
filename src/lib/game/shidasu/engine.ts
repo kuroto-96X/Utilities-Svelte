@@ -941,11 +941,13 @@ function toStarRestriction(entry: ShidasuParams['stars'][number], rand: () => nu
 // 指定したwaveSlot(1/2/3)に属する候補群からrandで1つ抽選し、Star型に変換する。
 // 候補が1件も無いwaveSlotは管理画面のバリデーションで基本的に発生しないが、念のため
 // エントリが見つからない場合は制限ルールなしのダミー星を返す。
-function rollStarForSlot(params: ShidasuParams, waveSlot: 1 | 2 | 3, rand: () => number): Star {
-  const candidates = params.stars.filter(s => s.waveSlot === waveSlot)
-  if (candidates.length === 0) {
+function rollStarForSlot(params: ShidasuParams, waveSlot: 1 | 2 | 3, rand: () => number, excludeId?: string): Star {
+  const allCandidates = params.stars.filter(s => s.waveSlot === waveSlot)
+  if (allCandidates.length === 0) {
     return { id: `fallback-${waveSlot}`, name: '名もなき星', waveSlot, targetMultiplier: 1, reward: 0, restriction: null, sabotage: null }
   }
+  // リロール時、候補が2件以上あれば直前と同じ星を除外して再抽選が必ず変化するようにする
+  const candidates = excludeId && allCandidates.length > 1 ? allCandidates.filter(s => s.id !== excludeId) : allCandidates
   const entry = candidates[Math.floor(rand() * candidates.length)]
   return {
     id: entry.id,
@@ -1128,14 +1130,16 @@ export function skipWave(params: ShidasuParams, run: RunState): RunState {
   return { ...run, waveIndex: run.waveIndex + 1 }
 }
 
-// ステージ画面のリロールボタンから呼ぶ。waveSlot 3(waveIndex 2)かつ通貨がrerollCost以上のときのみ、
-// 通貨からrerollCostを差し引きstageStars[2]をrollStarForSlotで再抽選する。それ以外の条件(waveSlot
-// 1・2、通貨不足、phaseがshop以外)ではrunをそのまま返す。
+// ステージ画面のリロールボタンから呼ぶ。Wave3(waveSlot 3)がまだクリアされておらず(waveIndexが2以下)
+// 通貨がrerollCost以上のときのみ動作する。Wave1・2がNEXTの間でも押せる(Wave3のカード自体は先に
+// 抽選済みで表示されているため)。通貨からrerollCostを差し引き、stageStars[2]を直前と異なる星に
+// rollStarForSlotで再抽選する。それ以外の条件(Wave3クリア済み、通貨不足、phaseがshop以外)では
+// runをそのまま返す。
 export function rerollStageStars(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
   if (run.phase !== 'shop') return run
-  if (run.waveIndex !== 2) return run
+  if (run.waveIndex > 2) return run
   if (run.currency < params.flow.rerollCost) return run
-  const newStar = rollStarForSlot(params, 3, rand)
+  const newStar = rollStarForSlot(params, 3, rand, run.stageStars[2]?.id)
   const stageStars = [...run.stageStars]
   stageStars[2] = newStar
   return { ...run, currency: run.currency - params.flow.rerollCost, stageStars }

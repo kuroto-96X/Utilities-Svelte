@@ -822,7 +822,7 @@
               <div class="flex gap-2 mt-2">
                 <button onclick={handleSkipWave} class="flex-1 px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs">スキップ</button>
               </div>
-            {:else if isNext && isBoss}
+            {:else if isBoss && !isCleared}
               <div class="flex gap-2 mt-2">
                 <button
                   onclick={handleRerollStageStars}
