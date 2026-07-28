@@ -606,7 +606,9 @@
     if (allParts.length === 0) {
       displayedScore = wave.score
       onScoreRevealDone?.()
-      if (wave.status === 'ended' && wave.endReason === 'target') startCleanupAnimation()
+      // previewDismissedは天啓プレビュー盤面(使い捨て)の破棄トリガー。片付けアニメ自体は
+      // targetの場合と共通ロジックのため同じ扱いにする(下のfinishScoreRevealも同様)。
+      if (wave.status === 'ended' && (wave.endReason === 'target' || wave.endReason === 'previewDismissed')) startCleanupAnimation()
       return
     }
     const runningTotals = runningTotalsFromScoreParts(allParts)
