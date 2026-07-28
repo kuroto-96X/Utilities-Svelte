@@ -148,6 +148,7 @@
   }
 
   let cleanupAnimation = $state<CleanupAnimation | null>(null)
+  // UI表示には使わない内部処理専用のキューのため、意図的に$stateにしていない。
   let cleanupQueue: { kind: 'column' | 'chain' | 'discard'; columnIndex: number; card: Card }[] = []
   let cleanupTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -190,6 +191,9 @@
     }
     if (!fromEl || !stockButtonEl) {
       // 座標が取得できない(要素未マウント等)場合は、このアイテムをスキップして次へ進む。
+      // stockButtonEl自体が無い場合はキュー内の全アイテムがこの分岐に入り同期的な
+      // 再帰呼び出しで一気に消化されるが、キューの長さは場札の列数+チェーン+捨て札の
+      // 最大10個未満に収まるため、スタックオーバーフローの実害はない。
       processNextCleanupItem()
       return
     }
