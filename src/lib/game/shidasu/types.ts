@@ -10,8 +10,34 @@ export type SpreadId = 'fool' | 'moon'
 // どの階級(小凶/中凶/大凶)に属するかはparams.bosses[kind].tierとして管理画面から変更できる。
 // noLoop/faceLock=小凶向け(isPlayableの可否制約)、lowCombo/oddCombo=中凶向け、suit/face=大凶向け(得点ロック)
 // という想定だが、実際にどの階級で抽選されるかはtierの値のみが決める。
+// 非推奨: Star型(下記)への移行に伴い廃止予定。StarRestriction.kindが同等の役割を持つ。
+// 移行完了後(次回以降のセッションでUI・管理画面の置き換えが終わったら)削除すること。
 export type BossKind = 'noLoop' | 'faceLock' | 'lowCombo' | 'oddCombo' | 'suit' | 'face'
 export type BossTierKey = 'shoukyou' | 'chuukyou' | 'taikyou'
+
+// Wave単位の新概念「星」が持つ制限ルール。旧BossKind(noLoop/faceLock/lowCombo/oddCombo/suit/face)を
+// kindで判別するUnion型として引き継ぐ。suitのみ、星が選出されると同時にスートを抽選し確定させる。
+export type StarRestriction =
+  | { kind: 'noLoop' }
+  | { kind: 'faceLock' }
+  | { kind: 'lowCombo'; maxCombo: number }
+  | { kind: 'oddCombo' }
+  | { kind: 'suit'; suit: Suit }
+  | { kind: 'face' }
+  | null
+
+// Wave単位の新概念「星」(旧: 小凶/中凶/大凶の階級制を廃止した代わりの仕組み)。
+// waveSlotが1/2/3のうちどのWave番号で使われうるかを表す。全ての星はフラットな1つのリストとして
+// 定義され、Wave開始時にwaveSlotが一致する星の中からランダムに1つ選ばれる。
+export interface Star {
+  id: string
+  name: string
+  waveSlot: 1 | 2 | 3
+  targetMultiplier: number
+  reward: number
+  restriction: StarRestriction
+  sabotage: null
+}
 export type Rarity = 'C' | 'U' | 'R'
 export type RoleName = 'flush' | 'royalSet' | 'sameRank' | 'completeRun' | 'columnSweep' | 'suit' | 'color' | 'stair'
 export type ItemId =
@@ -253,16 +279,12 @@ export interface RunState {
   oracleLevels: Record<RoleName, number>
   // 神託選択画面('oracleSelect'フェーズ)で提示中のオファー(3択)。それ以外のフェーズでは空配列
   oracleOffer: RoleName[]
-  // 大凶ステージ(stageIndex % 3 === 2)の対象スート。中凶クリア直後(大凶ステージの1ウェーブ目を
-  // 配る時点)にrandで抽選して確定し、そのステージが終わるまで(1〜3ウェーブ目)固定で使い回す。
-  // 小凶・中凶ステージの間は常にnull
-  currentGreatMisfortuneSuit: Suit | null
   // ラン開始時に選ばれたスプレッド。ラン全体を通して不変(タイトル画面に戻って選び直すまで固定)
   spreadId: SpreadId
-  // 現在のステージのボスウェーブで適用される候補。ステージ突入時(そのステージのウェーブ0を
-  // 配る時点)にそのステージの階級(bossTierOf(stageIndex))に属する候補群からrandで1つ抽選し、
-  // そのステージの3ウェーブ間(表示・実際の判定とも)固定で使い回す。titleフェーズではnull
-  currentBossKind: BossKind | null
+  // 現在のステージの3Wave分の「星」。新しいステージに入る直前(waveIndexが0に戻るタイミング)に
+  // waveSlot 1・2・3それぞれの候補群から1つずつ抽選し一括で確定させる。titleフェーズでは空配列。
+  // stageStars[waveIndex]が現在Waveの星に相当する(専用フィールドは持たず都度導出する)。
+  stageStars: Star[]
   // ラン単位で保持する通貨(星片)の所持数。continueChoiceを挟んでもリセットされず、
   // beginRun(新しいラン開始)のときのみ初期値に戻る
   currency: number
