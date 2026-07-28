@@ -128,30 +128,6 @@
     cleanedUpColumns = new Set()
     chainCleanedUp = false
   })
-  // $effect.preを使う理由: 山札を捲った際のチェーンリセットは、捲ったカードの追加と
-  // リセットによる短縮がengine側で1回のwave更新にまとめて起きるため、通常の$effect
-  // (DOM更新後に発火)では旧チェーンのカードDOM要素が既に消えており座標を取得できない。
-  // $effect.preはDOM更新前(旧チェーンがまだ描画されている状態)に発火するため、
-  // ここで対象カードのDOM要素から座標を記録してからstartChainResetAnimationへ渡す。
-  $effect.pre(() => {
-    const currentChainIds = wave.chain.map(c => c.id)
-    // waveKeyの変化(新Wave境界)を自前で追跡する。既存のwaveKey監視effect
-    // (直前のブロック)が同じフレームでpreviousWaveKeyを先に更新してしまうため、
-    // このeffect内でwaveKey !== previousWaveKeyを見ても新Wave境界を検知できない。
-    if (waveKey !== previousChainWaveKey) {
-      previousChainWaveKey = waveKey
-      previousChainIds = currentChainIds
-      return
-    }
-    const resetCards = previousChainIds.length > currentChainIds.length
-      ? wave.chain.length > 0
-        ? previousChainIds.filter(id => id !== wave.chain[wave.chain.length - 1].id)
-        : previousChainIds
-      : []
-    previousChainIds = currentChainIds
-    if (resetCards.length === 0) return
-    startChainResetAnimation(resetCards)
-  })
   let scoreNumberEl: HTMLDivElement | undefined = $state()
   let scoreNumberScale = $state(1)
   let scoreNumberTransitionMs = $state(0)
@@ -207,6 +183,31 @@
   let chainResetTimer: ReturnType<typeof setTimeout> | undefined
   let previousChainIds: number[] = wave.chain.map(c => c.id)
   let previousChainWaveKey = waveKey
+
+  // $effect.preを使う理由: 山札を捲った際のチェーンリセットは、捲ったカードの追加と
+  // リセットによる短縮がengine側で1回のwave更新にまとめて起きるため、通常の$effect
+  // (DOM更新後に発火)では旧チェーンのカードDOM要素が既に消えており座標を取得できない。
+  // $effect.preはDOM更新前(旧チェーンがまだ描画されている状態)に発火するため、
+  // ここで対象カードのDOM要素から座標を記録してからstartChainResetAnimationへ渡す。
+  $effect.pre(() => {
+    const currentChainIds = wave.chain.map(c => c.id)
+    // waveKeyの変化(新Wave境界)を自前で追跡する。既存のwaveKey監視effect
+    // (前方のブロック)が同じフレームでpreviousWaveKeyを先に更新してしまうため、
+    // このeffect内でwaveKey !== previousWaveKeyを見ても新Wave境界を検知できない。
+    if (waveKey !== previousChainWaveKey) {
+      previousChainWaveKey = waveKey
+      previousChainIds = currentChainIds
+      return
+    }
+    const resetCards = previousChainIds.length > currentChainIds.length
+      ? wave.chain.length > 0
+        ? previousChainIds.filter(id => id !== wave.chain[wave.chain.length - 1].id)
+        : previousChainIds
+      : []
+    previousChainIds = currentChainIds
+    if (resetCards.length === 0) return
+    startChainResetAnimation(resetCards)
+  })
 
   // Waveクリア確定後、場札の各列(左から右)→チェーン→捨て札の順に、
   // 各カード群を1山にまとめて山札へ移動させるアニメーションを開始する。
