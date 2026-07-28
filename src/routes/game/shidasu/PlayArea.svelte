@@ -735,9 +735,9 @@
               {@const isCardPlayable = !columnTargetMode && wave.status === 'playing' && isPlayable(modifier, wave, card)}
               <button
                 type="button"
-                disabled={playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null}
+                disabled={playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null}
                 onclick={() => (columnTargetMode ? (isTargetable && onTargetColumn?.(ci)) : (isCardPlayable && startPlayCardAnimation(ci, ri, card)))}
-                class="block w-full text-left {columnTargetMode ? (isTargetable ? 'ring-2 ring-fuchsia-400 shadow-lg -translate-y-0.5' : '') : (isCardPlayable && playingAnimation === null && scoreReveal === null && cleanupAnimation === null ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : '')} transition-transform disabled:cursor-not-allowed"
+                class="block w-full text-left {columnTargetMode ? (isTargetable ? 'ring-2 ring-fuchsia-400 shadow-lg -translate-y-0.5' : '') : (isCardPlayable && playingAnimation === null && scoreReveal === null && cleanupAnimation === null && chainResetAnimation === null ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : '')} transition-transform disabled:cursor-not-allowed"
               >
                 <CardFace {card} covered={false} />
               </button>
@@ -772,7 +772,7 @@
     <button
       type="button"
       onclick={onDraw}
-      disabled={wave.stock.length === 0 || !allowDraw || playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null}
+      disabled={wave.stock.length === 0 || !allowDraw || playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null}
       data-drop-stock
       bind:this={stockButtonEl}
       style="aspect-ratio: 2 / 3;"
@@ -781,8 +781,8 @@
       <div class="text-xs">山札</div>
       <div class="text-lg tabular-nums">{wave.stock.length}</div>
     </button>
-    {#if wave.discardPile.length > 0 && cleanupAnimation?.kind !== 'discard'}
-      <div bind:this={discardPileEl} class="w-16">
+    {#if wave.discardPile.length > 0}
+      <div bind:this={discardPileEl} class="w-16 {cleanupAnimation?.kind === 'discard' || chainResetAnimation !== null ? 'invisible' : ''}">
         <CardFace card={wave.discardPile[wave.discardPile.length - 1]} covered={false} />
       </div>
     {/if}
@@ -821,7 +821,7 @@
 {#if rites.length > 0}
   <div class="px-4 pb-4 flex items-center gap-2">
     {#each rites as riteId, i (i)}
-      {@const usable = canUseRite(params, wave, riteId) && playingAnimation === null && scoreReveal === null && cleanupAnimation === null}
+      {@const usable = canUseRite(params, wave, riteId) && playingAnimation === null && scoreReveal === null && cleanupAnimation === null && chainResetAnimation === null}
       <button
         type="button"
         onclick={() => onUseRite?.(riteId)}
@@ -837,7 +837,7 @@
 {#if revelations.length > 0}
   <div class="px-4 pb-4 flex items-center gap-2">
     {#each revelations as revelationId, i (i)}
-      {@const usable = canUseRevelation(params, wave, revelationId) && playingAnimation === null && scoreReveal === null && cleanupAnimation === null}
+      {@const usable = canUseRevelation(params, wave, revelationId) && playingAnimation === null && scoreReveal === null && cleanupAnimation === null && chainResetAnimation === null}
       <button
         type="button"
         onclick={() => onUseRevelationClick?.(revelationId)}
@@ -890,4 +890,15 @@
       <CardFace card={cleanupAnimation.card} covered={false} />
     </div>
   {/if}
+{/if}
+
+{#if chainResetAnimation}
+  {#each chainResetAnimation.gatherCards as gatherCard (gatherCard.card.id)}
+    <div
+      class="fixed pointer-events-none z-[100] ease-out"
+      style="left:{gatherCard.left}px; top:{gatherCard.top}px; width:64px; transform: translate(-50%, -50%); transition-property: left, top; transition-duration:{chainResetAnimation.transitionMs}ms;"
+    >
+      <CardFace card={gatherCard.card} covered={false} />
+    </div>
+  {/each}
 {/if}
