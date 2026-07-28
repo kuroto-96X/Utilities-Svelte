@@ -2209,12 +2209,14 @@ describe('resolveWaveEnd', () => {
     expect(result.shop!.packs).toHaveLength(2)
   })
 
-  test('ショップ突入時、次のウェーブ位置・ボス種別・プレビューウェーブが確定する(既存のenterRevelationSelect相当)', () => {
+  test('ショップ突入時、次のウェーブ位置・stageStarsは確定するが、waveは直前Waveの状態のまま変更されない', () => {
     const run = endedRun({ waveIndex: 0 }, waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars))
+    const previousWave = run.wave
     const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
+    expect(result.phase).toBe('shop')
     expect(result.waveIndex).toBe(run.waveIndex + 1)
-    expect(result.wave).not.toBeNull()
-    expect(result.wave!.status).toBe('playing')
+    expect(result.wave).toBe(previousWave)
+    expect(result.shop).not.toBeNull()
   })
 
   test('目標スコア未達の場合はgameOverへ遷移しshopはnullのまま', () => {

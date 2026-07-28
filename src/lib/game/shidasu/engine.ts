@@ -1089,10 +1089,9 @@ export function useRite(params: ShidasuParams, run: RunState, riteId: RiteId, ra
 // Waveクリア確定後(resolveWaveEnd)・大凶続行後(continueAfterGreatMisfortune)に呼ぶ。
 // 次ウェーブ位置・ボス種別・大凶対象スートを確定し、天啓ターゲット用のプレビューウェーブを配布した上で
 // ショップの商品構成を抽選し、phase: 'shop'へ遷移する。
-function enterShop(params: ShidasuParams, run: RunState, seed: number | undefined, rand: () => number): RunState {
+function enterShop(params: ShidasuParams, run: RunState, _seed: number | undefined, rand: () => number): RunState {
   const newLocation = nextWaveLocation(params, run)
   const newStageStars = nextStageStars(params, run, newLocation, rand)
-  const { wave, deckComposition } = startWave(params, newLocation.stageIndex, newLocation.waveIndex, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels)
   const next: RunState = {
     ...run,
     phase: 'shop',
@@ -1101,8 +1100,6 @@ function enterShop(params: ShidasuParams, run: RunState, seed: number | undefine
     stageStars: newStageStars,
     offer: [],
     pendingNewItem: null,
-    wave,
-    deckComposition,
     revelationOffer: [],
     oracleOffer: [],
     riteOffer: [],
