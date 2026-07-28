@@ -124,6 +124,8 @@
     if (waveKey === undefined || waveKey === previousWaveKey) return
     previousWaveKey = waveKey
     displayedScore = wave.score
+    cleanedUpColumns = new Set()
+    chainCleanedUp = false
   })
   let scoreNumberEl: HTMLDivElement | undefined = $state()
   let scoreNumberScale = $state(1)
