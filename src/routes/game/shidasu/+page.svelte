@@ -88,14 +88,24 @@
   function afterAction() {
     clearPendingTimer()
     if (run.wave?.status === 'ended') {
-      const delay = run.wave.endReason === 'target' ? params.flow.clearDelayMs : 0
+      if (run.wave.endReason === 'target') {
+        // 片付けアニメーション完了(PlayArea側のonCleanupDone経由でhandleCleanupDoneが
+        // 呼ばれるまで)を待ってからresolveWaveEndを呼ぶため、ここでは何もしない。
+        return
+      }
       pendingTimer = setTimeout(() => {
         pendingTimer = null
         run = resolveWaveEnd(params, run)
-      }, delay)
+      }, 0)
       return
     }
     scheduleStuckCheck()
+  }
+
+  // PlayArea側の片付けアニメーション(場札・チェーン・捨て札を山札へ戻す演出)が
+  // 完了した後に呼ばれる。endReason==='target'のときのafterAction()から委譲される。
+  function handleCleanupDone() {
+    run = resolveWaveEnd(params, run)
   }
 
   const SPREAD_IDS: SpreadId[] = ['fool', 'moon']
@@ -471,6 +481,7 @@
     {wave} {params} modifier={currentModifier} {target} items={run.items}
     onPlayCard={handlePlayCard} onDraw={handleDraw}
     onScoreRevealDone={handleScoreRevealDone}
+    onCleanupDone={handleCleanupDone}
     waveKey={`${run.stageIndex}-${run.waveIndex}`}
     headerExtra={stageRow} extraFooter={itemBadges}
     rites={run.rites} onUseRite={handleUseRite}
