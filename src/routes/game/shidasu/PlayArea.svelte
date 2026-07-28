@@ -77,6 +77,7 @@
     clearTimeout(scoreRevealTimer)
     clearTimeout(cleanupTimer)
     clearTimeout(chainResetTimer)
+    dealTimers.forEach(clearTimeout)
   })
 
   const PART_FLYIN_CENTER_MS = 300
@@ -174,6 +175,16 @@
     gatherCards: GatherMoveCardPosition[]
   }
 
+  // 配布アニメーション中、1枚のカードが山札から場札のマス目へ飛んでいく状態。
+  interface DealingCard {
+    card: Card
+    colIndex: number
+    rowIndex: number
+    left: number
+    top: number
+    transitionMs: number
+  }
+
   // 「複数カードを1山にまとめてから移動先へ移動させる」gather→moveの2フェーズ
   // アニメーションの共通制御ロジック。cleanupAnimation・chainResetAnimation両方から
   // 呼ばれる。呼び出し元は現在の$state値の読み取り・更新(get/set)と、gather対象カード・
@@ -263,6 +274,16 @@
   let cleanupTimer: ReturnType<typeof setTimeout> | undefined
   let chainResetAnimation = $state<ChainResetAnimation | null>(null)
   let chainResetTimer: ReturnType<typeof setTimeout> | undefined
+  let dealingCards = $state<DealingCard[]>([])
+  // 着地済み(実表示に切り替え済み)のマス目を"col-row"形式の文字列で追跡する。
+  // 配布アニメーション進行中は、このSetに含まれないマス目を非表示にする。
+  let dealtCells = $state<Set<string>>(new Set())
+  let dealAnimationActive = $derived(dealingCards.length > 0)
+  let dealTimers: ReturnType<typeof setTimeout>[] = []
+  let previousDealWaveKey = waveKey
+
+  const DEAL_INTERVAL_MS = 30
+  const DEAL_MOVE_MS = 150
   // Cardオブジェクトそのものをスナップショットとして保持する(IDだけでなく)。
   // wave.discardPileから該当カードを引き直す設計だと、治癒(healing)護符の発動時に
   // discardPile全体がシャッフルされ一部が場札へ復元されるため、末尾N件がリセット対象と
