@@ -148,6 +148,8 @@
   }
 
   let cleanupAnimation = $state<CleanupAnimation | null>(null)
+  let cleanedUpColumns = $state<Set<number>>(new Set())
+  let chainCleanedUp = $state(false)
   // UI表示には使わない内部処理専用のキューのため、意図的に$stateにしていない。
   let cleanupQueue: { kind: 'column' | 'chain' | 'discard'; columnIndex: number; card: Card }[] = []
   let cleanupTimer: ReturnType<typeof setTimeout> | undefined
@@ -155,6 +157,8 @@
   // Waveクリア確定後、場札の各列(左から右)→チェーン→捨て札の順に、
   // 各カード群を1山にまとめて山札へ移動させるアニメーションを開始する。
   function startCleanupAnimation() {
+    cleanedUpColumns = new Set()
+    chainCleanedUp = false
     const columnItems = wave.tableau
       .map((col, ci) => ({ columnIndex: ci, card: col[col.length - 1] }))
       .filter((entry): entry is { columnIndex: number; card: Card } => entry.card !== undefined)
@@ -216,6 +220,11 @@
         left: toRect.left + toRect.width / 2,
         top: toRect.top + toRect.height / 2,
         transitionMs: CLEANUP_MOVE_MS,
+      }
+      if (item.kind === 'column') {
+        cleanedUpColumns = new Set([...cleanedUpColumns, item.columnIndex])
+      } else if (item.kind === 'chain') {
+        chainCleanedUp = true
       }
       cleanupTimer = setTimeout(processNextCleanupItem, CLEANUP_MOVE_MS)
     }, CLEANUP_GATHER_MS)
@@ -513,7 +522,7 @@
           {@const isExposedByAnimation = playingAnimation !== null && playingAnimation.colIndex === ci && ri === col.length - 2}
           {@const isSelectable = columnTargetMode ? isTop : (isTop || wave.playFromAnywhereActiveThisWave)}
           {@const isAnimatingThisCard = playingAnimation?.colIndex === ci && playingAnimation?.rowIndex === ri}
-          {@const isCleaningUpThisColumn = cleanupAnimation?.kind === 'column' && cleanupAnimation.columnIndex === ci}
+          {@const isCleaningUpThisColumn = (cleanupAnimation?.kind === 'column' && cleanupAnimation.columnIndex === ci) || cleanedUpColumns.has(ci)}
           <div
             class="absolute left-0 right-0 {dropTarget && dropTarget !== 'stockTop' && dropTarget.col === ci && dropTarget.row === ri ? 'ring-4 ring-sky-400 rounded-lg' : ''} {isAnimatingThisCard || isCleaningUpThisColumn ? 'invisible' : ''}"
             style="top:{ri * 18}px; z-index:{ri};"
@@ -572,7 +581,7 @@
       <div class="text-lg tabular-nums">{wave.stock.length}</div>
     </button>
     {#if wave.discardPile.length > 0 && cleanupAnimation?.kind !== 'discard'}
-      <div bind:this={discardPileEl} class="w-10">
+      <div bind:this={discardPileEl} class="w-16">
         <CardFace card={wave.discardPile[wave.discardPile.length - 1]} covered={false} />
       </div>
     {/if}
@@ -584,7 +593,7 @@
       <CardFace card={nextCard} covered={false} />
     </div>
   {/if}
-  <div bind:this={chainAreaEl} class="overflow-x-auto min-w-0 {cleanupAnimation?.kind === 'chain' ? 'invisible' : ''}">
+  <div bind:this={chainAreaEl} class="overflow-x-auto min-w-0 {cleanupAnimation?.kind === 'chain' || chainCleanedUp ? 'invisible' : ''}">
     {#if chainAreaExtra}
       {@render chainAreaExtra()}
     {:else}
