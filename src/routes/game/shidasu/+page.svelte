@@ -5,6 +5,7 @@
     createInitialRun, beginRun, applyPlayCard, applyDrawStock, applyStuckCheck,
     resolveWaveEnd, continueAfterGreatMisfortune, stopAfterGreatMisfortune, startWave, forceStockTop, useRite,
     useRevelation,
+    SHOP_FLOW_PHASES, startRevelationPreview,
     waveTarget, stageModifierFor, isBossWave, skipWave, rerollStageStars,
     finishShop, buyIndividualItem, buyIndividualRite, buyIndividualRevelationUse, buyIndividualRevelationHold,
     buyIndividualOracleUse, buyIndividualOracleHold, buyPack,
@@ -24,7 +25,7 @@
     itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice,
     oracleBuyPrice, oracleSellPrice, packPrice,
   } from '$lib/game/shidasu/shop'
-  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, ShopSlotKind, PlayCardResult, Star } from '$lib/game/shidasu/types'
+  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, ShopSlotKind, PlayCardResult, Star, WaveState } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
   import RoleStatusPanel from './RoleStatusPanel.svelte'
@@ -129,6 +130,13 @@
   // 完了した後に呼ばれる。endReason==='target'のときのafterAction()から委譲される。
   function handleCleanupDone() {
     run = resolveWaveEnd(params, run)
+  }
+
+  // 天啓プレビュー盤面の片付けアニメーション(PlayArea側のonCleanupDone経由)が
+  // 完了した後に呼ばれる。resolveWaveEndは呼ばず、プレビューstateを破棄するだけで
+  // ショップ画面表示に戻る(run自体は既にhandleTargetColumnで更新済み)。
+  function handleRevelationPreviewCleanupDone() {
+    revelationPreviewWave = null
   }
 
   const SPREAD_IDS: SpreadId[] = ['fool', 'moon']
@@ -307,9 +315,22 @@
     | null
   >(null)
 
+  // ショップ系フェーズでの天啓ターゲット選択用の使い捨てプレビュー盤面。非nullの間、
+  // pendingRevelationTargetのコラム選択はrun.waveではなくこちらを対象に行う。
+  // playingフェーズ中の保有天啓使用(source: 'held')ではセットされない。
+  let revelationPreviewWave = $state<WaveState | null>(null)
+  let revelationPreviewSeq = 0
+  let revelationPreviewWaveKey = $state('')
+
+  function beginRevelationPreview() {
+    revelationPreviewWave = startRevelationPreview(params, run)
+    revelationPreviewWaveKey = `revelation-preview-${++revelationPreviewSeq}`
+  }
+
   function handleBuyIndividualRevelationUse(slotIndex: number, revelationId: RevelationId) {
     if (revelationNeedsTarget(revelationId)) {
       pendingRevelationTarget = { revelationId, source: 'individual', slotIndex }
+      beginRevelationPreview()
       return
     }
     run = buyIndividualRevelationUse(params, run, slotIndex, null)
@@ -318,6 +339,7 @@
   function handlePickPackRevelationUse(revelationId: RevelationId) {
     if (revelationNeedsTarget(revelationId)) {
       pendingRevelationTarget = { revelationId, source: 'pack' }
+      beginRevelationPreview()
       return
     }
     run = pickPackRevelationUse(params, run, revelationId, null)
@@ -326,6 +348,9 @@
   function handleUseRevelationClick(revelationId: RevelationId) {
     if (revelationNeedsTarget(revelationId)) {
       pendingRevelationTarget = { revelationId, source: 'held' }
+      if (SHOP_FLOW_PHASES.includes(run.phase)) {
+        beginRevelationPreview()
+      }
       return
     }
     run = useRevelation(params, run, revelationId, null)
@@ -334,12 +359,36 @@
 
   function handleCancelRevelationTarget() {
     pendingRevelationTarget = null
+    revelationPreviewWave = null
   }
 
   function handleTargetColumn(colIndex: number) {
     if (!pendingRevelationTarget) return
     const target = pendingRevelationTarget
     pendingRevelationTarget = null
+
+    if (revelationPreviewWave) {
+      // プレビュー盤面に対して既存の天啓適用関数を流用する。run.waveを一時的に
+      // プレビューへすり替えて呼び出し、結果からwave以外(deckComposition・currency・
+      // shop・revelations等の永続的な変更)のみ本番runへ反映する。wave自体は
+      // 呼び出し前のrun.wave(直前Waveのended状態)のまま変更しない。
+      const runForPreview = { ...run, wave: revelationPreviewWave }
+      let resultRun: RunState
+      if (target.source === 'individual') {
+        resultRun = buyIndividualRevelationUse(params, runForPreview, target.slotIndex, colIndex)
+      } else if (target.source === 'pack') {
+        resultRun = pickPackRevelationUse(params, runForPreview, target.revelationId, colIndex)
+      } else {
+        resultRun = useRevelation(params, runForPreview, target.revelationId, colIndex)
+      }
+      const previewResultWave = resultRun.wave
+      run = { ...resultRun, wave: run.wave }
+      revelationPreviewWave = previewResultWave
+        ? { ...previewResultWave, status: 'ended', endReason: 'previewDismissed' }
+        : null
+      return
+    }
+
     if (target.source === 'individual') {
       run = buyIndividualRevelationUse(params, run, target.slotIndex, colIndex)
     } else if (target.source === 'pack') {
@@ -351,9 +400,10 @@
   }
 
   function canTargetRevelationColumn(colIndex: number): boolean {
-    if (!wave || !pendingRevelationTarget) return false
+    const targetWave = revelationPreviewWave ?? wave
+    if (!targetWave || !pendingRevelationTarget) return false
     if (pendingRevelationTarget.revelationId === 'aya') return true
-    return wave.tableau[colIndex].length > 0
+    return targetWave.tableau[colIndex].length > 0
   }
 </script>
 
@@ -499,6 +549,19 @@
     </div>
   </div>
 
+{:else if revelationPreviewWave}
+  <PlayArea
+    wave={revelationPreviewWave} {params} modifier={currentModifier} target={0} items={run.items}
+    onPlayCard={() => {}} onDraw={() => {}}
+    showScoreAndCombo={false} allowDraw={false}
+    onCleanupDone={handleRevelationPreviewCleanupDone}
+    waveKey={revelationPreviewWaveKey}
+    headerExtra={stageRow}
+    columnTargetMode={true}
+    canTargetColumn={canTargetRevelationColumn}
+    onTargetColumn={handleTargetColumn}
+    chainAreaExtra={revelationSelectExtra}
+  />
 {:else if wave && run.phase === 'revelationSelect'}
   <PlayArea
     {wave} {params} modifier={currentModifier} {target} items={run.items}
