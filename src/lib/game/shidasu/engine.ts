@@ -893,8 +893,9 @@ export function bossTierOf(stageIndex: number): 0 | 1 | 2 {
 
 // 現在Waveの星(stageStars[waveIndex])が持つ制限ルールのうち、取得可否そのものを制限する
 // 種類(noLoop/faceLock)のみを対象とする。得点ロック系(lowCombo/oddCombo/suit/face)は
-// bossScoreLockForが別途扱う。
-export function stageModifierFor(params: ShidasuParams, run: RunState): StageModifier {
+// bossScoreLockForが別途扱う。paramsは呼び出し元との既存シグネチャ互換のため残しているが、
+// 判定に使うのはrun.stageStarsのみで参照していない。
+export function stageModifierFor(_params: ShidasuParams, run: RunState): StageModifier {
   const star = run.stageStars[run.waveIndex]
   if (!star || !star.restriction) return 'none'
   if (star.restriction.kind === 'noLoop') return 'noLoop'
@@ -903,8 +904,10 @@ export function stageModifierFor(params: ShidasuParams, run: RunState): StageMod
 }
 
 // 現在Waveの星が持つ制限ルールのうち、得点ロック系(lowCombo/oddCombo/suit/face)を対象とする。
-// tierLabelには星の名前(旧: 階級名)をそのまま使う。
-export function bossScoreLockFor(params: ShidasuParams, run: RunState): BossScoreLock {
+// tierLabelには星の名前(旧: 階級名)をそのまま使う。noLoop/faceLockはstageModifierFor側の
+// 担当であり、ここでは意図的にdefaultへ落としてnullを返す(取得可否制限と得点ロックは排他)。
+// paramsは呼び出し元との既存シグネチャ互換のため残しているが、判定には使っていない。
+export function bossScoreLockFor(_params: ShidasuParams, run: RunState): BossScoreLock {
   const star = run.stageStars[run.waveIndex]
   if (!star || !star.restriction) return null
   switch (star.restriction.kind) {
