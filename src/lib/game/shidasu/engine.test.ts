@@ -2188,10 +2188,12 @@ describe('resolveWaveEnd', () => {
   const noRewardStar: Star = { id: 'no-reward-star', name: '無報酬の星', waveSlot: 1, targetMultiplier: 1, reward: 0, restriction: null, sabotage: null }
 
   function endedRun(overrides: Partial<RunState>, waveScore: number): RunState {
-    const run = { ...beginRun(DEFAULT_PARAMS, 1), ...overrides }
+    const base = beginRun(DEFAULT_PARAMS, 1)
+    const run = { ...base, ...overrides }
+    const { wave } = startWave(DEFAULT_PARAMS, run.stageIndex, run.waveIndex, run.items, run.deckComposition, 1, run.extraTableauRows, run.oracleLevels)
     return {
       ...run,
-      wave: { ...run.wave!, score: waveScore, status: 'ended', endReason: 'target' },
+      wave: { ...wave, score: waveScore, status: 'ended', endReason: 'target' },
     }
   }
 
