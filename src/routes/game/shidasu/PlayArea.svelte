@@ -247,15 +247,20 @@
 
     const cards = wave.discardPile.slice(-resetCardIds.length).filter(c => resetCardIds.includes(c.id))
     if (cards.length !== cardEntries.length) return
+    // cardEntriesの各IDに対応するカードがcardsに実在することを保証してから使う。
+    // 件数が一致していても、想定外の状態(IDの重複や不一致)ではfindがundefinedを
+    // 返しうるため、その場合はアニメーション全体を安全側に倒して中断する。
+    const cardById = new Map(cards.map(c => [c.id, c]))
+    if (cardEntries.some(entry => !cardById.has(entry.id))) return
 
     const gatherLeft = cardEntries[0].el.getBoundingClientRect().left + cardEntries[0].el.getBoundingClientRect().width / 2
     const gatherTop = cardEntries[0].el.getBoundingClientRect().top + cardEntries[0].el.getBoundingClientRect().height / 2
 
     const gatherCards: ChainResetCardPosition[] = cardEntries.map(entry => {
       const rect = entry.el.getBoundingClientRect()
-      const card = cards.find(c => c.id === entry.id)
+      const card = cardById.get(entry.id)!
       return {
-        card: card as Card,
+        card,
         left: rect.left + rect.width / 2,
         top: rect.top + rect.height / 2,
       }
