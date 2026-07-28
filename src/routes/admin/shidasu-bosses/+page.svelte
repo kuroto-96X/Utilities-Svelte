@@ -43,7 +43,7 @@
   function addStar() {
     if (!config) return
     config.stars.push({
-      id: `star-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: `star-${crypto.randomUUID()}`,
       name: '',
       waveSlot: 1,
       targetMultiplier: 1,
