@@ -232,6 +232,12 @@
 
   function handleBuyPack(slotIndex: number) {
     run = buyPack(params, run, slotIndex)
+    // 天啓福袋の場合、候補一覧を見せている段階から一貫してプレビュー盤面(配布アニメ付き)を
+    // 使う。プレビューを開始しないと、候補の「使用」ボタンでターゲットが必要な天啓を選ぶまで
+    // run.wave(直前Waveのended状態)がそのまま見えてしまい紛らわしいため。
+    if (run.phase === 'revelationSelect') {
+      beginRevelationPreview()
+    }
   }
 
   function handlePickPackItem(itemId: ItemId) {
@@ -260,17 +266,29 @@
     run = closePackRiteSelect(run)
   }
 
+  // revelationSelectフェーズを離れた(=福袋での天啓選択が完了しshopへ戻った)場合、
+  // handleBuyPackで開始したプレビューを破棄する。まだrevelationSelectのまま(複数選択の
+  // 途中)なら何もしない。
+  function syncRevelationPreviewWithPhase() {
+    if (run.phase !== 'revelationSelect') {
+      revelationPreviewWave = null
+    }
+  }
+
   function handlePickPackRevelationHold(revelationId: RevelationId) {
     run = pickPackRevelationHold(run, revelationId)
+    syncRevelationPreviewWithPhase()
   }
   function handleConfirmPackRevelationSwap(target: HeldRevelationOrOracleRef) {
     run = confirmPackRevelationSwap(run, target)
+    syncRevelationPreviewWithPhase()
   }
   function handleCancelPackRevelationSwap() {
     run = cancelPackRevelationSwap(run)
   }
   function handleClosePackRevelationSelect() {
     run = closePackRevelationSelect(run)
+    syncRevelationPreviewWithPhase()
   }
 
   function handlePickPackOracleUse(roleName: RoleName) {
@@ -343,6 +361,7 @@
       return
     }
     run = pickPackRevelationUse(params, run, revelationId, null)
+    syncRevelationPreviewWithPhase()
   }
 
   function handleUseRevelationClick(revelationId: RevelationId) {
@@ -586,7 +605,7 @@
     onPlayCard={handlePlayCard} onDraw={handleDraw}
     onScoreRevealDone={handleScoreRevealDone}
     onCleanupDone={handleCleanupDone}
-    waveKey={`${run.stageIndex}-${run.waveIndex}`}
+    waveKey={`wave-${run.waveGeneration}`}
     headerExtra={stageRow} extraFooter={itemBadges}
     rites={run.rites} onUseRite={handleUseRite}
     revelations={run.revelations} onUseRevelationClick={handleUseRevelationClick}

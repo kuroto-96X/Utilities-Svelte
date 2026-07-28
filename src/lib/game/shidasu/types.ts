@@ -266,6 +266,10 @@ export interface RunState {
   items: ItemId[]
   offer: ItemId[]
   wave: WaveState | null
+  // waveが実際に新規生成(startWave)されるたびに1ずつ増える。stageIndex/waveIndexは
+  // enterShopの時点で次Wave位置へ進んでしまい実際の生成(finishShop)より早く変化するため、
+  // UI側の配布アニメーション発火キー(waveKey)はこちらを使う。
+  waveGeneration: number
   pendingNewItem: ItemId | null
   // ラン全体で持続するデッキの構成(永劫・豊穣・静寂によって書き換えられる)
   deckComposition: DeckCard[]
