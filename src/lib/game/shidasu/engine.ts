@@ -1118,6 +1118,29 @@ export function finishShop(params: ShidasuParams, run: RunState, seed?: number):
   return { ...run, phase: 'playing', wave, deckComposition, shop: null }
 }
 
+// ステージ画面のスキップボタンから呼ぶ。waveSlot 1・2(waveIndex 0・1)のときのみ、waveIndexを
+// 1つ進める。WaveState(wave)は一切生成・変更せず、報酬も発生しない。waveSlot 3(waveIndex 2)や
+// phaseがshop以外のときは何もせず、runをそのまま返す(UIでスキップボタン自体を出さないことと
+// 合わせた二重の安全策)。
+export function skipWave(run: RunState): RunState {
+  if (run.phase !== 'shop') return run
+  if (run.waveIndex >= 2) return run
+  return { ...run, waveIndex: run.waveIndex + 1 }
+}
+
+// ステージ画面のリロールボタンから呼ぶ。waveSlot 3(waveIndex 2)かつ通貨がrerollCost以上のときのみ、
+// 通貨からrerollCostを差し引きstageStars[2]をrollStarForSlotで再抽選する。それ以外の条件(waveSlot
+// 1・2、通貨不足、phaseがshop以外)ではrunをそのまま返す。
+export function rerollStageStars(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
+  if (run.phase !== 'shop') return run
+  if (run.waveIndex !== 2) return run
+  if (run.currency < params.flow.rerollCost) return run
+  const newStar = rollStarForSlot(params, 3, rand)
+  const stageStars = [...run.stageStars]
+  stageStars[2] = newStar
+  return { ...run, currency: run.currency - params.flow.rerollCost, stageStars }
+}
+
 // バラ売り護符購入。所持上限(maxItems)到達時・通貨不足時・売り切れ時は何もしない(スワップは発生しない)。
 export function buyIndividualItem(params: ShidasuParams, run: RunState, slotIndex: number): RunState {
   if (run.phase !== 'shop' || !run.shop) return run

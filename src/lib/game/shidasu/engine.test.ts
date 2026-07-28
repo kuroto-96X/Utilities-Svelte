@@ -56,6 +56,8 @@ import {
   sellRite,
   sellRevelation,
   sellOracle,
+  skipWave,
+  rerollStageStars,
 } from './engine'
 import { isFace, chainContinuesPattern } from './patterns'
 import type { Card, WaveState, RunState, ItemId, ShopIndividualSlot, Star, StarRestriction } from './types'
@@ -2300,6 +2302,74 @@ describe('stageModifierFor / bossScoreLockFor', () => {
   test('制限ルールがfaceならkind:faceのscoreLockが返る', () => {
     const run = runWith({ stageStars: [starWith(null), starWith(null), starWith({ kind: 'face' })], waveIndex: 2 })
     expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'face', tierLabel: 'テスト星' })
+  })
+})
+
+describe('skipWave', () => {
+  test('waveIndexが0(waveSlot 1)のとき、waveIndexが1つ進む', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop', waveIndex: 0 }
+    const result = skipWave(run)
+    expect(result.waveIndex).toBe(1)
+    expect(result.phase).toBe('shop')
+  })
+
+  test('waveIndexが1(waveSlot 2)のとき、waveIndexが1つ進む', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop', waveIndex: 1 }
+    const result = skipWave(run)
+    expect(result.waveIndex).toBe(2)
+  })
+
+  test('waveIndexが2(waveSlot 3)のとき、何も変化しない', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop', waveIndex: 2 }
+    const result = skipWave(run)
+    expect(result.waveIndex).toBe(2)
+    expect(result).toEqual(run)
+  })
+
+  test('phaseがshop以外のとき、何も変化しない', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'playing', waveIndex: 0 }
+    const result = skipWave(run)
+    expect(result).toEqual(run)
+  })
+
+  test('waveのWaveStateには影響しない(生成・変更しない)', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop', waveIndex: 0 }
+    const result = skipWave(run)
+    expect(result.wave).toBe(run.wave)
+  })
+})
+
+describe('rerollStageStars', () => {
+  function shopRunAtWave3(currency: number): RunState {
+    return { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop', waveIndex: 2, currency }
+  }
+
+  test('通貨がrerollCost以上のとき、通貨が減りstageStars[2]が再抽選される', () => {
+    const run = shopRunAtWave3(100)
+    const originalStar = run.stageStars[2]
+    const result = rerollStageStars(DEFAULT_PARAMS, run, () => 0.9)
+    expect(result.currency).toBe(100 - DEFAULT_PARAMS.flow.rerollCost)
+    expect(result.stageStars[0]).toBe(run.stageStars[0])
+    expect(result.stageStars[1]).toBe(run.stageStars[1])
+    expect(result.stageStars[2]).not.toBe(originalStar)
+  })
+
+  test('通貨がrerollCost未満のとき、何も変化しない', () => {
+    const run = shopRunAtWave3(DEFAULT_PARAMS.flow.rerollCost - 1)
+    const result = rerollStageStars(DEFAULT_PARAMS, run, () => 0.9)
+    expect(result).toEqual(run)
+  })
+
+  test('waveIndexが2(waveSlot 3)以外のとき、何も変化しない', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop', waveIndex: 0, currency: 100 }
+    const result = rerollStageStars(DEFAULT_PARAMS, run, () => 0.9)
+    expect(result).toEqual(run)
+  })
+
+  test('phaseがshop以外のとき、何も変化しない', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'playing', waveIndex: 2, currency: 100 }
+    const result = rerollStageStars(DEFAULT_PARAMS, run, () => 0.9)
+    expect(result).toEqual(run)
   })
 })
 
