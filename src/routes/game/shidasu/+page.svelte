@@ -186,7 +186,7 @@
   }
 
   function handleSkipWave() {
-    run = skipWave(run)
+    run = skipWave(params, run)
   }
 
   function handleRerollStageStars() {
@@ -801,6 +801,7 @@
         {#each run.stageStars as star, i (star.id)}
           {@const isCleared = i < run.waveIndex}
           {@const isNext = i === run.waveIndex}
+          {@const isBoss = isBossWave(params, i)}
           {@const waveTargetValue = waveTarget(params, run.stageIndex, i, run.stageStars)}
           <div
             class="border-2 rounded-xl p-3 {isNext ? 'border-teal-500 bg-teal-50' : 'border-slate-200 bg-white'} {isCleared ? 'opacity-60' : ''}"
@@ -808,7 +809,7 @@
             <div class="flex items-center justify-between">
               <div>
                 <div class="text-[11px] {isNext ? 'text-teal-700 font-bold' : 'text-slate-400'}">
-                  WAVE {i + 1}{#if isCleared}・クリア済み{:else if isNext && i === 2}・必須{:else if isNext}・NEXT{/if}
+                  WAVE {i + 1}{#if isCleared}・クリア済み{:else if isNext && isBoss}・必須{:else if isNext}・NEXT{/if}
                 </div>
                 <div class="font-bold text-slate-800">{star.name}</div>
                 <div class="text-[11px] text-slate-500 mt-0.5">{starRestrictionDetail(star) || '制限なし'}</div>
@@ -817,11 +818,11 @@
                 目標 {waveTargetValue}<br />報酬 +{star.reward}
               </div>
             </div>
-            {#if isNext && i !== 2}
+            {#if isNext && !isBoss}
               <div class="flex gap-2 mt-2">
                 <button onclick={handleSkipWave} class="flex-1 px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs">スキップ</button>
               </div>
-            {:else if isNext && i === 2}
+            {:else if isNext && isBoss}
               <div class="flex gap-2 mt-2">
                 <button
                   onclick={handleRerollStageStars}

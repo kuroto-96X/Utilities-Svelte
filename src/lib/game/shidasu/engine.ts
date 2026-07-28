@@ -1118,13 +1118,13 @@ export function finishShop(params: ShidasuParams, run: RunState, seed?: number):
   return { ...run, phase: 'playing', wave, deckComposition, shop: null }
 }
 
-// ステージ画面のスキップボタンから呼ぶ。waveSlot 1・2(waveIndex 0・1)のときのみ、waveIndexを
-// 1つ進める。WaveState(wave)は一切生成・変更せず、報酬も発生しない。waveSlot 3(waveIndex 2)や
-// phaseがshop以外のときは何もせず、runをそのまま返す(UIでスキップボタン自体を出さないことと
-// 合わせた二重の安全策)。
-export function skipWave(run: RunState): RunState {
+// ステージ画面のスキップボタンから呼ぶ。ボスWave(isBossWaveがtrueを返すwaveIndex、通常は
+// wavesPerStage-1=waveSlot 3)以外のときのみ、waveIndexを1つ進める。WaveState(wave)は
+// 一切生成・変更せず、報酬も発生しない。ボスWaveやphaseがshop以外のときは何もせず、
+// runをそのまま返す(UIでスキップボタン自体を出さないことと合わせた二重の安全策)。
+export function skipWave(params: ShidasuParams, run: RunState): RunState {
   if (run.phase !== 'shop') return run
-  if (run.waveIndex >= 2) return run
+  if (isBossWave(params, run.waveIndex)) return run
   return { ...run, waveIndex: run.waveIndex + 1 }
 }
 

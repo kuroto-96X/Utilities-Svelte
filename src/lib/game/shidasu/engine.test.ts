@@ -2308,33 +2308,33 @@ describe('stageModifierFor / bossScoreLockFor', () => {
 describe('skipWave', () => {
   test('waveIndexが0(waveSlot 1)のとき、waveIndexが1つ進む', () => {
     const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop', waveIndex: 0 }
-    const result = skipWave(run)
+    const result = skipWave(DEFAULT_PARAMS, run)
     expect(result.waveIndex).toBe(1)
     expect(result.phase).toBe('shop')
   })
 
   test('waveIndexが1(waveSlot 2)のとき、waveIndexが1つ進む', () => {
     const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop', waveIndex: 1 }
-    const result = skipWave(run)
+    const result = skipWave(DEFAULT_PARAMS, run)
     expect(result.waveIndex).toBe(2)
   })
 
   test('waveIndexが2(waveSlot 3)のとき、何も変化しない', () => {
     const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop', waveIndex: 2 }
-    const result = skipWave(run)
+    const result = skipWave(DEFAULT_PARAMS, run)
     expect(result.waveIndex).toBe(2)
     expect(result).toEqual(run)
   })
 
   test('phaseがshop以外のとき、何も変化しない', () => {
     const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'playing', waveIndex: 0 }
-    const result = skipWave(run)
+    const result = skipWave(DEFAULT_PARAMS, run)
     expect(result).toEqual(run)
   })
 
   test('waveのWaveStateには影響しない(生成・変更しない)', () => {
     const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop', waveIndex: 0 }
-    const result = skipWave(run)
+    const result = skipWave(DEFAULT_PARAMS, run)
     expect(result.wave).toBe(run.wave)
   })
 })
