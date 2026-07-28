@@ -23,8 +23,7 @@
     canTargetColumn = () => true,
     onTargetColumn,
     chainAreaExtra,
-    onScoreRevealDone,
-    waveKey,
+    onScoreRevealDone, waveKey, onCleanupDone,
   }: {
     wave: WaveState
     params: ShidasuParams
@@ -48,6 +47,7 @@
     chainAreaExtra?: Snippet
     onScoreRevealDone?: () => void
     waveKey?: string
+    onCleanupDone?: () => void
   } = $props()
 
   let tableauEl: HTMLDivElement | undefined = $state()
@@ -75,6 +75,7 @@
     clearTimeout(animationTimer1)
     clearTimeout(animationTimer2)
     clearTimeout(scoreRevealTimer)
+    clearTimeout(cleanupTimer)
   })
 
   const PART_FLYIN_CENTER_MS = 300
@@ -133,6 +134,89 @@
   let stockButtonEl: HTMLButtonElement | undefined = $state()
   let discardPileEl: HTMLDivElement | undefined = $state()
 
+  const CLEANUP_GATHER_MS = 150
+  const CLEANUP_MOVE_MS = 200
+
+  interface CleanupAnimation {
+    kind: 'column' | 'chain' | 'discard'
+    columnIndex: number
+    card: Card
+    phase: 'gather' | 'move'
+    left: number
+    top: number
+    transitionMs: number
+  }
+
+  let cleanupAnimation = $state<CleanupAnimation | null>(null)
+  let cleanupQueue: { kind: 'column' | 'chain' | 'discard'; columnIndex: number; card: Card }[] = []
+  let cleanupTimer: ReturnType<typeof setTimeout> | undefined
+
+  // Waveクリア確定後、場札の各列(左から右)→チェーン→捨て札の順に、
+  // 各カード群を1山にまとめて山札へ移動させるアニメーションを開始する。
+  function startCleanupAnimation() {
+    const columnItems = wave.tableau
+      .map((col, ci) => ({ columnIndex: ci, card: col[col.length - 1] }))
+      .filter((entry): entry is { columnIndex: number; card: Card } => entry.card !== undefined)
+      .map(entry => ({ kind: 'column' as const, columnIndex: entry.columnIndex, card: entry.card }))
+    const chainItems = wave.chain.length > 0
+      ? [{ kind: 'chain' as const, columnIndex: -1, card: wave.chain[wave.chain.length - 1] }]
+      : []
+    const discardItems = wave.discardPile.length > 0
+      ? [{ kind: 'discard' as const, columnIndex: -1, card: wave.discardPile[wave.discardPile.length - 1] }]
+      : []
+    cleanupQueue = [...columnItems, ...chainItems, ...discardItems]
+    processNextCleanupItem()
+  }
+
+  function processNextCleanupItem() {
+    const item = cleanupQueue.shift()
+    if (!item) {
+      cleanupAnimation = null
+      onCleanupDone?.()
+      return
+    }
+    startCleanupItem(item)
+  }
+
+  function startCleanupItem(item: { kind: 'column' | 'chain' | 'discard'; columnIndex: number; card: Card }) {
+    let fromEl: HTMLElement | null = null
+    if (item.kind === 'column') {
+      const col = wave.tableau[item.columnIndex]
+      fromEl = tableauEl?.querySelector<HTMLElement>(`[data-drop-col="${item.columnIndex}"][data-drop-row="${col.length - 1}"]`) ?? null
+    } else if (item.kind === 'chain') {
+      fromEl = chainAreaEl ?? null
+    } else {
+      fromEl = discardPileEl ?? null
+    }
+    if (!fromEl || !stockButtonEl) {
+      // 座標が取得できない(要素未マウント等)場合は、このアイテムをスキップして次へ進む。
+      processNextCleanupItem()
+      return
+    }
+    const fromRect = fromEl.getBoundingClientRect()
+    const toRect = stockButtonEl.getBoundingClientRect()
+    cleanupAnimation = {
+      kind: item.kind,
+      columnIndex: item.columnIndex,
+      card: item.card,
+      phase: 'gather',
+      left: fromRect.left + fromRect.width / 2,
+      top: fromRect.top + fromRect.height / 2,
+      transitionMs: 0,
+    }
+    cleanupTimer = setTimeout(() => {
+      if (!cleanupAnimation) return
+      cleanupAnimation = {
+        ...cleanupAnimation,
+        phase: 'move',
+        left: toRect.left + toRect.width / 2,
+        top: toRect.top + toRect.height / 2,
+        transitionMs: CLEANUP_MOVE_MS,
+      }
+      cleanupTimer = setTimeout(processNextCleanupItem, CLEANUP_MOVE_MS)
+    }, CLEANUP_GATHER_MS)
+  }
+
   let scoreRevealTimer: ReturnType<typeof setTimeout> | undefined
 
   let previousDisplayedScore = displayedScore
@@ -155,6 +239,7 @@
     if (allParts.length === 0) {
       displayedScore = wave.score
       onScoreRevealDone?.()
+      if (wave.status === 'ended' && wave.endReason === 'target') startCleanupAnimation()
       return
     }
     const runningTotals = runningTotalsFromScoreParts(allParts)
@@ -267,6 +352,7 @@
     displayedScore = wave.score
     scoreReveal = null
     onScoreRevealDone?.()
+    if (wave.status === 'ended' && wave.endReason === 'target') startCleanupAnimation()
   }
 
   function startPlayCardAnimation(colIndex: number, rowIndex: number, card: Card) {
@@ -423,8 +509,9 @@
           {@const isExposedByAnimation = playingAnimation !== null && playingAnimation.colIndex === ci && ri === col.length - 2}
           {@const isSelectable = columnTargetMode ? isTop : (isTop || wave.playFromAnywhereActiveThisWave)}
           {@const isAnimatingThisCard = playingAnimation?.colIndex === ci && playingAnimation?.rowIndex === ri}
+          {@const isCleaningUpThisColumn = cleanupAnimation?.kind === 'column' && cleanupAnimation.columnIndex === ci}
           <div
-            class="absolute left-0 right-0 {dropTarget && dropTarget !== 'stockTop' && dropTarget.col === ci && dropTarget.row === ri ? 'ring-4 ring-sky-400 rounded-lg' : ''} {isAnimatingThisCard ? 'invisible' : ''}"
+            class="absolute left-0 right-0 {dropTarget && dropTarget !== 'stockTop' && dropTarget.col === ci && dropTarget.row === ri ? 'ring-4 ring-sky-400 rounded-lg' : ''} {isAnimatingThisCard || isCleaningUpThisColumn ? 'invisible' : ''}"
             style="top:{ri * 18}px; z-index:{ri};"
             data-drop-col={ci}
             data-drop-row={ri}
@@ -434,9 +521,9 @@
               {@const isCardPlayable = !columnTargetMode && wave.status === 'playing' && isPlayable(modifier, wave, card)}
               <button
                 type="button"
-                disabled={playingAnimation !== null || scoreReveal !== null}
+                disabled={playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null}
                 onclick={() => (columnTargetMode ? (isTargetable && onTargetColumn?.(ci)) : (isCardPlayable && startPlayCardAnimation(ci, ri, card)))}
-                class="block w-full text-left {columnTargetMode ? (isTargetable ? 'ring-2 ring-fuchsia-400 shadow-lg -translate-y-0.5' : '') : (isCardPlayable && playingAnimation === null && scoreReveal === null ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : '')} transition-transform disabled:cursor-not-allowed"
+                class="block w-full text-left {columnTargetMode ? (isTargetable ? 'ring-2 ring-fuchsia-400 shadow-lg -translate-y-0.5' : '') : (isCardPlayable && playingAnimation === null && scoreReveal === null && cleanupAnimation === null ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : '')} transition-transform disabled:cursor-not-allowed"
               >
                 <CardFace {card} covered={false} />
               </button>
@@ -471,7 +558,7 @@
     <button
       type="button"
       onclick={onDraw}
-      disabled={wave.stock.length === 0 || !allowDraw || playingAnimation !== null || scoreReveal !== null}
+      disabled={wave.stock.length === 0 || !allowDraw || playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null}
       data-drop-stock
       bind:this={stockButtonEl}
       style="aspect-ratio: 2 / 3;"
@@ -480,7 +567,7 @@
       <div class="text-xs">山札</div>
       <div class="text-lg tabular-nums">{wave.stock.length}</div>
     </button>
-    {#if wave.discardPile.length > 0}
+    {#if wave.discardPile.length > 0 && cleanupAnimation?.kind !== 'discard'}
       <div bind:this={discardPileEl} class="w-10">
         <CardFace card={wave.discardPile[wave.discardPile.length - 1]} covered={false} />
       </div>
@@ -493,7 +580,7 @@
       <CardFace card={nextCard} covered={false} />
     </div>
   {/if}
-  <div bind:this={chainAreaEl} class="overflow-x-auto min-w-0">
+  <div bind:this={chainAreaEl} class="overflow-x-auto min-w-0 {cleanupAnimation?.kind === 'chain' ? 'invisible' : ''}">
     {#if chainAreaExtra}
       {@render chainAreaExtra()}
     {:else}
@@ -519,7 +606,7 @@
 {#if rites.length > 0}
   <div class="px-4 pb-4 flex items-center gap-2">
     {#each rites as riteId, i (i)}
-      {@const usable = canUseRite(params, wave, riteId) && playingAnimation === null && scoreReveal === null}
+      {@const usable = canUseRite(params, wave, riteId) && playingAnimation === null && scoreReveal === null && cleanupAnimation === null}
       <button
         type="button"
         onclick={() => onUseRite?.(riteId)}
@@ -535,7 +622,7 @@
 {#if revelations.length > 0}
   <div class="px-4 pb-4 flex items-center gap-2">
     {#each revelations as revelationId, i (i)}
-      {@const usable = canUseRevelation(params, wave, revelationId) && playingAnimation === null && scoreReveal === null}
+      {@const usable = canUseRevelation(params, wave, revelationId) && playingAnimation === null && scoreReveal === null && cleanupAnimation === null}
       <button
         type="button"
         onclick={() => onUseRevelationClick?.(revelationId)}
@@ -568,4 +655,13 @@
     class="fixed pointer-events-none z-[110] ease-out text-emerald-200 text-sm font-bold"
     style="left:{partFlyIn.left}px; top:{partFlyIn.top}px; transform: translate({partFlyIn.phase === 'center' ? '-50%' : '0%'}, -50%) scale({partFlyIn.scale}); transition-property: left, top, transform; transition-duration:{partFlyIn.transitionMs}ms;"
   >{partFlyIn.text}</div>
+{/if}
+
+{#if cleanupAnimation}
+  <div
+    class="fixed pointer-events-none z-[100] ease-out"
+    style="left:{cleanupAnimation.left}px; top:{cleanupAnimation.top}px; width:64px; transform: translate(-50%, -50%); transition-property: left, top; transition-duration:{cleanupAnimation.transitionMs}ms;"
+  >
+    <CardFace card={cleanupAnimation.card} covered={false} />
+  </div>
 {/if}
