@@ -885,12 +885,6 @@ export function isBossWave(params: ShidasuParams, waveIndex: number): boolean {
   return waveIndex === params.flow.wavesPerStage - 1
 }
 
-// stageIndexから、そのステージのボス階級を返す(0=小凶,1=中凶,2=大凶)。stageIndexは
-// 無制限に増加するため、3で割った余りで階級を決定する(3ステージごとに小凶→中凶→大凶を繰り返す)。
-export function bossTierOf(stageIndex: number): 0 | 1 | 2 {
-  return (stageIndex % 3) as 0 | 1 | 2
-}
-
 // 現在Waveの星(stageStars[waveIndex])が持つ制限ルールのうち、取得可否そのものを制限する
 // 種類(noLoop/faceLock)のみを対象とする。得点ロック系(lowCombo/oddCombo/suit/face)は
 // bossScoreLockForが別途扱う。paramsは呼び出し元との既存シグネチャ互換のため残しているが、
@@ -983,29 +977,16 @@ function nextWaveLocation(params: ShidasuParams, run: RunState): { stageIndex: n
   return { stageIndex: run.stageIndex, waveIndex: nextWaveIndex }
 }
 
-// 次のウェーブ位置に応じたcurrentBossKindを算出する。同じステージ内に留まる場合は現在の値を
-// 維持し、新しいステージに入る場合はそのステージの階級に属する候補群からrandで新規抽選する。
-function nextBossKind(
+// 次のウェーブ位置に応じたstageStarsを算出する。同じステージ内に留まる場合は現在のstageStarsを
+// 維持し、新しいステージに入る場合はrollStageStarsで3Wave分をまとめて新規抽選する。
+function nextStageStars(
   params: ShidasuParams,
   run: RunState,
   newLocation: { stageIndex: number; waveIndex: number },
   rand: () => number
-): BossKind | null {
-  if (newLocation.stageIndex === run.stageIndex) return run.currentBossKind
-  return rollBossKindForStage(params, newLocation.stageIndex, rand)
-}
-
-// 次のウェーブ位置・次のcurrentBossKindに応じたcurrentGreatMisfortuneSuitを算出する。
-// 同じステージ内に留まる場合は現在の値を維持し、新しいステージに入る場合はnewBossKindが
-// 'suit'のときのみrandで新規抽選し、それ以外はnullにする。
-function nextGreatMisfortuneSuit(
-  run: RunState,
-  newLocation: { stageIndex: number; waveIndex: number },
-  newBossKind: BossKind | null,
-  rand: () => number
-): Suit | null {
-  if (newLocation.stageIndex === run.stageIndex) return run.currentGreatMisfortuneSuit
-  return newBossKind === 'suit' ? rollGreatMisfortuneSuit(rand) : null
+): Star[] {
+  if (newLocation.stageIndex === run.stageIndex) return run.stageStars
+  return rollStageStars(params, rand)
 }
 
 export function isStuck(modifier: StageModifier, wave: WaveState, rites: RiteId[] = []): boolean {
@@ -1028,8 +1009,8 @@ export function createInitialRun(): RunState {
   return {
     phase: 'title', stageIndex: 0, waveIndex: 0, items: [], offer: [], wave: null, pendingNewItem: null,
     deckComposition: standardDeckComposition(), rites: [], revelations: [], revelationOffer: [], extraTableauRows: 0,
-    oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null, spreadId: 'fool',
-    currentBossKind: null, currency: 0,
+    oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool',
+    stageStars: [], currency: 0,
     oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
     pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
   }
@@ -1038,7 +1019,7 @@ export function createInitialRun(): RunState {
 export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadId = 'fool'): RunState {
   const initialExtraTableauRows = params.spreads[spreadId].initialExtraTableauRows
   const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
-  const initialBossKind = rollBossKindForStage(params, 0, rand)
+  const initialStageStars = rollStageStars(params, rand)
   const { wave, deckComposition } = startWave(params, 0, 0, [], standardDeckComposition(), seed, initialExtraTableauRows, defaultOracleLevels())
   return {
     phase: 'playing',
@@ -1055,9 +1036,8 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
     extraTableauRows: initialExtraTableauRows,
     oracleLevels: defaultOracleLevels(),
     oracleOffer: [],
-    currentGreatMisfortuneSuit: null,
     spreadId,
-    currentBossKind: initialBossKind,
+    stageStars: initialStageStars,
     currency: params.currency.initialAmount,
     oracles: [],
     shop: null,
@@ -1078,13 +1058,14 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
     return { ...run, phase: 'gameOver' }
   }
 
-  const earned = params.currency.waveClearAmount
-    + (isBossWave(params, run.waveIndex) ? params.currency.bossBonus[BOSS_TIER_KEYS[bossTierOf(run.stageIndex)]] : 0)
+  const currentStar = run.stageStars[run.waveIndex]
+  const earned = params.currency.waveClearAmount + (currentStar?.reward ?? 0)
   const runWithCurrency = { ...run, currency: run.currency + earned }
 
-  // 大凶(各サイクルの最終ウェーブ)クリア時のみ、ショップ突入を後回しにして続行確認を挟む。
-  // それ以外(小凶・中凶のボスウェーブを含む通常のウェーブクリア)は、すべて同じショップへ進む。
-  if (isBossWave(params, run.waveIndex) && bossTierOf(run.stageIndex) === 2) {
+  // 8ステージクリア(stageIndex === stagesPerRun - 1のwaveSlot 3クリア)時のみ、ショップ突入を
+  // 後回しにして続行確認を挟む。それ以外は通常通りショップへ進む。
+  const isFinalWaveOfRun = isBossWave(params, run.waveIndex) && run.stageIndex === params.flow.stagesPerRun - 1
+  if (isFinalWaveOfRun) {
     return { ...runWithCurrency, phase: 'continueChoice' }
   }
   return enterShop(params, runWithCurrency, seed, rand)
@@ -1107,16 +1088,14 @@ export function useRite(params: ShidasuParams, run: RunState, riteId: RiteId, ra
 // ショップの商品構成を抽選し、phase: 'shop'へ遷移する。
 function enterShop(params: ShidasuParams, run: RunState, seed: number | undefined, rand: () => number): RunState {
   const newLocation = nextWaveLocation(params, run)
-  const newBossKind = nextBossKind(params, run, newLocation, rand)
-  const newGreatMisfortuneSuit = nextGreatMisfortuneSuit(run, newLocation, newBossKind, rand)
+  const newStageStars = nextStageStars(params, run, newLocation, rand)
   const { wave, deckComposition } = startWave(params, newLocation.stageIndex, newLocation.waveIndex, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels)
   const next: RunState = {
     ...run,
     phase: 'shop',
     stageIndex: newLocation.stageIndex,
     waveIndex: newLocation.waveIndex,
-    currentGreatMisfortuneSuit: newGreatMisfortuneSuit,
-    currentBossKind: newBossKind,
+    stageStars: newStageStars,
     offer: [],
     pendingNewItem: null,
     wave,
