@@ -67,7 +67,7 @@ import { createRng, standardDeckComposition } from './deck'
 import { card } from './testHelpers'
 import { defaultOracleLevels } from './oracles'
 import { ITEM_POOL } from './items'
-import { itemBuyPrice, riteBuyPrice, revelationBuyPrice, packPrice, itemSellPrice, riteSellPrice, revelationSellPrice, oracleSellPrice } from './shop'
+import { itemBuyPrice, riteBuyPrice, revelationBuyPrice, packPrice, itemSellPrice, riteSellPrice, revelationSellPrice, oracleSellPrice, rollShop } from './shop'
 import { addPart, finalScoreFromScoreParts } from './scoreParts'
 
 describe('isFace / rankLabel', () => {
@@ -2394,6 +2394,24 @@ describe('rerollStageStars', () => {
   test('phaseがshop以外のとき、何も変化しない', () => {
     const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'playing', waveIndex: 2, currency: 100 }
     const result = rerollStageStars(DEFAULT_PARAMS, run, () => 0.9)
+    expect(result).toEqual(run)
+  })
+})
+
+describe('finishShop', () => {
+  test('phaseがshopのとき、waveが新規生成されplayingへ遷移する', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const shopRun = { ...run, shop: rollShop(run, () => 0.5) }
+    const result = finishShop(DEFAULT_PARAMS, shopRun, 1)
+    expect(result.phase).toBe('playing')
+    expect(result.wave).not.toBeNull()
+    expect(result.wave!.status).toBe('playing')
+    expect(result.shop).toBeNull()
+  })
+
+  test('phaseがshop以外のとき、何も変化しない', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'playing' }
+    const result = finishShop(DEFAULT_PARAMS, run, 1)
     expect(result).toEqual(run)
   })
 })
