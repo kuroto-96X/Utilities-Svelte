@@ -14,7 +14,6 @@
     pickPackOracleUse, pickPackOracleHold, confirmPackOracleSwap, cancelPackOracleSwap, closePackOracleSelect,
     useOracle, sellItem, sellRite, sellRevelation, sellOracle,
   } from '$lib/game/shidasu/engine'
-  import { bossName, bossDesc } from '$lib/game/shidasu/bosses'
   import { itemDesc, itemName } from '$lib/game/shidasu/items'
   import { riteName, riteDesc } from '$lib/game/shidasu/rites'
   import { revelationDesc, revelationName } from '$lib/game/shidasu/revelations'
@@ -53,21 +52,19 @@
 
   onDestroy(clearPendingTimer)
 
-  let target = $derived(waveTarget(params, run.stageIndex, run.waveIndex, run.spreadId))
+  let target = $derived(waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars))
   let wave = $derived(run.wave)
   let currentModifier = $derived(stageModifierFor(params, run))
 
-  // 現在のステージのボス(小凶→中凶→大凶)の情報を返す。ステージ内の3ウェーブは
-  // 常に同じボス階級を共有し、ボスウェーブ(3ウェーブ目)でのみ実際に制約が発動する
-  // (どちらの表示にするかはstageRow側のisBossWave分岐が担い、ここでは扱わない)。
+  // 現在Waveの星(制限ルール)の情報を返す。stageStarsが未確定(title等)の場合は空表示。
+  // 表示の見直し(ステージ画面新設に伴うUI再設計)は別セッションで行う。
   let upcomingBossInfo = $derived.by(() => {
-    const kind = run.currentBossKind
-    if (!kind) return { label: '', detail: '' }
-    if (kind === 'suit') {
-      const detail = run.currentGreatMisfortuneSuit ? `${run.currentGreatMisfortuneSuit}で無得点` : '対象スート未確定'
-      return { label: bossName('suit', params), detail }
+    const star = run.stageStars[run.waveIndex]
+    if (!star || !star.restriction) return { label: '', detail: '' }
+    if (star.restriction.kind === 'suit') {
+      return { label: star.name, detail: `${star.restriction.suit}で無得点` }
     }
-    return { label: bossName(kind, params), detail: bossDesc(kind, params) }
+    return { label: star.name, detail: '' }
   })
 
   function scheduleStuckCheck() {
@@ -719,7 +716,7 @@
 {:else if run.phase === 'continueChoice'}
   <div class="fixed inset-0 z-50 bg-emerald-950/90 backdrop-blur-sm flex items-center justify-center p-6">
     <div class="w-full max-w-sm flex flex-col items-center text-center">
-      <div class="text-yellow-300 text-xs tracking-widest mb-2">{params.bossTiers.taikyou.name} 撃破!</div>
+      <div class="text-yellow-300 text-xs tracking-widest mb-2">ステージ突破!</div>
       <div class="text-2xl font-black text-amber-50 mb-6">続けますか?</div>
       <div class="flex flex-col gap-3 w-full">
         <button onclick={handleContinueAfterGreatMisfortune} class="px-10 py-3 rounded-full bg-yellow-400 text-emerald-950 font-black active:scale-95 transition-transform">
