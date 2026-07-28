@@ -59,6 +59,7 @@ import {
   sellOracle,
   skipWave,
   rerollStageStars,
+  startRevelationPreview,
 } from './engine'
 import { isFace, chainContinuesPattern } from './patterns'
 import type { Card, WaveState, RunState, ItemId, ShopIndividualSlot, Star, StarRestriction } from './types'
@@ -2413,6 +2414,17 @@ describe('finishShop', () => {
     const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'playing' }
     const result = finishShop(DEFAULT_PARAMS, run, 1)
     expect(result).toEqual(run)
+  })
+})
+
+describe('startRevelationPreview', () => {
+  test('run.deckCompositionから場札を配ったWaveStateを生成する(本番run.waveには影響しない)', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const originalWave = run.wave
+    const preview = startRevelationPreview(DEFAULT_PARAMS, run, 1)
+    expect(preview.status).toBe('playing')
+    expect(preview.tableau.length).toBe(DEFAULT_PARAMS.layout.cols)
+    expect(run.wave).toBe(originalWave)
   })
 })
 

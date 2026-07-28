@@ -967,7 +967,7 @@ function rollStageStars(params: ShidasuParams, rand: () => number): Star[] {
 
 // 秘儀・天啓・神託の使用がショップ滞在中(shop本体および福袋の各中身選択画面)でも
 // 行えるようにするためのフェーズ集合。useRite/useRevelationのガードで使う。
-const SHOP_FLOW_PHASES: RunPhase[] = ['shop', 'itemSelect', 'riteSelect', 'revelationSelect', 'oracleSelect']
+export const SHOP_FLOW_PHASES: RunPhase[] = ['shop', 'itemSelect', 'riteSelect', 'revelationSelect', 'oracleSelect']
 
 // 現在のstageIndexから次のウェーブの(stageIndex, waveIndex)を算出する。
 // waveIndexがwavesPerStageに達したら次のステージ(stageIndex+1・waveIndex0)へ繰り上がる。
@@ -1106,6 +1106,15 @@ function enterShop(params: ShidasuParams, run: RunState, _seed: number | undefin
     offerPickRemaining: 0,
   }
   return { ...next, shop: rollShop(next, rand) }
+}
+
+// ショップ系フェーズでの天啓ターゲット選択用に、現在のdeckCompositionから使い捨ての
+// プレビュー盤面を生成する。stageIndex/waveIndexはstartWave内部では実質未使用のため
+// ダミー値(0, 0)を渡す。生成したWaveStateは本番run.waveとは無関係な一時オブジェクトであり、
+// 呼び出し元(+page.svelte)がローカルstateとして保持・破棄する。
+export function startRevelationPreview(params: ShidasuParams, run: RunState, seed?: number): WaveState {
+  const { wave } = startWave(params, 0, 0, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels)
+  return wave
 }
 
 // ショップを終了し、その時点のdeckComposition・extraTableauRows(ショップ滞在中の天啓「即使う」等で
