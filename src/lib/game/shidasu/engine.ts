@@ -932,6 +932,8 @@ function toStarRestriction(entry: ShidasuParams['stars'][number], rand: () => nu
     case 'none': return null
     case 'noLoop': return { kind: 'noLoop' }
     case 'faceLock': return { kind: 'faceLock' }
+    // maxComboはlowComboのとき管理画面バリデーションで必須指定されるはずだが、
+    // データ不整合時にクラッシュしないよう念のためデフォルト値2で握りつぶす。
     case 'lowCombo': return { kind: 'lowCombo', maxCombo: entry.maxCombo ?? 2 }
     case 'oddCombo': return { kind: 'oddCombo' }
     case 'suit': return { kind: 'suit', suit: GREAT_MISFORTUNE_SUITS[Math.floor(rand() * GREAT_MISFORTUNE_SUITS.length)] }
