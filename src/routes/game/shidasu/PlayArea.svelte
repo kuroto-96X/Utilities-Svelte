@@ -244,11 +244,34 @@
       transitionMs: 0,
       gatherCards,
     }
+    function scheduleMoveToStock() {
+      cleanupTimer = setTimeout(() => {
+        if (!cleanupAnimation) return
+        cleanupAnimation = {
+          ...cleanupAnimation,
+          phase: 'move',
+          left: toRect.left + toRect.width / 2,
+          top: toRect.top + toRect.height / 2,
+          transitionMs: CLEANUP_MOVE_MS,
+          gatherCards: [],
+        }
+        if (item.kind === 'column') {
+          cleanedUpColumns = new Set([...cleanedUpColumns, item.columnIndex])
+        } else if (item.kind === 'chain') {
+          chainCleanedUp = true
+        }
+        cleanupTimer = setTimeout(processNextCleanupItem, CLEANUP_MOVE_MS)
+      }, CLEANUP_GATHER_MS)
+    }
+
     if (gatherCards.length > 0) {
       // gatherCardsの初期位置(各カードの現在位置)をtransitionMs:0で表示した直後、
       // 2段rAFで一番上のカードの位置(gatherLeft/gatherTop)へ全カード同時に移動させる。
       // 1段のrAFだけだと同一フレーム内でスタイル変更がバッチ処理されtransitionが
       // 発生しないブラウザがある(既存の他アニメーションと同じ理由)。
+      // moveフェーズへの切り替えタイマーは、rAFの内側(実際に移動アニメーションが
+      // 開始した直後)でセットすることで、集約アニメーションが完了しきってから
+      // moveフェーズへ切り替わるようにする。
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (!cleanupAnimation) return
@@ -257,27 +280,12 @@
             gatherCards: cleanupAnimation.gatherCards.map(c => ({ ...c, left: gatherLeft, top: gatherTop })),
             transitionMs: CLEANUP_GATHER_MS,
           }
+          scheduleMoveToStock()
         })
       })
+    } else {
+      scheduleMoveToStock()
     }
-
-    cleanupTimer = setTimeout(() => {
-      if (!cleanupAnimation) return
-      cleanupAnimation = {
-        ...cleanupAnimation,
-        phase: 'move',
-        left: toRect.left + toRect.width / 2,
-        top: toRect.top + toRect.height / 2,
-        transitionMs: CLEANUP_MOVE_MS,
-        gatherCards: [],
-      }
-      if (item.kind === 'column') {
-        cleanedUpColumns = new Set([...cleanedUpColumns, item.columnIndex])
-      } else if (item.kind === 'chain') {
-        chainCleanedUp = true
-      }
-      cleanupTimer = setTimeout(processNextCleanupItem, CLEANUP_MOVE_MS)
-    }, CLEANUP_GATHER_MS)
   }
 
   let scoreRevealTimer: ReturnType<typeof setTimeout> | undefined
