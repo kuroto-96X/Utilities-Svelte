@@ -24,6 +24,19 @@ export interface ShidasuParams {
     completeRunSuitBonus: number
     columnSweepBonus: number
   }
+  // Wave単位の新概念「星」の定義一覧。waveSlot(1/2/3)が一致する星の中からランダムに1つ選ばれる。
+  // idは一意な文字列(管理画面での編集・参照に使う)。
+  stars: {
+    id: string
+    name: string
+    waveSlot: 1 | 2 | 3
+    targetMultiplier: number
+    reward: number
+    restrictionKind: 'none' | 'noLoop' | 'faceLock' | 'lowCombo' | 'oddCombo' | 'suit' | 'face'
+    maxCombo?: number
+  }[]
+  // 非推奨: starsフィールド(上記)への移行に伴い廃止予定。移行完了後(UI・管理画面の
+  // 置き換えが終わったら)削除すること。
   // ボス階級ごとの設定。stageIndex % 3 (0=小凶,1=中凶,2=大凶)でインデックスする代わりに、
   // 読みやすさのため名前付きキーで持つ(shoukyou=小凶,chuukyou=中凶,taikyou=大凶)
   bossTiers: {
@@ -31,6 +44,8 @@ export interface ShidasuParams {
     chuukyou: { name: string }
     taikyou: { name: string }
   }
+  // 非推奨: starsフィールド(上記)への移行に伴い廃止予定。移行完了後(UI・管理画面の
+  // 置き換えが終わったら)削除すること。
   // ボス制約の候補プール。どの階級(tier)に属するかは管理画面から変更できる。
   // 挙動そのもの(kindごとの実際のロジック)はengine.tsに固定で紐づく。
   bosses: {
@@ -218,6 +233,12 @@ export interface ShidasuParams {
   flow: {
     wavesPerStage: number
     clearDelayMs: number
+    // ステージ基準点。target(stageIndex, waveIndex) = flow.stageTargetBase × flow.stageTargetMultiplier^stageIndex
+    // × stageStars[waveIndex].targetMultiplier で算出する。
+    stageTargetBase: number
+    stageTargetMultiplier: number
+    // このステージ数をクリアするとラン全体のクリアとなり、続行確認(continueChoice)を挟む。
+    stagesPerRun: number
   }
   ui: {
     comboTierThresholds: [number, number, number]
@@ -245,6 +266,16 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     completeRunSuitBonus: 1000,
     columnSweepBonus: 150,
   },
+  stars: [
+    { id: 'ordinary-moon', name: '普通の衛星', waveSlot: 1, targetMultiplier: 1.0, reward: 20, restrictionKind: 'none' },
+    { id: 'slightly-bigger-moon', name: '少し大きな衛星', waveSlot: 2, targetMultiplier: 1.3, reward: 25, restrictionKind: 'none' },
+    { id: 'closed-loop-planet', name: '循環の閉じた荒廃惑星', waveSlot: 3, targetMultiplier: 1.6, reward: 35, restrictionKind: 'noLoop' },
+    { id: 'sealed-noble-planet', name: '高貴なる封印の惑星', waveSlot: 3, targetMultiplier: 1.6, reward: 35, restrictionKind: 'faceLock' },
+    { id: 'harsh-planet', name: '弱き者を拒む峻厳な惑星', waveSlot: 3, targetMultiplier: 1.6, reward: 35, restrictionKind: 'lowCombo', maxCombo: 2 },
+    { id: 'twisted-odd-planet', name: '奇数を忌む歪んだ惑星', waveSlot: 3, targetMultiplier: 1.6, reward: 35, restrictionKind: 'oddCombo' },
+    { id: 'exiling-color-planet', name: '排斥の色殺す惑星', waveSlot: 3, targetMultiplier: 1.6, reward: 35, restrictionKind: 'suit' },
+    { id: 'regicide-planet', name: '王侯を打ち滅ぼす惑星', waveSlot: 3, targetMultiplier: 1.6, reward: 35, restrictionKind: 'face' },
+  ],
   bossTiers: {
     shoukyou: { name: '小凶' },
     chuukyou: { name: '中凶' },
@@ -423,7 +454,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     columnSweep: { name: '艮', desc: '列一掃　レベル+1' },
     sameRank: { name: '坤', desc: '同ランク　レベル+1' },
   },
-  flow: { wavesPerStage: 3, clearDelayMs: 450 },
+  flow: { wavesPerStage: 3, clearDelayMs: 450, stageTargetBase: 2000, stageTargetMultiplier: 1.8, stagesPerRun: 8 },
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },
 }
 
