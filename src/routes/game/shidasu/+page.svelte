@@ -5,7 +5,7 @@
     createInitialRun, beginRun, applyPlayCard, applyDrawStock, applyStuckCheck,
     resolveWaveEnd, continueAfterGreatMisfortune, stopAfterGreatMisfortune, startWave, forceStockTop, useRite,
     useRevelation,
-    waveTarget, stageModifierFor, isBossWave,
+    waveTarget, stageModifierFor, isBossWave, skipWave, rerollStageStars,
     finishShop, buyIndividualItem, buyIndividualRite, buyIndividualRevelationUse, buyIndividualRevelationHold,
     buyIndividualOracleUse, buyIndividualOracleHold, buyPack,
     pickPackItem, confirmPackItemSwap, cancelPackItemSwap, closePackItemSelect,
@@ -183,6 +183,19 @@
 
   function handleFinishShop() {
     run = finishShop(params, run)
+  }
+
+  function handleSkipWave() {
+    run = skipWave(run)
+  }
+
+  function handleRerollStageStars() {
+    run = rerollStageStars(params, run)
+  }
+
+  function handleProceedToWave() {
+    run = finishShop(params, run)
+    showStageScreen = false
   }
 
   function handleBuyIndividualItem(slotIndex: number) {
@@ -769,6 +782,62 @@
       <div class="text-emerald-100/70 text-sm mb-6">目標スコアに届かなかった</div>
       <button onclick={handleBackToTitle} class="px-10 py-3 rounded-full bg-yellow-400 text-emerald-950 font-black active:scale-95">
         タイトルへ戻る
+      </button>
+    </div>
+  </div>
+{/if}
+
+{#if run.phase === 'shop' && run.shop && !pendingRevelationTarget && showStageScreen}
+  {@const baseTarget = Math.floor(params.flow.stageTargetBase * params.flow.stageTargetMultiplier ** run.stageIndex)}
+  <div class="fixed inset-0 z-50 bg-emerald-950/90 backdrop-blur-sm flex items-center justify-center p-6">
+    <div class="bg-white rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-bold text-slate-800">ステージ {run.stageIndex + 1}</h2>
+        <p class="text-sm text-teal-700 font-semibold">{params.currency.symbol}{run.currency}</p>
+      </div>
+      <p class="text-xs text-slate-400">ベース目標点数 {baseTarget}</p>
+
+      <div class="space-y-2">
+        {#each run.stageStars as star, i (star.id)}
+          {@const isCleared = i < run.waveIndex}
+          {@const isNext = i === run.waveIndex}
+          {@const waveTargetValue = waveTarget(params, run.stageIndex, i, run.stageStars)}
+          <div
+            class="border-2 rounded-xl p-3 {isNext ? 'border-teal-500 bg-teal-50' : 'border-slate-200 bg-white'} {isCleared ? 'opacity-60' : ''}"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-[11px] {isNext ? 'text-teal-700 font-bold' : 'text-slate-400'}">
+                  WAVE {i + 1}{#if isCleared}・クリア済み{:else if isNext && i === 2}・必須{:else if isNext}・NEXT{/if}
+                </div>
+                <div class="font-bold text-slate-800">{star.name}</div>
+                <div class="text-[11px] text-slate-500 mt-0.5">{starRestrictionDetail(star) || '制限なし'}</div>
+              </div>
+              <div class="text-right text-[11px] text-slate-600">
+                目標 {waveTargetValue}<br />報酬 +{star.reward}
+              </div>
+            </div>
+            {#if isNext && i !== 2}
+              <div class="flex gap-2 mt-2">
+                <button onclick={handleSkipWave} class="flex-1 px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs">スキップ</button>
+              </div>
+            {:else if isNext && i === 2}
+              <div class="flex gap-2 mt-2">
+                <button
+                  onclick={handleRerollStageStars}
+                  disabled={run.currency < params.flow.rerollCost}
+                  class="flex-1 px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  リロール({params.flow.rerollCost})
+                </button>
+              </div>
+            {/if}
+          </div>
+        {/each}
+      </div>
+
+      <button onclick={handleProceedToWave} class="w-full px-4 py-2 rounded-lg bg-teal-600 text-white font-semibold">
+        Wave{run.waveIndex + 1}へ進む
       </button>
     </div>
   </div>
