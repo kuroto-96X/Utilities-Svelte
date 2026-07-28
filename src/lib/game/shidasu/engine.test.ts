@@ -58,7 +58,7 @@ import {
   sellOracle,
 } from './engine'
 import { isFace, chainContinuesPattern } from './patterns'
-import type { Card, WaveState, RunState, ItemId, ShopIndividualSlot } from './types'
+import type { Card, WaveState, RunState, ItemId, ShopIndividualSlot, Star, StarRestriction } from './types'
 import { DEFAULT_PARAMS, type ShidasuParams } from './params'
 import { createRng, standardDeckComposition } from './deck'
 import { card } from './testHelpers'
@@ -2136,22 +2136,27 @@ describe('createInitialRun / beginRun', () => {
     run.wave!.tableau.forEach(col => expect(col).toHaveLength(DEFAULT_PARAMS.layout.rows - 1))
   })
 
-  test('waveTargetはspreadIdごとに設定された基礎値・倍率を参照する', () => {
+  test('waveTargetはflow.stageTargetBase・stageTargetMultiplierとstageStarsの倍率を参照する', () => {
     const custom = {
       ...DEFAULT_PARAMS,
-      spreads: {
-        fool: { ...DEFAULT_PARAMS.spreads.fool, waveTargetBase: 1000, waveTargetMultiplier: 2 },
-        moon: { ...DEFAULT_PARAMS.spreads.moon, waveTargetBase: 3000, waveTargetMultiplier: 1.1 },
-      },
+      flow: { ...DEFAULT_PARAMS.flow, stageTargetBase: 1000, stageTargetMultiplier: 2 },
     }
-    expect(waveTarget(custom, 0, 0, 'fool')).toBe(1000) // 1000 × 2^0
-    expect(waveTarget(custom, 0, 1, 'fool')).toBe(2000) // 1000 × 2^1
-    expect(waveTarget(custom, 0, 0, 'moon')).toBe(3000) // 3000 × 1.1^0
+    const stars: Star[] = [
+      { id: 's1', name: 'star1', waveSlot: 1, targetMultiplier: 1, reward: 0, restriction: null, sabotage: null },
+      { id: 's2', name: 'star2', waveSlot: 2, targetMultiplier: 1.5, reward: 0, restriction: null, sabotage: null },
+      { id: 's3', name: 'star3', waveSlot: 3, targetMultiplier: 2, reward: 0, restriction: null, sabotage: null },
+    ]
+    expect(waveTarget(custom, 0, 0, stars)).toBe(1000) // 1000 × 2^0 × 1
+    expect(waveTarget(custom, 0, 1, stars)).toBe(1500) // 1000 × 2^0 × 1.5
+    expect(waveTarget(custom, 1, 0, stars)).toBe(2000) // 1000 × 2^1 × 1
   })
 
-  test('beginRunのcurrentBossKindは、ステージ0(小凶)に属する候補からランダムに選ばれる', () => {
+  test('beginRunのstageStarsは、waveSlot 1・2・3それぞれから1件ずつ確定した3要素配列になる', () => {
     const run = beginRun(DEFAULT_PARAMS, 1)
-    expect(['noLoop', 'faceLock']).toContain(run.currentBossKind)
+    expect(run.stageStars).toHaveLength(3)
+    expect(run.stageStars[0].waveSlot).toBe(1)
+    expect(run.stageStars[1].waveSlot).toBe(2)
+    expect(run.stageStars[2].waveSlot).toBe(3)
   })
 
   test('createInitialRunはショップ用フィールドを初期値で持つ', () => {
@@ -2178,17 +2183,18 @@ describe('createInitialRun / beginRun', () => {
 })
 
 describe('resolveWaveEnd', () => {
+  const noRewardStar: Star = { id: 'no-reward-star', name: '無報酬の星', waveSlot: 1, targetMultiplier: 1, reward: 0, restriction: null, sabotage: null }
+
   function endedRun(overrides: Partial<RunState>, waveScore: number): RunState {
-    const run = beginRun(DEFAULT_PARAMS, 1)
+    const run = { ...beginRun(DEFAULT_PARAMS, 1), ...overrides }
     return {
       ...run,
-      ...overrides,
       wave: { ...run.wave!, score: waveScore, status: 'ended', endReason: 'target' },
     }
   }
 
   test('目標スコア以上でクリアした場合、ショップ画面(shop)へ遷移しバラ売り3枠・福袋2枠が確定する', () => {
-    const run = endedRun({ waveIndex: 0 }, waveTarget(DEFAULT_PARAMS, 0, 0))
+    const run = endedRun({ waveIndex: 0 }, waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars))
     const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
     expect(result.phase).toBe('shop')
     expect(result.shop).not.toBeNull()
@@ -2197,7 +2203,7 @@ describe('resolveWaveEnd', () => {
   })
 
   test('ショップ突入時、次のウェーブ位置・ボス種別・プレビューウェーブが確定する(既存のenterRevelationSelect相当)', () => {
-    const run = endedRun({ waveIndex: 0 }, waveTarget(DEFAULT_PARAMS, 0, 0))
+    const run = endedRun({ waveIndex: 0 }, waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars))
     const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
     expect(result.waveIndex).toBe(run.waveIndex + 1)
     expect(result.wave).not.toBeNull()
@@ -2211,17 +2217,16 @@ describe('resolveWaveEnd', () => {
     expect(result.shop).toBeNull()
   })
 
-  test('大凶ボスWaveクリア時はcontinueChoiceへ遷移しshopはnullのまま', () => {
-    const run = endedRun({ waveIndex: DEFAULT_PARAMS.flow.wavesPerStage - 1, stageIndex: 2 }, waveTarget(DEFAULT_PARAMS, 2, DEFAULT_PARAMS.flow.wavesPerStage - 1))
+  test('最終ステージのボスWaveクリア時はcontinueChoiceへ遷移しshopはnullのまま', () => {
+    const finalStageIndex = DEFAULT_PARAMS.flow.stagesPerRun - 1
+    const stageStars = beginRun(DEFAULT_PARAMS, 1).stageStars
+    const run = endedRun(
+      { waveIndex: DEFAULT_PARAMS.flow.wavesPerStage - 1, stageIndex: finalStageIndex },
+      waveTarget(DEFAULT_PARAMS, finalStageIndex, DEFAULT_PARAMS.flow.wavesPerStage - 1, stageStars),
+    )
     const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
     expect(result.phase).toBe('continueChoice')
     expect(result.shop).toBeNull()
-  })
-
-  test('2周目の大凶(stageIndex5の3ウェーブ目)クリアもcontinueChoiceになる(サイクルが無限に続く)', () => {
-    const run = endedRun({ waveIndex: 2, stageIndex: 5 }, waveTarget(DEFAULT_PARAMS, 5, 2))
-    const next = resolveWaveEnd(DEFAULT_PARAMS, run)
-    expect(next.phase).toBe('continueChoice')
   })
 
   test('beginRun直後、currencyは初期所持数になる', () => {
@@ -2235,28 +2240,21 @@ describe('resolveWaveEnd', () => {
     expect(next.currency).toBe(run.currency)
   })
 
-  test('通常Wave(ボスWave以外)クリアでcurrencyがwaveClearAmount分増える', () => {
-    const run = endedRun({ waveIndex: 0 }, waveTarget(DEFAULT_PARAMS, 0, 0))
+  test('報酬なしの星のWaveクリアでcurrencyがwaveClearAmount分だけ増える', () => {
+    const run = endedRun(
+      { waveIndex: 0, stageStars: [noRewardStar, noRewardStar, noRewardStar] },
+      waveTarget(DEFAULT_PARAMS, 0, 0, [noRewardStar, noRewardStar, noRewardStar]),
+    )
     const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
     expect(next.currency).toBe(run.currency + DEFAULT_PARAMS.currency.waveClearAmount)
   })
 
-  test('小凶ボスWave(stageIndex0の3ウェーブ目)クリアでwaveClearAmount+shoukyouボーナス分増える', () => {
-    const run = endedRun({ waveIndex: 2, stageIndex: 0 }, waveTarget(DEFAULT_PARAMS, 0, 2))
+  test('星にrewardが設定されていればwaveClearAmount+reward分増える', () => {
+    const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: null }
+    const stageStars = [noRewardStar, noRewardStar, rewardStar]
+    const run = endedRun({ waveIndex: 2, stageStars }, waveTarget(DEFAULT_PARAMS, 0, 2, stageStars))
     const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
-    expect(next.currency).toBe(run.currency + DEFAULT_PARAMS.currency.waveClearAmount + DEFAULT_PARAMS.currency.bossBonus.shoukyou)
-  })
-
-  test('中凶ボスWave(stageIndex1の3ウェーブ目)クリアでwaveClearAmount+chuukyouボーナス分増える', () => {
-    const run = endedRun({ waveIndex: 2, stageIndex: 1 }, waveTarget(DEFAULT_PARAMS, 1, 2))
-    const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
-    expect(next.currency).toBe(run.currency + DEFAULT_PARAMS.currency.waveClearAmount + DEFAULT_PARAMS.currency.bossBonus.chuukyou)
-  })
-
-  test('大凶ボスWave(stageIndex2の3ウェーブ目)クリアでwaveClearAmount+taikyouボーナス分増える', () => {
-    const run = endedRun({ waveIndex: 2, stageIndex: 2 }, waveTarget(DEFAULT_PARAMS, 2, 2))
-    const next = resolveWaveEnd(DEFAULT_PARAMS, run)
-    expect(next.currency).toBe(run.currency + DEFAULT_PARAMS.currency.waveClearAmount + DEFAULT_PARAMS.currency.bossBonus.taikyou)
+    expect(next.currency).toBe(run.currency + DEFAULT_PARAMS.currency.waveClearAmount + 20)
   })
 })
 
@@ -2265,39 +2263,43 @@ describe('stageModifierFor / bossScoreLockFor', () => {
     return { ...beginRun(DEFAULT_PARAMS, 1), waveIndex: 2, ...overrides }
   }
 
-  test('currentBossKindがnoLoopのボスウェーブではnoLoopが返る', () => {
-    const run = runWith({ currentBossKind: 'noLoop' })
+  function starWith(restriction: StarRestriction): Star {
+    return { id: 'test-star', name: 'テスト星', waveSlot: 3, targetMultiplier: 1, reward: 0, restriction, sabotage: null }
+  }
+
+  test('制限ルールがnoLoopならnoLoopが返る', () => {
+    const run = runWith({ stageStars: [starWith(null), starWith(null), starWith({ kind: 'noLoop' })], waveIndex: 2 })
     expect(stageModifierFor(DEFAULT_PARAMS, run)).toBe('noLoop')
   })
 
-  test('currentBossKindがfaceLockのボスウェーブではfaceLockが返る', () => {
-    const run = runWith({ currentBossKind: 'faceLock' })
+  test('制限ルールがfaceLockならfaceLockが返る', () => {
+    const run = runWith({ stageStars: [starWith(null), starWith(null), starWith({ kind: 'faceLock' })], waveIndex: 2 })
     expect(stageModifierFor(DEFAULT_PARAMS, run)).toBe('faceLock')
   })
 
-  test('ボスウェーブでなければcurrentBossKindに関わらずnoneが返る', () => {
-    const run = runWith({ currentBossKind: 'noLoop', waveIndex: 0 })
+  test('現在Waveの星に制限ルールが無ければnoneが返る', () => {
+    const run = runWith({ stageStars: [starWith(null), starWith(null), starWith({ kind: 'noLoop' })], waveIndex: 0 })
     expect(stageModifierFor(DEFAULT_PARAMS, run)).toBe('none')
   })
 
-  test('currentBossKindがlowComboならkind:comboのscoreLockが返る', () => {
-    const run = runWith({ currentBossKind: 'lowCombo' })
-    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'combo', maxCombo: DEFAULT_PARAMS.bosses.lowCombo.maxCombo, tierLabel: DEFAULT_PARAMS.bossTiers.chuukyou.name })
+  test('制限ルールがlowComboならkind:comboのscoreLockが返る', () => {
+    const run = runWith({ stageStars: [starWith(null), starWith(null), starWith({ kind: 'lowCombo', maxCombo: 2 })], waveIndex: 2 })
+    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'combo', maxCombo: 2, tierLabel: 'テスト星' })
   })
 
-  test('currentBossKindがoddComboならkind:oddComboのscoreLockが返る', () => {
-    const run = runWith({ currentBossKind: 'oddCombo' })
-    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'oddCombo', tierLabel: DEFAULT_PARAMS.bossTiers.chuukyou.name })
+  test('制限ルールがoddComboならkind:oddComboのscoreLockが返る', () => {
+    const run = runWith({ stageStars: [starWith(null), starWith(null), starWith({ kind: 'oddCombo' })], waveIndex: 2 })
+    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'oddCombo', tierLabel: 'テスト星' })
   })
 
-  test('currentBossKindがsuitかつcurrentGreatMisfortuneSuitが確定していればkind:suitのscoreLockが返る', () => {
-    const run = runWith({ currentBossKind: 'suit', currentGreatMisfortuneSuit: '♠' })
-    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'suit', suit: '♠', tierLabel: DEFAULT_PARAMS.bossTiers.taikyou.name })
+  test('制限ルールがsuitならkind:suitのscoreLockが返る', () => {
+    const run = runWith({ stageStars: [starWith(null), starWith(null), starWith({ kind: 'suit', suit: '♠' })], waveIndex: 2 })
+    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'suit', suit: '♠', tierLabel: 'テスト星' })
   })
 
-  test('currentBossKindがfaceならkind:faceのscoreLockが返る', () => {
-    const run = runWith({ currentBossKind: 'face' })
-    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'face', tierLabel: DEFAULT_PARAMS.bossTiers.taikyou.name })
+  test('制限ルールがfaceならkind:faceのscoreLockが返る', () => {
+    const run = runWith({ stageStars: [starWith(null), starWith(null), starWith({ kind: 'face' })], waveIndex: 2 })
+    expect(bossScoreLockFor(DEFAULT_PARAMS, run)).toEqual({ kind: 'face', tierLabel: 'テスト星' })
   })
 })
 
@@ -2693,7 +2695,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['resilience'], offer: [],
       wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], revelationOffer: [], extraTableauRows: 0,
-      oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null, spreadId: 'fool', currentBossKind: 'noLoop',
+      oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
@@ -2721,7 +2723,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['resilience'], offer: [],
       wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], revelationOffer: [], extraTableauRows: 0,
-      oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null, spreadId: 'fool', currentBossKind: 'noLoop',
+      oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
@@ -2743,7 +2745,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: [], offer: [],
       wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], revelationOffer: [], extraTableauRows: 0,
-      oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null, spreadId: 'fool', currentBossKind: 'noLoop',
+      oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
@@ -2766,7 +2768,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['resilience'], offer: [],
       wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], revelationOffer: [], extraTableauRows: 0,
-      oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null, spreadId: 'fool', currentBossKind: 'noLoop',
+      oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
@@ -2790,7 +2792,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['healing', 'resilience'], offer: [],
       wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], revelationOffer: [], extraTableauRows: 0,
-      oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null, spreadId: 'fool', currentBossKind: 'noLoop',
+      oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
@@ -2813,7 +2815,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['healing'], offer: [],
       wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], revelationOffer: [], extraTableauRows: 0,
-      oracleLevels: defaultOracleLevels(), oracleOffer: [], currentGreatMisfortuneSuit: null, spreadId: 'fool', currentBossKind: 'noLoop',
+      oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
