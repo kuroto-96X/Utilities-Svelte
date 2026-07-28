@@ -130,6 +130,8 @@
   let totalGainEl: HTMLSpanElement | undefined = $state()
   let breakdownRowEl: HTMLSpanElement | undefined = $state()
   let noPlayableHintEl: HTMLDivElement | undefined = $state()
+  let stockButtonEl: HTMLButtonElement | undefined = $state()
+  let discardPileEl: HTMLDivElement | undefined = $state()
 
   let scoreRevealTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -465,17 +467,25 @@
 <div class="px-4 text-center text-yellow-300 text-xs font-black animate-pulse mb-1 {wave.lastDrawEffect === 'pattern' ? '' : 'invisible'}">✦ パターン継続! ✦</div>
 
 <div class="px-4 pb-5 pt-2 flex items-start gap-4">
-  <button
-    type="button"
-    onclick={onDraw}
-    disabled={wave.stock.length === 0 || !allowDraw || playingAnimation !== null || scoreReveal !== null}
-    data-drop-stock
-    style="aspect-ratio: 2 / 3; margin-top:20px;"
-    class="w-16 shrink-0 rounded-lg border-2 flex flex-col items-center justify-center font-black active:scale-95 transition-transform {dropTarget === 'stockTop' ? 'ring-4 ring-sky-400' : ''} {wave.stock.length > 0 ? 'bg-emerald-700 border-emerald-500 text-amber-50' : 'bg-emerald-900 border-emerald-800 text-emerald-700'}"
-  >
-    <div class="text-xs">山札</div>
-    <div class="text-lg tabular-nums">{wave.stock.length}</div>
-  </button>
+  <div class="flex flex-col items-center gap-1" style="margin-top:20px;">
+    <button
+      type="button"
+      onclick={onDraw}
+      disabled={wave.stock.length === 0 || !allowDraw || playingAnimation !== null || scoreReveal !== null}
+      data-drop-stock
+      bind:this={stockButtonEl}
+      style="aspect-ratio: 2 / 3;"
+      class="w-16 shrink-0 rounded-lg border-2 flex flex-col items-center justify-center font-black active:scale-95 transition-transform {dropTarget === 'stockTop' ? 'ring-4 ring-sky-400' : ''} {wave.stock.length > 0 ? 'bg-emerald-700 border-emerald-500 text-amber-50' : 'bg-emerald-900 border-emerald-800 text-emerald-700'}"
+    >
+      <div class="text-xs">山札</div>
+      <div class="text-lg tabular-nums">{wave.stock.length}</div>
+    </button>
+    {#if wave.discardPile.length > 0}
+      <div bind:this={discardPileEl} class="w-10">
+        <CardFace card={wave.discardPile[wave.discardPile.length - 1]} covered={false} />
+      </div>
+    {/if}
+  </div>
   {#if items.includes('guidance') && wave.stock.length > 0}
     {@const nextCard = wave.stock[wave.stock.length - 1]}
     <div class="flex flex-col items-center justify-center" style="margin-top:20px;">
