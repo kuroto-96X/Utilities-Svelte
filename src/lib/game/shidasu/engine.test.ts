@@ -13,6 +13,7 @@ import {
   markStuck,
   createInitialRun,
   beginRun,
+  finishShop,
   resolveWaveEnd,
   continueAfterGreatMisfortune,
   stopAfterGreatMisfortune,
@@ -2115,27 +2116,29 @@ describe('createInitialRun / beginRun', () => {
     expect(run.spreadId).toBe('fool')
   })
 
-  test('beginRunはplayingフェーズでステージ0・ウェーブ0から始まる、pendingNewItemはnull', () => {
+  test('beginRunはshopフェーズでステージ0・ウェーブ0から始まり、waveは未生成', () => {
     const run = beginRun(DEFAULT_PARAMS, 1)
-    expect(run.phase).toBe('playing')
+    expect(run.phase).toBe('shop')
     expect(run.stageIndex).toBe(0)
     expect(run.waveIndex).toBe(0)
-    expect(run.wave).not.toBeNull()
-    expect(run.pendingNewItem).toBeNull()
+    expect(run.wave).toBeNull()
+    expect(run.shop).toBeNull()
   })
 
-  test('beginRunはspreadIdを省略するとfoolになり、extraTableauRowsは0、場札は通常の行数(5行)で配られる', () => {
+  test('beginRunはspreadIdを省略するとfoolになり、finishShop後の場札は通常の行数で配られる', () => {
     const run = beginRun(DEFAULT_PARAMS, 1)
+    const started = finishShop(DEFAULT_PARAMS, run, 1)
     expect(run.spreadId).toBe('fool')
     expect(run.extraTableauRows).toBe(0)
-    run.wave!.tableau.forEach(col => expect(col).toHaveLength(DEFAULT_PARAMS.layout.rows))
+    started.wave!.tableau.forEach(col => expect(col).toHaveLength(DEFAULT_PARAMS.layout.rows))
   })
 
-  test('beginRunでspreadId=moonを指定すると、extraTableauRowsは-1になり、場札は通常より1行少なく配られる', () => {
+  test('spreadId=moonを指定すると、finishShop後の場札は通常より1行少なく配られる', () => {
     const run = beginRun(DEFAULT_PARAMS, 1, 'moon')
+    const started = finishShop(DEFAULT_PARAMS, run, 1)
     expect(run.spreadId).toBe('moon')
     expect(run.extraTableauRows).toBe(-1)
-    run.wave!.tableau.forEach(col => expect(col).toHaveLength(DEFAULT_PARAMS.layout.rows - 1))
+    started.wave!.tableau.forEach(col => expect(col).toHaveLength(DEFAULT_PARAMS.layout.rows - 1))
   })
 
   test('waveTargetはflow.stageTargetBase・stageTargetMultiplierとstageStarsの倍率を参照する', () => {
@@ -2414,7 +2417,7 @@ describe('pickItem / continueAfterGreatMisfortune / restartRun', () => {
 
   test('restartRunでステージ0・ウェーブ0・アイテムなしに戻る', () => {
     const next = restartRun(DEFAULT_PARAMS, 1)
-    expect(next.phase).toBe('playing')
+    expect(next.phase).toBe('shop')
     expect(next.stageIndex).toBe(0)
     expect(next.waveIndex).toBe(0)
     expect(next.items).toEqual([])
@@ -2743,7 +2746,7 @@ describe('buyPack / pickPackRite(秘儀の福袋)', () => {
 
 describe('applyPlayCard / applyDrawStock / applyStuckCheck', () => {
   test('applyPlayCardはrun.waveを更新する', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
+    const run = finishShop(DEFAULT_PARAMS, beginRun(DEFAULT_PARAMS, 1), 1)
     const col0 = run.wave!.tableau[0]
     const before = col0.length
     const next = applyPlayCard(DEFAULT_PARAMS, run, 0)
@@ -2751,14 +2754,14 @@ describe('applyPlayCard / applyDrawStock / applyStuckCheck', () => {
   })
 
   test('applyDrawStockはrun.wave.stockを減らす', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
+    const run = finishShop(DEFAULT_PARAMS, beginRun(DEFAULT_PARAMS, 1), 1)
     const before = run.wave!.stock.length
     const next = applyDrawStock(DEFAULT_PARAMS, run)
     expect(next.wave!.stock.length).toBe(before - 1)
   })
 
   test('applyStuckCheckは手詰まりでなければ何もしない', () => {
-    const run = beginRun(DEFAULT_PARAMS, 1)
+    const run = finishShop(DEFAULT_PARAMS, beginRun(DEFAULT_PARAMS, 1), 1)
     const next = applyStuckCheck(DEFAULT_PARAMS, run)
     expect(next.wave!.status).toBe('playing')
   })
@@ -3049,7 +3052,7 @@ describe('エイワズ(コンボリセット防止)とdrawStock/applyStuckCheck�
       comboResetShieldRemaining: 1,
       score: 1000,
     })
-    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), items: [], wave }
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'playing', items: [], wave }
     const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
     const totalCards = (w: WaveState) =>
       w.tableau.reduce((n, col) => n + col.length, 0) + w.stock.length + w.chain.length + w.discardPile.length

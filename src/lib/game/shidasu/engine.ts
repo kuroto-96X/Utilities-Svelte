@@ -1022,16 +1022,15 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
   const initialExtraTableauRows = params.spreads[spreadId].initialExtraTableauRows
   const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
   const initialStageStars = rollStageStars(params, rand)
-  const { wave, deckComposition } = startWave(params, 0, 0, [], standardDeckComposition(), seed, initialExtraTableauRows, defaultOracleLevels())
   return {
-    phase: 'playing',
+    phase: 'shop',
     stageIndex: 0,
     waveIndex: 0,
     items: [],
     offer: [],
-    wave,
+    wave: null,
     pendingNewItem: null,
-    deckComposition,
+    deckComposition: standardDeckComposition(),
     rites: [],
     revelations: [],
     revelationOffer: [],
