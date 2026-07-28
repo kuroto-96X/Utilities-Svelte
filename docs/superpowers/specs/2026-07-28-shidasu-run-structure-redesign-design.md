@@ -117,3 +117,18 @@ Wave開始前に毎回表示される画面。ショップ画面(`fixed inset-0`
 ## テスト方針
 
 このセッションではデータモデル・仕様の確定のみを行うため、自動テストの追加・変更はない。実装セッションで`engine.ts`の変更に伴うユニットテストの追加・既存テスト(`bossTierOf`・`currentBossKind`関連)の削除・書き換えが必要になる。
+
+## 実装セッションからの申し送り(データモデル層完了時点)
+
+`types.ts`・`params.ts`・`engine.ts`・`bosses.ts`・`bossActualEffects.ts`・`engine.test.ts`の変更が完了した。当初「別セッション」の予定だった`+page.svelte`の型エラー解消・管理画面(`src/routes/admin/shidasu-bosses/+page.svelte`)の最小限修正も、`npm run build`がビルド全体を通す都合上、今回のセッション内で対応した(`bosses.ts`から削除されたシンボルを管理画面がimportしていたため、`MISSING_EXPORT`でビルド自体が失敗する状態だったため)。
+
+- `npm run build`・`npm run check`・`npx vitest run src/lib/game/shidasu`(589件)すべて成功
+
+以下は次セッションで対応が必要:
+
+1. **ステージ画面の新設**: `+page.svelte`のWave進行フロー(ショップ→ステージ画面→次Wave)は未実装。現状は`enterShop`が確定させた`stageStars`を使って即座に次Waveへ進む形のまま。ヘッダー表示(`upcomingBossInfo`)も最小限の暫定表示のみ。
+2. **Waveスキップ・リロールのUI**: 未実装。`engine.ts`側にもスキップ・リロールを行う関数はまだ存在しない(Star抽選ロジックのみ実装済み)。
+3. **8ステージクリア後の`continueChoice`画面の文言・演出**: 暫定的に「ステージ突破!」という固定文言にしている。適切な演出は別途検討。
+4. **管理画面(`admin/shidasu-bosses`)の本格UI**: 今回は「動く最小限のシンプルなUI」(stars配列を素朴なテーブルで編集、追加・削除ボタンのみ)にとどめた。UX改善(waveSlotごとのグルーピング表示、ドラッグ&ドロップでの並び替え等)は別途検討。
+5. **`bosses.ts`・`params.ts`内の非推奨フィールド(`bossTiers`・`bosses`)の削除**: `types.ts`の`BossKind`・`BossTierKey`型とあわせて削除する。`BossTiersSection.svelte`(`config.bossTiers.*.name`を参照)も合わせて整理が必要。
+6. **配布アニメーションの誤発火問題(再掲)**: `docs/superpowers/specs/2026-07-28-shidasu-deal-animation-design.md`に記載の通り保留中。ステージ画面新設のタイミングで改めて検討する。
