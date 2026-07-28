@@ -247,14 +247,30 @@
     function scheduleMoveToStock() {
       cleanupTimer = setTimeout(() => {
         if (!cleanupAnimation) return
+        // 単一オーバーレイへの切り替え(gatherCards:[]によりDOM要素が新規マウントされる)と
+        // 同時に山札の位置・transitionを設定すると、要素がいきなり最終位置に出現してしまい
+        // トランジションが発生しない(ワープしてしまう)。そのため、まず現在の集約位置のまま
+        // transitionMs:0で単一オーバーレイに切り替え、2段rAF後に山札の位置へtransitionMs付きで
+        // 変更する(既存のplayingAnimationのワープ処理と同じ理由・同じ手法)。
         cleanupAnimation = {
           ...cleanupAnimation,
           phase: 'move',
-          left: toRect.left + toRect.width / 2,
-          top: toRect.top + toRect.height / 2,
-          transitionMs: CLEANUP_MOVE_MS,
+          left: gatherLeft,
+          top: gatherTop,
+          transitionMs: 0,
           gatherCards: [],
         }
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (!cleanupAnimation) return
+            cleanupAnimation = {
+              ...cleanupAnimation,
+              left: toRect.left + toRect.width / 2,
+              top: toRect.top + toRect.height / 2,
+              transitionMs: CLEANUP_MOVE_MS,
+            }
+          })
+        })
         if (item.kind === 'column') {
           cleanedUpColumns = new Set([...cleanedUpColumns, item.columnIndex])
         } else if (item.kind === 'chain') {
