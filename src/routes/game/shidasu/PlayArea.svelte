@@ -263,7 +263,12 @@
   let cleanupTimer: ReturnType<typeof setTimeout> | undefined
   let chainResetAnimation = $state<ChainResetAnimation | null>(null)
   let chainResetTimer: ReturnType<typeof setTimeout> | undefined
-  let previousChainIds: number[] = wave.chain.map(c => c.id)
+  // Cardオブジェクトそのものをスナップショットとして保持する(IDだけでなく)。
+  // wave.discardPileから該当カードを引き直す設計だと、治癒(healing)護符の発動時に
+  // discardPile全体がシャッフルされ一部が場札へ復元されるため、末尾N件がリセット対象と
+  // 一致しなくなりアニメーションが無音でスキップされる不具合があった。リセット直前の
+  // wave.chainから直接Cardを保持しておけば、discardPileの並び順に一切依存しない。
+  let previousChainCards: Card[] = wave.chain
   let previousChainWaveKey = waveKey
 
   // $effect.preを使う理由: 山札を捲った際のチェーンリセットは、捲ったカードの追加と
@@ -272,28 +277,28 @@
   // $effect.preはDOM更新前(旧チェーンがまだ描画されている状態)に発火するため、
   // ここで対象カードのDOM要素から座標を記録してからstartChainResetAnimationへ渡す。
   $effect.pre(() => {
-    const currentChainIds = wave.chain.map(c => c.id)
+    const currentChainCards = wave.chain
     // waveKeyの変化(新Wave境界)を自前で追跡する。既存のwaveKey監視effect
     // (前方のブロック)が同じフレームでpreviousWaveKeyを先に更新してしまうため、
     // このeffect内でwaveKey !== previousWaveKeyを見ても新Wave境界を検知できない。
     if (waveKey !== previousChainWaveKey) {
       previousChainWaveKey = waveKey
-      previousChainIds = currentChainIds
+      previousChainCards = currentChainCards
       return
     }
-    // 通常のプレイ・山札捲りによるチェーン延長は、previousChainIdsの末尾に
+    // 通常のプレイ・山札捲りによるチェーン延長は、previousChainCardsの末尾に
     // 1件追加しただけの配列と一致する(先頭からの並びが変わらない)。
     // それ以外の変化(チェーンが短くなる、または同じ長さでも中身が入れ替わる)は
     // すべてリセットとみなす。長さの比較だけでは「1枚→1枚」のリセットを
     // 検知できないため、先頭からの一致を見る。
-    const isExtension = currentChainIds.length === previousChainIds.length + 1
-      && previousChainIds.every((id, i) => id === currentChainIds[i])
+    const isExtension = currentChainCards.length === previousChainCards.length + 1
+      && previousChainCards.every((card, i) => card.id === currentChainCards[i].id)
     const resetCards = isExtension
       ? []
-      : wave.chain.length > 0
-        ? previousChainIds.filter(id => id !== wave.chain[wave.chain.length - 1].id)
-        : previousChainIds
-    previousChainIds = currentChainIds
+      : currentChainCards.length > 0
+        ? previousChainCards.filter(card => card.id !== currentChainCards[currentChainCards.length - 1].id)
+        : previousChainCards
+    previousChainCards = currentChainCards
     if (resetCards.length === 0) return
     startChainResetAnimation(resetCards)
   })
@@ -337,26 +342,21 @@
 
   // チェーンリセット発生時、旧チェーンのカード(次チェーンに引き継がれる1枚を除く)を
   // 1山にまとめてから捨て札の位置へ移動させるアニメーションを開始する。
-  // resetCardIdsはリセット直前のwave.chainのうち、次チェーンへ引き継がれなかったカードのID一覧。
-  function startChainResetAnimation(resetCardIds: number[]) {
+  // resetCardsはリセット直前のwave.chainのうち、次チェーンへ引き継がれなかったカード一覧。
+  // wave.discardPileから該当カードを引き直さず、渡されたCardオブジェクトをそのまま使う。
+  // (治癒護符発動時、discardPile全体がシャッフルされ末尾N件がリセット対象と一致しなくなる
+  // ケースがあるため、discardPileの並び順には一切依存しない設計にしている)
+  function startChainResetAnimation(resetCards: Card[]) {
     if (!chainAreaEl || !discardPileEl) return
-    const cardEntries = resetCardIds
-      .map(id => {
-        const cardEl = chainAreaEl?.querySelector<HTMLElement>(`[data-chain-card-id="${id}"]`)
-        return cardEl ? { id, el: cardEl } : null
+    const cardEntries = resetCards
+      .map(card => {
+        const cardEl = chainAreaEl?.querySelector<HTMLElement>(`[data-chain-card-id="${card.id}"]`)
+        return cardEl ? { card, el: cardEl } : null
       })
-      .filter((entry): entry is { id: number; el: HTMLElement } => entry !== null)
+      .filter((entry): entry is { card: Card; el: HTMLElement } => entry !== null)
     if (cardEntries.length === 0) return
 
-    const cards = wave.discardPile.slice(-resetCardIds.length).filter(c => resetCardIds.includes(c.id))
-    if (cards.length !== cardEntries.length) return
-    // cardEntriesの各IDに対応するカードがcardsに実在することを保証してから使う。
-    // 件数が一致していても、想定外の状態(IDの重複や不一致)ではfindがundefinedを
-    // 返しうるため、その場合はアニメーション全体を安全側に倒して中断する。
-    const cardById = new Map(cards.map(c => [c.id, c]))
-    if (cardEntries.some(entry => !cardById.has(entry.id))) return
-
-    // 集約先・代表カードの基準は「一番上に見えていたカード」= resetCardIdsの末尾
+    // 集約先・代表カードの基準は「一番上に見えていたカード」= resetCardsの末尾
     // (wave.chainは先頭が最も古く、末尾が最新=最前面に描画されるカードのため)。
     const topEntry = cardEntries[cardEntries.length - 1]
     const gatherLeft = topEntry.el.getBoundingClientRect().left + topEntry.el.getBoundingClientRect().width / 2
@@ -364,9 +364,8 @@
 
     const gatherCards: GatherMoveCardPosition[] = cardEntries.map(entry => {
       const rect = entry.el.getBoundingClientRect()
-      const card = cardById.get(entry.id)!
       return {
-        card,
+        card: entry.card,
         left: rect.left + rect.width / 2,
         top: rect.top + rect.height / 2,
       }
@@ -385,7 +384,7 @@
       setAnimation: next => { chainResetAnimation = next },
       setTimer: timer => { chainResetTimer = timer },
       gatherCards,
-      representativeCard: cardById.get(topEntry.id)!,
+      representativeCard: topEntry.card,
       gatherLeft,
       gatherTop,
       getMoveTarget: () => {
