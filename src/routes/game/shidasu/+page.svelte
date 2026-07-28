@@ -61,10 +61,14 @@
   let upcomingBossInfo = $derived.by(() => {
     const star = run.stageStars[run.waveIndex]
     if (!star || !star.restriction) return { label: '', detail: '' }
-    if (star.restriction.kind === 'suit') {
-      return { label: star.name, detail: `${star.restriction.suit}で無得点` }
+    switch (star.restriction.kind) {
+      case 'suit': return { label: star.name, detail: `${star.restriction.suit}で無得点` }
+      case 'noLoop': return { label: star.name, detail: 'A⇔Kループ禁止' }
+      case 'faceLock': return { label: star.name, detail: '絵札はコンボ2以上でのみ取得可' }
+      case 'lowCombo': return { label: star.name, detail: `${star.restriction.maxCombo}コンボ以下で無得点` }
+      case 'oddCombo': return { label: star.name, detail: 'コンボが奇数のとき無得点' }
+      case 'face': return { label: star.name, detail: '絵札(J・Q・K)で無得点' }
     }
-    return { label: star.name, detail: '' }
   })
 
   function scheduleStuckCheck() {
