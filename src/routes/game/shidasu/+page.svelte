@@ -359,6 +359,9 @@
 
   function handleCancelRevelationTarget() {
     pendingRevelationTarget = null
+    // キャンセル時は天啓効果を一切適用していないため、片付けアニメーションを経由せず
+    // 即座にプレビューを破棄してよい(handleTargetColumnでの確定時のみ、適用結果を
+    // 見せてから片付けアニメーション経由で破棄する)。
     revelationPreviewWave = null
   }
 
@@ -370,8 +373,10 @@
     if (revelationPreviewWave) {
       // プレビュー盤面に対して既存の天啓適用関数を流用する。run.waveを一時的に
       // プレビューへすり替えて呼び出し、結果からwave以外(deckComposition・currency・
-      // shop・revelations等の永続的な変更)のみ本番runへ反映する。wave自体は
-      // 呼び出し前のrun.wave(直前Waveのended状態)のまま変更しない。
+      // shop・revelations等の永続的な変更)のみ本番runへ反映する。プレビューは使い捨て
+      // であり、本番run.waveへ反映すると通常のショップ/プレイ画面にプレビュー内容が
+      // 漏れてしまうため、wave自体は呼び出し前のrun.wave(直前Waveのended状態)のまま
+      // 変更しない。
       const runForPreview = { ...run, wave: revelationPreviewWave }
       let resultRun: RunState
       if (target.source === 'individual') {
@@ -593,7 +598,7 @@
   <RoleStatusPanel {params} oracleLevels={run.oracleLevels} />
 {/if}
 
-{#if run.phase === 'shop' && run.shop && !pendingRevelationTarget && !showStageScreen}
+{#if run.phase === 'shop' && run.shop && !pendingRevelationTarget && !revelationPreviewWave && !showStageScreen}
   <div class="fixed inset-0 z-50 bg-emerald-950/90 backdrop-blur-sm flex items-center justify-center p-6">
     <div class="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-4">
       <div class="flex items-center justify-between">
@@ -854,7 +859,7 @@
   </div>
 {/if}
 
-{#if run.phase === 'shop' && !pendingRevelationTarget && showStageScreen}
+{#if run.phase === 'shop' && !pendingRevelationTarget && !revelationPreviewWave && showStageScreen}
   {@const baseTarget = Math.floor(params.flow.stageTargetBase * params.flow.stageTargetMultiplier ** run.stageIndex)}
   <div class="fixed inset-0 z-50 bg-emerald-950/90 backdrop-blur-sm flex items-center justify-center p-6">
     <div class="bg-white rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto space-y-3">
