@@ -1,10 +1,9 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte'
   import { DEFAULT_PARAMS, type ShidasuParams } from '$lib/game/shidasu/params'
-  import { bossDesc, bossesInTier, BOSS_KINDS } from '$lib/game/shidasu/bosses'
+  import { starsInSlot } from '$lib/game/shidasu/bosses'
   import { SIN_DAUGHTERS } from '$lib/game/shidasu/sinDaughters'
-  import { BOSS_ACTUAL_EFFECTS } from '$lib/game/shidasu/bossActualEffects'
-  import type { BossKind, BossTierKey } from '$lib/game/shidasu/types'
+  import { STAR_RESTRICTION_ACTUAL_EFFECTS } from '$lib/game/shidasu/bossActualEffects'
 
   let config = $state<ShidasuParams | null>(null)
   let error = $state<string | null>(null)
@@ -17,38 +16,46 @@
     flashTimer = setTimeout(() => { flash = null }, 2000)
   }
 
-  const TIER_LABELS: Record<BossTierKey, string> = { shoukyou: '小凶', chuukyou: '中凶', taikyou: '大凶' }
-  const TIER_OPTIONS: BossTierKey[] = ['shoukyou', 'chuukyou', 'taikyou']
+  const WAVE_SLOTS: (1 | 2 | 3)[] = [1, 2, 3]
+  const RESTRICTION_OPTIONS: ShidasuParams['stars'][number]['restrictionKind'][] = [
+    'none', 'noLoop', 'faceLock', 'lowCombo', 'oddCombo', 'suit', 'face',
+  ]
 
-  type BossEntry = { name: string; tier: BossTierKey; desc: string } & Record<string, number | string>
-
-  function bossEntry(kind: BossKind): BossEntry {
-    return config!.bosses[kind] as unknown as BossEntry
-  }
-
-  function bossParamKeys(kind: BossKind): string[] {
-    return Object.keys(bossEntry(kind)).filter(key => key !== 'name' && key !== 'desc' && key !== 'tier')
-  }
-
-  let tierCounts = $derived.by(() => {
-    if (!config) return { shoukyou: 0, chuukyou: 0, taikyou: 0 }
+  let slotCounts = $derived.by(() => {
+    if (!config) return { 1: 0, 2: 0, 3: 0 }
     return {
-      shoukyou: bossesInTier(config, 'shoukyou').length,
-      chuukyou: bossesInTier(config, 'chuukyou').length,
-      taikyou: bossesInTier(config, 'taikyou').length,
+      1: starsInSlot(config, 1).length,
+      2: starsInSlot(config, 2).length,
+      3: starsInSlot(config, 3).length,
     }
   })
 
   let hasValidationError = $derived.by(() => {
     if (!config) return false
-    if (tierCounts.shoukyou === 0 || tierCounts.chuukyou === 0 || tierCounts.taikyou === 0) return true
-    return BOSS_KINDS.some(kind => {
-      const entry = bossEntry(kind)
-      if (!entry.name.trim()) return true
-      if (!entry.desc.trim()) return true
-      return bossParamKeys(kind).some(key => !Number.isFinite(entry[key] as number))
+    if (slotCounts[1] === 0 || slotCounts[2] === 0 || slotCounts[3] === 0) return true
+    return config.stars.some(star => {
+      if (!star.name.trim()) return true
+      if (star.restrictionKind === 'lowCombo' && !Number.isFinite(star.maxCombo)) return true
+      return false
     })
   })
+
+  function addStar() {
+    if (!config) return
+    config.stars.push({
+      id: `star-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      name: '',
+      waveSlot: 1,
+      targetMultiplier: 1,
+      reward: 0,
+      restrictionKind: 'none',
+    })
+  }
+
+  function removeStar(id: string) {
+    if (!config) return
+    config.stars = config.stars.filter(star => star.id !== id)
+  }
 
   async function loadConfig(toast = false) {
     try {
@@ -85,20 +92,20 @@
 </script>
 
 <svelte:head>
-  <title>Shidasu ボス候補パラメータ設定</title>
+  <title>Shidasu 星パラメータ設定</title>
 </svelte:head>
 
 <div class="max-w-5xl mx-auto px-4 py-8">
   <a href="/admin" class="text-xs text-slate-400 hover:text-teal-600 mb-4 inline-block">← 管理ページ一覧</a>
 
   <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-slate-800">星詠みソリティア -Shidasu- ボス候補パラメータ設定</h1>
+    <h1 class="text-2xl font-bold text-slate-800">星詠みソリティア -Shidasu- 星パラメータ設定</h1>
     <div class="flex gap-2">
       <button onclick={() => loadConfig(true)} class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
         リロード
       </button>
       {#if hasValidationError}
-        <p class="text-xs text-red-600 self-center">ボス名・説明文が空、パラメータが未入力、またはいずれかの階級の候補数が0件です</p>
+        <p class="text-xs text-red-600 self-center">星名が空、lowCombo制限でmaxComboが未入力、またはいずれかのWaveスロットの星数が0件です</p>
       {/if}
       <button
         onclick={save}
@@ -116,9 +123,9 @@
 
   {#if config}
     <div class="flex gap-4 mb-4 text-xs text-slate-500">
-      <span class={tierCounts.shoukyou === 0 ? 'text-red-600 font-bold' : ''}>小凶: {tierCounts.shoukyou}件</span>
-      <span class={tierCounts.chuukyou === 0 ? 'text-red-600 font-bold' : ''}>中凶: {tierCounts.chuukyou}件</span>
-      <span class={tierCounts.taikyou === 0 ? 'text-red-600 font-bold' : ''}>大凶: {tierCounts.taikyou}件</span>
+      <span class={slotCounts[1] === 0 ? 'text-red-600 font-bold' : ''}>Wave1: {slotCounts[1]}件</span>
+      <span class={slotCounts[2] === 0 ? 'text-red-600 font-bold' : ''}>Wave2: {slotCounts[2]}件</span>
+      <span class={slotCounts[3] === 0 ? 'text-red-600 font-bold' : ''}>Wave3: {slotCounts[3]}件</span>
     </div>
 
     <section class="bg-white border border-slate-200 rounded-xl p-4">
@@ -126,64 +133,83 @@
         <table class="w-full text-xs border border-slate-200 rounded-lg overflow-hidden">
           <thead>
             <tr class="bg-slate-50 text-slate-500">
-              <th class="px-2 py-1.5 text-left" style="width:6rem;">階級</th>
+              <th class="px-2 py-1.5 text-left" style="width:5rem;">Wave</th>
               <th class="px-2 py-1.5 text-left" style="width:9rem;">名前</th>
-              <th class="px-2 py-1.5 text-left" style="width:9rem;">パラメータ</th>
-              <th class="px-2 py-1.5 text-left" style="width:14rem;">説明文テンプレート</th>
-              <th class="px-2 py-1.5 text-left" style="width:14rem;">プレビュー</th>
-              <th class="px-2 py-1.5 text-left" style="width:20rem;">実際の効果(監査用)</th>
+              <th class="px-2 py-1.5 text-left" style="width:6rem;">倍率</th>
+              <th class="px-2 py-1.5 text-left" style="width:6rem;">報酬</th>
+              <th class="px-2 py-1.5 text-left" style="width:8rem;">制限種別</th>
+              <th class="px-2 py-1.5 text-left" style="width:6rem;">maxCombo</th>
+              <th class="px-2 py-1.5 text-left" style="width:16rem;">実際の効果(監査用)</th>
+              <th class="px-2 py-1.5 text-left" style="width:3rem;"></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            {#each BOSS_KINDS as kind (kind)}
-              {@const entry = bossEntry(kind)}
+            {#each config.stars as star, i (star.id)}
               <tr>
                 <td class="px-2 py-1.5 align-top">
-                  <select bind:value={entry.tier} class="w-full border border-slate-200 rounded px-1.5 py-0.5">
-                    {#each TIER_OPTIONS as tierKey (tierKey)}
-                      <option value={tierKey}>{TIER_LABELS[tierKey]}</option>
+                  <select bind:value={star.waveSlot} class="w-full border border-slate-200 rounded px-1.5 py-0.5">
+                    {#each WAVE_SLOTS as slot (slot)}
+                      <option value={slot}>{slot}</option>
                     {/each}
                   </select>
                 </td>
                 <td class="px-2 py-1.5 align-top">
-                  <select bind:value={entry.name} class="w-full border border-slate-200 rounded px-1.5 py-0.5">
-                    {#each SIN_DAUGHTERS as daughter (daughter.name)}
-                      <option value={daughter.name}>{daughter.name}({daughter.parentSin})</option>
+                  <input type="text" bind:value={star.name} list="sin-daughter-names" class="w-full border border-slate-200 rounded px-1.5 py-0.5" />
+                </td>
+                <td class="px-2 py-1.5 align-top">
+                  <input type="number" step="any" bind:value={star.targetMultiplier} class="w-full border border-slate-200 rounded px-1.5 py-0.5" />
+                </td>
+                <td class="px-2 py-1.5 align-top">
+                  <input type="number" step="any" bind:value={star.reward} class="w-full border border-slate-200 rounded px-1.5 py-0.5" />
+                </td>
+                <td class="px-2 py-1.5 align-top">
+                  <select bind:value={star.restrictionKind} class="w-full border border-slate-200 rounded px-1.5 py-0.5">
+                    {#each RESTRICTION_OPTIONS as kind (kind)}
+                      <option value={kind}>{kind}</option>
                     {/each}
                   </select>
                 </td>
                 <td class="px-2 py-1.5 align-top">
-                  <div class="flex flex-wrap gap-1.5">
-                    {#each bossParamKeys(kind) as key (key)}
-                      <label class="flex items-center gap-1 text-[11px] text-slate-500">
-                        {key}
-                        <input type="number" step="any" bind:value={entry[key]} class="w-16 border border-slate-200 rounded px-1 py-0.5" />
-                      </label>
-                    {/each}
-                    {#if bossParamKeys(kind).length === 0}
-                      <span class="text-slate-300">-</span>
-                    {/if}
-                  </div>
+                  {#if star.restrictionKind === 'lowCombo'}
+                    <input type="number" step="1" bind:value={star.maxCombo} class="w-full border border-slate-200 rounded px-1.5 py-0.5" />
+                  {:else}
+                    <span class="text-slate-300">-</span>
+                  {/if}
+                </td>
+                <td class="px-2 py-1.5 align-top text-slate-500">
+                  {star.restrictionKind === 'none' ? '-' : STAR_RESTRICTION_ACTUAL_EFFECTS[star.restrictionKind]}
                 </td>
                 <td class="px-2 py-1.5 align-top">
-                  <textarea
-                    bind:value={entry.desc}
-                    rows="3"
-                    class="w-full border border-slate-200 rounded px-1.5 py-0.5 font-mono text-[11px] resize-y"
-                  ></textarea>
+                  <button
+                    onclick={() => removeStar(star.id)}
+                    class="text-red-500 hover:text-red-700 text-[11px]"
+                    aria-label={`星${i + 1}を削除`}
+                  >
+                    削除
+                  </button>
                 </td>
-                <td class="px-2 py-1.5 align-top text-slate-500">{bossDesc(kind, config)}</td>
-                <td class="px-2 py-1.5 align-top text-slate-500">{BOSS_ACTUAL_EFFECTS[kind]}</td>
               </tr>
             {/each}
           </tbody>
         </table>
       </div>
+      <button
+        onclick={addStar}
+        class="mt-3 text-sm px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+      >
+        + 星を追加
+      </button>
     </section>
   {:else if !error}
     <p class="text-slate-500 text-sm">読み込み中...</p>
   {/if}
 </div>
+
+<datalist id="sin-daughter-names">
+  {#each SIN_DAUGHTERS as daughter (daughter.name)}
+    <option value={daughter.name}>{daughter.name}({daughter.parentSin})</option>
+  {/each}
+</datalist>
 
 {#if flash}
   <div class="fixed bottom-6 right-6 bg-slate-800 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg z-50">
