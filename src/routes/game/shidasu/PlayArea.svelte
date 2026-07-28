@@ -137,6 +137,14 @@
   const CLEANUP_GATHER_MS = 150
   const CLEANUP_MOVE_MS = 200
 
+  interface CleanupCardPosition {
+    card: Card
+    startLeft: number
+    startTop: number
+    left: number
+    top: number
+  }
+
   interface CleanupAnimation {
     kind: 'column' | 'chain' | 'discard'
     columnIndex: number
@@ -145,6 +153,7 @@
     left: number
     top: number
     transitionMs: number
+    gatherCards: CleanupCardPosition[]
   }
 
   let cleanupAnimation = $state<CleanupAnimation | null>(null)
@@ -203,15 +212,55 @@
     }
     const fromRect = fromEl.getBoundingClientRect()
     const toRect = stockButtonEl.getBoundingClientRect()
+    const gatherLeft = fromRect.left + fromRect.width / 2
+    const gatherTop = fromRect.top + fromRect.height / 2
+
+    let gatherCards: CleanupCardPosition[] = []
+    if (item.kind === 'column' && tableauEl) {
+      const col = wave.tableau[item.columnIndex]
+      gatherCards = col
+        .map((card, ri) => {
+          const cardEl = tableauEl?.querySelector<HTMLElement>(`[data-drop-col="${item.columnIndex}"][data-drop-row="${ri}"]`)
+          if (!cardEl) return null
+          const cardRect = cardEl.getBoundingClientRect()
+          return {
+            card,
+            startLeft: cardRect.left + cardRect.width / 2,
+            startTop: cardRect.top + cardRect.height / 2,
+            left: cardRect.left + cardRect.width / 2,
+            top: cardRect.top + cardRect.height / 2,
+          }
+        })
+        .filter((entry): entry is CleanupCardPosition => entry !== null)
+    }
+
     cleanupAnimation = {
       kind: item.kind,
       columnIndex: item.columnIndex,
       card: item.card,
       phase: 'gather',
-      left: fromRect.left + fromRect.width / 2,
-      top: fromRect.top + fromRect.height / 2,
+      left: gatherLeft,
+      top: gatherTop,
       transitionMs: 0,
+      gatherCards,
     }
+    if (gatherCards.length > 0) {
+      // gatherCardsの初期位置(各カードの現在位置)をtransitionMs:0で表示した直後、
+      // 2段rAFで一番上のカードの位置(gatherLeft/gatherTop)へ全カード同時に移動させる。
+      // 1段のrAFだけだと同一フレーム内でスタイル変更がバッチ処理されtransitionが
+      // 発生しないブラウザがある(既存の他アニメーションと同じ理由)。
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (!cleanupAnimation) return
+          cleanupAnimation = {
+            ...cleanupAnimation,
+            gatherCards: cleanupAnimation.gatherCards.map(c => ({ ...c, left: gatherLeft, top: gatherTop })),
+            transitionMs: CLEANUP_GATHER_MS,
+          }
+        })
+      })
+    }
+
     cleanupTimer = setTimeout(() => {
       if (!cleanupAnimation) return
       cleanupAnimation = {
@@ -220,6 +269,7 @@
         left: toRect.left + toRect.width / 2,
         top: toRect.top + toRect.height / 2,
         transitionMs: CLEANUP_MOVE_MS,
+        gatherCards: [],
       }
       if (item.kind === 'column') {
         cleanedUpColumns = new Set([...cleanedUpColumns, item.columnIndex])
@@ -671,10 +721,21 @@
 {/if}
 
 {#if cleanupAnimation}
-  <div
-    class="fixed pointer-events-none z-[100] ease-out"
-    style="left:{cleanupAnimation.left}px; top:{cleanupAnimation.top}px; width:64px; transform: translate(-50%, -50%); transition-property: left, top; transition-duration:{cleanupAnimation.transitionMs}ms;"
-  >
-    <CardFace card={cleanupAnimation.card} covered={false} />
-  </div>
+  {#if cleanupAnimation.gatherCards.length > 0}
+    {#each cleanupAnimation.gatherCards as gatherCard (gatherCard.card.id)}
+      <div
+        class="fixed pointer-events-none z-[100] ease-out"
+        style="left:{gatherCard.left}px; top:{gatherCard.top}px; width:64px; transform: translate(-50%, -50%); transition-property: left, top; transition-duration:{cleanupAnimation.transitionMs}ms;"
+      >
+        <CardFace card={gatherCard.card} covered={false} />
+      </div>
+    {/each}
+  {:else}
+    <div
+      class="fixed pointer-events-none z-[100] ease-out"
+      style="left:{cleanupAnimation.left}px; top:{cleanupAnimation.top}px; width:64px; transform: translate(-50%, -50%); transition-property: left, top; transition-duration:{cleanupAnimation.transitionMs}ms;"
+    >
+      <CardFace card={cleanupAnimation.card} covered={false} />
+    </div>
+  {/if}
 {/if}
