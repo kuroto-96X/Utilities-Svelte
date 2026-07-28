@@ -678,6 +678,7 @@
           {#each row as entry, j (entry.card.id)}
             <div
               class="absolute"
+              data-chain-card-id={entry.card.id}
               style="left:{j * params.ui.chainCardOffsetX}px; top:{entry.origin === 'draw' ? 20 : 0}px; z-index:{j + 1}; width:64px;"
             >
               <CardFace card={entry.card} covered={false} />
