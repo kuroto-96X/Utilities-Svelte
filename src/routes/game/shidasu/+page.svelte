@@ -60,6 +60,10 @@
 
   let previousPhaseForStageScreen = run.phase
   $effect(() => {
+    // title→shop遷移(handleStartWithSpreadでbeginRun直後にshowStageScreen=trueをセットする)
+    // ではこのリセットを走らせない。title除外がないと、セット直後にこのeffectが
+    // 「shopフェーズになった」と検知してshowStageScreenを即falseへ戻してしまい、
+    // ステージ画面が一切表示されなくなる。
     if (run.phase === 'shop' && previousPhaseForStageScreen !== 'shop' && previousPhaseForStageScreen !== 'title') {
       showStageScreen = false
     }
