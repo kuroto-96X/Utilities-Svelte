@@ -130,7 +130,11 @@
   })
   $effect(() => {
     const currentChainIds = wave.chain.map(c => c.id)
-    if (waveKey !== previousWaveKey) {
+    // waveKeyの変化(新Wave境界)を自前で追跡する。既存のwaveKey監視effect
+    // (直前のブロック)が同じフレームでpreviousWaveKeyを先に更新してしまうため、
+    // このeffect内でwaveKey !== previousWaveKeyを見ても新Wave境界を検知できない。
+    if (waveKey !== previousChainWaveKey) {
+      previousChainWaveKey = waveKey
       previousChainIds = currentChainIds
       return
     }
@@ -197,6 +201,7 @@
   let chainResetAnimation = $state<ChainResetAnimation | null>(null)
   let chainResetTimer: ReturnType<typeof setTimeout> | undefined
   let previousChainIds: number[] = wave.chain.map(c => c.id)
+  let previousChainWaveKey = waveKey
 
   // Waveクリア確定後、場札の各列(左から右)→チェーン→捨て札の順に、
   // 各カード群を1山にまとめて山札へ移動させるアニメーションを開始する。
