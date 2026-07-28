@@ -76,6 +76,7 @@
     clearTimeout(animationTimer2)
     clearTimeout(scoreRevealTimer)
     clearTimeout(cleanupTimer)
+    clearTimeout(chainResetTimer)
   })
 
   const PART_FLYIN_CENTER_MS = 300
@@ -127,6 +128,21 @@
     cleanedUpColumns = new Set()
     chainCleanedUp = false
   })
+  $effect(() => {
+    const currentChainIds = wave.chain.map(c => c.id)
+    if (waveKey !== previousWaveKey) {
+      previousChainIds = currentChainIds
+      return
+    }
+    const resetCards = previousChainIds.length > currentChainIds.length
+      ? wave.chain.length > 0
+        ? previousChainIds.filter(id => id !== wave.chain[wave.chain.length - 1].id)
+        : previousChainIds
+      : []
+    previousChainIds = currentChainIds
+    if (resetCards.length === 0) return
+    startChainResetAnimation(resetCards)
+  })
   let scoreNumberEl: HTMLDivElement | undefined = $state()
   let scoreNumberScale = $state(1)
   let scoreNumberTransitionMs = $state(0)
@@ -158,12 +174,29 @@
     gatherCards: CleanupCardPosition[]
   }
 
+  interface ChainResetCardPosition {
+    card: Card
+    left: number
+    top: number
+  }
+
+  interface ChainResetAnimation {
+    phase: 'gather' | 'move'
+    left: number
+    top: number
+    transitionMs: number
+    gatherCards: ChainResetCardPosition[]
+  }
+
   let cleanupAnimation = $state<CleanupAnimation | null>(null)
   let cleanedUpColumns = $state<Set<number>>(new Set())
   let chainCleanedUp = $state(false)
   // UI表示には使わない内部処理専用のキューのため、意図的に$stateにしていない。
   let cleanupQueue: { kind: 'column' | 'chain' | 'discard'; columnIndex: number; card: Card }[] = []
   let cleanupTimer: ReturnType<typeof setTimeout> | undefined
+  let chainResetAnimation = $state<ChainResetAnimation | null>(null)
+  let chainResetTimer: ReturnType<typeof setTimeout> | undefined
+  let previousChainIds: number[] = wave.chain.map(c => c.id)
 
   // Waveクリア確定後、場札の各列(左から右)→チェーン→捨て札の順に、
   // 各カード群を1山にまとめて山札へ移動させるアニメーションを開始する。
@@ -192,6 +225,88 @@
       return
     }
     startCleanupItem(item)
+  }
+
+  // チェーンリセット発生時、旧チェーンのカード(次チェーンに引き継がれる1枚を除く)を
+  // 1山にまとめてから捨て札の位置へ移動させるアニメーションを開始する。
+  // resetCardIdsはリセット直前のwave.chainのうち、次チェーンへ引き継がれなかったカードのID一覧。
+  function startChainResetAnimation(resetCardIds: number[]) {
+    if (!chainAreaEl || !discardPileEl) return
+    const cardEntries = resetCardIds
+      .map(id => {
+        const cardEl = chainAreaEl?.querySelector<HTMLElement>(`[data-chain-card-id="${id}"]`)
+        return cardEl ? { id, el: cardEl } : null
+      })
+      .filter((entry): entry is { id: number; el: HTMLElement } => entry !== null)
+    if (cardEntries.length === 0) return
+
+    const cards = wave.discardPile.slice(-resetCardIds.length).filter(c => resetCardIds.includes(c.id))
+    if (cards.length !== cardEntries.length) return
+
+    const gatherLeft = cardEntries[0].el.getBoundingClientRect().left + cardEntries[0].el.getBoundingClientRect().width / 2
+    const gatherTop = cardEntries[0].el.getBoundingClientRect().top + cardEntries[0].el.getBoundingClientRect().height / 2
+
+    const gatherCards: ChainResetCardPosition[] = cardEntries.map(entry => {
+      const rect = entry.el.getBoundingClientRect()
+      const card = cards.find(c => c.id === entry.id)
+      return {
+        card: card as Card,
+        left: rect.left + rect.width / 2,
+        top: rect.top + rect.height / 2,
+      }
+    })
+
+    chainResetAnimation = {
+      phase: 'gather',
+      left: gatherLeft,
+      top: gatherTop,
+      transitionMs: 0,
+      gatherCards,
+    }
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!chainResetAnimation) return
+        chainResetAnimation = {
+          ...chainResetAnimation,
+          gatherCards: chainResetAnimation.gatherCards.map(c => ({ ...c, left: gatherLeft, top: gatherTop })),
+          transitionMs: CLEANUP_GATHER_MS,
+        }
+        chainResetTimer = setTimeout(() => {
+          if (!chainResetAnimation || !discardPileEl) return
+          // move フェーズでも gatherCards に代表カード(先頭カード)を1件だけ残す。
+          // 全カードを個別に残すと捨て札位置への収束が視覚的にごちゃつくため、
+          // 1山になった後は代表カード1枚の移動として表現する。
+          const representativeCard = chainResetAnimation.gatherCards[0]?.card
+          chainResetAnimation = {
+            ...chainResetAnimation,
+            phase: 'move',
+            left: gatherLeft,
+            top: gatherTop,
+            transitionMs: 0,
+            gatherCards: representativeCard ? [{ card: representativeCard, left: gatherLeft, top: gatherTop }] : [],
+          }
+          const toRect = discardPileEl.getBoundingClientRect()
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              if (!chainResetAnimation) return
+              chainResetAnimation = {
+                ...chainResetAnimation,
+                gatherCards: chainResetAnimation.gatherCards.map(c => ({
+                  ...c,
+                  left: toRect.left + toRect.width / 2,
+                  top: toRect.top + toRect.height / 2,
+                })),
+                transitionMs: CLEANUP_MOVE_MS,
+              }
+            })
+          })
+          chainResetTimer = setTimeout(() => {
+            chainResetAnimation = null
+          }, CLEANUP_MOVE_MS)
+        }, CLEANUP_GATHER_MS)
+      })
+    })
   }
 
   function startCleanupItem(item: { kind: 'column' | 'chain' | 'discard'; columnIndex: number; card: Card }) {
