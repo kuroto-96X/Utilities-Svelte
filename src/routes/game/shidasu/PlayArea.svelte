@@ -128,7 +128,12 @@
     cleanedUpColumns = new Set()
     chainCleanedUp = false
   })
-  $effect(() => {
+  // $effect.preを使う理由: 山札を捲った際のチェーンリセットは、捲ったカードの追加と
+  // リセットによる短縮がengine側で1回のwave更新にまとめて起きるため、通常の$effect
+  // (DOM更新後に発火)では旧チェーンのカードDOM要素が既に消えており座標を取得できない。
+  // $effect.preはDOM更新前(旧チェーンがまだ描画されている状態)に発火するため、
+  // ここで対象カードのDOM要素から座標を記録してからstartChainResetAnimationへ渡す。
+  $effect.pre(() => {
     const currentChainIds = wave.chain.map(c => c.id)
     // waveKeyの変化(新Wave境界)を自前で追跡する。既存のwaveKey監視effect
     // (直前のブロック)が同じフレームでpreviousWaveKeyを先に更新してしまうため、
