@@ -891,37 +891,37 @@ export function bossTierOf(stageIndex: number): 0 | 1 | 2 {
   return (stageIndex % 3) as 0 | 1 | 2
 }
 
-// そのウェーブで適用されるisPlayable用の修飾子を返す(currentBossKindがnoLoop/faceLockの
-// ボスウェーブでのみ有効。中凶・大凶相当のkindはisPlayableの可否には影響しないため、
-// ここでは扱わない=bossScoreLockForを使う)。
+// 現在Waveの星(stageStars[waveIndex])が持つ制限ルールのうち、取得可否そのものを制限する
+// 種類(noLoop/faceLock)のみを対象とする。得点ロック系(lowCombo/oddCombo/suit/face)は
+// bossScoreLockForが別途扱う。
 export function stageModifierFor(params: ShidasuParams, run: RunState): StageModifier {
-  if (!isBossWave(params, run.waveIndex)) return 'none'
-  if (run.currentBossKind === 'noLoop') return 'noLoop'
-  if (run.currentBossKind === 'faceLock') return 'faceLock'
+  const star = run.stageStars[run.waveIndex]
+  if (!star || !star.restriction) return 'none'
+  if (star.restriction.kind === 'noLoop') return 'noLoop'
+  if (star.restriction.kind === 'faceLock') return 'faceLock'
   return 'none'
 }
 
-// そのウェーブで適用される得点ロックを返す。currentBossKindの値そのものが挙動を決める。
-// suitで対象スートが未確定(currentGreatMisfortuneSuitがnull)の場合はロック無しとして扱う
-// (実際にはsuitが選ばれた瞬間に必ず確定させるため、通常はnullにならない)。
+// 現在Waveの星が持つ制限ルールのうち、得点ロック系(lowCombo/oddCombo/suit/face)を対象とする。
+// tierLabelには星の名前(旧: 階級名)をそのまま使う。
 export function bossScoreLockFor(params: ShidasuParams, run: RunState): BossScoreLock {
-  if (!isBossWave(params, run.waveIndex)) return null
-  const tierLabelFor = (bossKind: BossKind) => params.bossTiers[params.bosses[bossKind].tier].name
-  switch (run.currentBossKind) {
-    case 'lowCombo': return { kind: 'combo', maxCombo: params.bosses.lowCombo.maxCombo, tierLabel: tierLabelFor('lowCombo') }
-    case 'oddCombo': return { kind: 'oddCombo', tierLabel: tierLabelFor('oddCombo') }
-    case 'suit': return run.currentGreatMisfortuneSuit ? { kind: 'suit', suit: run.currentGreatMisfortuneSuit, tierLabel: tierLabelFor('suit') } : null
-    case 'face': return { kind: 'face', tierLabel: tierLabelFor('face') }
+  const star = run.stageStars[run.waveIndex]
+  if (!star || !star.restriction) return null
+  switch (star.restriction.kind) {
+    case 'lowCombo': return { kind: 'combo', maxCombo: star.restriction.maxCombo, tierLabel: star.name }
+    case 'oddCombo': return { kind: 'oddCombo', tierLabel: star.name }
+    case 'suit': return { kind: 'suit', suit: star.restriction.suit, tierLabel: star.name }
+    case 'face': return { kind: 'face', tierLabel: star.name }
     default: return null
   }
 }
 
-// ラン開始からの通しウェーブ番号(1始まり)から目標スコアを算出する。
-// target(n) = waveTargetBase × waveTargetMultiplier^(n-1)
-export function waveTarget(params: ShidasuParams, stageIndex: number, waveIndex: number, spreadId: SpreadId = 'fool'): number {
-  const overallWaveNumber = stageIndex * params.flow.wavesPerStage + waveIndex + 1
-  const spread = params.spreads[spreadId]
-  return Math.floor(spread.waveTargetBase * spread.waveTargetMultiplier ** (overallWaveNumber - 1))
+// ステージ基準点に、現在Waveの星が持つ倍率をかけて目標スコアを算出する。
+// target(stageIndex, waveIndex) = flow.stageTargetBase × flow.stageTargetMultiplier^stageIndex × star.targetMultiplier
+export function waveTarget(params: ShidasuParams, stageIndex: number, waveIndex: number, stageStars: Star[]): number {
+  const base = params.flow.stageTargetBase * params.flow.stageTargetMultiplier ** stageIndex
+  const star = stageStars[waveIndex]
+  return Math.floor(base * (star?.targetMultiplier ?? 1))
 }
 
 const GREAT_MISFORTUNE_SUITS: Suit[] = ['♠', '♥', '♦', '♣']
@@ -1070,7 +1070,7 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
   const wave = run.wave
   if (!wave || wave.status !== 'ended') return run
 
-  const target = waveTarget(params, run.stageIndex, run.waveIndex, run.spreadId)
+  const target = waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars)
   if (wave.score < target) {
     return { ...run, phase: 'gameOver' }
   }
@@ -1498,7 +1498,7 @@ export function restartRun(params: ShidasuParams, seed?: number): RunState {
 
 export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: number, rand: () => number = Math.random, rowIndex?: number): RunState {
   if (run.phase !== 'playing' || !run.wave) return run
-  const target = waveTarget(params, run.stageIndex, run.waveIndex, run.spreadId)
+  const target = waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars)
   const modifier = stageModifierFor(params, run)
   const scoreLock = bossScoreLockFor(params, run)
   const { wave, deckComposition } = playCard(params, run.wave, modifier, run.items, target, colIndex, run.deckComposition, rand, scoreLock, rowIndex)
@@ -1507,7 +1507,7 @@ export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: nu
 
 export function applyDrawStock(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
   if (run.phase !== 'playing' || !run.wave) return run
-  const target = waveTarget(params, run.stageIndex, run.waveIndex, run.spreadId)
+  const target = waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars)
   const modifier = stageModifierFor(params, run)
   const scoreLock = bossScoreLockFor(params, run)
   const { wave, deckComposition } = drawStock(params, run.wave, run.items, target, run.deckComposition, modifier, rand, scoreLock)
@@ -1546,7 +1546,7 @@ export function applyStuckCheck(params: ShidasuParams, run: RunState, rand: () =
   }
 
   if (resetWave.stock.length > 0) {
-    const stageTarget = waveTarget(params, run.stageIndex, run.waveIndex, run.spreadId)
+    const stageTarget = waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars)
     const scoreLock = bossScoreLockFor(params, run)
     const drawResult = drawStock(params, resetWave, run.items, stageTarget, run.deckComposition, modifier, rand, scoreLock)
     return { ...run, wave: drawResult.wave, deckComposition: drawResult.deckComposition }
