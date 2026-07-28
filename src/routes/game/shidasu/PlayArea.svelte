@@ -135,6 +135,11 @@
     cleanedUpColumns = new Set()
     chainCleanedUp = false
   })
+  $effect(() => {
+    if (waveKey === undefined || waveKey === previousDealWaveKey) return
+    previousDealWaveKey = waveKey
+    startDealAnimation()
+  })
   let scoreNumberEl: HTMLDivElement | undefined = $state()
   let scoreNumberScale = $state(1)
   let scoreNumberTransitionMs = $state(0)
@@ -359,6 +364,68 @@
       return
     }
     startCleanupItem(item)
+  }
+
+  // 新Wave開始時、山札の位置から場札の各マス目へカードを配るアニメーションを開始する。
+  // 配布順序はrow=0を全列左→右に1枚ずつ、次にrow=1を全列左→右…という順。
+  function startDealAnimation() {
+    dealTimers.forEach(clearTimeout)
+    dealTimers = []
+    dealingCards = []
+    dealtCells = new Set()
+
+    if (!stockButtonEl) return
+    const fromRect = stockButtonEl.getBoundingClientRect()
+    const fromLeft = fromRect.left + fromRect.width / 2
+    const fromTop = fromRect.top + fromRect.height / 2
+
+    const maxRows = Math.max(0, ...wave.tableau.map(col => col.length))
+    const order: { card: Card; colIndex: number; rowIndex: number }[] = []
+    for (let ri = 0; ri < maxRows; ri++) {
+      for (let ci = 0; ci < wave.tableau.length; ci++) {
+        const card = wave.tableau[ci][ri]
+        if (card) order.push({ card, colIndex: ci, rowIndex: ri })
+      }
+    }
+
+    order.forEach((entry, index) => {
+      const timer = setTimeout(() => {
+        dealOneCard(entry, fromLeft, fromTop)
+      }, index * DEAL_INTERVAL_MS)
+      dealTimers.push(timer)
+    })
+  }
+
+  // 1枚のカードを山札の位置からマス目の位置へ移動させ、着地したらdealtCellsに登録して
+  // 実表示へ切り替える。複数枚が時間差で同時並行するため、dealingCardsは配列で管理する。
+  function dealOneCard(entry: { card: Card; colIndex: number; rowIndex: number }, fromLeft: number, fromTop: number) {
+    if (!tableauEl) return
+    const targetEl = tableauEl.querySelector<HTMLElement>(`[data-drop-col="${entry.colIndex}"][data-drop-row="${entry.rowIndex}"]`)
+    if (!targetEl) return
+    const targetRect = targetEl.getBoundingClientRect()
+    const targetLeft = targetRect.left + targetRect.width / 2
+    const targetTop = targetRect.top + targetRect.height / 2
+
+    dealingCards = [
+      ...dealingCards,
+      { card: entry.card, colIndex: entry.colIndex, rowIndex: entry.rowIndex, left: fromLeft, top: fromTop, transitionMs: 0 },
+    ]
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        dealingCards = dealingCards.map(d =>
+          d.colIndex === entry.colIndex && d.rowIndex === entry.rowIndex
+            ? { ...d, left: targetLeft, top: targetTop, transitionMs: DEAL_MOVE_MS }
+            : d
+        )
+      })
+    })
+
+    const timer = setTimeout(() => {
+      dealtCells = new Set([...dealtCells, `${entry.colIndex}-${entry.rowIndex}`])
+      dealingCards = dealingCards.filter(d => !(d.colIndex === entry.colIndex && d.rowIndex === entry.rowIndex))
+    }, DEAL_MOVE_MS)
+    dealTimers.push(timer)
   }
 
   // チェーンリセット発生時、旧チェーンのカード(次チェーンに引き継がれる1枚を除く)を
