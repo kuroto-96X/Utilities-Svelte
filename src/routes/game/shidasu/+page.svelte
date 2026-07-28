@@ -53,6 +53,19 @@
   let measuredPlayHeight = $state(0)
 
   let run = $state<RunState>(createInitialRun())
+
+  // ショップ画面の「次のWaveへ」を押した後、ステージ画面を表示するかどうかのフラグ。
+  // run.phaseとは独立したUI制御用のローカルstate。
+  let showStageScreen = $state(false)
+
+  let previousPhaseForStageScreen = run.phase
+  $effect(() => {
+    if (run.phase === 'shop' && previousPhaseForStageScreen !== 'shop') {
+      showStageScreen = false
+    }
+    previousPhaseForStageScreen = run.phase
+  })
+
   // ウェーブ終了系のタイマーは常にこの1本にまとめ、次の予約前に必ず前の分をキャンセルする
   // (手詰まりチェックと目標達成遅延を別々のタイマーで管理すると、片方が発火しないまま
   //  もう片方も発火してresolveWaveEndが二重に走り、アイテム選択肢が無言ですり替わるため)
@@ -500,7 +513,7 @@
   <RoleStatusPanel {params} oracleLevels={run.oracleLevels} />
 {/if}
 
-{#if run.phase === 'shop' && run.shop && !pendingRevelationTarget}
+{#if run.phase === 'shop' && run.shop && !pendingRevelationTarget && !showStageScreen}
   <div class="fixed inset-0 z-50 bg-emerald-950/90 backdrop-blur-sm flex items-center justify-center p-6">
     <div class="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-4">
       <div class="flex items-center justify-between">
@@ -603,7 +616,7 @@
         </div>
       </div>
 
-      <button onclick={handleFinishShop} class="w-full px-4 py-2 rounded-lg bg-teal-700 text-white font-semibold">次のWaveへ</button>
+      <button onclick={() => { showStageScreen = true }} class="w-full px-4 py-2 rounded-lg bg-teal-700 text-white font-semibold">次のWaveへ</button>
     </div>
   </div>
 {:else if run.phase === 'riteSelect'}
