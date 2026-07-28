@@ -285,7 +285,11 @@
   let dealtCells = $state<Set<string>>(new Set())
   let dealAnimationActive = $derived(dealingCards.length > 0)
   let dealTimers: ReturnType<typeof setTimeout>[] = []
-  let previousDealWaveKey = waveKey
+  // 初期値をundefinedにしておくことで、マウント直後(ゲーム開始直後の最初のWave)にも
+  // 「waveKeyが変化した」と判定され配布アニメーションが発火する。他のprevious系変数
+  // (previousWaveKey等)は「変化検知後の差分リセット」用途のため初期値をwaveKeyにしているが、
+  // こちらは初回から必ず配布演出を見せたいため、あえて挙動を変えている。
+  let previousDealWaveKey: string | undefined = undefined
 
   const DEAL_INTERVAL_MS = 30
   const DEAL_MOVE_MS = 150
