@@ -573,32 +573,6 @@
     </div>
   </div>
 
-{:else if revelationPreviewWave}
-  <PlayArea
-    wave={revelationPreviewWave} {params} modifier={currentModifier} target={0} items={run.items}
-    onPlayCard={() => {}} onDraw={() => {}}
-    showScoreAndCombo={false} allowDraw={false}
-    onCleanupDone={handleRevelationPreviewCleanupDone}
-    waveKey={revelationPreviewWaveKey}
-    headerExtra={stageRow}
-    columnTargetMode={true}
-    canTargetColumn={canTargetRevelationColumn}
-    onTargetColumn={handleTargetColumn}
-    chainAreaExtra={revelationSelectExtra}
-  />
-{:else if wave && run.phase === 'revelationSelect'}
-  <PlayArea
-    {wave} {params} modifier={currentModifier} {target} items={run.items}
-    onPlayCard={() => {}} onDraw={() => {}}
-    showScoreAndCombo={false} allowDraw={false}
-    headerExtra={stageRow}
-    rites={run.rites} onUseRite={handleUseRite}
-    revelations={run.revelations} onUseRevelationClick={handleUseRevelationClick}
-    columnTargetMode={pendingRevelationTarget !== null}
-    canTargetColumn={canTargetRevelationColumn}
-    onTargetColumn={handleTargetColumn}
-    chainAreaExtra={revelationSelectExtra}
-  />
 {:else if wave}
   <PlayArea
     {wave} {params} modifier={currentModifier} {target} items={run.items}
@@ -615,6 +589,33 @@
     chainAreaExtra={pendingRevelationTarget ? revelationTargetPrompt : undefined}
   />
   <RoleStatusPanel {params} oracleLevels={run.oracleLevels} />
+{/if}
+
+{#if revelationPreviewWave}
+  <!-- 本番PlayArea({:else if wave}側)を常にマウントしたまま、オーバーレイとして重ねる。
+       {:else if}チェーンで切り替える形にすると、プレビュー表示中は本番PlayAreaがアンマウント
+       され、プレビュー破棄時の再マウントでwaveKey監視の初回配布アニメーションが誤発火する
+       (previousDealWaveKeyの初期値がundefinedのため、マウント直後は必ず発火する設計)。 -->
+  <div class="fixed inset-0 z-50 bg-emerald-950/95 flex flex-col overflow-y-auto">
+    {#if pendingRevelationTarget}
+      <div class="px-4 pt-3 pb-1 text-xs bg-indigo-950/80 border-b border-indigo-500/40">
+        <div class="font-black text-yellow-300">{revelationName(pendingRevelationTarget.revelationId, params)}</div>
+        <div class="text-emerald-100/80 mt-0.5">{revelationDesc(pendingRevelationTarget.revelationId, params)}</div>
+      </div>
+    {/if}
+    <PlayArea
+      wave={revelationPreviewWave} {params} modifier={currentModifier} target={0} items={run.items}
+      onPlayCard={() => {}} onDraw={() => {}}
+      showScoreAndCombo={false} allowDraw={false}
+      onCleanupDone={handleRevelationPreviewCleanupDone}
+      waveKey={revelationPreviewWaveKey}
+      headerExtra={stageRow}
+      columnTargetMode={true}
+      canTargetColumn={canTargetRevelationColumn}
+      onTargetColumn={handleTargetColumn}
+      chainAreaExtra={revelationSelectExtra}
+    />
+  </div>
 {/if}
 
 {#if run.phase === 'shop' && run.shop && !pendingRevelationTarget && !revelationPreviewWave && !showStageScreen}
