@@ -239,6 +239,8 @@ export interface ShidasuParams {
     stageTargetMultiplier: number
     // このステージ数をクリアするとラン全体のクリアとなり、続行確認(continueChoice)を挟む。
     stagesPerRun: number
+    // ステージ画面でWave3(waveSlot 3)の星をリロールする際に消費する固定コスト。
+    rerollCost: number
   }
   ui: {
     comboTierThresholds: [number, number, number]
@@ -454,7 +456,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     columnSweep: { name: '艮', desc: '列一掃　レベル+1' },
     sameRank: { name: '坤', desc: '同ランク　レベル+1' },
   },
-  flow: { wavesPerStage: 3, clearDelayMs: 450, stageTargetBase: 2000, stageTargetMultiplier: 1.8, stagesPerRun: 8 },
+  flow: { wavesPerStage: 3, clearDelayMs: 450, stageTargetBase: 2000, stageTargetMultiplier: 1.8, stagesPerRun: 8, rerollCost: 30 },
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },
 }
 

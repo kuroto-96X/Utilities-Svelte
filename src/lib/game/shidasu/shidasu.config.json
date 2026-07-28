@@ -869,7 +869,8 @@
     "clearDelayMs": 450,
     "stageTargetBase": 2000,
     "stageTargetMultiplier": 1.8,
-    "stagesPerRun": 8
+    "stagesPerRun": 8,
+    "rerollCost": 30
   },
   "ui": {
     "comboTierThresholds": [
