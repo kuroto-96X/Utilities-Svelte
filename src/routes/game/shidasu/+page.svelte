@@ -24,12 +24,25 @@
     itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice,
     oracleBuyPrice, oracleSellPrice, packPrice,
   } from '$lib/game/shidasu/shop'
-  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, ShopSlotKind, PlayCardResult } from '$lib/game/shidasu/types'
+  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, ShopSlotKind, PlayCardResult, Star } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
   import RoleStatusPanel from './RoleStatusPanel.svelte'
 
   const params = loadParams()
+
+  // 星のrestrictionから、プレイヤー向けの効果説明文(1行)を返す。制限なしの場合は空文字。
+  function starRestrictionDetail(star: Star): string {
+    if (!star.restriction) return ''
+    switch (star.restriction.kind) {
+      case 'suit': return `${star.restriction.suit}で無得点`
+      case 'noLoop': return 'A⇔Kループ禁止'
+      case 'faceLock': return '絵札はコンボ2以上でのみ取得可'
+      case 'lowCombo': return `${star.restriction.maxCombo}コンボ以下で無得点`
+      case 'oddCombo': return 'コンボが奇数のとき無得点'
+      case 'face': return '絵札(J・Q・K)で無得点'
+    }
+  }
 
   const SHOP_SLOT_KIND_LABEL: Record<ShopSlotKind, string> = {
     item: '護符', rite: '秘儀', revelation: '天啓', oracle: '神託',
@@ -57,18 +70,10 @@
   let currentModifier = $derived(stageModifierFor(params, run))
 
   // 現在Waveの星(制限ルール)の情報を返す。stageStarsが未確定(title等)の場合は空表示。
-  // 表示の見直し(ステージ画面新設に伴うUI再設計)は別セッションで行う。
   let upcomingBossInfo = $derived.by(() => {
     const star = run.stageStars[run.waveIndex]
-    if (!star || !star.restriction) return { label: '', detail: '' }
-    switch (star.restriction.kind) {
-      case 'suit': return { label: star.name, detail: `${star.restriction.suit}で無得点` }
-      case 'noLoop': return { label: star.name, detail: 'A⇔Kループ禁止' }
-      case 'faceLock': return { label: star.name, detail: '絵札はコンボ2以上でのみ取得可' }
-      case 'lowCombo': return { label: star.name, detail: `${star.restriction.maxCombo}コンボ以下で無得点` }
-      case 'oddCombo': return { label: star.name, detail: 'コンボが奇数のとき無得点' }
-      case 'face': return { label: star.name, detail: '絵札(J・Q・K)で無得点' }
-    }
+    if (!star) return { label: '', detail: '' }
+    return { label: star.name, detail: starRestrictionDetail(star) }
   })
 
   function scheduleStuckCheck() {
