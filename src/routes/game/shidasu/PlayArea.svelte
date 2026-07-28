@@ -873,7 +873,6 @@
       <div class="relative" style="min-height: 10.5rem;">
         {#each col as card, ri (card.id)}
           {@const isTop = ri === col.length - 1}
-          {@const isExposedByAnimation = playingAnimation !== null && playingAnimation.colIndex === ci && ri === col.length - 2}
           {@const isSelectable = columnTargetMode ? isTop : (isTop || wave.playFromAnywhereActiveThisWave)}
           {@const isAnimatingThisCard = playingAnimation?.colIndex === ci && playingAnimation?.rowIndex === ri}
           {@const isCleaningUpThisColumn = (cleanupAnimation?.kind === 'column' && cleanupAnimation.columnIndex === ci) || cleanedUpColumns.has(ci)}
@@ -896,7 +895,7 @@
                 <CardFace {card} covered={false} />
               </button>
             {:else}
-              <CardFace {card} covered={!isExposedByAnimation} />
+              <CardFace {card} covered={false} />
             {/if}
           </div>
         {/each}
