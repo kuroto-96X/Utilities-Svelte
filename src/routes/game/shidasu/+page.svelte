@@ -345,19 +345,12 @@
     revelationPreviewWaveKey = `revelation-preview-${++revelationPreviewSeq}`
   }
 
-  function handleBuyIndividualRevelationUse(slotIndex: number, revelationId: RevelationId) {
-    if (revelationNeedsTarget(revelationId)) {
-      pendingRevelationTarget = { revelationId, source: 'individual', slotIndex }
-      beginRevelationPreview()
-      return
-    }
-    run = buyIndividualRevelationUse(params, run, slotIndex, null)
-  }
-
   function handlePickPackRevelationUse(revelationId: RevelationId) {
     if (revelationNeedsTarget(revelationId)) {
+      // pack(福袋)はhandleBuyPack時点で既にプレビューを開始済みなので、ここで
+      // beginRevelationPreview()を呼び直さない。呼び直すと場札が再シャッフルされ、
+      // 福袋を開いた時点でユーザーに見せていた盤面と食い違ってしまう。
       pendingRevelationTarget = { revelationId, source: 'pack' }
-      beginRevelationPreview()
       return
     }
     run = pickPackRevelationUse(params, run, revelationId, null)
@@ -596,25 +589,27 @@
        {:else if}チェーンで切り替える形にすると、プレビュー表示中は本番PlayAreaがアンマウント
        され、プレビュー破棄時の再マウントでwaveKey監視の初回配布アニメーションが誤発火する
        (previousDealWaveKeyの初期値がundefinedのため、マウント直後は必ず発火する設計)。 -->
-  <div class="fixed inset-0 z-50 bg-emerald-950/95 flex flex-col overflow-y-auto">
-    {#if pendingRevelationTarget}
-      <div class="px-4 pt-3 pb-1 text-xs bg-indigo-950/80 border-b border-indigo-500/40">
-        <div class="font-black text-yellow-300">{revelationName(pendingRevelationTarget.revelationId, params)}</div>
-        <div class="text-emerald-100/80 mt-0.5">{revelationDesc(pendingRevelationTarget.revelationId, params)}</div>
-      </div>
-    {/if}
-    <PlayArea
-      wave={revelationPreviewWave} {params} modifier={currentModifier} target={0} items={run.items}
-      onPlayCard={() => {}} onDraw={() => {}}
-      showScoreAndCombo={false} allowDraw={false}
-      onCleanupDone={handleRevelationPreviewCleanupDone}
-      waveKey={revelationPreviewWaveKey}
-      headerExtra={stageRow}
-      columnTargetMode={true}
-      canTargetColumn={canTargetRevelationColumn}
-      onTargetColumn={handleTargetColumn}
-      chainAreaExtra={revelationSelectExtra}
-    />
+  <div class="fixed inset-0 z-50 bg-emerald-950 overflow-y-auto">
+    <div class="w-full mx-auto" style="max-width:480px;">
+      {#if pendingRevelationTarget}
+        <div class="px-4 pt-3 pb-1 text-xs bg-indigo-950/80 border-b border-indigo-500/40">
+          <div class="font-black text-yellow-300">{revelationName(pendingRevelationTarget.revelationId, params)}</div>
+          <div class="text-emerald-100/80 mt-0.5">{revelationDesc(pendingRevelationTarget.revelationId, params)}</div>
+        </div>
+      {/if}
+      <PlayArea
+        wave={revelationPreviewWave} {params} modifier={currentModifier} target={0} items={run.items}
+        onPlayCard={() => {}} onDraw={() => {}}
+        showScoreAndCombo={false} allowDraw={false}
+        onCleanupDone={handleRevelationPreviewCleanupDone}
+        waveKey={revelationPreviewWaveKey}
+        headerExtra={stageRow}
+        columnTargetMode={true}
+        canTargetColumn={canTargetRevelationColumn}
+        onTargetColumn={handleTargetColumn}
+        chainAreaExtra={revelationSelectExtra}
+      />
+    </div>
   </div>
 {/if}
 
@@ -664,9 +659,6 @@
                   購入({riteBuyPrice(params)})
                 </button>
               {:else if slot.kind === 'revelation'}
-                <button onclick={() => handleBuyIndividualRevelationUse(i, slot.id as RevelationId)} disabled={run.currency < revelationBuyPrice(params) || !wave || !canUseRevelation(params, wave, slot.id as RevelationId)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
-                  即使う({revelationBuyPrice(params)})
-                </button>
                 <button onclick={() => handleBuyIndividualRevelationHold(i)} disabled={run.revelations.length + run.oracles.length >= 2 || run.currency < revelationBuyPrice(params)} class="w-full px-2 py-1 rounded bg-slate-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">
                   温存({revelationBuyPrice(params)})
                 </button>
