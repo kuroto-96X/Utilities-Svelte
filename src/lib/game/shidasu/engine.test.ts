@@ -2818,7 +2818,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
     })
     const run: RunState = {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['resilience'], offer: [],
-      wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
+      wave, waveGeneration: 1, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
@@ -2846,7 +2846,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
     })
     const run: RunState = {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['resilience'], offer: [],
-      wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
+      wave, waveGeneration: 1, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
@@ -2868,7 +2868,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
     })
     const run: RunState = {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: [], offer: [],
-      wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
+      wave, waveGeneration: 1, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
@@ -2891,7 +2891,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
     })
     const run: RunState = {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['resilience'], offer: [],
-      wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
+      wave, waveGeneration: 1, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
@@ -2915,7 +2915,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
     })
     const run: RunState = {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['healing', 'resilience'], offer: [],
-      wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
+      wave, waveGeneration: 1, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
@@ -2938,7 +2938,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
     })
     const run: RunState = {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['healing'], offer: [],
-      wave, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
+      wave, waveGeneration: 1, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
