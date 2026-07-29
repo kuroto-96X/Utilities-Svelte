@@ -68,14 +68,17 @@
     }
   })
 
+  function starNameInvalid(star: ShidasuParams['stars'][number]): boolean {
+    return !star.name.trim()
+  }
+  function starMaxComboInvalid(star: ShidasuParams['stars'][number]): boolean {
+    return star.restrictionKind === 'lowCombo' && !Number.isFinite(star.maxCombo)
+  }
+
   let hasValidationError = $derived.by(() => {
     if (!config) return false
     if (slotCounts[1] === 0 || slotCounts[2] === 0 || slotCounts[3] === 0) return true
-    return config.stars.some(star => {
-      if (!star.name.trim()) return true
-      if (star.restrictionKind === 'lowCombo' && !Number.isFinite(star.maxCombo)) return true
-      return false
-    })
+    return config.stars.some(star => starNameInvalid(star) || starMaxComboInvalid(star))
   })
 
   function addStar() {
@@ -108,13 +111,6 @@
       }
     }
     showToast('Wave3の倍率・報酬を更新しました(保存ボタンで確定してください)')
-  }
-
-  function starNameInvalid(star: ShidasuParams['stars'][number]): boolean {
-    return !star.name.trim()
-  }
-  function starMaxComboInvalid(star: ShidasuParams['stars'][number]): boolean {
-    return star.restrictionKind === 'lowCombo' && !Number.isFinite(star.maxCombo)
   }
 
   async function loadConfig(toast = false) {
