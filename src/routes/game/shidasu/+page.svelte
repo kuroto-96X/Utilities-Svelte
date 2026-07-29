@@ -33,16 +33,16 @@
   const params = loadParams()
 
   // 星のrestrictionから、プレイヤー向けの効果説明文(1行)を返す。制限なしの場合は空文字。
+  // descTemplateのプレースホルダー({maxCombo}等)は、restriction内の数値・文字列フィールドで
+  // 展開する(revelations.tsのrevelationDescと同じ.replace(/\{(\w+)\}/g, ...)方式)。
   function starRestrictionDetail(star: Star): string {
-    if (!star.restriction) return ''
-    switch (star.restriction.kind) {
-      case 'suit': return `${star.restriction.suit}で無得点`
-      case 'noLoop': return 'A⇔Kループ禁止'
-      case 'faceLock': return '絵札はコンボ2以上でのみ取得可'
-      case 'lowCombo': return `${star.restriction.maxCombo}コンボ以下で無得点`
-      case 'oddCombo': return 'コンボが奇数のとき無得点'
-      case 'face': return '絵札(J・Q・K)で無得点'
+    if (!star.restriction || !star.descTemplate) return ''
+    const context: Record<string, string> = {}
+    for (const [key, value] of Object.entries(star.restriction)) {
+      if (key === 'kind') continue
+      if (typeof value === 'number' || typeof value === 'string') context[key] = String(value)
     }
+    return star.descTemplate.replace(/\{(\w+)\}/g, (match, key) => (key in context ? context[key] : match))
   }
 
   const SHOP_SLOT_KIND_LABEL: Record<ShopSlotKind, string> = {
