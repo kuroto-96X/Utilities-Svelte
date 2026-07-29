@@ -37,6 +37,10 @@ export interface Star {
   reward: number
   restriction: StarRestriction
   sabotage: null
+  // 制限ルールのプレイヤー向け説明文テンプレート。{maxCombo}等のプレースホルダーを
+  // 含む場合があり、starRestrictionDetail(+page.svelte)で展開して表示する。
+  // restrictionがnullの星ではdescTemplateも空文字になる。
+  descTemplate: string
 }
 export type Rarity = 'C' | 'U' | 'R'
 export type RoleName = 'flush' | 'royalSet' | 'sameRank' | 'completeRun' | 'columnSweep' | 'suit' | 'color' | 'stair'
