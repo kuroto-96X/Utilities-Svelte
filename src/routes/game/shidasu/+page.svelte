@@ -373,8 +373,23 @@
   function handleUseRevelationClick(revelationId: RevelationId) {
     if (revelationNeedsTarget(revelationId)) {
       pendingRevelationTarget = { revelationId, source: 'held' }
-      if (SHOP_FLOW_PHASES.includes(run.phase)) {
+      // 既にプレビュー表示中(天啓福袋選択中)なら再生成しない。再生成すると場札が
+      // 意図せず再シャッフルされ、ユーザーに見せていた盤面と食い違ってしまう
+      // (福袋の「使用」ボタンで踏んだのと同種の問題)。
+      if (SHOP_FLOW_PHASES.includes(run.phase) && !revelationPreviewWave) {
         beginRevelationPreview()
+      }
+      return
+    }
+    if (revelationPreviewWave) {
+      // プレビュー表示中の即時適用天啓(コラム選択不要)は、プレビュー盤面に対して
+      // 適用する。片付けアニメーションは発火させない(秘儀の即時使用と同様)。
+      const runForPreview = { ...run, wave: revelationPreviewWave }
+      const resultRun = useRevelation(params, runForPreview, revelationId, null)
+      const previewResultWave = resultRun.wave
+      run = { ...resultRun, wave: run.wave }
+      if (previewResultWave) {
+        revelationPreviewWave = previewResultWave
       }
       return
     }
