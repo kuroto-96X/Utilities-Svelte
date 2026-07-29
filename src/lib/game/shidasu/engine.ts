@@ -944,7 +944,7 @@ function toStarRestriction(entry: ShidasuParams['stars'][number], rand: () => nu
 function rollStarForSlot(params: ShidasuParams, waveSlot: 1 | 2 | 3, rand: () => number, excludeId?: string): Star {
   const allCandidates = params.stars.filter(s => s.waveSlot === waveSlot)
   if (allCandidates.length === 0) {
-    return { id: `fallback-${waveSlot}`, name: '名もなき星', waveSlot, targetMultiplier: 1, reward: 0, restriction: null, sabotage: null }
+    return { id: `fallback-${waveSlot}`, name: '名もなき星', waveSlot, targetMultiplier: 1, reward: 0, restriction: null, sabotage: null, descTemplate: '' }
   }
   // リロール時、候補が2件以上あれば直前と同じ星を除外して再抽選が必ず変化するようにする
   const candidates = excludeId && allCandidates.length > 1 ? allCandidates.filter(s => s.id !== excludeId) : allCandidates
@@ -957,6 +957,7 @@ function rollStarForSlot(params: ShidasuParams, waveSlot: 1 | 2 | 3, rand: () =>
     reward: entry.reward,
     restriction: toStarRestriction(entry, rand),
     sabotage: null,
+    descTemplate: entry.descTemplate,
   }
 }
 

@@ -2148,9 +2148,9 @@ describe('createInitialRun / beginRun', () => {
       flow: { ...DEFAULT_PARAMS.flow, stageTargetBase: 1000, stageTargetMultiplier: 2 },
     }
     const stars: Star[] = [
-      { id: 's1', name: 'star1', waveSlot: 1, targetMultiplier: 1, reward: 0, restriction: null, sabotage: null },
-      { id: 's2', name: 'star2', waveSlot: 2, targetMultiplier: 1.5, reward: 0, restriction: null, sabotage: null },
-      { id: 's3', name: 'star3', waveSlot: 3, targetMultiplier: 2, reward: 0, restriction: null, sabotage: null },
+      { id: 's1', name: 'star1', waveSlot: 1, targetMultiplier: 1, reward: 0, restriction: null, sabotage: null, descTemplate: '' },
+      { id: 's2', name: 'star2', waveSlot: 2, targetMultiplier: 1.5, reward: 0, restriction: null, sabotage: null, descTemplate: '' },
+      { id: 's3', name: 'star3', waveSlot: 3, targetMultiplier: 2, reward: 0, restriction: null, sabotage: null, descTemplate: '' },
     ]
     expect(waveTarget(custom, 0, 0, stars)).toBe(1000) // 1000 × 2^0 × 1
     expect(waveTarget(custom, 0, 1, stars)).toBe(1500) // 1000 × 2^0 × 1.5
@@ -2163,6 +2163,15 @@ describe('createInitialRun / beginRun', () => {
     expect(run.stageStars[0].waveSlot).toBe(1)
     expect(run.stageStars[1].waveSlot).toBe(2)
     expect(run.stageStars[2].waveSlot).toBe(3)
+  })
+
+  test('選出されたstar.descTemplateはparams.stars側のdescTemplateと一致する', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    for (const star of run.stageStars) {
+      const sourceEntry = DEFAULT_PARAMS.stars.find(s => s.id === star.id)
+      expect(sourceEntry).toBeDefined()
+      expect(star.descTemplate).toBe(sourceEntry!.descTemplate)
+    }
   })
 
   test('createInitialRunはショップ用フィールドを初期値で持つ', () => {
@@ -2189,7 +2198,7 @@ describe('createInitialRun / beginRun', () => {
 })
 
 describe('resolveWaveEnd', () => {
-  const noRewardStar: Star = { id: 'no-reward-star', name: '無報酬の星', waveSlot: 1, targetMultiplier: 1, reward: 0, restriction: null, sabotage: null }
+  const noRewardStar: Star = { id: 'no-reward-star', name: '無報酬の星', waveSlot: 1, targetMultiplier: 1, reward: 0, restriction: null, sabotage: null, descTemplate: '' }
 
   function endedRun(overrides: Partial<RunState>, waveScore: number): RunState {
     const base = beginRun(DEFAULT_PARAMS, 1)
@@ -2260,7 +2269,7 @@ describe('resolveWaveEnd', () => {
   })
 
   test('星にrewardが設定されていればwaveClearAmount+reward分増える', () => {
-    const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: null }
+    const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: null, descTemplate: '' }
     const stageStars = [noRewardStar, noRewardStar, rewardStar]
     const run = endedRun({ waveIndex: 2, stageStars }, waveTarget(DEFAULT_PARAMS, 0, 2, stageStars))
     const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
@@ -2274,7 +2283,7 @@ describe('stageModifierFor / bossScoreLockFor', () => {
   }
 
   function starWith(restriction: StarRestriction): Star {
-    return { id: 'test-star', name: 'テスト星', waveSlot: 3, targetMultiplier: 1, reward: 0, restriction, sabotage: null }
+    return { id: 'test-star', name: 'テスト星', waveSlot: 3, targetMultiplier: 1, reward: 0, restriction, sabotage: null, descTemplate: '' }
   }
 
   test('制限ルールがnoLoopならnoLoopが返る', () => {
