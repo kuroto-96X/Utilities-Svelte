@@ -65,14 +65,14 @@
     }
   },
   "stars": [
-    { "id": "ordinary-moon", "name": "普通の衛星", "waveSlot": 1, "targetMultiplier": 1.0, "reward": 20, "restrictionKind": "none" },
-    { "id": "slightly-bigger-moon", "name": "少し大きな衛星", "waveSlot": 2, "targetMultiplier": 1.3, "reward": 25, "restrictionKind": "none" },
-    { "id": "closed-loop-planet", "name": "循環の閉じた荒廃惑星", "waveSlot": 3, "targetMultiplier": 1.6, "reward": 35, "restrictionKind": "noLoop" },
-    { "id": "sealed-noble-planet", "name": "高貴なる封印の惑星", "waveSlot": 3, "targetMultiplier": 1.6, "reward": 35, "restrictionKind": "faceLock" },
-    { "id": "harsh-planet", "name": "弱き者を拒む峻厳な惑星", "waveSlot": 3, "targetMultiplier": 1.6, "reward": 35, "restrictionKind": "lowCombo", "maxCombo": 2 },
-    { "id": "twisted-odd-planet", "name": "奇数を忌む歪んだ惑星", "waveSlot": 3, "targetMultiplier": 1.6, "reward": 35, "restrictionKind": "oddCombo" },
-    { "id": "exiling-color-planet", "name": "排斥の色殺す惑星", "waveSlot": 3, "targetMultiplier": 1.6, "reward": 35, "restrictionKind": "suit" },
-    { "id": "regicide-planet", "name": "王侯を打ち滅ぼす惑星", "waveSlot": 3, "targetMultiplier": 1.6, "reward": 35, "restrictionKind": "face" }
+    { "id": "ordinary-moon", "name": "普通の衛星", "waveSlot": 1, "targetMultiplier": 1.0, "reward": 20, "restrictionKind": "none", "descTemplate": "" },
+    { "id": "slightly-bigger-moon", "name": "少し大きな衛星", "waveSlot": 2, "targetMultiplier": 1.3, "reward": 25, "restrictionKind": "none", "descTemplate": "" },
+    { "id": "closed-loop-planet", "name": "循環の閉じた荒廃惑星", "waveSlot": 3, "targetMultiplier": 2, "reward": 5, "restrictionKind": "noLoop", "descTemplate": "A⇔Kループ禁止" },
+    { "id": "sealed-noble-planet", "name": "高貴なる封印の惑星", "waveSlot": 3, "targetMultiplier": 2, "reward": 5, "restrictionKind": "faceLock", "descTemplate": "絵札はコンボ2以上でのみ取得可" },
+    { "id": "harsh-planet", "name": "弱き者を拒む峻厳な惑星", "waveSlot": 3, "targetMultiplier": 2, "reward": 5, "restrictionKind": "lowCombo", "maxCombo": 2, "descTemplate": "{maxCombo}コンボ以下で無得点" },
+    { "id": "twisted-odd-planet", "name": "奇数を忌む歪んだ惑星", "waveSlot": 3, "targetMultiplier": 2, "reward": 5, "restrictionKind": "oddCombo", "descTemplate": "コンボが奇数のとき無得点" },
+    { "id": "exiling-color-planet", "name": "排斥の色殺す惑星", "waveSlot": 3, "targetMultiplier": 2, "reward": 5, "restrictionKind": "suit", "descTemplate": "{suit}で無得点" },
+    { "id": "regicide-planet", "name": "王侯を打ち滅ぼす惑星", "waveSlot": 3, "targetMultiplier": 2, "reward": 5, "restrictionKind": "face", "descTemplate": "絵札(J・Q・K)で無得点" }
   ],
   "spreads": {
     "fool": {
