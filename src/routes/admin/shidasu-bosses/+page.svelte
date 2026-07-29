@@ -86,7 +86,7 @@
     config.stars.push({
       id: `star-${crypto.randomUUID()}`,
       name: '',
-      waveSlot: 1,
+      waveSlot: 3,
       targetMultiplier: 2,
       reward: 5,
       restrictionKind: 'none',
@@ -151,7 +151,7 @@
   <title>Shidasu 星パラメータ設定</title>
 </svelte:head>
 
-<div class="max-w-5xl mx-auto px-4 py-8">
+<div class="max-w-none mx-auto px-4 py-8">
   <a href="/admin" class="text-xs text-slate-400 hover:text-teal-600 mb-4 inline-block">← 管理ページ一覧</a>
 
   <div class="flex items-center justify-between mb-6">
@@ -192,7 +192,7 @@
               <th class="px-2 py-1.5 text-left cursor-pointer select-none" style="width:5rem;" onclick={() => toggleSort('waveSlot')}>
                 Wave{sortColumn === 'waveSlot' ? (sortDirection === 'asc' ? ' ▲' : ' ▼') : ''}
               </th>
-              <th class="px-2 py-1.5 text-left cursor-pointer select-none" style="width:9rem;" onclick={() => toggleSort('name')}>
+              <th class="px-2 py-1.5 text-left cursor-pointer select-none" style="width:24rem;" onclick={() => toggleSort('name')}>
                 名前{sortColumn === 'name' ? (sortDirection === 'asc' ? ' ▲' : ' ▼') : ''}
               </th>
               <th class="px-2 py-1.5 text-left cursor-pointer select-none" style="width:6rem;" onclick={() => toggleSort('targetMultiplier')}>
@@ -201,13 +201,13 @@
               <th class="px-2 py-1.5 text-left cursor-pointer select-none" style="width:6rem;" onclick={() => toggleSort('reward')}>
                 報酬{sortColumn === 'reward' ? (sortDirection === 'asc' ? ' ▲' : ' ▼') : ''}
               </th>
-              <th class="px-2 py-1.5 text-left cursor-pointer select-none" style="width:8rem;" onclick={() => toggleSort('restrictionKind')}>
+              <th class="px-2 py-1.5 text-left cursor-pointer select-none" style="width:12rem;" onclick={() => toggleSort('restrictionKind')}>
                 制限種別{sortColumn === 'restrictionKind' ? (sortDirection === 'asc' ? ' ▲' : ' ▼') : ''}
               </th>
               <th class="px-2 py-1.5 text-left" style="width:6rem;">maxCombo</th>
-              <th class="px-2 py-1.5 text-left" style="width:12rem;">説明文テンプレート</th>
-              <th class="px-2 py-1.5 text-left" style="width:10rem;">プレビュー</th>
-              <th class="px-2 py-1.5 text-left" style="width:16rem;">実際の効果(監査用)</th>
+              <th class="px-2 py-1.5 text-left" style="width:36rem;">説明文テンプレート</th>
+              <th class="px-2 py-1.5 text-left" style="width:36rem;">プレビュー</th>
+              <th class="px-2 py-1.5 text-left" style="width:36rem;">実際の効果(監査用)</th>
               <th class="px-2 py-1.5 text-left" style="width:3rem;"></th>
             </tr>
           </thead>
@@ -244,8 +244,8 @@
                     <span class="text-slate-300">-</span>
                   {/if}
                 </td>
-                <td class="px-2 py-1.5 align-top">
-                  <input type="text" bind:value={star.descTemplate} class="w-full border border-slate-200 rounded px-1.5 py-0.5" />
+                <td class="px-2 py-1.5 align-top h-px">
+                  <textarea bind:value={star.descTemplate} class="w-full h-full min-h-[2rem] border border-slate-200 rounded px-1.5 py-0.5 resize-none"></textarea>
                 </td>
                 <td class="px-2 py-1.5 align-top text-slate-500">
                   {previewDescTemplate(star) || '-'}
