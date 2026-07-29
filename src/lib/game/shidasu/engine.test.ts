@@ -2415,6 +2415,17 @@ describe('finishShop', () => {
     const result = finishShop(DEFAULT_PARAMS, run, 1)
     expect(result).toEqual(run)
   })
+
+  test('waveGenerationがWave生成のたびに1ずつ増える(waveKeyの配布アニメ発火キーとして使う)', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    expect(run.waveGeneration).toBe(0)
+    const shopRun = { ...run, shop: rollShop(run, () => 0.5) }
+    const started = finishShop(DEFAULT_PARAMS, shopRun, 1)
+    expect(started.waveGeneration).toBe(1)
+    const secondShopRun = { ...started, phase: 'shop' as const, shop: rollShop(started, () => 0.5) }
+    const startedAgain = finishShop(DEFAULT_PARAMS, secondShopRun, 2)
+    expect(startedAgain.waveGeneration).toBe(2)
+  })
 })
 
 describe('startRevelationPreview', () => {

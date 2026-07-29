@@ -1179,7 +1179,11 @@ export function buyIndividualRite(params: ShidasuParams, run: RunState, slotInde
   return { ...run, currency: run.currency - price, rites: [...run.rites, riteId], shop: { ...run.shop, individual } }
 }
 
-// バラ売り天啓・即使う。プレビューウェーブ(run.wave)に即座に効果を適用する。天啓・神託合算上限とは無関係に常に購入可。
+// バラ売り天啓・即使う。run.waveに即座に効果を適用する(target: colIndexが必要な天啓は
+// 呼び出し元でコラム選択後に呼ばれる)。天啓・神託合算上限とは無関係に常に購入可。
+// ショップ画面のバラ売りUIからは現在呼ばれず(即使うボタンは廃止・購入(温存)のみ)、
+// 福袋(pack)経由の即使用でrun.waveを一時的にプレビューへ差し替えて呼ぶ用途にのみ使う
+// (呼び出し元+page.svelteのhandleTargetColumn参照)。
 export function buyIndividualRevelationUse(params: ShidasuParams, run: RunState, slotIndex: number, targetCol: number | null, rand: () => number = Math.random): RunState {
   if (run.phase !== 'shop' || !run.shop || !run.wave) return run
   const slot = run.shop.individual[slotIndex]

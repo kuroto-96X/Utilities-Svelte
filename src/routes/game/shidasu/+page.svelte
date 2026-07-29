@@ -193,10 +193,6 @@
     handleDraw()
   }
 
-  function handleFinishShop() {
-    run = finishShop(params, run)
-  }
-
   function handleSkipWave() {
     run = skipWave(params, run)
   }
