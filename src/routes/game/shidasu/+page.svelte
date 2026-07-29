@@ -366,6 +366,23 @@
       pendingRevelationTarget = { revelationId, source: 'pack' }
       return
     }
+    if (revelationPreviewWave) {
+      // ターゲット不要な天啓もプレビュー盤面に対して適用する。run.waveへ直接適用すると、
+      // 本番の直前Wave(ended状態)のデータが意図せず書き換わり、その変化を本番PlayAreaが
+      // 検知して片付けアニメーションが誤って再生されてしまう不具合があった。
+      const runForPreview = { ...run, wave: revelationPreviewWave }
+      const resultRun = pickPackRevelationUse(params, runForPreview, revelationId, null)
+      const previewResultWave = resultRun.wave
+      run = { ...resultRun, wave: run.wave }
+      if (!previewResultWave) {
+        revelationPreviewWave = null
+      } else if (resultRun.phase === 'revelationSelect') {
+        revelationPreviewWave = previewResultWave
+      } else {
+        revelationPreviewWave = { ...previewResultWave, status: 'ended', endReason: 'previewDismissed' }
+      }
+      return
+    }
     run = pickPackRevelationUse(params, run, revelationId, null)
     syncRevelationPreviewWithPhase()
   }
