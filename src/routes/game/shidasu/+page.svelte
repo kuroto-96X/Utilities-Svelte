@@ -164,6 +164,21 @@
     if (run.phase === 'playing') afterAction()
   }
 
+  // 天啓プレビュー表示中、所持秘儀を使用した際に呼ぶ。run.waveを一時的にプレビューへ
+  // すり替えてuseRiteを適用し、結果のwaveをプレビューへ反映する(秘儀は即時適用でコラム
+  // 選択が無いため、片付けアニメーションは発火させない)。本番runにはwave以外の変更
+  // (秘儀の所持数減少)のみ反映する。revelationPreviewWaveがnullの間は何もしない。
+  function handleUseRiteInPreview(riteId: RiteId) {
+    if (!revelationPreviewWave) return
+    const runForPreview = { ...run, wave: revelationPreviewWave }
+    const resultRun = useRite(params, runForPreview, riteId)
+    const previewResultWave = resultRun.wave
+    run = { ...resultRun, wave: run.wave }
+    if (previewResultWave) {
+      revelationPreviewWave = previewResultWave
+    }
+  }
+
   function handleDraw() {
     if (run.phase !== 'playing' || run.wave?.status !== 'playing') return
     run = applyDrawStock(params, run)
@@ -263,11 +278,13 @@
   }
 
   // revelationSelectフェーズを離れた(=福袋での天啓選択が完了しshopへ戻った)場合、
-  // handleBuyPackで開始したプレビューを破棄する。まだrevelationSelectのまま(複数選択の
-  // 途中)なら何もしない。
+  // handleBuyPackで開始したプレビューに片付けアニメーションを発火させる。完了後は
+  // handleRevelationPreviewCleanupDone経由でnullになる(handleTargetColumnでの
+  // コラム確定時と同じ経路)。まだrevelationSelectのまま(複数選択の途中)、または
+  // 既にended状態(片付けアニメ発火済み)なら何もしない。
   function syncRevelationPreviewWithPhase() {
-    if (run.phase !== 'revelationSelect') {
-      revelationPreviewWave = null
+    if (run.phase !== 'revelationSelect' && revelationPreviewWave && revelationPreviewWave.status !== 'ended') {
+      revelationPreviewWave = { ...revelationPreviewWave, status: 'ended', endReason: 'previewDismissed' }
     }
   }
 
