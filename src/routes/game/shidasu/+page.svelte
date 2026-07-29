@@ -660,14 +660,14 @@
                 </button>
               {:else if slot.kind === 'revelation'}
                 <button onclick={() => handleBuyIndividualRevelationHold(i)} disabled={run.revelations.length + run.oracles.length >= 2 || run.currency < revelationBuyPrice(params)} class="w-full px-2 py-1 rounded bg-slate-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">
-                  温存({revelationBuyPrice(params)})
+                  購入({revelationBuyPrice(params)})
                 </button>
               {:else if slot.kind === 'oracle'}
                 <button onclick={() => handleBuyIndividualOracleUse(i)} disabled={run.currency < oracleBuyPrice(params)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
-                  即使う({oracleBuyPrice(params)})
+                  購入&使用({oracleBuyPrice(params)})
                 </button>
                 <button onclick={() => handleBuyIndividualOracleHold(i)} disabled={run.revelations.length + run.oracles.length >= 2 || run.currency < oracleBuyPrice(params)} class="w-full px-2 py-1 rounded bg-slate-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">
-                  温存({oracleBuyPrice(params)})
+                  購入({oracleBuyPrice(params)})
                 </button>
               {/if}
             </div>
