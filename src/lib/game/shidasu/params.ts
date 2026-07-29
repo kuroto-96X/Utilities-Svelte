@@ -273,8 +273,8 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     columnSweepBonus: 150,
   },
   stars: [
-    { id: 'ordinary-moon', name: '普通の衛星', waveSlot: 1, targetMultiplier: 1.0, reward: 20, restrictionKind: 'none', descTemplate: '' },
-    { id: 'slightly-bigger-moon', name: '少し大きな衛星', waveSlot: 2, targetMultiplier: 1.3, reward: 25, restrictionKind: 'none', descTemplate: '' },
+    { id: 'ordinary-moon', name: '普通の衛星', waveSlot: 1, targetMultiplier: 1, reward: 3, restrictionKind: 'none', descTemplate: '' },
+    { id: 'slightly-bigger-moon', name: '少し大きな衛星', waveSlot: 2, targetMultiplier: 1.5, reward: 4, restrictionKind: 'none', descTemplate: '' },
     { id: 'closed-loop-planet', name: '循環の閉じた荒廃惑星', waveSlot: 3, targetMultiplier: 2, reward: 5, restrictionKind: 'noLoop', descTemplate: 'A⇔Kループ禁止' },
     { id: 'sealed-noble-planet', name: '高貴なる封印の惑星', waveSlot: 3, targetMultiplier: 2, reward: 5, restrictionKind: 'faceLock', descTemplate: '絵札はコンボ2以上でのみ取得可' },
     { id: 'harsh-planet', name: '弱き者を拒む峻厳な惑星', waveSlot: 3, targetMultiplier: 2, reward: 5, restrictionKind: 'lowCombo', maxCombo: 2, descTemplate: '{maxCombo}コンボ以下で無得点' },
