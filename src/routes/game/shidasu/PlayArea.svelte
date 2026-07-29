@@ -140,6 +140,19 @@
     previousDealWaveKey = waveKey
     startDealAnimation()
   })
+  // 天啓プレビュー破棄(endReason==='previewDismissed')を直接検知して片付けアニメーションを
+  // 発火させる。通常のカードプレイ(target)によるWave終了はstartScoreReveal/finishScoreReveal
+  // 経由で既に片付けアニメが発火するため対象外にする(waveKeyはプレビュー破棄時に変化しない
+  // ためwaveKey監視では検知できず、この$effectが無いと片付けアニメが永遠に発火しなかった)。
+  let previousPreviewDismissed = wave.status === 'ended' && wave.endReason === 'previewDismissed'
+  $effect(() => {
+    const isPreviewDismissed = wave.status === 'ended' && wave.endReason === 'previewDismissed'
+    if (isPreviewDismissed === previousPreviewDismissed) return
+    previousPreviewDismissed = isPreviewDismissed
+    if (isPreviewDismissed && cleanupAnimation === null) {
+      startCleanupAnimation()
+    }
+  })
   let scoreNumberEl: HTMLDivElement | undefined = $state()
   let scoreNumberScale = $state(1)
   let scoreNumberTransitionMs = $state(0)
@@ -606,9 +619,7 @@
     if (allParts.length === 0) {
       displayedScore = wave.score
       onScoreRevealDone?.()
-      // previewDismissedは天啓プレビュー盤面(使い捨て)の破棄トリガー。片付けアニメ自体は
-      // targetの場合と共通ロジックのため同じ扱いにする(下のfinishScoreRevealも同様)。
-      if (wave.status === 'ended' && (wave.endReason === 'target' || wave.endReason === 'previewDismissed')) startCleanupAnimation()
+      if (wave.status === 'ended' && wave.endReason === 'target') startCleanupAnimation()
       return
     }
     const runningTotals = runningTotalsFromScoreParts(allParts)
