@@ -632,6 +632,8 @@
         onCleanupDone={handleRevelationPreviewCleanupDone}
         waveKey={revelationPreviewWaveKey}
         headerExtra={stageRow}
+        rites={run.rites} onUseRite={handleUseRiteInPreview}
+        revelations={run.revelations} onUseRevelationClick={handleUseRevelationClick}
         columnTargetMode={true}
         canTargetColumn={canTargetRevelationColumn}
         onTargetColumn={handleTargetColumn}
