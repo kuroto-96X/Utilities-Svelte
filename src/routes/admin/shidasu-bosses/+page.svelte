@@ -21,6 +21,44 @@
     'none', 'noLoop', 'faceLock', 'lowCombo', 'oddCombo', 'suit', 'face',
   ]
 
+  // 管理画面用のdescTemplateプレビュー展開。suitは実行時ランダム抽選のため
+  // 固定のプレースホルダー文字列で表示する(実際のスートは表示しない)。
+  function previewDescTemplate(star: ShidasuParams['stars'][number]): string {
+    if (!star.descTemplate) return ''
+    const context: Record<string, string> = {}
+    if (star.restrictionKind === 'lowCombo') context.maxCombo = String(star.maxCombo ?? 2)
+    if (star.restrictionKind === 'suit') context.suit = '(抽選)'
+    return star.descTemplate.replace(/\{(\w+)\}/g, (match, key) => (key in context ? context[key] : match))
+  }
+
+  type SortColumn = 'waveSlot' | 'name' | 'targetMultiplier' | 'reward' | 'restrictionKind'
+  let sortColumn = $state<SortColumn | null>(null)
+  let sortDirection = $state<'asc' | 'desc'>('asc')
+
+  function toggleSort(column: SortColumn) {
+    if (sortColumn === column) {
+      sortDirection = sortDirection === 'asc' ? 'desc' : 'asc'
+    } else {
+      sortColumn = column
+      sortDirection = 'asc'
+    }
+  }
+
+  // 表示専用の並び替え済み配列。config.stars自体の順序は変更しない(保存時の
+  // 意図しない差分を避けるため)。
+  let sortedStars = $derived.by(() => {
+    if (!config) return []
+    if (!sortColumn) return config.stars
+    const column = sortColumn
+    const direction = sortDirection
+    return [...config.stars].sort((a, b) => {
+      const av = a[column]
+      const bv = b[column]
+      const cmp = typeof av === 'number' && typeof bv === 'number' ? av - bv : String(av).localeCompare(String(bv))
+      return direction === 'asc' ? cmp : -cmp
+    })
+  })
+
   let slotCounts = $derived.by(() => {
     if (!config) return { 1: 0, 2: 0, 3: 0 }
     return {
@@ -46,15 +84,37 @@
       id: `star-${crypto.randomUUID()}`,
       name: '',
       waveSlot: 1,
-      targetMultiplier: 1,
-      reward: 0,
+      targetMultiplier: 2,
+      reward: 5,
       restrictionKind: 'none',
+      descTemplate: '',
     })
   }
 
   function removeStar(id: string) {
     if (!config) return
     config.stars = config.stars.filter(star => star.id !== id)
+  }
+
+  // Wave3(waveSlot 3)の全星のtargetMultiplier・rewardを一律2・5に上書きする。
+  // 他のフィールド(名前・制限種別等)は変更しない。ローカルconfig stateの書き換えのみで、
+  // 保存ボタンを押すまでAPIへは反映されない。
+  function updateWave3Defaults() {
+    if (!config) return
+    for (const star of config.stars) {
+      if (star.waveSlot === 3) {
+        star.targetMultiplier = 2
+        star.reward = 5
+      }
+    }
+    showToast('Wave3の倍率・報酬を更新しました(保存ボタンで確定してください)')
+  }
+
+  function starNameInvalid(star: ShidasuParams['stars'][number]): boolean {
+    return !star.name.trim()
+  }
+  function starMaxComboInvalid(star: ShidasuParams['stars'][number]): boolean {
+    return star.restrictionKind === 'lowCombo' && !Number.isFinite(star.maxCombo)
   }
 
   async function loadConfig(toast = false) {
@@ -133,18 +193,30 @@
         <table class="w-full text-xs border border-slate-200 rounded-lg overflow-hidden">
           <thead>
             <tr class="bg-slate-50 text-slate-500">
-              <th class="px-2 py-1.5 text-left" style="width:5rem;">Wave</th>
-              <th class="px-2 py-1.5 text-left" style="width:9rem;">名前</th>
-              <th class="px-2 py-1.5 text-left" style="width:6rem;">倍率</th>
-              <th class="px-2 py-1.5 text-left" style="width:6rem;">報酬</th>
-              <th class="px-2 py-1.5 text-left" style="width:8rem;">制限種別</th>
+              <th class="px-2 py-1.5 text-left cursor-pointer select-none" style="width:5rem;" onclick={() => toggleSort('waveSlot')}>
+                Wave{sortColumn === 'waveSlot' ? (sortDirection === 'asc' ? ' ▲' : ' ▼') : ''}
+              </th>
+              <th class="px-2 py-1.5 text-left cursor-pointer select-none" style="width:9rem;" onclick={() => toggleSort('name')}>
+                名前{sortColumn === 'name' ? (sortDirection === 'asc' ? ' ▲' : ' ▼') : ''}
+              </th>
+              <th class="px-2 py-1.5 text-left cursor-pointer select-none" style="width:6rem;" onclick={() => toggleSort('targetMultiplier')}>
+                倍率{sortColumn === 'targetMultiplier' ? (sortDirection === 'asc' ? ' ▲' : ' ▼') : ''}
+              </th>
+              <th class="px-2 py-1.5 text-left cursor-pointer select-none" style="width:6rem;" onclick={() => toggleSort('reward')}>
+                報酬{sortColumn === 'reward' ? (sortDirection === 'asc' ? ' ▲' : ' ▼') : ''}
+              </th>
+              <th class="px-2 py-1.5 text-left cursor-pointer select-none" style="width:8rem;" onclick={() => toggleSort('restrictionKind')}>
+                制限種別{sortColumn === 'restrictionKind' ? (sortDirection === 'asc' ? ' ▲' : ' ▼') : ''}
+              </th>
               <th class="px-2 py-1.5 text-left" style="width:6rem;">maxCombo</th>
+              <th class="px-2 py-1.5 text-left" style="width:12rem;">説明文テンプレート</th>
+              <th class="px-2 py-1.5 text-left" style="width:10rem;">プレビュー</th>
               <th class="px-2 py-1.5 text-left" style="width:16rem;">実際の効果(監査用)</th>
               <th class="px-2 py-1.5 text-left" style="width:3rem;"></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            {#each config.stars as star, i (star.id)}
+            {#each sortedStars as star, i (star.id)}
               <tr>
                 <td class="px-2 py-1.5 align-top">
                   <select bind:value={star.waveSlot} class="w-full border border-slate-200 rounded px-1.5 py-0.5">
@@ -154,7 +226,7 @@
                   </select>
                 </td>
                 <td class="px-2 py-1.5 align-top">
-                  <input type="text" bind:value={star.name} list="sin-daughter-names" class="w-full border border-slate-200 rounded px-1.5 py-0.5" />
+                  <input type="text" bind:value={star.name} list="sin-daughter-names" class="w-full border rounded px-1.5 py-0.5 {starNameInvalid(star) ? 'border-red-400' : 'border-slate-200'}" />
                 </td>
                 <td class="px-2 py-1.5 align-top">
                   <input type="number" step="any" bind:value={star.targetMultiplier} class="w-full border border-slate-200 rounded px-1.5 py-0.5" />
@@ -171,10 +243,16 @@
                 </td>
                 <td class="px-2 py-1.5 align-top">
                   {#if star.restrictionKind === 'lowCombo'}
-                    <input type="number" step="1" bind:value={star.maxCombo} class="w-full border border-slate-200 rounded px-1.5 py-0.5" />
+                    <input type="number" step="1" bind:value={star.maxCombo} class="w-full border rounded px-1.5 py-0.5 {starMaxComboInvalid(star) ? 'border-red-400' : 'border-slate-200'}" />
                   {:else}
                     <span class="text-slate-300">-</span>
                   {/if}
+                </td>
+                <td class="px-2 py-1.5 align-top">
+                  <input type="text" bind:value={star.descTemplate} class="w-full border border-slate-200 rounded px-1.5 py-0.5" />
+                </td>
+                <td class="px-2 py-1.5 align-top text-slate-500">
+                  {previewDescTemplate(star) || '-'}
                 </td>
                 <td class="px-2 py-1.5 align-top text-slate-500">
                   {star.restrictionKind === 'none' ? '-' : STAR_RESTRICTION_ACTUAL_EFFECTS[star.restrictionKind]}
@@ -198,6 +276,12 @@
         class="mt-3 text-sm px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
       >
         + 星を追加
+      </button>
+      <button
+        onclick={updateWave3Defaults}
+        class="mt-3 ml-2 text-sm px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+      >
+        Wave3の倍率・報酬を一括更新(倍率2・報酬5)
       </button>
     </section>
   {:else if !error}
