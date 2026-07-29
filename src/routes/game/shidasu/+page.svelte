@@ -428,9 +428,17 @@
       }
       const previewResultWave = resultRun.wave
       run = { ...resultRun, wave: run.wave }
-      revelationPreviewWave = previewResultWave
-        ? { ...previewResultWave, status: 'ended', endReason: 'previewDismissed' }
-        : null
+      if (!previewResultWave) {
+        revelationPreviewWave = null
+      } else if (target.source === 'held') {
+        // 所持天啓の使用(held)は福袋選択そのものではないため、コラム確定してもプレビューは
+        // 終了させない(即時反映のみ、秘儀・コラム不要天啓のプレビュー内使用と同様)。
+        // 福袋選択(individual/pack)は選択操作の完了を意味するため、従来通りプレビューを
+        // 終了させ片付けアニメーションを発火する。
+        revelationPreviewWave = previewResultWave
+      } else {
+        revelationPreviewWave = { ...previewResultWave, status: 'ended', endReason: 'previewDismissed' }
+      }
       return
     }
 
