@@ -13,7 +13,7 @@
     pickPackRite, confirmPackRiteSwap, cancelPackRiteSwap, closePackRiteSelect,
     pickPackRevelationUse, pickPackRevelationHold, confirmPackRevelationSwap, cancelPackRevelationSwap, closePackRevelationSelect,
     pickPackOracleUse, pickPackOracleHold, confirmPackOracleSwap, cancelPackOracleSwap, closePackOracleSelect,
-    useOracle, sellItem, sellRite, sellRevelation, sellOracle,
+    useOracle, sellItem, sellRite, sellRevelation, sellOracle, reorderItems,
   } from '$lib/game/shidasu/engine'
   import { itemDesc, itemName } from '$lib/game/shidasu/items'
   import { riteName, riteDesc } from '$lib/game/shidasu/rites'
@@ -322,6 +322,35 @@
 
   function handleUseOracle(roleName: RoleName) {
     run = useOracle(run, roleName)
+  }
+
+  let draggingItemIndex = $state<number | null>(null)
+  let dragPointerX = $state(0)
+  let dragPointerY = $state(0)
+
+  function handleItemPointerDown(index: number, e: PointerEvent) {
+    draggingItemIndex = index
+    dragPointerX = e.clientX
+    dragPointerY = e.clientY
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+  }
+
+  function handleItemPointerMove(e: PointerEvent) {
+    if (draggingItemIndex === null) return
+    dragPointerX = e.clientX
+    dragPointerY = e.clientY
+
+    const el = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[data-item-index]')
+    if (!el) return
+    const targetIndex = Number(el.dataset.itemIndex)
+    if (Number.isNaN(targetIndex) || targetIndex === draggingItemIndex) return
+
+    run = reorderItems(run, draggingItemIndex, targetIndex)
+    draggingItemIndex = targetIndex
+  }
+
+  function handleItemPointerUp() {
+    draggingItemIndex = null
   }
 
   function handleSellItem(itemId: ItemId) {
@@ -750,11 +779,27 @@
       </div>
 
       <div class="space-y-2">
-        <p class="text-xs text-slate-500">所持品(売却可)</p>
+        <p class="text-xs text-slate-500">所持護符(ドラッグで並べ替え・売却可)</p>
         <div class="flex flex-wrap gap-1">
-          {#each run.items as itemId}
-            <button onclick={() => handleSellItem(itemId)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{itemName(itemId, params)} 売({itemSellPrice(params, itemId)})</button>
+          {#each run.items as itemId, i (i)}
+            <div
+              data-item-index={i}
+              onpointerdown={(e) => handleItemPointerDown(i, e)}
+              onpointermove={handleItemPointerMove}
+              onpointerup={handleItemPointerUp}
+              onpointercancel={handleItemPointerUp}
+              class="flex items-center gap-1 text-xs text-slate-800 px-2 py-1 rounded border touch-none select-none {draggingItemIndex === i ? 'border-teal-500 bg-teal-50 shadow-md' : 'border-slate-200 bg-white cursor-grab'}"
+            >
+              <span>{itemName(itemId, params)}</span>
+              <button onclick={() => handleSellItem(itemId)} class="text-slate-400 hover:text-slate-700">売({itemSellPrice(params, itemId)})</button>
+            </div>
           {/each}
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <p class="text-xs text-slate-500">その他の所持品(売却可)</p>
+        <div class="flex flex-wrap gap-1">
           {#each run.rites as riteId}
             <button onclick={() => handleUseRite(riteId)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{riteName(riteId, params)} 使用</button>
             <button onclick={() => handleSellRite(riteId)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{riteName(riteId, params)} 売({riteSellPrice(params)})</button>
