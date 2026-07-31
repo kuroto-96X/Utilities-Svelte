@@ -118,12 +118,7 @@
     "name": "星片",
     "symbol": "☆",
     "initialAmount": 5,
-    "waveClearAmount": 5,
-    "bossBonus": {
-      "shoukyou": 5,
-      "chuukyou": 10,
-      "taikyou": 15
-    }
+    "waveClearAmount": 5
   },
   "shop": {
     "itemPrice": {
