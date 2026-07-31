@@ -131,7 +131,6 @@
         Waveクリア時の獲得数(ボスWaveも含め毎回付与される基礎分)
         <input type="number" step="1" bind:value={config.currency.waveClearAmount} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
       </label>
-
     </section>
 
     <section class="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
