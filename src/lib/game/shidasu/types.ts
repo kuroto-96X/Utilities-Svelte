@@ -6,15 +6,6 @@ export type StageModifier = 'none' | 'noLoop' | 'faceLock'
 // スプレッド: ラン開始時にプレイヤーが選ぶ固有ルールセット。大アルカナから命名する。
 // fool(愚者)=特殊ルールなしの基本スプレッド、moon(月)=場札が常に1行少ない状態で始まる
 export type SpreadId = 'fool' | 'moon'
-// ボスウェーブの制約候補。挙動(kind)そのものはコードに紐づく固定値で、
-// どの階級(小凶/中凶/大凶)に属するかはparams.bosses[kind].tierとして管理画面から変更できる。
-// noLoop/faceLock=小凶向け(isPlayableの可否制約)、lowCombo/oddCombo=中凶向け、suit/face=大凶向け(得点ロック)
-// という想定だが、実際にどの階級で抽選されるかはtierの値のみが決める。
-// 非推奨: Star型(下記)への移行に伴い廃止予定。StarRestriction.kindが同等の役割を持つ。
-// 移行完了後(次回以降のセッションでUI・管理画面の置き換えが終わったら)削除すること。
-export type BossKind = 'noLoop' | 'faceLock' | 'lowCombo' | 'oddCombo' | 'suit' | 'face'
-export type BossTierKey = 'shoukyou' | 'chuukyou' | 'taikyou'
-
 // Wave単位の新概念「星」が持つ制限ルール。旧BossKind(noLoop/faceLock/lowCombo/oddCombo/suit/face)を
 // kindで判別するUnion型として引き継ぐ。suitのみ、星が選出されると同時にスートを抽選し確定させる。
 export type StarRestriction =
