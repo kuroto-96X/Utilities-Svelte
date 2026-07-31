@@ -55,11 +55,6 @@ export interface ShidasuParams {
     symbol: string
     initialAmount: number
     waveClearAmount: number
-    bossBonus: {
-      shoukyou: number
-      chuukyou: number
-      taikyou: number
-    }
   }
   shop: {
     itemPrice: Record<Rarity, { buy: number; sell: number }>
@@ -273,7 +268,6 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     symbol: '☆',
     initialAmount: 5,
     waveClearAmount: 5,
-    bossBonus: { shoukyou: 5, chuukyou: 10, taikyou: 15 },
   },
   shop: {
     itemPrice: { C: { buy: 8, sell: 4 }, U: { buy: 16, sell: 8 }, R: { buy: 30, sell: 15 } },
