@@ -1466,6 +1466,16 @@ export function useOracle(run: RunState, roleName: RoleName): RunState {
   return { ...run, oracles, oracleLevels, wave }
 }
 
+// 所持護符の並び順をfromIndexからtoIndexへ移動する。加算・倍算型護符の適用順(左から順に適用)を
+// プレイヤーが調整できるようにするためのショップ画面向けの並べ替え操作。
+export function reorderItems(run: RunState, fromIndex: number, toIndex: number): RunState {
+  if (fromIndex === toIndex) return run
+  const items = [...run.items]
+  const [moved] = items.splice(fromIndex, 1)
+  items.splice(toIndex, 0, moved)
+  return { ...run, items }
+}
+
 // 所持中の護符を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
 export function sellItem(params: ShidasuParams, run: RunState, itemId: ItemId): RunState {
   if (run.phase !== 'playing' && run.phase !== 'shop') return run

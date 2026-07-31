@@ -57,6 +57,7 @@ import {
   sellRite,
   sellRevelation,
   sellOracle,
+  reorderItems,
   skipWave,
   rerollStageStars,
   startRevelationPreview,
@@ -3014,6 +3015,26 @@ describe('useRite', () => {
     const run: RunState = { ...createInitialRun(), phase: 'riteSelect', wave, rites: ['raidho'] }
     const result = useRite(DEFAULT_PARAMS, run, 'raidho', createRng(1))
     expect(result.rites).toEqual([])
+  })
+})
+
+describe('reorderItems(所持護符の並べ替え)', () => {
+  test('fromIndexの要素をtoIndexへ移動し、残りの要素の相対順序は保たれる', () => {
+    const run: RunState = { ...createInitialRun(), items: ['bridge', 'grace', 'eternity'] }
+    const result = reorderItems(run, 0, 2)
+    expect(result.items).toEqual(['grace', 'eternity', 'bridge'])
+  })
+
+  test('末尾の要素を先頭へ移動できる', () => {
+    const run: RunState = { ...createInitialRun(), items: ['bridge', 'grace', 'eternity'] }
+    const result = reorderItems(run, 2, 0)
+    expect(result.items).toEqual(['eternity', 'bridge', 'grace'])
+  })
+
+  test('fromIndexとtoIndexが同じ場合、itemsの内容は変化しない', () => {
+    const run: RunState = { ...createInitialRun(), items: ['bridge', 'grace'] }
+    const result = reorderItems(run, 1, 1)
+    expect(result.items).toEqual(['bridge', 'grace'])
   })
 })
 
