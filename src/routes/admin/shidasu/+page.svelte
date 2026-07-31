@@ -5,7 +5,6 @@
   import ItemsSection from './ItemsSection.svelte'
   import ScoringSection from './ScoringSection.svelte'
   import RoleBonusSection from './RoleBonusSection.svelte'
-  import BossTiersSection from './BossTiersSection.svelte'
   import SpreadsSection from './SpreadsSection.svelte'
   import FlowUiSection from './FlowUiSection.svelte'
   import JsonPanel from './JsonPanel.svelte'
@@ -117,8 +116,6 @@
       <ScoringSection {config} />
 
       <RoleBonusSection {config} />
-
-      <BossTiersSection {config} />
 
       <SpreadsSection {config} />
 

@@ -14,20 +14,12 @@
   function isValidShidasuParams(value: unknown): value is ShidasuParams {
     if (typeof value !== 'object' || value === null) return false
     const v = value as Record<string, unknown>
-    const bossTiers = v.bossTiers as Record<string, unknown> | undefined
-    const shoukyou = bossTiers?.shoukyou as Record<string, unknown> | undefined
-    const chuukyou = bossTiers?.chuukyou as Record<string, unknown> | undefined
-    const taikyou = bossTiers?.taikyou as Record<string, unknown> | undefined
     const spreads = v.spreads as Record<string, unknown> | undefined
     const fool = spreads?.fool as Record<string, unknown> | undefined
     const moon = spreads?.moon as Record<string, unknown> | undefined
     return (
       typeof v.layout === 'object' && v.layout !== null &&
       typeof v.scoring === 'object' && v.scoring !== null &&
-      typeof v.bossTiers === 'object' && v.bossTiers !== null &&
-      typeof shoukyou?.name === 'string' &&
-      typeof chuukyou?.name === 'string' &&
-      typeof taikyou?.name === 'string' &&
       typeof v.spreads === 'object' && v.spreads !== null &&
       typeof fool?.name === 'string' &&
       typeof fool?.desc === 'string' &&
@@ -50,7 +42,7 @@
     try {
       const parsed = JSON.parse(jsonText)
       if (!isValidShidasuParams(parsed)) {
-        jsonError = '必須項目(layout/scoring/bossTiers/spreads/items/flow/ui)が不足しています'
+        jsonError = '必須項目(layout/scoring/spreads/items/flow/ui)が不足しています'
         return
       }
       onApply(parsed)
