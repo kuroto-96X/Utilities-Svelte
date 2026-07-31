@@ -20,50 +20,6 @@
     "completeRunSuitBonus": 1000,
     "columnSweepBonus": 500
   },
-  "bossTiers": {
-    "shoukyou": {
-      "name": "小凶"
-    },
-    "chuukyou": {
-      "name": "中凶"
-    },
-    "taikyou": {
-      "name": "大凶"
-    }
-  },
-  "bosses": {
-    "noLoop": {
-      "name": "頑迷",
-      "tier": "shoukyou",
-      "desc": "A⇔Kループ禁止"
-    },
-    "faceLock": {
-      "name": "偽善",
-      "tier": "shoukyou",
-      "desc": "絵札はコンボ2以上でのみ取れる"
-    },
-    "lowCombo": {
-      "name": "憤慨",
-      "tier": "chuukyou",
-      "desc": "{maxCombo}コンボ以下で無得点",
-      "maxCombo": 2
-    },
-    "oddCombo": {
-      "name": "口論",
-      "tier": "chuukyou",
-      "desc": "コンボが奇数のとき無得点"
-    },
-    "suit": {
-      "name": "裏切り",
-      "tier": "taikyou",
-      "desc": "特定のスートで無得点"
-    },
-    "face": {
-      "name": "詐欺",
-      "tier": "taikyou",
-      "desc": "絵札(J・Q・K)で無得点"
-    }
-  },
   "stars": [
     {
       "id": "ordinary-moon",
