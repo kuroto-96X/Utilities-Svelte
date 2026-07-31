@@ -781,7 +781,7 @@
       <div class="space-y-2">
         <p class="text-xs text-slate-500">所持護符(ドラッグで並べ替え・売却可)</p>
         <div class="flex flex-wrap gap-1">
-          {#each run.items as itemId, i (i)}
+          {#each run.items as itemId, i (itemId)}
             <div
               role="button"
               tabindex="0"
