@@ -19,9 +19,6 @@
     if (!config.currency.symbol.trim()) return true
     if (!Number.isFinite(config.currency.initialAmount) || config.currency.initialAmount < 0) return true
     if (!Number.isFinite(config.currency.waveClearAmount) || config.currency.waveClearAmount < 0) return true
-    if (!Number.isFinite(config.currency.bossBonus.shoukyou) || config.currency.bossBonus.shoukyou < 0) return true
-    if (!Number.isFinite(config.currency.bossBonus.chuukyou) || config.currency.bossBonus.chuukyou < 0) return true
-    if (!Number.isFinite(config.currency.bossBonus.taikyou) || config.currency.bossBonus.taikyou < 0) return true
     if (!Number.isFinite(config.shop.itemPrice.C.buy) || config.shop.itemPrice.C.buy < 0) return true
     if (!Number.isFinite(config.shop.itemPrice.C.sell) || config.shop.itemPrice.C.sell < 0) return true
     if (!Number.isFinite(config.shop.itemPrice.U.buy) || config.shop.itemPrice.U.buy < 0) return true
@@ -135,24 +132,6 @@
         <input type="number" step="1" bind:value={config.currency.waveClearAmount} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
       </label>
 
-      <div class="grid grid-cols-3 gap-3">
-        <label class="text-xs text-slate-500">
-          小凶ボスボーナス
-          <input type="number" step="1" bind:value={config.currency.bossBonus.shoukyou} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-        </label>
-        <label class="text-xs text-slate-500">
-          中凶ボスボーナス
-          <input type="number" step="1" bind:value={config.currency.bossBonus.chuukyou} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-        </label>
-        <label class="text-xs text-slate-500">
-          大凶ボスボーナス
-          <input type="number" step="1" bind:value={config.currency.bossBonus.taikyou} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-        </label>
-      </div>
-
-      <p class="text-xs text-slate-400">
-        ボスボーナスはWaveクリア時の獲得数に加算されます(例: 小凶ボスWaveクリア時の獲得数 = Waveクリア時の獲得数 + 小凶ボスボーナス)。
-      </p>
     </section>
 
     <section class="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
