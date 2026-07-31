@@ -783,6 +783,8 @@
         <div class="flex flex-wrap gap-1">
           {#each run.items as itemId, i (i)}
             <div
+              role="button"
+              tabindex="0"
               data-item-index={i}
               onpointerdown={(e) => handleItemPointerDown(i, e)}
               onpointermove={handleItemPointerMove}
