@@ -120,6 +120,9 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     columnSweepActiveThisWave: false,
     benevolenceUsedThisCombo: false,
     baseComboCount: 0,
+    dedicationX: 1,
+    diligenceX: 1,
+    divineProtectionX: 1,
     roleEchoUsedThisCombo: {},
     sameRankEchoUsedThisCombo: [],
     pendingRoleEcho: null,
@@ -2843,6 +2846,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
+      dedicationX: 1, diligenceX: 1, divineProtectionX: 1,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     }
@@ -2871,6 +2875,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
+      dedicationX: 1, diligenceX: 1, divineProtectionX: 1,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     }
@@ -2893,6 +2898,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
+      dedicationX: 1, diligenceX: 1, divineProtectionX: 1,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     }
@@ -2916,6 +2922,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
+      dedicationX: 1, diligenceX: 1, divineProtectionX: 1,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     }
@@ -2940,6 +2947,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
+      dedicationX: 1, diligenceX: 1, divineProtectionX: 1,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     }
@@ -2963,6 +2971,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
+      dedicationX: 1, diligenceX: 1, divineProtectionX: 1,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     }
@@ -3035,6 +3044,42 @@ describe('reorderItems(所持護符の並べ替え)', () => {
     const run: RunState = { ...createInitialRun(), items: ['bridge', 'grace'] }
     const result = reorderItems(run, 1, 1)
     expect(result.items).toEqual(['bridge', 'grace'])
+  })
+})
+
+describe('献身(dedication): フラッシュ成立ごとにdedicationXが積み上がりx倍算', () => {
+  test('フラッシュ成立プレイの直後、dedicationXが0.01加算される', () => {
+    // フラッシュが成立する組み合わせ(直近4枚が4スート: ♥3,♦4,♠5,♣6)
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      chain: [card(20, '♥', 3), card(21, '♦', 4), card(22, '♠', 5)],
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      dedicationX: 1,
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['dedication'], 1000000, 0, standardDeckComposition())
+    expect(next.dedicationX).toBeCloseTo(1 + DEFAULT_PARAMS.talismans.dedication.n)
+  })
+
+  test('献身を所持していなければdedicationXは変化しない', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      chain: [card(20, '♥', 3), card(21, '♦', 4), card(22, '♠', 5)],
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      dedicationX: 1,
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    expect(next.dedicationX).toBe(1)
+  })
+
+  test('フラッシュが成立しないプレイではdedicationXは変化しない', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      chain: [card(0, '♠', 5)],
+      tableau: [[card(1, '♠', 6)], [card(2, '♦', 2)]],
+      dedicationX: 1,
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['dedication'], 1000000, 0, standardDeckComposition())
+    expect(next.dedicationX).toBe(1)
   })
 })
 

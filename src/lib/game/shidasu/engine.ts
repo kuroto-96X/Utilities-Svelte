@@ -113,7 +113,10 @@ export function startWave(
   deckComposition: DeckCard[],
   seed?: number,
   extraTableauRows: number = 0,
-  oracleLevels: Record<RoleName, number> = defaultOracleLevels()
+  oracleLevels: Record<RoleName, number> = defaultOracleLevels(),
+  dedicationX: number = 1,
+  diligenceX: number = 1,
+  divineProtectionX: number = 1
 ): { wave: WaveState; deckComposition: DeckCard[] } {
   const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
   let idSeq = 0
@@ -172,6 +175,9 @@ export function startWave(
     columnSweepActiveThisWave: false,
     benevolenceUsedThisCombo: false,
     baseComboCount: 0,
+    dedicationX,
+    diligenceX,
+    divineProtectionX,
     roleEchoUsedThisCombo: {},
     sameRankEchoUsedThisCombo: [],
     pendingRoleEcho: null,
@@ -451,6 +457,11 @@ export function playCard(
   // 祝福: 役成立ごとに基礎コンボ数(baseComboCount)を永続的に+1する
   const newBaseComboCount = items.includes('sanctify') && roleFired.length > 0 ? wave.baseComboCount + 1 : wave.baseComboCount
 
+  // 献身: フラッシュ成立のたびdedicationXにnを加算する(永続的に積み上がる)
+  const newDedicationX = items.includes('dedication') && roleFired.some(r => r.name === 'flush')
+    ? wave.dedicationX + params.talismans.dedication.n
+    : wave.dedicationX
+
   // 基礎コンボ数は計算用のコンボ数に常に加算する(このプレイで祝福により増えた分も含む)。
   // 庇護・大地: 所持順(itemsの並び順)でさらに一時comboに適用する。wave.combo(実コンボ)自体は変化しない。
   let effectiveCombo = newCombo + newBaseComboCount
@@ -501,7 +512,9 @@ export function playCard(
   if (multiplier !== 1) parts.push(multiplyPart('コンボ倍率', multiplier))
   const mannazFactor = wave.mannazActiveThisWave ? 1 + mannazWeightSum(items, params) * params.rites.mannaz.x : 1
   if (mannazFactor !== 1) parts.push(multiplyPart('マンナズ', mannazFactor))
-  let gained = Math.floor(itemResult.value * multiplier * mannazFactor)
+  const dedicationFactor = items.includes('dedication') ? wave.dedicationX : 1
+  if (dedicationFactor !== 1) parts.push(multiplyPart('献身', dedicationFactor))
+  let gained = Math.floor(itemResult.value * multiplier * mannazFactor * dedicationFactor)
   if (scoreLock && isBossScoreLocked(scoreLock, effectiveCombo, card)) {
     parts.push(lockPart(bossScoreLockMessage(scoreLock)))
     gained = 0
@@ -561,6 +574,7 @@ export function playCard(
     flushActiveThisCombo: newFlushActiveThisCombo,
     columnSweepActiveThisWave: newColumnSweepActiveThisWave,
     baseComboCount: newBaseComboCount,
+    dedicationX: newDedicationX,
     roleOccurrenceCountThisWave: newRoleOccurrenceCountThisWave,
     pendingRoleEcho: newPendingRoleEcho,
     roleEchoUsedThisCombo: newRoleEchoUsedThisCombo,
@@ -1014,6 +1028,7 @@ export function createInitialRun(): RunState {
     deckComposition: standardDeckComposition(), rites: [], revelations: [], revelationOffer: [], extraTableauRows: 0,
     oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool',
     stageStars: [], currency: 0,
+    dedicationX: 1, diligenceX: 1, divineProtectionX: 1,
     oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
     pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
   }
@@ -1042,6 +1057,9 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
     spreadId,
     stageStars: initialStageStars,
     currency: params.currency.initialAmount,
+    dedicationX: 1,
+    diligenceX: 1,
+    divineProtectionX: 1,
     oracles: [],
     shop: null,
     offerPickRemaining: 0,
@@ -1065,7 +1083,13 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
   // 対応している前提でwaveIndexをそのままインデックスとして使う。
   const currentStar = run.stageStars[run.waveIndex]
   const earned = params.currency.waveClearAmount + (currentStar?.reward ?? 0)
-  const runWithCurrency = { ...run, currency: run.currency + earned }
+  const runWithCurrency = {
+    ...run,
+    currency: run.currency + earned,
+    dedicationX: wave.dedicationX,
+    diligenceX: wave.diligenceX,
+    divineProtectionX: wave.divineProtectionX,
+  }
 
   // 8ステージクリア(stageIndex === stagesPerRun - 1のwaveSlot 3クリア)時のみ、ショップ突入を
   // 後回しにして続行確認を挟む。それ以外は通常通りショップへ進む。
@@ -1115,7 +1139,7 @@ function enterShop(params: ShidasuParams, run: RunState, _seed: number | undefin
 // ダミー値(0, 0)を渡す。生成したWaveStateは本番run.waveとは無関係な一時オブジェクトであり、
 // 呼び出し元(+page.svelte)がローカルstateとして保持・破棄する。
 export function startRevelationPreview(params: ShidasuParams, run: RunState, seed?: number): WaveState {
-  const { wave } = startWave(params, 0, 0, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels)
+  const { wave } = startWave(params, 0, 0, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX)
   return wave
 }
 
@@ -1123,7 +1147,7 @@ export function startRevelationPreview(params: ShidasuParams, run: RunState, see
 // 更新されている可能性がある)から実際のウェーブを配り直してプレイ画面へ進む。「次のWaveへ」ボタンから呼ぶ。
 export function finishShop(params: ShidasuParams, run: RunState, seed?: number): RunState {
   if (run.phase !== 'shop') return run
-  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels)
+  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX)
   return { ...run, phase: 'playing', wave, waveGeneration: run.waveGeneration + 1, deckComposition, shop: null }
 }
 

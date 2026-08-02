@@ -25,4 +25,5 @@ export const ITEM_GROUPS: ItemGroup[] = [
   { label: 'グループ15: 情報表示', ids: ['guidance'] },
   { label: 'グループ16: 持続効果', ids: ['passion', 'fightingSpirit'] },
   { label: 'グループ17: コアパラメータ書き換え', ids: ['sanctify', 'protection', 'earth', 'golden', 'morningStar', 'mercy', 'mirror', 'deadline'] },
+  { label: 'グループ18: 判定ロジック内部干渉', ids: ['dedication', 'diligence', 'divineProtection'] },
 ]

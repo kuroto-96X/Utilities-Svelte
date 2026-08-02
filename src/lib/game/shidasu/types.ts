@@ -60,6 +60,7 @@ export type ItemId =
   | 'passion' | 'fightingSpirit'
   | 'sanctify' | 'protection' | 'earth' | 'golden'
   | 'morningStar' | 'mercy' | 'mirror' | 'deadline'
+  | 'dedication' | 'diligence' | 'divineProtection'
 
 // 秘儀(Rite): プレイ中に能動的に使用する消費アイテム。エルダー・フサルク(北欧ルーン文字)
 // 全24種すべてに効果を実装済みで、ここにメンバーとして揃っている。
@@ -182,6 +183,12 @@ export interface WaveState {
   // 祝福用: 役成立のたび+1(ウェーブ単位、永続)。コンボリセット処理では参照せず、
   // 得点計算時の実効コンボ(effectiveCombo)に常に加算する別枠の値として扱う
   baseComboCount: number
+  // 献身・勤勉・加護用: 護符ごとの累積倍率(xは1から開始、対象役が成立するたびx+=nされる)。
+  // ラン全体で永続する値だが、playCard内でのみ更新されるためWaveState側に正本を持ち、
+  // startWaveでRunStateからコピー・resolveWaveEndでRunStateへ書き戻す。
+  dedicationX: number
+  diligenceX: number
+  divineProtectionX: number
   // 水鏡用: 役の種類ごと(sameRank以外)に、今コンボで遅延複製をスケジュール済みか
   roleEchoUsedThisCombo: Partial<Record<RoleName, boolean>>
   // 水鏡用: sameRankは枚数段階(sameRankCountの値)ごとに使用済みかを記録する
@@ -289,6 +296,11 @@ export interface RunState {
   // ラン単位で保持する通貨(星片)の所持数。continueChoiceを挟んでもリセットされず、
   // beginRun(新しいラン開始)のときのみ初期値に戻る
   currency: number
+  // 献身・勤勉・加護の累積倍率の永続値。WaveState側のdedicationX等の正本。
+  // beginRunで1に初期化され、resolveWaveEnd成功時にwaveの値で更新される。
+  dedicationX: number
+  diligenceX: number
+  divineProtectionX: number
   // 温存中の神託(合算上限2をrevelationsと共有)。同じ役を複数所持できる
   oracles: RoleName[]
   // 現在のショップの商品構成。'shop'フェーズおよびそこから派生する福袋中身選択フェーズの間のみ非null

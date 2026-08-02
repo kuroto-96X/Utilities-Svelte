@@ -128,4 +128,9 @@ export const ITEM_ACTUAL_EFFECTS: Record<ItemId, string> = {
   mercy: 'コンボリセット直前のコンボ数がc以下なら次のコンボを有効化し、そのコンボ中の獲得点をx倍にする',
   mirror: '成立した役ボーナスのうち未予約の1つを次のプレイ用に予約し、次のプレイの基礎点に無条件加算する(同一役タイプにつき1コンボ1回。異なる役タイプならコンボ内で複数回予約されうる)',
   deadline: '山札残り枚数(0のときは無効)×nを獲得点に加算する',
+
+  // グループ18: 判定ロジック内部干渉
+  dedication: '所持中、フラッシュが成立するたび累積倍率dedicationXに永続的にnを加算する(1から開始)。獲得点に常にdedicationXを乗算する',
+  diligence: '所持中、同ランクの役が成立するたび累積倍率diligenceXに永続的にnを加算する(1から開始)。獲得点に常にdiligenceXを乗算する',
+  divineProtection: '所持中、ロイヤルセットが成立するたび累積倍率divineProtectionXに永続的にnを加算する(1から開始)。獲得点に常にdivineProtectionXを乗算する',
 }

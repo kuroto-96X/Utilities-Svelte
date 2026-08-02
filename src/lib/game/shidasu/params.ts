@@ -157,6 +157,9 @@ export interface ShidasuParams {
     mercy: { name: string; c: number; x: number; rarity: Rarity; desc: string }
     mirror: { name: string; rarity: Rarity; desc: string }
     deadline: { name: string; n: number; rarity: Rarity; desc: string }
+    dedication: { name: string; n: number; rarity: Rarity; desc: string }
+    diligence: { name: string; n: number; rarity: Rarity; desc: string }
+    divineProtection: { name: string; n: number; rarity: Rarity; desc: string }
   }
   rites: {
     raidho: { name: string; desc: string }
@@ -369,6 +372,9 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     mercy: { name: '慈悲', c: 3, x: 1.5, rarity: 'U', desc: 'コンボ数が{c}以下でリセットされたとき、次のコンボの間、獲得点を{x}倍' },
     mirror: { name: '鋼鉄', rarity: 'R', desc: '役が成立するたび(コンボ中1回、同ランクは枚数ごとに1回)、次のプレイで同じ役ボーナスを追加でもう一度加算する' },
     deadline: { name: '刻限', n: 10, rarity: 'U', desc: 'カードを取るたび、山札の残り枚数×{n}点加算' },
+    dedication: { name: '献身', n: 0.01, rarity: 'R', desc: 'x倍算。xは1から開始し、この護符を所持してからフラッシュが成立するたびx+={n}される' },
+    diligence: { name: '勤勉', n: 0.01, rarity: 'R', desc: 'x倍算。xは1から開始し、この護符を所持してから同ランクが成立するたびx+={n}される' },
+    divineProtection: { name: '加護', n: 0.01, rarity: 'R', desc: 'x倍算。xは1から開始し、この護符を所持してからロイヤルセットが成立するたびx+={n}される' },
   },
   rites: {
     raidho: { name: 'ᚱ', desc: '場札のランダムな1列を階段に変換する(最下段起点、昇順/降順はランダム)' },
