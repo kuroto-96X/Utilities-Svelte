@@ -29,3 +29,25 @@ describe('applyItemEffects', () => {
     expect(result.parts).toEqual([])
   })
 })
+
+describe('水鏡(waterMirror): 左隣の護符の効果をもう一度発動させる', () => {
+  const params = DEFAULT_PARAMS
+
+  test('左隣が忍耐(全消しボーナスへの固定加算)の場合、忍耐の効果が2回分適用される', () => {
+    const result = applyItemEffects('clearBonus', 0, ['patience', 'waterMirror'], ctx({ stockRemaining: 5 }), params)
+    const perApplication = 5 * params.talismans.patience.x
+    expect(result.value).toBe(perApplication * 2)
+  })
+
+  test('水鏡が先頭にある場合(左隣が存在しない)、何も追加されない', () => {
+    const result = applyItemEffects('clearBonus', 0, ['waterMirror', 'patience'], ctx({ stockRemaining: 5 }), params)
+    const perApplication = 5 * params.talismans.patience.x
+    expect(result.value).toBe(perApplication)
+  })
+
+  test('水鏡を所持していなければ通常通り1回分のみ適用される', () => {
+    const result = applyItemEffects('clearBonus', 0, ['patience'], ctx({ stockRemaining: 5 }), params)
+    const perApplication = 5 * params.talismans.patience.x
+    expect(result.value).toBe(perApplication)
+  })
+})

@@ -62,12 +62,25 @@ export function applyItemEffects(
   params: ShidasuParams
 ): { value: number; parts: ScorePart[] } {
   const parts: ScorePart[] = []
-  const value = items.reduce((v, id) => {
+  let value = baseValue
+  for (let i = 0; i < items.length; i++) {
+    const id = items[i]
     const entry = ITEM_EFFECTS[id]
-    if (!entry || entry.channel !== channel) return v
-    const result = entry.effect(v, ctx, params)
-    if (result.part) parts.push(result.part)
-    return result.value
-  }, baseValue)
+    if (entry && entry.channel === channel) {
+      const result = entry.effect(value, ctx, params)
+      if (result.part) parts.push(result.part)
+      value = result.value
+    }
+    // 水鏡: 自分の左隣(i-1番目)の護符の効果を、追加でもう一度この時点の値に適用する
+    if (id === 'waterMirror' && i > 0) {
+      const leftId = items[i - 1]
+      const leftEntry = ITEM_EFFECTS[leftId]
+      if (leftEntry && leftEntry.channel === channel) {
+        const echoResult = leftEntry.effect(value, ctx, params)
+        if (echoResult.part) parts.push(echoResult.part)
+        value = echoResult.value
+      }
+    }
+  }
   return { value, parts }
 }

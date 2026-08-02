@@ -62,6 +62,7 @@ export type ItemId =
   | 'morningStar' | 'mercy' | 'mirror' | 'deadline'
   | 'dedication' | 'diligence' | 'divineProtection'
   | 'fortitude'
+  | 'waterMirror'
 
 // 秘儀(Rite): プレイ中に能動的に使用する消費アイテム。エルダー・フサルク(北欧ルーン文字)
 // 全24種すべてに効果を実装済みで、ここにメンバーとして揃っている。
