@@ -3120,6 +3120,43 @@ describe('勤勉(diligence): 同ランク成立ごとにdiligenceXが積み上�
   })
 })
 
+describe('加護(divineProtection): ロイヤルセット成立ごとにdivineProtectionXが積み上がりx倍算', () => {
+  test('ロイヤルセット成立プレイの直後、divineProtectionXが0.01加算される', () => {
+    // chainにJ・Qを積み、tableauからKを取ることでロイヤルセットを成立させる。
+    // foundationはA(1)にすることで取得カードK(13)とのランク差12となりisPlayableを満たす。
+    const wave = makeWave({
+      foundation: card(0, '♠', 1),
+      chain: [card(20, '♥', 11), card(21, '♦', 12)],
+      tableau: [[card(1, '♣', 13)], [card(2, '♦', 2)]],
+      divineProtectionX: 1,
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['divineProtection'], 1000000, 0, standardDeckComposition())
+    expect(next.divineProtectionX).toBeCloseTo(1 + DEFAULT_PARAMS.talismans.divineProtection.n)
+  })
+
+  test('加護を所持していなければdivineProtectionXは変化しない', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 1),
+      chain: [card(20, '♥', 11), card(21, '♦', 12)],
+      tableau: [[card(1, '♣', 13)], [card(2, '♦', 2)]],
+      divineProtectionX: 1,
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    expect(next.divineProtectionX).toBe(1)
+  })
+
+  test('ロイヤルセットが成立しないプレイではdivineProtectionXは変化しない', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 6),
+      chain: [card(0, '♠', 6)],
+      tableau: [[card(1, '♦', 7)], [card(2, '♦', 2)]],
+      divineProtectionX: 1,
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['divineProtection'], 1000000, 0, standardDeckComposition())
+    expect(next.divineProtectionX).toBe(1)
+  })
+})
+
 describe('sellItem / sellRite / sellRevelation / sellOracle(所持品売却)', () => {
   test('sellItemは所持から削除し、売却額分だけ通貨が増える(playing/shopどちらでも可)', () => {
     const itemId = ITEM_POOL.find(id => DEFAULT_PARAMS.talismans[id].rarity === 'U')!

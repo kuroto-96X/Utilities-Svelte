@@ -467,6 +467,11 @@ export function playCard(
     ? wave.diligenceX + params.talismans.diligence.n
     : wave.diligenceX
 
+  // 加護: ロイヤルセット成立のたびdivineProtectionXにnを加算する(永続的に積み上がる)
+  const newDivineProtectionX = items.includes('divineProtection') && roleFired.some(r => r.name === 'royalSet')
+    ? wave.divineProtectionX + params.talismans.divineProtection.n
+    : wave.divineProtectionX
+
   // 基礎コンボ数は計算用のコンボ数に常に加算する(このプレイで祝福により増えた分も含む)。
   // 庇護・大地: 所持順(itemsの並び順)でさらに一時comboに適用する。wave.combo(実コンボ)自体は変化しない。
   let effectiveCombo = newCombo + newBaseComboCount
@@ -521,7 +526,9 @@ export function playCard(
   if (dedicationFactor !== 1) parts.push(multiplyPart('献身', dedicationFactor))
   const diligenceFactor = items.includes('diligence') ? wave.diligenceX : 1
   if (diligenceFactor !== 1) parts.push(multiplyPart('勤勉', diligenceFactor))
-  let gained = Math.floor(itemResult.value * multiplier * mannazFactor * dedicationFactor * diligenceFactor)
+  const divineProtectionFactor = items.includes('divineProtection') ? wave.divineProtectionX : 1
+  if (divineProtectionFactor !== 1) parts.push(multiplyPart('加護', divineProtectionFactor))
+  let gained = Math.floor(itemResult.value * multiplier * mannazFactor * dedicationFactor * diligenceFactor * divineProtectionFactor)
   if (scoreLock && isBossScoreLocked(scoreLock, effectiveCombo, card)) {
     parts.push(lockPart(bossScoreLockMessage(scoreLock)))
     gained = 0
@@ -583,6 +590,7 @@ export function playCard(
     baseComboCount: newBaseComboCount,
     dedicationX: newDedicationX,
     diligenceX: newDiligenceX,
+    divineProtectionX: newDivineProtectionX,
     roleOccurrenceCountThisWave: newRoleOccurrenceCountThisWave,
     pendingRoleEcho: newPendingRoleEcho,
     roleEchoUsedThisCombo: newRoleEchoUsedThisCombo,
