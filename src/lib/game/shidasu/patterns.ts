@@ -156,7 +156,7 @@ export interface ChainBonusResult {
   // sameRankは同ランクボーナスの加点量自体がワイルド枚数を無条件に含むため、
   // 「チェーンにワイルドが1枚でも存在すれば常にtrue」(寄与ベース)になる。
   // amountはこの役が実際に加算した点数(roleBonusMultiplier適用後、completeRunは同スート追加分を含む)。
-  // 明星(倍率適用)・水鏡(遅延複製)が参照する。
+  // 明星(倍率適用)・鋼鉄(遅延複製)が参照する。
   roleFired: { name: RoleName; usedWild: boolean; amount: number }[]
 }
 

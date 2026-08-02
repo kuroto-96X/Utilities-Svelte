@@ -191,11 +191,11 @@ export interface WaveState {
   dedicationX: number
   diligenceX: number
   divineProtectionX: number
-  // 水鏡用: 役の種類ごと(sameRank以外)に、今コンボで遅延複製をスケジュール済みか
+  // 鋼鉄用: 役の種類ごと(sameRank以外)に、今コンボで遅延複製をスケジュール済みか
   roleEchoUsedThisCombo: Partial<Record<RoleName, boolean>>
-  // 水鏡用: sameRankは枚数段階(sameRankCountの値)ごとに使用済みかを記録する
+  // 鋼鉄用: sameRankは枚数段階(sameRankCountの値)ごとに使用済みかを記録する
   sameRankEchoUsedThisCombo: number[]
-  // 水鏡用: 次の1プレイで上乗せ予定の役ボーナス(未予約ならnull)
+  // 鋼鉄用: 次の1プレイで上乗せ予定の役ボーナス(未予約ならnull)
   pendingRoleEcho: { name: RoleName; amount: number } | null
   // 明星用: 役の種類ごとのウェーブ内累積成立回数(今回成立分は含まない)
   roleOccurrenceCountThisWave: Partial<Record<RoleName, number>>

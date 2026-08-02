@@ -366,10 +366,10 @@ export function playCard(
   let base = params.scoring.basePoint
   const parts: ScorePart[] = [addPart('基礎点', base)]
 
-  // 水鏡: 前のプレイで予約された役ボーナスの遅延複製を無条件で上乗せする
+  // 鋼鉄: 前のプレイで予約された役ボーナスの遅延複製を無条件で上乗せする
   if (items.includes('mirror') && wave.pendingRoleEcho) {
     base += wave.pendingRoleEcho.amount
-    parts.push(addPart(`水鏡(${wave.pendingRoleEcho.name})`, wave.pendingRoleEcho.amount))
+    parts.push(addPart(`鋼鉄(${wave.pendingRoleEcho.name})`, wave.pendingRoleEcho.amount))
   }
 
   const effectiveStairMinLen = items.includes('bridge') ? params.scoring.stairMinLen - params.talismans.bridge.m : params.scoring.stairMinLen
@@ -423,7 +423,7 @@ export function playCard(
     roleFired.push({ name: 'columnSweep', usedWild: false, amount: sweepGain })
   }
 
-  // 水鏡: 今回成立した役のうち、まだ今コンボで遅延複製を予約していないものを1つだけ、次のプレイへ予約する。
+  // 鋼鉄: 今回成立した役のうち、まだ今コンボで遅延複製を予約していないものを1つだけ、次のプレイへ予約する。
   // 優先順位はroleFiredの出現順(flush→royalSet→sameRank→completeRun→columnSweepの判定順)。
   let newPendingRoleEcho: WaveState['pendingRoleEcho'] = null
   let newRoleEchoUsedThisCombo = wave.roleEchoUsedThisCombo

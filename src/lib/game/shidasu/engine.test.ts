@@ -1150,7 +1150,7 @@ describe('playCard', () => {
     expect(next.sowiloBoostedRole).toBe('completeRun')
   })
 
-  test('水鏡: 役が成立すると次のプレイへ同じ役ボーナスの複製が予約される', () => {
+  test('鋼鉄: 役が成立すると次のプレイへ同じ役ボーナスの複製が予約される', () => {
     const wave = baseWave({
       foundation: card(0, '♠', 5),
       chain: [card(20, '♥', 3), card(21, '♦', 4), card(22, '♠', 5)],
@@ -1162,7 +1162,7 @@ describe('playCard', () => {
     expect(next.roleEchoUsedThisCombo.flush).toBe(true)
   })
 
-  test('水鏡: 予約された複製は次のプレイで無条件に上乗せされる', () => {
+  test('鋼鉄: 予約された複製は次のプレイで無条件に上乗せされる', () => {
     const wave = baseWave({
       tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
       pendingRoleEcho: { name: 'flush', amount: 999 },
@@ -1172,7 +1172,7 @@ describe('playCard', () => {
     expect(next.pendingRoleEcho).toBeNull()
   })
 
-  test('水鏡: 同じ役はコンボ中1回しか予約されない', () => {
+  test('鋼鉄: 同じ役はコンボ中1回しか予約されない', () => {
     const wave = baseWave({
       foundation: card(0, '♠', 5),
       chain: [card(20, '♥', 3), card(21, '♦', 4), card(22, '♠', 5)],
@@ -1183,7 +1183,7 @@ describe('playCard', () => {
     expect(next.pendingRoleEcho).toBeNull()
   })
 
-  test('水鏡: 同ランクは枚数段階(sameRankCount)ごとに個別予約できる(段階1使用済みでも段階2は予約可能)', () => {
+  test('鋼鉄: 同ランクは枚数段階(sameRankCount)ごとに個別予約できる(段階1使用済みでも段階2は予約可能)', () => {
     const wave = baseWave({
       foundation: card(0, '♠', 6),
       chain: [card(10, '♠', 7), card(11, '♣', 7)], // 同ランク(7)が既に2枚チェーンに存在
