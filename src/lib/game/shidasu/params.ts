@@ -160,6 +160,7 @@ export interface ShidasuParams {
     dedication: { name: string; n: number; rarity: Rarity; desc: string }
     diligence: { name: string; n: number; rarity: Rarity; desc: string }
     divineProtection: { name: string; n: number; rarity: Rarity; desc: string }
+    fortitude: { name: string; n: number; rarity: Rarity; desc: string }
   }
   rites: {
     raidho: { name: string; desc: string }
@@ -375,6 +376,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     dedication: { name: '献身', n: 0.01, rarity: 'R', desc: 'x倍算。xは1から開始し、この護符を所持してからフラッシュが成立するたびx+={n}される' },
     diligence: { name: '勤勉', n: 0.01, rarity: 'R', desc: 'x倍算。xは1から開始し、この護符を所持してから同ランクが成立するたびx+={n}される' },
     divineProtection: { name: '加護', n: 0.01, rarity: 'R', desc: 'x倍算。xは1から開始し、この護符を所持してからロイヤルセットが成立するたびx+={n}される' },
+    fortitude: { name: '剛毅', n: 30, rarity: 'R', desc: 'Wave開始時、山札と場札の合計枚数が{n}枚ごとに基礎コンボ数+1される' },
   },
   rites: {
     raidho: { name: 'ᚱ', desc: '場札のランダムな1列を階段に変換する(最下段起点、昇順/降順はランダム)' },

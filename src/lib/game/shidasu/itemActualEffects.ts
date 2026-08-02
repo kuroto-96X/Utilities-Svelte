@@ -133,4 +133,5 @@ export const ITEM_ACTUAL_EFFECTS: Record<ItemId, string> = {
   dedication: '所持中、フラッシュが成立するたび累積倍率dedicationXに永続的にnを加算する(1から開始)。獲得点に常にdedicationXを乗算する',
   diligence: '所持中、同ランクの役が成立するたび累積倍率diligenceXに永続的にnを加算する(1から開始)。獲得点に常にdiligenceXを乗算する',
   divineProtection: '所持中、ロイヤルセットが成立するたび累積倍率divineProtectionXに永続的にnを加算する(1から開始)。獲得点に常にdivineProtectionXを乗算する',
+  fortitude: 'Wave開始時、その時点の山札+場札の合計枚数(deckComposition.length)がn枚ごとに基礎コンボ数(baseComboCount)を+1する',
 }

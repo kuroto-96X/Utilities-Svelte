@@ -337,6 +337,26 @@ describe('startWave', () => {
   })
 })
 
+describe('剛毅(fortitude): Wave開始時、山札+場札の合計枚数に応じてbaseComboCountが加算される', () => {
+  test('デッキ枚数が30枚未満なら加算なし', () => {
+    const smallDeck = standardDeckComposition().slice(0, 29)
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, ['fortitude'], smallDeck, 1)
+    expect(wave.baseComboCount).toBe(0)
+  })
+
+  test('デッキ枚数が30〜59枚ならbaseComboCount+1', () => {
+    const midDeck = standardDeckComposition().slice(0, 40)
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, ['fortitude'], midDeck, 1)
+    expect(wave.baseComboCount).toBe(1)
+  })
+
+  test('剛毅を所持していなければ加算されない', () => {
+    const midDeck = standardDeckComposition().slice(0, 40)
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], midDeck, 1)
+    expect(wave.baseComboCount).toBe(0)
+  })
+})
+
 describe('playCard', () => {
   const scoring = DEFAULT_PARAMS.scoring
 

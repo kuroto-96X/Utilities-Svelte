@@ -146,6 +146,12 @@ export function startWave(
     ? arrangeNextCardForContinuation(params.scoring, deck, [foundation], effectiveStairMinLenAtDeal, effectiveSuitColorMinLenAtDeal)
     : deck
 
+  // 剛毅: Wave開始時、山札+場札の合計枚数(deckComposition.length、ワイルド生成後の値)が
+  // n枚ごとに基礎コンボ数+1する
+  const fortitudeBaseCombo = items.includes('fortitude')
+    ? Math.floor(composition.length / params.talismans.fortitude.n)
+    : 0
+
   const wave: WaveState = {
     tableau,
     stock: stockAfterDeal,
@@ -174,7 +180,7 @@ export function startWave(
     flushActiveThisCombo: false,
     columnSweepActiveThisWave: false,
     benevolenceUsedThisCombo: false,
-    baseComboCount: 0,
+    baseComboCount: fortitudeBaseCombo,
     dedicationX,
     diligenceX,
     divineProtectionX,

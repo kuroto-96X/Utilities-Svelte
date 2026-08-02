@@ -31,6 +31,7 @@ export const ITEM_POOL: ItemId[] = [
   'sanctify', 'protection', 'earth', 'golden',
   'morningStar', 'mercy', 'mirror', 'deadline',
   'dedication', 'diligence', 'divineProtection',
+  'fortitude',
 ]
 
 export function itemName(id: ItemId, params: ShidasuParams): string {
