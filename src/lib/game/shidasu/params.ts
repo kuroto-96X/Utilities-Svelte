@@ -367,7 +367,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     golden: { name: '黄金', rarity: 'R', desc: 'コンボが1回進むたびに、通常の+1ではなく+2進む' },
     morningStar: { name: '明星', x: 0.2, rarity: 'R', desc: '役ボーナスの額を、その役のウェーブ内累積成立回数×{x}分だけ倍加' },
     mercy: { name: '慈悲', c: 3, x: 1.5, rarity: 'U', desc: 'コンボ数が{c}以下でリセットされたとき、次のコンボの間、獲得点を{x}倍' },
-    mirror: { name: '水鏡', rarity: 'R', desc: '役が成立するたび(コンボ中1回、同ランクは枚数ごとに1回)、次のプレイで同じ役ボーナスを追加でもう一度加算する' },
+    mirror: { name: '鋼鉄', rarity: 'R', desc: '役が成立するたび(コンボ中1回、同ランクは枚数ごとに1回)、次のプレイで同じ役ボーナスを追加でもう一度加算する' },
     deadline: { name: '刻限', n: 10, rarity: 'U', desc: 'カードを取るたび、山札の残り枚数×{n}点加算' },
   },
   rites: {
