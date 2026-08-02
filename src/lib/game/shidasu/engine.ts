@@ -462,6 +462,11 @@ export function playCard(
     ? wave.dedicationX + params.talismans.dedication.n
     : wave.dedicationX
 
+  // 勤勉: 同ランク成立のたびdiligenceXにnを加算する(永続的に積み上がる)
+  const newDiligenceX = items.includes('diligence') && roleFired.some(r => r.name === 'sameRank')
+    ? wave.diligenceX + params.talismans.diligence.n
+    : wave.diligenceX
+
   // 基礎コンボ数は計算用のコンボ数に常に加算する(このプレイで祝福により増えた分も含む)。
   // 庇護・大地: 所持順(itemsの並び順)でさらに一時comboに適用する。wave.combo(実コンボ)自体は変化しない。
   let effectiveCombo = newCombo + newBaseComboCount
@@ -514,7 +519,9 @@ export function playCard(
   if (mannazFactor !== 1) parts.push(multiplyPart('マンナズ', mannazFactor))
   const dedicationFactor = items.includes('dedication') ? wave.dedicationX : 1
   if (dedicationFactor !== 1) parts.push(multiplyPart('献身', dedicationFactor))
-  let gained = Math.floor(itemResult.value * multiplier * mannazFactor * dedicationFactor)
+  const diligenceFactor = items.includes('diligence') ? wave.diligenceX : 1
+  if (diligenceFactor !== 1) parts.push(multiplyPart('勤勉', diligenceFactor))
+  let gained = Math.floor(itemResult.value * multiplier * mannazFactor * dedicationFactor * diligenceFactor)
   if (scoreLock && isBossScoreLocked(scoreLock, effectiveCombo, card)) {
     parts.push(lockPart(bossScoreLockMessage(scoreLock)))
     gained = 0
@@ -575,6 +582,7 @@ export function playCard(
     columnSweepActiveThisWave: newColumnSweepActiveThisWave,
     baseComboCount: newBaseComboCount,
     dedicationX: newDedicationX,
+    diligenceX: newDiligenceX,
     roleOccurrenceCountThisWave: newRoleOccurrenceCountThisWave,
     pendingRoleEcho: newPendingRoleEcho,
     roleEchoUsedThisCombo: newRoleEchoUsedThisCombo,

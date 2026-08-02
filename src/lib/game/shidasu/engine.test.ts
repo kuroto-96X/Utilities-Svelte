@@ -3083,6 +3083,43 @@ describe('献身(dedication): フラッシュ成立ごとにdedicationXが積み
   })
 })
 
+describe('勤勉(diligence): 同ランク成立ごとにdiligenceXが積み上がりx倍算', () => {
+  test('同ランク成立プレイの直後、diligenceXが0.01加算される', () => {
+    // 同ランクが成立する組み合わせ(chain内に既にrank7が1枚あり、取得カードもrank7。
+    // foundationはrank6でランク差1のため取得カード♦7はisPlayableを満たす)
+    const wave = makeWave({
+      foundation: card(0, '♠', 6),
+      chain: [card(0, '♠', 6), card(20, '♥', 7)],
+      tableau: [[card(1, '♦', 7)], [card(2, '♦', 2)]],
+      diligenceX: 1,
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['diligence'], 1000000, 0, standardDeckComposition())
+    expect(next.diligenceX).toBeCloseTo(1 + DEFAULT_PARAMS.talismans.diligence.n)
+  })
+
+  test('勤勉を所持していなければdiligenceXは変化しない', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 6),
+      chain: [card(0, '♠', 6), card(20, '♥', 7)],
+      tableau: [[card(1, '♦', 7)], [card(2, '♦', 2)]],
+      diligenceX: 1,
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    expect(next.diligenceX).toBe(1)
+  })
+
+  test('同ランクが成立しないプレイではdiligenceXは変化しない', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 6),
+      chain: [card(0, '♠', 6)],
+      tableau: [[card(1, '♦', 7)], [card(2, '♦', 2)]],
+      diligenceX: 1,
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['diligence'], 1000000, 0, standardDeckComposition())
+    expect(next.diligenceX).toBe(1)
+  })
+})
+
 describe('sellItem / sellRite / sellRevelation / sellOracle(所持品売却)', () => {
   test('sellItemは所持から削除し、売却額分だけ通貨が増える(playing/shopどちらでも可)', () => {
     const itemId = ITEM_POOL.find(id => DEFAULT_PARAMS.talismans[id].rarity === 'U')!
