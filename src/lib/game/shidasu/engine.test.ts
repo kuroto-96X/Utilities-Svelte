@@ -470,6 +470,32 @@ describe('果断・星霜: 秘儀/天啓/神託使用でdiscretionN・frostXが�
   })
 })
 
+describe('果断・星霜: gained計算への反映', () => {
+  test('果断所持時、獲得点にdiscretionNが加算される', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      discretionN: 30,
+      comboFrozenThisWave: true, // コンボ倍率をかけず単純加算のみを検証するため固定
+    })
+    const withoutDiscretion = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const withDiscretion = playCard(DEFAULT_PARAMS, wave, 'none', ['discretion'], 1000000, 0, standardDeckComposition())
+    expect(withDiscretion.wave.score).toBe(withoutDiscretion.wave.score + 30)
+  })
+
+  test('星霜所持時、獲得点にfrostXが倍算される', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      frostX: 1.5,
+      comboFrozenThisWave: true, // コンボ倍率をかけず単純倍算のみを検証するため固定
+    })
+    const withoutFrost = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const withFrost = playCard(DEFAULT_PARAMS, wave, 'none', ['frost'], 1000000, 0, standardDeckComposition())
+    expect(withFrost.wave.score).toBe(Math.floor(withoutFrost.wave.score * 1.5))
+  })
+})
+
 describe('playCard', () => {
   const scoring = DEFAULT_PARAMS.scoring
 

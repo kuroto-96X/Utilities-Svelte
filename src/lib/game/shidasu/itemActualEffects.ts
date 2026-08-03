@@ -142,6 +142,6 @@ export const ITEM_ACTUAL_EFFECTS: Record<ItemId, string> = {
   silver: '獲得点に常にx倍算する。CardFace.svelte側でスート記号非表示・色をグレー統一する表示変更と対になる(スコア計算・isPlayable・コンボ継続判定には一切影響しない)',
 
   // グループ18: 秘儀/天啓/神託使用への永続加算
-  discretion: '所持中、秘儀・天啓・神託のいずれかを使用するたびwave.discretionNに永続的にnを加算する(初期値10から開始)',
-  frost: '所持中、秘儀・天啓・神託のいずれかを使用するたびwave.frostXに永続的にxを加算する(初期値1から開始)',
+  discretion: '所持中、天啓・神託・秘儀のいずれかを使用するたび永続的にdiscretionXにnを加算する(10から開始)。playCardのgained計算時にdiscretionN分を加算する',
+  frost: '所持中、天啓・神託・秘儀のいずれかを使用するたび永続的にfrostXにxを加算する(1から開始)。playCardのgained計算時にfrostXを乗算する',
 }

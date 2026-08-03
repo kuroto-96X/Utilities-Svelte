@@ -549,7 +549,11 @@ export function playCard(
   if (diligenceFactor !== 1) parts.push(multiplyPart('勤勉', diligenceFactor))
   const divineProtectionFactor = items.includes('divineProtection') ? wave.divineProtectionX : 1
   if (divineProtectionFactor !== 1) parts.push(multiplyPart('加護', divineProtectionFactor))
-  let gained = Math.floor(itemResult.value * multiplier * mannazFactor * dedicationFactor * diligenceFactor * divineProtectionFactor)
+  const discretionAdd = items.includes('discretion') ? wave.discretionN : 0
+  if (discretionAdd !== 0) parts.push(addPart('果断', discretionAdd))
+  const frostFactor = items.includes('frost') ? wave.frostX : 1
+  if (frostFactor !== 1) parts.push(multiplyPart('星霜', frostFactor))
+  let gained = Math.floor((itemResult.value + discretionAdd) * multiplier * mannazFactor * dedicationFactor * diligenceFactor * divineProtectionFactor * frostFactor)
   if (scoreLock && isBossScoreLocked(scoreLock, effectiveCombo, card)) {
     parts.push(lockPart(bossScoreLockMessage(scoreLock)))
     gained = 0
@@ -612,6 +616,8 @@ export function playCard(
     dedicationX: newDedicationX,
     diligenceX: newDiligenceX,
     divineProtectionX: newDivineProtectionX,
+    discretionN: wave.discretionN,
+    frostX: wave.frostX,
     roleOccurrenceCountThisWave: newRoleOccurrenceCountThisWave,
     pendingRoleEcho: newPendingRoleEcho,
     roleEchoUsedThisCombo: newRoleEchoUsedThisCombo,
