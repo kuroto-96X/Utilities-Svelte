@@ -132,4 +132,9 @@ describe('applyItemEffects (グループ2+3: カード単体属性・コンボ�
     const result = applyItemEffects('gained', 100, ['pact'], ctx(), params)
     expect(result.value).toBe(100 * params.talismans.pact.x)
   })
+
+  test('silver: 常にx倍算される', () => {
+    const result = applyItemEffects('gained', 100, ['silver'], ctx(), params)
+    expect(result.value).toBe(100 * params.talismans.silver.x)
+  })
 })

@@ -166,6 +166,7 @@ export interface ShidasuParams {
     pact: { name: string; x: number; rarity: Rarity; desc: string }
     crimson: { name: string; rarity: Rarity; desc: string }
     jetBlack: { name: string; rarity: Rarity; desc: string }
+    silver: { name: string; x: number; rarity: Rarity; desc: string }
   }
   rites: {
     raidho: { name: string; desc: string }
@@ -387,6 +388,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     pact: { name: '契り', x: 3, rarity: 'R', desc: 'コンボ内の札と同じスートの札しか取れなくなるが、x倍算' },
     crimson: { name: '紅蓮', rarity: 'U', desc: '全ての札が赤の札としても扱われる' },
     jetBlack: { name: '漆黒', rarity: 'U', desc: '全ての札が黒の札としても扱われる' },
+    silver: { name: '白銀', x: 1.5, rarity: 'U', desc: '全ての札の色とスートが非表示になるが、x倍算(点数計算やコンボ継続の判定には引き続き色とスートが使われる)' },
   },
   rites: {
     raidho: { name: 'ᚱ', desc: '場札のランダムな1列を階段に変換する(最下段起点、昇順/降順はランダム)' },

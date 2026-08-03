@@ -124,4 +124,11 @@ export const CARD_COMBO_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'c
       return { value: v * factor, part: multiplyPart('契り', factor) }
     },
   },
+  silver: {
+    channel: 'gained',
+    effect: (v, _ctx, p) => {
+      const factor = p.talismans.silver.x
+      return { value: v * factor, part: multiplyPart('白銀', factor) }
+    },
+  },
 }

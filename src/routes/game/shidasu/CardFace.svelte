@@ -1,9 +1,11 @@
 <script lang="ts">
   import { rankLabel } from '$lib/game/shidasu/engine'
   import { isRed } from '$lib/game/shidasu/patterns'
-  import type { Card } from '$lib/game/shidasu/types'
+  import type { Card, ItemId } from '$lib/game/shidasu/types'
 
-  let { card, covered }: { card: Card; covered: boolean } = $props()
+  let { card, covered, items = [] }: { card: Card; covered: boolean; items?: ItemId[] } = $props()
+
+  let hideColorAndSuit = $derived(items.includes('silver'))
 
   const PIP_LAYOUTS: Record<number, [number, number, boolean][]> = {
     1:  [[50, 50, false]],
@@ -38,24 +40,28 @@
     {/if}
   </div>
 {:else}
-  {@const colorClass = isRed(card) ? 'text-red-600' : 'text-slate-900'}
+  {@const colorClass = hideColorAndSuit ? 'text-slate-900' : (isRed(card) ? 'text-red-600' : 'text-slate-900')}
   <div
     class="relative w-full rounded-lg border border-indigo-500/50 p-1 flex flex-col items-start overflow-hidden bg-white select-none"
     style="aspect-ratio: 2 / 3;"
   >
     <div class="flex items-center gap-0.5 leading-none {colorClass}">
       <span class="text-sm font-bold leading-none">{rankLabel(card)}</span>
-      <span class="text-xs leading-none">{card.suit}</span>
+      {#if !hideColorAndSuit}
+        <span class="text-xs leading-none">{card.suit}</span>
+      {/if}
     </div>
     {#if !covered}
       {#if card.rank <= 10}
         <div class="w-full flex-1 relative {colorClass}">
-          {#each (PIP_LAYOUTS[card.rank] ?? []) as [x, y, rot], i (i)}
-            <span
-              class="absolute leading-none select-none"
-              style="left:{x}%; top:{y}%; transform:translate(-50%,-50%){rot ? ' rotate(180deg)' : ''}; font-size:{card.rank === 1 ? 18 : card.rank <= 4 ? 11 : card.rank <= 7 ? 10 : 9}px;"
-            >{card.suit}</span>
-          {/each}
+          {#if !hideColorAndSuit}
+            {#each (PIP_LAYOUTS[card.rank] ?? []) as [x, y, rot], i (i)}
+              <span
+                class="absolute leading-none select-none"
+                style="left:{x}%; top:{y}%; transform:translate(-50%,-50%){rot ? ' rotate(180deg)' : ''}; font-size:{card.rank === 1 ? 18 : card.rank <= 4 ? 11 : card.rank <= 7 ? 10 : 9}px;"
+              >{card.suit}</span>
+            {/each}
+          {/if}
         </div>
       {:else}
         <div class="w-full flex-1 flex items-center justify-center {colorClass}">
@@ -64,7 +70,9 @@
       {/if}
       <div class="rotate-180 self-end flex items-center gap-0.5 leading-none {colorClass}">
         <span class="text-sm font-bold leading-none">{rankLabel(card)}</span>
-        <span class="text-xs leading-none">{card.suit}</span>
+        {#if !hideColorAndSuit}
+          <span class="text-xs leading-none">{card.suit}</span>
+        {/if}
       </div>
     {/if}
   </div>

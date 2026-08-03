@@ -905,10 +905,10 @@
                 onclick={() => (columnTargetMode ? (isTargetable && onTargetColumn?.(ci)) : (isCardPlayable && startPlayCardAnimation(ci, ri, card)))}
                 class="block w-full text-left {columnTargetMode ? (isTargetable ? 'ring-2 ring-fuchsia-400 shadow-lg -translate-y-0.5' : '') : (isCardPlayable && playingAnimation === null && scoreReveal === null && cleanupAnimation === null && chainResetAnimation === null && !dealAnimationActive ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : '')} transition-transform disabled:cursor-not-allowed"
               >
-                <CardFace {card} covered={false} />
+                <CardFace {card} covered={false} {items} />
               </button>
             {:else}
-              <CardFace {card} covered={false} />
+              <CardFace {card} covered={false} {items} />
             {/if}
           </div>
         {/each}
@@ -949,7 +949,7 @@
     </button>
     <div bind:this={discardPileEl} class="w-16 {cleanupAnimation?.kind === 'discard' ? 'invisible' : ''}">
       {#if displayedDiscardTop}
-        <CardFace card={displayedDiscardTop} covered={false} />
+        <CardFace card={displayedDiscardTop} covered={false} {items} />
       {:else}
         <div class="w-full rounded-lg border-2 border-dashed border-emerald-800 flex items-center justify-center text-[10px] text-emerald-700" style="aspect-ratio: 2 / 3;">捨て札</div>
       {/if}
@@ -959,7 +959,7 @@
     {@const nextCard = wave.stock[wave.stock.length - 1]}
     <div class="flex flex-col items-center justify-center" style="margin-top:20px;">
       <div class="text-[10px] text-emerald-300/70 mb-1">次の札</div>
-      <CardFace card={nextCard} covered={false} />
+      <CardFace card={nextCard} covered={false} {items} />
     </div>
   {/if}
   <div bind:this={chainAreaEl} class="overflow-x-auto min-w-0 {cleanupAnimation?.kind === 'chain' || chainCleanedUp || chainResetAnimation !== null || dealAnimationActive ? 'invisible' : ''}">
@@ -974,7 +974,7 @@
               data-chain-card-id={entry.card.id}
               style="left:{j * params.ui.chainCardOffsetX}px; top:{entry.origin === 'draw' ? 20 : 0}px; z-index:{j + 1}; width:64px;"
             >
-              <CardFace card={entry.card} covered={false} />
+              <CardFace card={entry.card} covered={false} {items} />
             </div>
           {/each}
         </div>
@@ -1022,7 +1022,7 @@
     class="fixed pointer-events-none z-[100] ease-out"
     style="left:{playingAnimation.left}px; top:{playingAnimation.top}px; width:64px; transition-property:left,top; transition-duration:{playingAnimation.transitionMs}ms;"
   >
-    <CardFace card={playingAnimation.card} covered={false} />
+    <CardFace card={playingAnimation.card} covered={false} {items} />
   </div>
 {/if}
 
@@ -1047,7 +1047,7 @@
         class="fixed pointer-events-none z-[100] ease-out"
         style="left:{gatherCard.left}px; top:{gatherCard.top}px; width:64px; transform: translate(-50%, -50%); transition-property: left, top; transition-duration:{cleanupAnimation.transitionMs}ms;"
       >
-        <CardFace card={gatherCard.card} covered={false} />
+        <CardFace card={gatherCard.card} covered={false} {items} />
       </div>
     {/each}
   {:else}
@@ -1055,7 +1055,7 @@
       class="fixed pointer-events-none z-[100] ease-out"
       style="left:{cleanupAnimation.left}px; top:{cleanupAnimation.top}px; width:64px; transform: translate(-50%, -50%); transition-property: left, top; transition-duration:{cleanupAnimation.transitionMs}ms;"
     >
-      <CardFace card={cleanupAnimation.card} covered={false} />
+      <CardFace card={cleanupAnimation.card} covered={false} {items} />
     </div>
   {/if}
 {/if}
@@ -1066,7 +1066,7 @@
       class="fixed pointer-events-none z-[100] ease-out"
       style="left:{gatherCard.left}px; top:{gatherCard.top}px; width:64px; transform: translate(-50%, -50%); transition-property: left, top; transition-duration:{chainResetAnimation.transitionMs}ms;"
     >
-      <CardFace card={gatherCard.card} covered={false} />
+      <CardFace card={gatherCard.card} covered={false} {items} />
     </div>
   {/each}
 {/if}
@@ -1076,6 +1076,6 @@
     class="fixed pointer-events-none z-[100] ease-out"
     style="left:{dealingCard.left}px; top:{dealingCard.top}px; width:64px; transform: translate(-50%, -50%); transition-property: left, top; transition-duration:{dealingCard.transitionMs}ms;"
   >
-    <CardFace card={dealingCard.card} covered={false} />
+    <CardFace card={dealingCard.card} covered={false} {items} />
   </div>
 {/each}

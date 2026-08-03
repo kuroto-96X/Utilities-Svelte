@@ -139,4 +139,5 @@ export const ITEM_ACTUAL_EFFECTS: Record<ItemId, string> = {
   pact: '獲得点に常にx倍算する。isPlayableでチェーン最新実カードとのスート不一致を禁止する制約と対になる(制約自体はengine.tsのisPlayable内で実装)',
   crimson: '直接のスコア加算/倍算は持たない。cardColorsを通じて全ての札がredを含むものとして扱われ、色判定系の護符・isPlayableの色制約・秘儀ヴンヨー/ラグズの赤黒判定に影響する',
   jetBlack: '直接のスコア加算/倍算は持たない。cardColorsを通じて全ての札がblackを含むものとして扱われ、色判定系の護符・isPlayableの色制約・秘儀ヴンヨー/ラグズの赤黒判定に影響する',
+  silver: '獲得点に常にx倍算する。CardFace.svelte側でスート記号非表示・色をグレー統一する表示変更と対になる(スコア計算・isPlayable・コンボ継続判定には一切影響しない)',
 }
