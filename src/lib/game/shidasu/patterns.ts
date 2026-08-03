@@ -32,13 +32,19 @@ export interface SuitColorAnalysis {
   colorHeld: boolean
 }
 
-export function analyzeSuitColor(chain: Card[]): SuitColorAnalysis {
+export function analyzeSuitColor(chain: Card[], items: ItemId[] = []): SuitColorAnalysis {
   const realCards = chain.filter(c => !c.wild)
   if (realCards.length === 0) return { suitHeld: true, colorHeld: true }
   const first = realCards[0]
+  const firstColors = cardColors(first, items)
   return {
     suitHeld: realCards.every(c => c.suit === first.suit),
-    colorHeld: realCards.every(c => isRed(c) === isRed(first)),
+    // 全カードが「firstと共通の色を持つか」で判定する(紅蓮・漆黒で複数色を持つカードは
+    // どちらの色とも一致しうる、都合の良い解釈)
+    colorHeld: realCards.every(c => {
+      const cColors = cardColors(c, items)
+      return (cColors.red && firstColors.red) || (cColors.black && firstColors.black)
+    }),
   }
 }
 
@@ -183,7 +189,8 @@ export function evaluateChainBonus(
   stairMinLen: number = scoring.stairMinLen,
   roleBonusMultiplier: (name: RoleName) => number = () => 1,
   suitColorMinLen: number = scoring.suitColorMinLen,
-  oracleLevel: (name: RoleName) => number = () => 1
+  oracleLevel: (name: RoleName) => number = () => 1,
+  items: ItemId[] = []
 ): ChainBonusResult {
   if (chainBefore.length === 0) {
     return { bonus: 0, parts: [], patternFired: false, patternFiredCount: 0, roleFired: [] }
@@ -197,7 +204,7 @@ export function evaluateChainBonus(
 
   const chainIncludingThis = [...chainBefore, card]
 
-  const { suitHeld, colorHeld } = analyzeSuitColor(chainIncludingThis)
+  const { suitHeld, colorHeld } = analyzeSuitColor(chainIncludingThis, items)
   if (chainIncludingThis.length >= suitColorMinLen) {
     if (suitHeld) {
       const suitGain = Math.floor(scoring.suitBonus * oracleLevel('suit'))

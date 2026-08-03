@@ -40,6 +40,20 @@ describe('cardColors(紅蓮・漆黒を考慮した色判定)', () => {
   })
 })
 
+describe('analyzeSuitColor with 紅蓮・漆黒', () => {
+  test('紅蓮所持時、黒札のみのチェーンでもcolorHeldがtrueになる(赤札が混ざっても崩れない)', () => {
+    const chain = [card(1, '♠', 5), card(2, '♣', 6), card(3, '♥', 7)]
+    const result = analyzeSuitColor(chain, ['crimson'])
+    expect(result.colorHeld).toBe(true)
+  })
+
+  test('護符なしの場合、黒札と赤札が混在するとcolorHeldはfalse', () => {
+    const chain = [card(1, '♠', 5), card(2, '♣', 6), card(3, '♥', 7)]
+    const result = analyzeSuitColor(chain, [])
+    expect(result.colorHeld).toBe(false)
+  })
+})
+
 describe('chainContinuesPattern', () => {
   test('チェーンが空なら継続不可', () => {
     expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, [], card(1, '♠', 5))).toBe(false)

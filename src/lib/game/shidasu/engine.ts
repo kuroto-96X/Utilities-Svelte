@@ -396,7 +396,7 @@ export function playCard(
   }
   // 神託: 役ごとの現在レベルをそのまま基礎点の乗数として渡す(ウェーブ開始時点で固定済み)
   const oracleLevel = (name: RoleName): number => wave.oracleLevels[name] ?? 1
-  const chainResult = evaluateChainBonus(params.scoring, wave.chain, card, effectiveStairMinLen, roleBonusMultiplier, effectiveSuitColorMinLen, oracleLevel)
+  const chainResult = evaluateChainBonus(params.scoring, wave.chain, card, effectiveStairMinLen, roleBonusMultiplier, effectiveSuitColorMinLen, oracleLevel, items)
   base += chainResult.bonus
   parts.push(...chainResult.parts)
 
@@ -744,7 +744,7 @@ export function drawStock(
   }
 
   if (patternContinues) {
-    const { colorHeld, suitHeld } = analyzeSuitColor([...wave.chain, drawnCard])
+    const { colorHeld, suitHeld } = analyzeSuitColor([...wave.chain, drawnCard], items)
     const drawContinueCtx: DirectEffectContext = {
       comboBeforeReset: 0,
       hasPlayableColumns: true,
@@ -776,7 +776,7 @@ export function drawStock(
       // 神託: このパスは明星・ソウィロによる役倍率(roleBonusMultiplier)を通さない既存方針を維持しつつ、
       // 神託レベルは永続的な基礎点の一部として引き続き適用する
       const oracleLevel = (name: RoleName): number => wave.oracleLevels[name] ?? 1
-      const chainResult = evaluateChainBonus(params.scoring, wave.chain, drawnCard, effectiveStairMinLen, undefined, effectiveSuitColorMinLen, oracleLevel)
+      const chainResult = evaluateChainBonus(params.scoring, wave.chain, drawnCard, effectiveStairMinLen, undefined, effectiveSuitColorMinLen, oracleLevel, items)
       base += chainResult.bonus
       parts.push(...chainResult.parts)
       naiveRoleFiredThisChain = wave.roleFiredThisChain || chainResult.roleFired.length > 0
