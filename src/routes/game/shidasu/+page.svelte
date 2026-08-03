@@ -321,7 +321,7 @@
   }
 
   function handleUseOracle(roleName: RoleName) {
-    run = useOracle(run, roleName)
+    run = useOracle(params, run, roleName)
   }
 
   let draggingItemIndex = $state<number | null>(null)

@@ -1150,7 +1150,10 @@ export function useRite(params: ShidasuParams, run: RunState, riteId: RiteId, ra
   if (!canUseRite(params, run.wave, riteId)) return run
   const idx = run.rites.indexOf(riteId)
   if (idx === -1) return run
-  const wave = applyRiteEffect(params, run.wave, riteId, rand, run.items)
+  let wave = applyRiteEffect(params, run.wave, riteId, rand, run.items)
+  // 果断・星霜: 天啓・神託・秘儀のいずれかを使用するたび永続的に加算する
+  if (run.items.includes('discretion')) wave = { ...wave, discretionN: wave.discretionN + params.talismans.discretion.n }
+  if (run.items.includes('frost')) wave = { ...wave, frostX: wave.frostX + params.talismans.frost.x }
   const rites = [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)]
   return { ...run, wave, rites }
 }
@@ -1462,7 +1465,10 @@ export function useRevelation(
   const idx = run.revelations.indexOf(revelationId)
   if (idx === -1) return run
   if (!canUseRevelation(params, run.wave, revelationId)) return run
-  const { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
+  let { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
+  // 果断・星霜: 天啓・神託・秘儀のいずれかを使用するたび永続的に加算する
+  if (run.items.includes('discretion')) wave = { ...wave, discretionN: wave.discretionN + params.talismans.discretion.n }
+  if (run.items.includes('frost')) wave = { ...wave, frostX: wave.frostX + params.talismans.frost.x }
   const extraTableauRows = revelationId === 'kyo' ? run.extraTableauRows + params.revelations.kyo.n : run.extraTableauRows
   const revelations = [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
   return { ...run, wave, deckComposition, revelations, extraTableauRows }
@@ -1523,13 +1529,18 @@ export function closePackOracleSelect(run: RunState): RunState {
 
 // 所持中の神託を1つ消費する。playingフェーズでのみ呼べる(ショップ内フェーズでは呼べない)。
 // run/wave両方のoracleLevelsを同期する。盤面への直接効果は無い。
-export function useOracle(run: RunState, roleName: RoleName): RunState {
+export function useOracle(params: ShidasuParams, run: RunState, roleName: RoleName): RunState {
   if (run.phase !== 'playing') return run
   const idx = run.oracles.indexOf(roleName)
   if (idx === -1) return run
   const oracles = [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)]
   const oracleLevels = { ...run.oracleLevels, [roleName]: run.oracleLevels[roleName] + 1 }
-  const wave = run.wave ? { ...run.wave, oracleLevels } : run.wave
+  let wave = run.wave ? { ...run.wave, oracleLevels } : run.wave
+  // 果断・星霜: 天啓・神託・秘儀のいずれかを使用するたび永続的に加算する
+  if (wave) {
+    if (run.items.includes('discretion')) wave = { ...wave, discretionN: wave.discretionN + params.talismans.discretion.n }
+    if (run.items.includes('frost')) wave = { ...wave, frostX: wave.frostX + params.talismans.frost.x }
+  }
   return { ...run, oracles, oracleLevels, wave }
 }
 

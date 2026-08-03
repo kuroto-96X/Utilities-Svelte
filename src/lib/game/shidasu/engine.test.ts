@@ -431,6 +431,45 @@ describe('果断・星霜の基盤(startWave/resolveWaveEndでの同期)', () =>
   })
 })
 
+describe('果断・星霜: 秘儀/天啓/神託使用でdiscretionN・frostXが加算される', () => {
+  test('秘儀使用後、discretionNが10から20になる(果断所持時)', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, ['discretion'], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: ['discretion'], rites: ['raidho'] }
+    const next = useRite(DEFAULT_PARAMS, run, 'raidho', createRng(1))
+    expect(next.wave!.discretionN).toBe(20)
+  })
+
+  test('果断を所持していなければdiscretionNは変化しない', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: [], rites: ['raidho'] }
+    const next = useRite(DEFAULT_PARAMS, run, 'raidho', createRng(1))
+    expect(next.wave!.discretionN).toBe(10)
+  })
+
+  test('秘儀使用後、frostXが1から1.01になる(星霜所持時)', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, ['frost'], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: ['frost'], rites: ['raidho'] }
+    const next = useRite(DEFAULT_PARAMS, run, 'raidho', createRng(1))
+    expect(next.wave!.frostX).toBeCloseTo(1.01)
+  })
+
+  test('神託使用後、discretionN・frostXが両方加算される(果断・星霜を両方所持)', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, ['discretion', 'frost'], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: ['discretion', 'frost'], oracles: ['flush'] }
+    const next = useOracle(DEFAULT_PARAMS, run, 'flush')
+    expect(next.wave!.discretionN).toBe(20)
+    expect(next.wave!.frostX).toBeCloseTo(1.01)
+  })
+
+  test('天啓使用後、discretionN・frostXが加算される(果断・星霜を所持)', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, ['discretion', 'frost'], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: ['discretion', 'frost'], revelations: ['shin'] }
+    const next = useRevelation(DEFAULT_PARAMS, run, 'shin', null, createRng(1))
+    expect(next.wave!.discretionN).toBe(20)
+    expect(next.wave!.frostX).toBeCloseTo(1.01)
+  })
+})
+
 describe('playCard', () => {
   const scoring = DEFAULT_PARAMS.scoring
 
@@ -3868,7 +3907,7 @@ describe('useOracle(所持神託の消費、playingフェーズ限定)', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
     const run: RunState = { ...createInitialRun(), phase: 'playing', wave, oracles: ['flush'] }
     const before = run.oracleLevels.flush
-    const result = useOracle(run, 'flush')
+    const result = useOracle(DEFAULT_PARAMS, run, 'flush')
     expect(result.oracleLevels.flush).toBe(before + 1)
     expect(result.wave!.oracleLevels.flush).toBe(before + 1)
     expect(result.oracles).toEqual([])
@@ -3877,12 +3916,12 @@ describe('useOracle(所持神託の消費、playingフェーズ限定)', () => {
   test('所持していない神託は使用できない', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
     const run: RunState = { ...createInitialRun(), phase: 'playing', wave, oracles: [] }
-    expect(useOracle(run, 'flush')).toBe(run)
+    expect(useOracle(DEFAULT_PARAMS, run, 'flush')).toBe(run)
   })
 
   test('shopフェーズでは使用できない(spec §6の通りplayingフェーズ限定)', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
     const run: RunState = { ...createInitialRun(), phase: 'shop', wave, oracles: ['flush'] }
-    expect(useOracle(run, 'flush')).toBe(run)
+    expect(useOracle(DEFAULT_PARAMS, run, 'flush')).toBe(run)
   })
 })

@@ -140,4 +140,8 @@ export const ITEM_ACTUAL_EFFECTS: Record<ItemId, string> = {
   crimson: '直接のスコア加算/倍算は持たない。cardColorsを通じて全ての札がredを含むものとして扱われ、色判定系の護符・isPlayableの色制約・秘儀ヴンヨー/ラグズの赤黒判定に影響する',
   jetBlack: '直接のスコア加算/倍算は持たない。cardColorsを通じて全ての札がblackを含むものとして扱われ、色判定系の護符・isPlayableの色制約・秘儀ヴンヨー/ラグズの赤黒判定に影響する',
   silver: '獲得点に常にx倍算する。CardFace.svelte側でスート記号非表示・色をグレー統一する表示変更と対になる(スコア計算・isPlayable・コンボ継続判定には一切影響しない)',
+
+  // グループ18: 秘儀/天啓/神託使用への永続加算
+  discretion: '所持中、秘儀・天啓・神託のいずれかを使用するたびwave.discretionNに永続的にnを加算する(初期値10から開始)',
+  frost: '所持中、秘儀・天啓・神託のいずれかを使用するたびwave.frostXに永続的にxを加算する(初期値1から開始)',
 }
