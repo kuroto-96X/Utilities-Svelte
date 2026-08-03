@@ -37,20 +37,28 @@ function countRankInChain(chain: Card[], rank: Card['rank']): number {
   return real + wild
 }
 
-// 赤黒の差(diff)をワイルドで埋めて同数にできるかを判定する。
-// ワイルドをwildToRed/wildToBlackに振り分けてrealRed+wildToRed = realBlack+wildToBlackを
-// 満たすには、wildToRed-wildToBlack = diffかつwildToRed+wildToBlack = wildCountを共に
-// 満たす非負整数解が要る。これはdiff<=wildCountに加えて、両者の差(wildCount-diff)が
-// 偶数である場合のみ整数解になる(そうでなければワイルドを半端に割ることになり不可能)。
-// (wildCount-diff)の偶奇は合計枚数(realRed+realBlack+wildCount)の偶奇と一致するため、
-// 後者で判定する。
-function redBlackBalanced(chain: Card[]): boolean {
-  const realRed = chain.filter(c => !c.wild && isRed(c)).length
-  const realBlack = chain.filter(c => !c.wild && !isRed(c)).length
+// 赤黒の差(diff)をワイルドで埋めて同数にできるかを判定する。紅蓮・漆黒所持時、両方の性質を
+// 持つカード(例: 紅蓮所持時の黒札はred:true・black:trueの両方)は、赤としても黒としても
+// カウントできる「都合の良い解釈」を適用する。具体的には、実カードのうち「赤のみ(blackを
+// 持たない)」枚数をrealRedOnly、「黒のみ」枚数をrealBlackOnly、「両方持つ(紅蓮/漆黒の
+// 効果で拡張されたカード)」枚数をflexibleとし、flexibleはワイルドと同様どちらにも
+// 割り振れる母数として扱う。
+function redBlackBalanced(chain: Card[], items: ItemId[]): boolean {
+  const realCards = chain.filter(c => !c.wild)
+  let realRedOnly = 0
+  let realBlackOnly = 0
+  let flexible = 0
+  for (const c of realCards) {
+    const colors = cardColors(c, items)
+    if (colors.red && colors.black) flexible += 1
+    else if (colors.red) realRedOnly += 1
+    else realBlackOnly += 1
+  }
   const wildCount = chain.filter(c => c.wild).length
-  const diff = Math.abs(realRed - realBlack)
-  const totalIsEven = (realRed + realBlack + wildCount) % 2 === 0
-  return diff <= wildCount && totalIsEven
+  const totalFlexible = wildCount + flexible
+  const diff = Math.abs(realRedOnly - realBlackOnly)
+  const totalIsEven = (realRedOnly + realBlackOnly + totalFlexible) % 2 === 0
+  return diff <= totalFlexible && totalIsEven
 }
 
 export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'clearBonus'; effect: ItemEffect }>> = {
@@ -183,12 +191,12 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
   balance: {
     channel: 'gained',
     effect: (v, ctx, p) =>
-      redBlackBalanced(ctx.chain) ? { value: v + p.talismans.balance.n, part: addPart('均衡', p.talismans.balance.n) } : { value: v, part: null },
+      redBlackBalanced(ctx.chain, ctx.items) ? { value: v + p.talismans.balance.n, part: addPart('均衡', p.talismans.balance.n) } : { value: v, part: null },
   },
   harmony: {
     channel: 'gained',
     effect: (v, ctx, p) => {
-      if (!redBlackBalanced(ctx.chain)) return { value: v, part: null }
+      if (!redBlackBalanced(ctx.chain, ctx.items)) return { value: v, part: null }
       const factor = p.talismans.harmony.x
       return { value: v * factor, part: multiplyPart('調和', factor) }
     },

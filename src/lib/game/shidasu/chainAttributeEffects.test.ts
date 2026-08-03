@@ -145,6 +145,20 @@ describe('applyItemEffects (グループ4-c: 枚数カウント系)', () => {
     const result = applyItemEffects('gained', 100, ['harmony'], ctx({ chain: [card(1, '♠', 3), card(2, '♥', 5)] }), params)
     expect(result.value).toBe(100 * params.talismans.harmony.x)
   })
+
+  test('均衡+紅蓮: 黒2枚では護符なしなら不成立、紅蓮所持時は黒札がredも含むため成立する', () => {
+    const chain = [card(1, '♠', 3), card(2, '♣', 4)]
+    const withoutCrimson = applyItemEffects('gained', 100, ['balance'], ctx({ chain }), params)
+    expect(withoutCrimson.value).toBe(100)
+    const withCrimson = applyItemEffects('gained', 100, ['balance', 'crimson'], ctx({ chain, items: ['balance', 'crimson'] }), params)
+    expect(withCrimson.value).toBe(100 + params.talismans.balance.n)
+  })
+
+  test('均衡+紅蓮: 赤3枚は紅蓮所持時でも不成立(紅蓮は黒→赤拡張のみ)', () => {
+    const chain = [card(1, '♥', 3), card(2, '♦', 4), card(3, '♥', 5)]
+    const result = applyItemEffects('gained', 100, ['balance', 'crimson'], ctx({ chain, items: ['balance', 'crimson'] }), params)
+    expect(result.value).toBe(100)
+  })
 })
 
 describe('applyItemEffects (グループ4-d: 既存フラグ再利用・KAループ系)', () => {
