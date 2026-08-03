@@ -2,7 +2,7 @@
 import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, Star, StarRestriction } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
-import { isFace, chainContinuesPattern, evaluateChainBonus, analyzeSuitColor, countSameRankBefore, countSameRankForWildPlay } from './patterns'
+import { isFace, chainContinuesPattern, evaluateChainBonus, analyzeSuitColor, countSameRankBefore, countSameRankForWildPlay, cardColors } from './patterns'
 import { addPart, multiplyPart, lockPart, type ScorePart } from './scoreParts'
 import { rollItemOffer } from './items'
 import { applyDirectEffects, type DirectEffectContext } from './directEffects'
@@ -21,43 +21,53 @@ export function rankLabel(card: Card): string {
   return RANK_LABEL[card.rank] ?? String(card.rank)
 }
 
-export function isPlayable(modifier: StageModifier, wave: WaveState, card: Card): boolean {
+export function isPlayable(modifier: StageModifier, wave: WaveState, card: Card, items: ItemId[] = []): boolean {
   // faceLockはワイルド(場札含む)より優先して評価する: ワイルド場札でも絵札はコンボ不足なら拒否する
   if (modifier === 'faceLock' && isFace(card) && wave.combo < 2) return false
   if (card.wild || wave.foundation.wild) return true
   const d = Math.abs(card.rank - wave.foundation.rank)
-  if (d === 1) return true
-  if (d === 12 && modifier !== 'noLoop') return true
-  // エワズ発動中は、そのウェーブが終わるまでランク差2(ループ越え含む)も許可する。
-  // 階段パターン判定(analyzeStair)には一切影響しない。
-  if (wave.ehwazActiveThisWave) {
-    if (d === 2) return true
-    if (d === 11 && modifier !== 'noLoop') return true
+  const rankOk = d === 1 || (d === 12 && modifier !== 'noLoop') ||
+    (wave.ehwazActiveThisWave && (d === 2 || (d === 11 && modifier !== 'noLoop')))
+  if (!rankOk) return false
+
+  // 誓約・契り: チェーンの最新実カードと色/スートが一致しなければ取れない(チェーンが空なら制約なし)
+  const lastChainCard = wave.chain[wave.chain.length - 1]
+  if (lastChainCard && !lastChainCard.wild) {
+    if (items.includes('vow')) {
+      const lastColors = cardColors(lastChainCard, items)
+      const cardCol = cardColors(card, items)
+      const colorMatches = (lastColors.red && cardCol.red) || (lastColors.black && cardCol.black)
+      if (!colorMatches) return false
+    }
+    if (items.includes('pact') && !card.wild && lastChainCard.suit !== card.suit) {
+      return false
+    }
   }
-  return false
+
+  return true
 }
 
 // アルギズ発動中は列内の全カードが、それ以外は一番上のカードのみがプレイ対象になる。
 // 対象カードのうち実際にisPlayableを満たす行インデックスの集合を返す(判定基準自体は変わらない)。
-export function getPlayableRowsInColumn(modifier: StageModifier, wave: WaveState, colIndex: number): Set<number> {
+export function getPlayableRowsInColumn(modifier: StageModifier, wave: WaveState, colIndex: number, items: ItemId[] = []): Set<number> {
   const col = wave.tableau[colIndex]
   const result = new Set<number>()
   if (!col || col.length === 0) return result
   if (wave.playFromAnywhereActiveThisWave) {
     col.forEach((c, ri) => {
-      if (isPlayable(modifier, wave, c)) result.add(ri)
+      if (isPlayable(modifier, wave, c, items)) result.add(ri)
     })
   } else {
     const topIndex = col.length - 1
-    if (isPlayable(modifier, wave, col[topIndex])) result.add(topIndex)
+    if (isPlayable(modifier, wave, col[topIndex], items)) result.add(topIndex)
   }
   return result
 }
 
-export function getPlayableColumns(modifier: StageModifier, wave: WaveState): Set<number> {
+export function getPlayableColumns(modifier: StageModifier, wave: WaveState, items: ItemId[] = []): Set<number> {
   const result = new Set<number>()
   wave.tableau.forEach((col, i) => {
-    if (getPlayableRowsInColumn(modifier, wave, i).size > 0) result.add(i)
+    if (getPlayableRowsInColumn(modifier, wave, i, items).size > 0) result.add(i)
   })
   return result
 }
@@ -358,7 +368,7 @@ export function playCard(
   if (row !== col.length - 1 && !wave.playFromAnywhereActiveThisWave) return { wave, deckComposition }
   const card = col[row]
   if (!card) return { wave, deckComposition }
-  if (!isPlayable(modifier, wave, card)) return { wave, deckComposition }
+  if (!isPlayable(modifier, wave, card, items)) return { wave, deckComposition }
 
   // 黄金: 通常のコンボ加算処理そのものを+1ではなく+2にする(他の護符には無干渉)
   // イサ(凍結)発動中は加算自体を行わない

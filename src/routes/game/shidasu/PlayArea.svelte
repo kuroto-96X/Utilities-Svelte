@@ -799,7 +799,7 @@
   const comboColor = ['text-emerald-100', 'text-yellow-300', 'text-orange-400', 'text-rose-400']
   const comboScale = ['scale-100', 'scale-105', 'scale-110', 'scale-125']
 
-  let playableCols = $derived(getPlayableColumns(modifier, wave))
+  let playableCols = $derived(getPlayableColumns(modifier, wave, items))
   let remainingCards = $derived(remainingCount(wave.tableau))
   let displayComboTier = $derived.by(() => {
     const [t1, t2, t3] = params.ui.comboTierThresholds
@@ -898,7 +898,7 @@
           >
             {#if isSelectable}
               {@const isTargetable = columnTargetMode && canTargetColumn(ci)}
-              {@const isCardPlayable = !columnTargetMode && wave.status === 'playing' && isPlayable(modifier, wave, card)}
+              {@const isCardPlayable = !columnTargetMode && wave.status === 'playing' && isPlayable(modifier, wave, card, items)}
               <button
                 type="button"
                 disabled={playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive}

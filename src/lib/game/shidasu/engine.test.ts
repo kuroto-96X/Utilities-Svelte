@@ -211,6 +211,64 @@ describe('isPlayable', () => {
   })
 })
 
+describe('isPlayable with 誓約・契り', () => {
+  test('誓約所持時、チェーン最新札と異なる色のカードは取れない', () => {
+    const wave = makeWave({
+      foundation: card(0, '♥', 5),
+      chain: [card(0, '♥', 5)],
+    })
+    expect(isPlayable('none', wave, card(1, '♠', 6), ['vow'])).toBe(false)
+  })
+
+  test('誓約所持時、チェーン最新札と同じ色のカードは取れる', () => {
+    const wave = makeWave({
+      foundation: card(0, '♥', 5),
+      chain: [card(0, '♥', 5)],
+    })
+    expect(isPlayable('none', wave, card(1, '♦', 6), ['vow'])).toBe(true)
+  })
+
+  test('誓約所持時、チェーンが空(ウェーブ最初の1枚)なら色制約は適用されない', () => {
+    const wave = makeWave({
+      foundation: card(0, '♥', 5),
+      chain: [],
+    })
+    expect(isPlayable('none', wave, card(1, '♠', 6), ['vow'])).toBe(true)
+  })
+
+  test('誓約を所持していなければ色制約は適用されない', () => {
+    const wave = makeWave({
+      foundation: card(0, '♥', 5),
+      chain: [card(0, '♥', 5)],
+    })
+    expect(isPlayable('none', wave, card(1, '♠', 6), [])).toBe(true)
+  })
+
+  test('契り所持時、チェーン最新札と異なるスートのカードは取れない', () => {
+    const wave = makeWave({
+      foundation: card(0, '♥', 5),
+      chain: [card(0, '♥', 5)],
+    })
+    expect(isPlayable('none', wave, card(1, '♦', 6), ['pact'])).toBe(false)
+  })
+
+  test('契り所持時、チェーン最新札と同じスートのカードは取れる', () => {
+    const wave = makeWave({
+      foundation: card(0, '♥', 5),
+      chain: [card(0, '♥', 5)],
+    })
+    expect(isPlayable('none', wave, card(1, '♥', 6), ['pact'])).toBe(true)
+  })
+
+  test('誓約+紅蓮所持時、黒札のチェーンに対して赤札(紅蓮で黒扱いも可)が取れる', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      chain: [card(0, '♠', 5)],
+    })
+    expect(isPlayable('none', wave, card(1, '♥', 6), ['vow', 'crimson'])).toBe(true)
+  })
+})
+
 describe('getPlayableColumns / remainingCount', () => {
   test('各列の一番手前のカードのみ判定対象になる', () => {
     const wave = makeWave({
