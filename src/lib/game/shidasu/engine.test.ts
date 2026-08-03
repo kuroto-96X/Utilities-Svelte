@@ -123,6 +123,8 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     dedicationX: 1,
     diligenceX: 1,
     divineProtectionX: 1,
+    discretionN: 10,
+    frostX: 1,
     roleEchoUsedThisCombo: {},
     sameRankEchoUsedThisCombo: [],
     pendingRoleEcho: null,
@@ -412,6 +414,20 @@ describe('剛毅(fortitude): Wave開始時、山札+場札の合計枚数に応�
     const midDeck = standardDeckComposition().slice(0, 40)
     const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], midDeck, 1)
     expect(wave.baseComboCount).toBe(0)
+  })
+})
+
+describe('果断・星霜の基盤(startWave/resolveWaveEndでの同期)', () => {
+  test('startWaveのdiscretionN・frostXのデフォルト値はそれぞれ10・1', () => {
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1)
+    expect(wave.discretionN).toBe(10)
+    expect(wave.frostX).toBe(1)
+  })
+
+  test('startWaveに渡した値がそのままwaveに反映される', () => {
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels(), 1, 1, 1, 30, 1.05)
+    expect(wave.discretionN).toBe(30)
+    expect(wave.frostX).toBe(1.05)
   })
 })
 
@@ -2924,7 +2940,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
-      dedicationX: 1, diligenceX: 1, divineProtectionX: 1,
+      dedicationX: 1, diligenceX: 1, divineProtectionX: 1, discretionN: 10, frostX: 1,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     }
@@ -2953,7 +2969,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
-      dedicationX: 1, diligenceX: 1, divineProtectionX: 1,
+      dedicationX: 1, diligenceX: 1, divineProtectionX: 1, discretionN: 10, frostX: 1,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     }
@@ -2976,7 +2992,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
-      dedicationX: 1, diligenceX: 1, divineProtectionX: 1,
+      dedicationX: 1, diligenceX: 1, divineProtectionX: 1, discretionN: 10, frostX: 1,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     }
@@ -3000,7 +3016,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
-      dedicationX: 1, diligenceX: 1, divineProtectionX: 1,
+      dedicationX: 1, diligenceX: 1, divineProtectionX: 1, discretionN: 10, frostX: 1,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     }
@@ -3025,7 +3041,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
-      dedicationX: 1, diligenceX: 1, divineProtectionX: 1,
+      dedicationX: 1, diligenceX: 1, divineProtectionX: 1, discretionN: 10, frostX: 1,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     }
@@ -3049,7 +3065,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       revelations: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
-      dedicationX: 1, diligenceX: 1, divineProtectionX: 1,
+      dedicationX: 1, diligenceX: 1, divineProtectionX: 1, discretionN: 10, frostX: 1,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     }

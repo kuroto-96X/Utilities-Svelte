@@ -27,4 +27,5 @@ export const ITEM_GROUPS: ItemGroup[] = [
   { label: 'グループ17: コアパラメータ書き換え', ids: ['sanctify', 'protection', 'earth', 'golden', 'morningStar', 'mercy', 'mirror', 'deadline'] },
   { label: 'グループ18: 判定ロジック内部干渉', ids: ['dedication', 'diligence', 'divineProtection', 'fortitude', 'waterMirror'] },
   { label: 'グループ19: デメリット付き倍算・色拡張イネーブラー', ids: ['vow', 'pact', 'crimson', 'jetBlack', 'silver'] },
+  { label: 'グループ22: 他カテゴリ依存', ids: ['discretion', 'frost'] },
 ]

@@ -65,6 +65,7 @@ export type ItemId =
   | 'waterMirror'
   | 'vow' | 'pact' | 'crimson' | 'jetBlack'
   | 'silver'
+  | 'discretion' | 'frost'
 
 // 秘儀(Rite): プレイ中に能動的に使用する消費アイテム。エルダー・フサルク(北欧ルーン文字)
 // 全24種すべてに効果を実装済みで、ここにメンバーとして揃っている。
@@ -193,6 +194,11 @@ export interface WaveState {
   dedicationX: number
   diligenceX: number
   divineProtectionX: number
+  // 果断・星霜用: 天啓・神託・秘儀を使用するたび永続的に加算/加算される値。
+  // ラン全体で永続する値だが、playingフェーズ中の使用イベント内でのみ更新されるため
+  // WaveState側に正本を持ち、startWaveでRunStateからコピー・resolveWaveEndでRunStateへ書き戻す。
+  discretionN: number
+  frostX: number
   // 鋼鉄用: 役の種類ごと(sameRank以外)に、今コンボで遅延複製をスケジュール済みか
   roleEchoUsedThisCombo: Partial<Record<RoleName, boolean>>
   // 鋼鉄用: sameRankは枚数段階(sameRankCountの値)ごとに使用済みかを記録する
@@ -305,6 +311,10 @@ export interface RunState {
   dedicationX: number
   diligenceX: number
   divineProtectionX: number
+  // 果断・星霜の累積値の永続値。WaveState側のdiscretionN/frostXの正本。
+  // beginRunで初期化され(discretionN=10, frostX=1)、resolveWaveEnd成功時にwaveの値で更新される。
+  discretionN: number
+  frostX: number
   // 温存中の神託(合算上限2をrevelationsと共有)。同じ役を複数所持できる
   oracles: RoleName[]
   // 現在のショップの商品構成。'shop'フェーズおよびそこから派生する福袋中身選択フェーズの間のみ非null

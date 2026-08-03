@@ -42,6 +42,8 @@ function baseWave(overrides: Partial<WaveState> = {}): WaveState {
     dedicationX: 1,
     diligenceX: 1,
     divineProtectionX: 1,
+    discretionN: 10,
+    frostX: 1,
     roleEchoUsedThisCombo: {},
     sameRankEchoUsedThisCombo: [],
     pendingRoleEcho: null,

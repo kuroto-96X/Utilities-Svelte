@@ -167,6 +167,8 @@ export interface ShidasuParams {
     crimson: { name: string; rarity: Rarity; desc: string }
     jetBlack: { name: string; rarity: Rarity; desc: string }
     silver: { name: string; x: number; rarity: Rarity; desc: string }
+    discretion: { name: string; n: number; rarity: Rarity; desc: string }
+    frost: { name: string; x: number; rarity: Rarity; desc: string }
   }
   rites: {
     raidho: { name: string; desc: string }
@@ -389,6 +391,8 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     crimson: { name: '紅蓮', rarity: 'U', desc: '全ての札が赤の札としても扱われる' },
     jetBlack: { name: '漆黒', rarity: 'U', desc: '全ての札が黒の札としても扱われる' },
     silver: { name: '白銀', x: 1.5, rarity: 'U', desc: '全ての札の色とスートが非表示になるが、x倍算(点数計算やコンボ継続の判定には引き続き色とスートが使われる)' },
+    discretion: { name: '果断', n: 10, rarity: 'C', desc: 'n点加算。nは{n}から開始し、この護符を所持してから天啓・神託・秘儀を使用するたびn+={n}される' },
+    frost: { name: '星霜', x: 0.01, rarity: 'R', desc: 'x倍算。xは1から開始し、この護符を所持してから天啓・神託・秘儀を使用するたびx+={x}される' },
   },
   rites: {
     raidho: { name: 'ᚱ', desc: '場札のランダムな1列を階段に変換する(最下段起点、昇順/降順はランダム)' },

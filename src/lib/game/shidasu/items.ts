@@ -35,6 +35,7 @@ export const ITEM_POOL: ItemId[] = [
   'waterMirror',
   'vow', 'pact', 'crimson', 'jetBlack',
   'silver',
+  'discretion', 'frost',
 ]
 
 export function itemName(id: ItemId, params: ShidasuParams): string {

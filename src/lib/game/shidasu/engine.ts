@@ -126,7 +126,9 @@ export function startWave(
   oracleLevels: Record<RoleName, number> = defaultOracleLevels(),
   dedicationX: number = 1,
   diligenceX: number = 1,
-  divineProtectionX: number = 1
+  divineProtectionX: number = 1,
+  discretionN: number = 10,
+  frostX: number = 1
 ): { wave: WaveState; deckComposition: DeckCard[] } {
   const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
   let idSeq = 0
@@ -194,6 +196,8 @@ export function startWave(
     dedicationX,
     diligenceX,
     divineProtectionX,
+    discretionN,
+    frostX,
     roleEchoUsedThisCombo: {},
     sameRankEchoUsedThisCombo: [],
     pendingRoleEcho: null,
@@ -1063,6 +1067,7 @@ export function createInitialRun(): RunState {
     oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool',
     stageStars: [], currency: 0,
     dedicationX: 1, diligenceX: 1, divineProtectionX: 1,
+    discretionN: 10, frostX: 1,
     oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
     pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
   }
@@ -1094,6 +1099,8 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
     dedicationX: 1,
     diligenceX: 1,
     divineProtectionX: 1,
+    discretionN: 10,
+    frostX: 1,
     oracles: [],
     shop: null,
     offerPickRemaining: 0,
@@ -1123,6 +1130,8 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
     dedicationX: wave.dedicationX,
     diligenceX: wave.diligenceX,
     divineProtectionX: wave.divineProtectionX,
+    discretionN: wave.discretionN,
+    frostX: wave.frostX,
   }
 
   // 8ステージクリア(stageIndex === stagesPerRun - 1のwaveSlot 3クリア)時のみ、ショップ突入を
@@ -1173,7 +1182,7 @@ function enterShop(params: ShidasuParams, run: RunState, _seed: number | undefin
 // ダミー値(0, 0)を渡す。生成したWaveStateは本番run.waveとは無関係な一時オブジェクトであり、
 // 呼び出し元(+page.svelte)がローカルstateとして保持・破棄する。
 export function startRevelationPreview(params: ShidasuParams, run: RunState, seed?: number): WaveState {
-  const { wave } = startWave(params, 0, 0, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX)
+  const { wave } = startWave(params, 0, 0, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX)
   return wave
 }
 
@@ -1181,7 +1190,7 @@ export function startRevelationPreview(params: ShidasuParams, run: RunState, see
 // 更新されている可能性がある)から実際のウェーブを配り直してプレイ画面へ進む。「次のWaveへ」ボタンから呼ぶ。
 export function finishShop(params: ShidasuParams, run: RunState, seed?: number): RunState {
   if (run.phase !== 'shop') return run
-  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX)
+  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX)
   return { ...run, phase: 'playing', wave, waveGeneration: run.waveGeneration + 1, deckComposition, shop: null }
 }
 
