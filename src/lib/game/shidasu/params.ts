@@ -162,6 +162,10 @@ export interface ShidasuParams {
     divineProtection: { name: string; n: number; rarity: Rarity; desc: string }
     fortitude: { name: string; n: number; rarity: Rarity; desc: string }
     waterMirror: { name: string; rarity: Rarity; desc: string }
+    vow: { name: string; x: number; rarity: Rarity; desc: string }
+    pact: { name: string; x: number; rarity: Rarity; desc: string }
+    crimson: { name: string; rarity: Rarity; desc: string }
+    jetBlack: { name: string; rarity: Rarity; desc: string }
   }
   rites: {
     raidho: { name: string; desc: string }
@@ -379,6 +383,10 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     divineProtection: { name: '加護', n: 0.01, rarity: 'R', desc: 'x倍算。xは1から開始し、この護符を所持してからロイヤルセットが成立するたびx+={n}される' },
     fortitude: { name: '剛毅', n: 30, rarity: 'R', desc: 'Wave開始時、山札と場札の合計枚数が{n}枚ごとに基礎コンボ数+1される' },
     waterMirror: { name: '水鏡', rarity: 'R', desc: '護符の並び順で自分の左隣にある護符の効果を、追加でもう一度発動させる(自分が先頭の場合は何も起きない)' },
+    vow: { name: '誓約', x: 2, rarity: 'U', desc: 'コンボ内の札と同じ色の札しか取れなくなるが、x倍算' },
+    pact: { name: '契り', x: 3, rarity: 'R', desc: 'コンボ内の札と同じスートの札しか取れなくなるが、x倍算' },
+    crimson: { name: '紅蓮', rarity: 'U', desc: '全ての札が赤の札としても扱われる' },
+    jetBlack: { name: '漆黒', rarity: 'U', desc: '全ての札が黒の札としても扱われる' },
   },
   rites: {
     raidho: { name: 'ᚱ', desc: '場札のランダムな1列を階段に変換する(最下段起点、昇順/降順はランダム)' },

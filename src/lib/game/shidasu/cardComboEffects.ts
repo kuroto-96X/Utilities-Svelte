@@ -110,4 +110,18 @@ export const CARD_COMBO_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'c
       return { value: v * factor, part: multiplyPart('朝霧', factor) }
     },
   },
+  vow: {
+    channel: 'gained',
+    effect: (v, _ctx, p) => {
+      const factor = p.talismans.vow.x
+      return { value: v * factor, part: multiplyPart('誓約', factor) }
+    },
+  },
+  pact: {
+    channel: 'gained',
+    effect: (v, _ctx, p) => {
+      const factor = p.talismans.pact.x
+      return { value: v * factor, part: multiplyPart('契り', factor) }
+    },
+  },
 }

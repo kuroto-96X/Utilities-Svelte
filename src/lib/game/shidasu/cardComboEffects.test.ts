@@ -122,4 +122,14 @@ describe('applyItemEffects (グループ2+3: カード単体属性・コンボ�
     expect(aboveOrEqual.value).toBe(100 * params.talismans.morningMist.x)
     expect(aboveOrEqual.parts.map(p => p.text)).toEqual([`朝霧×${params.talismans.morningMist.x}`])
   })
+
+  test('vow: 常にx倍算される', () => {
+    const result = applyItemEffects('gained', 100, ['vow'], ctx(), params)
+    expect(result.value).toBe(100 * params.talismans.vow.x)
+  })
+
+  test('pact: 常にx倍算される', () => {
+    const result = applyItemEffects('gained', 100, ['pact'], ctx(), params)
+    expect(result.value).toBe(100 * params.talismans.pact.x)
+  })
 })

@@ -135,4 +135,8 @@ export const ITEM_ACTUAL_EFFECTS: Record<ItemId, string> = {
   divineProtection: '所持中、ロイヤルセットが成立するたび累積倍率divineProtectionXに永続的にnを加算する(1から開始)。獲得点に常にdivineProtectionXを乗算する',
   fortitude: 'Wave開始時、その時点の山札+場札の合計枚数(deckComposition.length)がn枚ごとに基礎コンボ数(baseComboCount)を+1する',
   waterMirror: '護符の並び順(run.items配列)で自分の左隣(添字-1)にある護符の効果を、その時点の値に対して追加でもう一度適用する(自分が先頭の場合は何も起きない)',
+  vow: '獲得点に常にx倍算する。isPlayableでチェーン最新実カードとの色不一致を禁止する制約と対になる(制約自体はengine.tsのisPlayable内で実装)',
+  pact: '獲得点に常にx倍算する。isPlayableでチェーン最新実カードとのスート不一致を禁止する制約と対になる(制約自体はengine.tsのisPlayable内で実装)',
+  crimson: '直接のスコア加算/倍算は持たない。cardColorsを通じて全ての札がredを含むものとして扱われ、色判定系の護符・isPlayableの色制約・秘儀ヴンヨー/ラグズの赤黒判定に影響する',
+  jetBlack: '直接のスコア加算/倍算は持たない。cardColorsを通じて全ての札がblackを含むものとして扱われ、色判定系の護符・isPlayableの色制約・秘儀ヴンヨー/ラグズの赤黒判定に影響する',
 }
