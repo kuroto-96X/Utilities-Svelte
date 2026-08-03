@@ -74,6 +74,14 @@ describe('chainContinuesPattern', () => {
     expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '♥', 9))).toBe(false)
   })
 
+  test('紅蓮所持時、黒2枚のチェーンに赤札を捲っても同色継続する(紅蓮で黒札もredを含むため)', () => {
+    const chain = [card(1, '♠', 5), card(2, '♣', 6)]
+    const withoutCrimson = chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '♥', 9))
+    expect(withoutCrimson).toBe(false)
+    const withCrimson = chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '♥', 9), undefined, undefined, ['crimson'])
+    expect(withCrimson).toBe(true)
+  })
+
   test('階段が成立中で、捲った札が同方向を継続し長さがstairMinLen以上になれば継続', () => {
     const chain = [card(1, '♠', 5), card(2, '♣', 6)] // dir=+1, len=2
     expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(3, '♦', 7), 3)).toBe(true)

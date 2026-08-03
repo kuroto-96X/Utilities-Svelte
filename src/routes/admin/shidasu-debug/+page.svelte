@@ -176,7 +176,7 @@
 
   function handleExecuteRite(riteId: RiteId) {
     lastSnapshot = wave
-    wave = applyRiteEffect(params, wave, riteId, Math.random)
+    wave = applyRiteEffect(params, wave, riteId, Math.random, items)
   }
 
   let pendingDebugRevelation = $state<RevelationId | null>(null)

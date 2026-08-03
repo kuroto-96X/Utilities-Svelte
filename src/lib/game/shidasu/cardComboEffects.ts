@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/cardComboEffects.ts
 import type { ItemId } from './types'
-import { isRed, cardColors } from './patterns'
+import { cardColors } from './patterns'
 import { addPart, multiplyPart } from './scoreParts'
 import type { ItemEffect } from './itemEffects'
 

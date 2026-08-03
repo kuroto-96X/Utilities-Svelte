@@ -101,11 +101,11 @@ function convertCardToWildByDeckId(composition: DeckCard[], deckId: number): Dec
 
 // 山札(末尾が次にめくられる位置)の中から、今のチェーンが継続できる最初のカードを探し、末尾と交換する。
 // 候補が無ければ何もしない(元の配列をそのまま返す)。
-function arrangeNextCardForContinuation(scoring: ShidasuParams['scoring'], stock: Card[], chain: Card[], stairMinLen: number, suitColorMinLen: number = scoring.suitColorMinLen): Card[] {
+function arrangeNextCardForContinuation(scoring: ShidasuParams['scoring'], stock: Card[], chain: Card[], stairMinLen: number, suitColorMinLen: number = scoring.suitColorMinLen, items: ItemId[] = []): Card[] {
   if (stock.length === 0) return stock
   const lastIndex = stock.length - 1
   for (let i = 0; i <= lastIndex; i++) {
-    if (chainContinuesPattern(scoring, chain, stock[i], stairMinLen, suitColorMinLen)) {
+    if (chainContinuesPattern(scoring, chain, stock[i], stairMinLen, suitColorMinLen, items)) {
       if (i === lastIndex) return stock
       const arranged = [...stock]
       ;[arranged[i], arranged[lastIndex]] = [arranged[lastIndex], arranged[i]]
@@ -153,7 +153,7 @@ export function startWave(
   const effectiveStairMinLenAtDeal = items.includes('bridge') ? params.scoring.stairMinLen - params.talismans.bridge.m : params.scoring.stairMinLen
   const effectiveSuitColorMinLenAtDeal = items.includes('bridge') ? params.scoring.suitColorMinLen - params.talismans.bridge.m : params.scoring.suitColorMinLen
   const stockAfterDeal = items.includes('promise')
-    ? arrangeNextCardForContinuation(params.scoring, deck, [foundation], effectiveStairMinLenAtDeal, effectiveSuitColorMinLenAtDeal)
+    ? arrangeNextCardForContinuation(params.scoring, deck, [foundation], effectiveStairMinLenAtDeal, effectiveSuitColorMinLenAtDeal, items)
     : deck
 
   // 剛毅: Wave開始時、山札+場札の合計枚数(deckComposition.length、ワイルド生成後の値)が
@@ -711,7 +711,7 @@ export function drawStock(
 
   const effectiveStairMinLen = items.includes('bridge') ? params.scoring.stairMinLen - params.talismans.bridge.m : params.scoring.stairMinLen
   const effectiveSuitColorMinLen = items.includes('bridge') ? params.scoring.suitColorMinLen - params.talismans.bridge.m : params.scoring.suitColorMinLen
-  const wouldContinue = wave.linked && chainContinuesPattern(params.scoring, wave.chain, drawnCard, effectiveStairMinLen, effectiveSuitColorMinLen)
+  const wouldContinue = wave.linked && chainContinuesPattern(params.scoring, wave.chain, drawnCard, effectiveStairMinLen, effectiveSuitColorMinLen, items)
   const benevolenceFires = !wouldContinue && items.includes('benevolence') && !wave.benevolenceUsedThisCombo
   const patternContinues = wouldContinue || benevolenceFires
 
@@ -851,7 +851,7 @@ export function drawStock(
 
     const continueWave: WaveState = {
       ...wave,
-      stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [...wave.chain, drawnCard], effectiveStairMinLen, effectiveSuitColorMinLen) : newStock,
+      stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [...wave.chain, drawnCard], effectiveStairMinLen, effectiveSuitColorMinLen, items) : newStock,
       foundation: drawnCard,
       combo: naiveCombo,
       chain: [...wave.chain, drawnCard],
@@ -906,7 +906,7 @@ export function drawStock(
 
   let resetWave: WaveState = {
     ...resetComboFields(wave, params, card, 'draw'),
-    stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [card], effectiveStairMinLen, effectiveSuitColorMinLen) : newStock,
+    stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [card], effectiveStairMinLen, effectiveSuitColorMinLen, items) : newStock,
     lastDrawEffect: null,
     lastGain: null,
     score: scoreAfterStockEmpty + resetDirectGain,

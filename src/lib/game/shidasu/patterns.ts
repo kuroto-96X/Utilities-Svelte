@@ -287,11 +287,12 @@ export function chainContinuesPattern(
   chain: Card[],
   card: Card,
   stairMinLen: number = scoring.stairMinLen,
-  suitColorMinLen: number = scoring.suitColorMinLen
+  suitColorMinLen: number = scoring.suitColorMinLen,
+  items: ItemId[] = []
 ): boolean {
   const chainIncludingThis = [...chain, card]
 
-  const { suitHeld, colorHeld } = analyzeSuitColor(chainIncludingThis)
+  const { suitHeld, colorHeld } = analyzeSuitColor(chainIncludingThis, items)
   if (chainIncludingThis.length >= suitColorMinLen && (suitHeld || colorHeld)) return true
 
   const stairInfo = analyzeStair(chainIncludingThis)

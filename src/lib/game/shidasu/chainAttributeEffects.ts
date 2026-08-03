@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/chainAttributeEffects.ts
 import type { Card, ItemId, Suit } from './types'
-import { isRed, isFace, analyzeSuitColor, analyzeStair, stairUsesKALoop, cardColors } from './patterns'
+import { isFace, analyzeSuitColor, analyzeStair, stairUsesKALoop, cardColors } from './patterns'
 import { addPart, multiplyPart } from './scoreParts'
 import type { ItemEffect } from './itemEffects'
 

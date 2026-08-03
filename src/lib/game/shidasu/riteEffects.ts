@@ -1,6 +1,6 @@
 import type { Card, Rank, Suit, WaveState, RiteId, ItemId } from './types'
 import type { ShidasuParams } from './params'
-import { isRed, isFace, cardColors } from './patterns'
+import { isFace, cardColors } from './patterns'
 import { shuffleInPlace } from './deck'
 
 function pickRandom<T>(arr: T[], rand: () => number): T {
