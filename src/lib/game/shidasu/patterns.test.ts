@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/patterns.test.ts
 import { describe, test, expect } from 'vitest'
-import { isRed, analyzeSuitColor, analyzeStair, checkFlush, checkRoyalSet, countSameRankBefore, countSameRankForWildPlay, checkCompleteRun, evaluateChainBonus, stairUsesKALoop, chainContinuesPattern } from './patterns'
+import { isRed, analyzeSuitColor, analyzeStair, checkFlush, checkRoyalSet, countSameRankBefore, countSameRankForWildPlay, checkCompleteRun, evaluateChainBonus, stairUsesKALoop, chainContinuesPattern, cardColors } from './patterns'
 import type { Card, RoleName } from './types'
 import { DEFAULT_PARAMS } from './params'
 import { card } from './testHelpers'
@@ -11,6 +11,32 @@ describe('isRed', () => {
     expect(isRed(card(2, '♦', 5))).toBe(true)
     expect(isRed(card(3, '♠', 5))).toBe(false)
     expect(isRed(card(4, '♣', 5))).toBe(false)
+  })
+})
+
+describe('cardColors(紅蓮・漆黒を考慮した色判定)', () => {
+  test('護符なしの場合、赤札はred:trueのみ、黒札はblack:trueのみを返す', () => {
+    expect(cardColors(card(1, '♥', 5), [])).toEqual({ red: true, black: false })
+    expect(cardColors(card(1, '♦', 5), [])).toEqual({ red: true, black: false })
+    expect(cardColors(card(1, '♠', 5), [])).toEqual({ red: false, black: true })
+    expect(cardColors(card(1, '♣', 5), [])).toEqual({ red: false, black: true })
+  })
+
+  test('紅蓮所持時、黒札もred:trueになる(blackは元のまま)', () => {
+    expect(cardColors(card(1, '♠', 5), ['crimson'])).toEqual({ red: true, black: true })
+  })
+
+  test('紅蓮所持時、赤札はred:trueのまま(blackは変化しない)', () => {
+    expect(cardColors(card(1, '♥', 5), ['crimson'])).toEqual({ red: true, black: false })
+  })
+
+  test('漆黒所持時、赤札もblack:trueになる(redは元のまま)', () => {
+    expect(cardColors(card(1, '♥', 5), ['jetBlack'])).toEqual({ red: true, black: true })
+  })
+
+  test('紅蓮・漆黒を両方所持時、どのカードもred:true・black:trueになる', () => {
+    expect(cardColors(card(1, '♠', 5), ['crimson', 'jetBlack'])).toEqual({ red: true, black: true })
+    expect(cardColors(card(1, '♥', 5), ['crimson', 'jetBlack'])).toEqual({ red: true, black: true })
   })
 })
 

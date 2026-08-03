@@ -1,10 +1,26 @@
 // src/lib/game/shidasu/patterns.ts
-import type { Card, Suit, RoleName } from './types'
+import type { Card, Suit, RoleName, ItemId } from './types'
 import type { ShidasuParams } from './params'
 import { addPart, type ScorePart } from './scoreParts'
 
 export function isRed(card: Card): boolean {
   return card.suit === '♥' || card.suit === '♦'
+}
+
+export interface CardColors {
+  red: boolean
+  black: boolean
+}
+
+// 紅蓮・漆黒による色の拡張解釈。紅蓮所持時は全ての札がredとしても扱われ(blackは元のまま)、
+// 漆黒所持時は全ての札がblackとしても扱われる(redは元のまま)。両方所持時はどちらも常にtrue。
+// ワイルドカードの扱いは呼び出し元で個別に処理する(この関数はワイルドの母数を考慮しない)。
+export function cardColors(card: Card, items: ItemId[]): CardColors {
+  const baseRed = card.suit === '♥' || card.suit === '♦'
+  return {
+    red: baseRed || items.includes('crimson'),
+    black: !baseRed || items.includes('jetBlack'),
+  }
 }
 
 export function isFace(card: Card): boolean {
