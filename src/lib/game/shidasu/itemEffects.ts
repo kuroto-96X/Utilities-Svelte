@@ -43,6 +43,8 @@ export interface ItemEffectContext {
   drawContinueCountThisChain: number
   // 慈悲用: 次のコンボの間、倍率xを適用中か
   mercyActiveNextCombo: boolean
+  // 紅蓮・漆黒用: このプレイ時点で所持している護符一覧(cardColorsに渡すため)
+  items: ItemId[]
 }
 
 export type ItemEffect = (value: number, ctx: ItemEffectContext, params: ShidasuParams) => { value: number; part: ScorePart | null }

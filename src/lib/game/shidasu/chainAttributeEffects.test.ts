@@ -80,6 +80,14 @@ describe('applyItemEffects (グループ4-b: スート/色専有系)', () => {
     const result = applyItemEffects('gained', 100, ['sunlight'], ctx({ chain: [card(1, '♥', 3), card(2, '♦', 5)] }), params)
     expect(result.value).toBe(100 * params.talismans.sunlight.x)
   })
+
+  test('月光+紅蓮: 赤札が混ざっても紅蓮所持時は成立しない(紅蓮は黒→赤拡張のみ)が、漆黒所持時は赤札もblackを含むため成立する', () => {
+    const chain = [card(1, '♠', 3), card(2, '♥', 5)]
+    const withCrimson = applyItemEffects('gained', 100, ['moonlight', 'crimson'], ctx({ chain, items: ['moonlight', 'crimson'] }), params)
+    expect(withCrimson.value).toBe(100)
+    const withJetBlack = applyItemEffects('gained', 100, ['moonlight', 'jetBlack'], ctx({ chain, items: ['moonlight', 'jetBlack'] }), params)
+    expect(withJetBlack.value).toBe(100 * params.talismans.moonlight.x)
+  })
 })
 
 describe('applyItemEffects (グループ4-c: 枚数カウント系)', () => {

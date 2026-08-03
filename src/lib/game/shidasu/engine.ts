@@ -518,6 +518,7 @@ export function playCard(
     columnSweepActiveThisWave: newColumnSweepActiveThisWave,
     drawContinueCountThisChain: wave.drawContinueCountThisChain,
     mercyActiveNextCombo: wave.mercyActiveNextCombo,
+    items,
   }
 
   const itemResult = applyItemEffects('gained', base, items, itemEffectCtx, params)
@@ -811,6 +812,7 @@ export function drawStock(
         columnSweepActiveThisWave: wave.columnSweepActiveThisWave,
         drawContinueCountThisChain: newDrawContinueCount,
         mercyActiveNextCombo: wave.mercyActiveNextCombo,
+        items,
       }
       const itemResult = applyItemEffects('gained', base, items, naiveCtx, params)
       parts.push(...itemResult.parts)

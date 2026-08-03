@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/cardComboEffects.ts
 import type { ItemId } from './types'
-import { isRed } from './patterns'
+import { isRed, cardColors } from './patterns'
 import { addPart, multiplyPart } from './scoreParts'
 import type { ItemEffect } from './itemEffects'
 
@@ -49,15 +49,17 @@ export const CARD_COMBO_EFFECTS: Partial<Record<ItemId, { channel: 'gained' | 'c
   },
   dusk: {
     channel: 'gained',
+    // 直前の札がredを含み、かつ今回の札がblackを含めば成立(紅蓮所持時は黒札もredを含むため、
+    // 黒札→黒札の連続でも成立しうる)
     effect: (v, ctx, p) =>
-      isRed(ctx.previousFoundation) && !isRed(ctx.card)
+      cardColors(ctx.previousFoundation, ctx.items).red && cardColors(ctx.card, ctx.items).black
         ? { value: v + p.talismans.dusk.n, part: addPart('宵闇', p.talismans.dusk.n) }
         : { value: v, part: null },
   },
   dawn: {
     channel: 'gained',
     effect: (v, ctx, p) =>
-      !isRed(ctx.previousFoundation) && isRed(ctx.card)
+      cardColors(ctx.previousFoundation, ctx.items).black && cardColors(ctx.card, ctx.items).red
         ? { value: v + p.talismans.dawn.n, part: addPart('払暁', p.talismans.dawn.n) }
         : { value: v, part: null },
   },

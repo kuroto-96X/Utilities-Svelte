@@ -43,6 +43,7 @@ export function ctx(overrides: Partial<ItemEffectContext> = {}, params = DEFAULT
     columnSweepActiveThisWave: false,
     drawContinueCountThisChain: 0,
     mercyActiveNextCombo: false,
+    items: [],
     ...overrides,
   }
 }

@@ -59,6 +59,18 @@ describe('applyItemEffects (グループ2+3: カード単体属性・コンボ�
     expect(notTriggered.value).toBe(100)
   })
 
+  test('dusk・dawn+紅蓮: 黒→黒の連続でも紅蓮所持時は黒札がredも含むため両方成立する', () => {
+    const items = ['dusk', 'dawn', 'crimson'] as const
+    const contextItems = [...items]
+    const result = applyItemEffects('gained', 100, [...items], ctx({ previousFoundation: card(2, '♠', 4), card: card(1, '♣', 5), items: contextItems }), params)
+    expect(result.value).toBe(100 + params.talismans.dusk.n + params.talismans.dawn.n)
+  })
+
+  test('dusk・dawn: 護符なしの場合、黒→黒の連続では両方不成立', () => {
+    const result = applyItemEffects('gained', 100, ['dusk', 'dawn'], ctx({ previousFoundation: card(2, '♠', 4), card: card(1, '♣', 5) }), params)
+    expect(result.value).toBe(100)
+  })
+
   test('wit: ワイルドを取った時のみnを加算', () => {
     const triggered = applyItemEffects('gained', 100, ['wit'], ctx({ card: card(1, '★', 0, true) }), params)
     expect(triggered.value).toBe(100 + params.talismans.wit.n)

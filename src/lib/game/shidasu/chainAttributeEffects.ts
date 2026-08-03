@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/chainAttributeEffects.ts
 import type { Card, ItemId, Suit } from './types'
-import { isRed, isFace, analyzeSuitColor, analyzeStair, stairUsesKALoop } from './patterns'
+import { isRed, isFace, analyzeSuitColor, analyzeStair, stairUsesKALoop, cardColors } from './patterns'
 import { addPart, multiplyPart } from './scoreParts'
 import type { ItemEffect } from './itemEffects'
 
@@ -15,8 +15,14 @@ function chainSuitExclusive(chain: Card[], suit: Suit): boolean {
   return chain.every(c => c.wild || c.suit === suit)
 }
 
-function chainColorExclusive(chain: Card[], red: boolean): boolean {
-  return chain.every(c => c.wild || isRed(c) === red)
+// red=trueなら「全カードがredを含む」、red=falseなら「全カードがblackを含む」で判定する
+// (紅蓮・漆黒所持時、複数色を持つカードはどちらの専有判定も満たしうる)
+function chainColorExclusive(chain: Card[], red: boolean, items: ItemId[]): boolean {
+  return chain.every(c => {
+    if (c.wild) return true
+    const colors = cardColors(c, items)
+    return red ? colors.red : colors.black
+  })
 }
 
 function countSuitInChain(chain: Card[], suit: Suit): number {
@@ -116,7 +122,7 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
   moonlight: {
     channel: 'gained',
     effect: (v, ctx, p) => {
-      if (!chainColorExclusive(ctx.chain, false)) return { value: v, part: null }
+      if (!chainColorExclusive(ctx.chain, false, ctx.items)) return { value: v, part: null }
       const factor = p.talismans.moonlight.x
       return { value: v * factor, part: multiplyPart('月光', factor) }
     },
@@ -124,7 +130,7 @@ export const CHAIN_ATTRIBUTE_EFFECTS: Partial<Record<ItemId, { channel: 'gained'
   sunlight: {
     channel: 'gained',
     effect: (v, ctx, p) => {
-      if (!chainColorExclusive(ctx.chain, true)) return { value: v, part: null }
+      if (!chainColorExclusive(ctx.chain, true, ctx.items)) return { value: v, part: null }
       const factor = p.talismans.sunlight.x
       return { value: v * factor, part: multiplyPart('陽光', factor) }
     },
