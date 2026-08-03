@@ -1,6 +1,6 @@
-import type { Card, Rank, Suit, WaveState, RiteId } from './types'
+import type { Card, Rank, Suit, WaveState, RiteId, ItemId } from './types'
 import type { ShidasuParams } from './params'
-import { isRed, isFace } from './patterns'
+import { isRed, isFace, cardColors } from './patterns'
 import { shuffleInPlace } from './deck'
 
 function pickRandom<T>(arr: T[], rand: () => number): T {
@@ -27,9 +27,11 @@ function applyJera(wave: WaveState, rand: () => number): WaveState {
   return { ...wave, tableau }
 }
 
-function applyWunjo(wave: WaveState, rand: () => number): WaveState {
+function applyWunjo(wave: WaveState, rand: () => number, items: ItemId[]): WaveState {
   const realCards = wave.tableau.flat().filter(c => !c.wild)
-  const redCount = realCards.filter(isRed).length
+  // 紅蓮・漆黒所持時、両方の性質を持つカードはredCount側にカウントする(都合の良い解釈)。
+  // これによりtoRedの判定が紅蓮所持時は赤寄りに、漆黒所持時は挙動に影響しにくくなる。
+  const redCount = realCards.filter(c => cardColors(c, items).red).length
   const blackCount = realCards.length - redCount
   const toRed = redCount === blackCount ? rand() < 0.5 : redCount > blackCount
   const suits: Suit[] = toRed ? ['♥', '♦'] : ['♠', '♣']
@@ -109,11 +111,11 @@ function applyTiwaz(wave: WaveState, rand: () => number): WaveState {
   return { ...wave, chain, foundation: chain[chain.length - 1] }
 }
 
-function applyLaguz(wave: WaveState, rand: () => number): WaveState {
+function applyLaguz(wave: WaveState, rand: () => number, items: ItemId[]): WaveState {
   if (wave.chain.length < 2) return wave
   const realCards = wave.chain.filter(c => !c.wild)
   if (realCards.length === 0) return wave
-  const redCount = realCards.filter(isRed).length
+  const redCount = realCards.filter(c => cardColors(c, items).red).length
   const blackCount = realCards.length - redCount
   const toRed = redCount === blackCount ? rand() < 0.5 : redCount > blackCount
   const suits: Suit[] = toRed ? ['♥', '♦'] : ['♠', '♣']
@@ -208,14 +210,14 @@ export function canUseRite(_params: ShidasuParams, wave: WaveState, riteId: Rite
 }
 
 // 指定した秘儀の効果を適用した新しいWaveStateを返す。所持からの削除はengine.tsのuseRite側で行う。
-export function applyRiteEffect(params: ShidasuParams, wave: WaveState, riteId: RiteId, rand: () => number): WaveState {
+export function applyRiteEffect(params: ShidasuParams, wave: WaveState, riteId: RiteId, rand: () => number, items: ItemId[] = []): WaveState {
   switch (riteId) {
     case 'raidho':
       return applyRaidho(wave, rand)
     case 'jera':
       return applyJera(wave, rand)
     case 'wunjo':
-      return applyWunjo(wave, rand)
+      return applyWunjo(wave, rand, items)
     case 'othala':
       return applyOthala(wave, rand)
     case 'perthro':
@@ -235,7 +237,7 @@ export function applyRiteEffect(params: ShidasuParams, wave: WaveState, riteId: 
     case 'tiwaz':
       return applyTiwaz(wave, rand)
     case 'laguz':
-      return applyLaguz(wave, rand)
+      return applyLaguz(wave, rand, items)
     case 'eihwaz':
       return applyEihwaz(wave, params.rites.eihwaz.n)
     case 'ansuz':

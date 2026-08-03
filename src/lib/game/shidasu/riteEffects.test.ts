@@ -97,6 +97,17 @@ describe('riteEffects', () => {
     expect(next.tableau[0][2].wild).toBe(true)
   })
 
+  test('ウンヨー+紅蓮: 黒札のみの場札でも紅蓮所持時はredCountに算入され赤スートへ統一されうる', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♠', 3), card(2, '♣', 4)]],
+    })
+    // 決定的な乱数(常に0を返す)で、redCount===blackCountなら toRed = rand() < 0.5 = true
+    const withoutCrimson = applyRiteEffect(DEFAULT_PARAMS, wave, 'wunjo', () => 0, [])
+    expect(withoutCrimson.tableau[0].every(c => c.suit === '♠' || c.suit === '♣')).toBe(true)
+    const withCrimson = applyRiteEffect(DEFAULT_PARAMS, wave, 'wunjo', () => 0, ['crimson'])
+    expect(withCrimson.tableau[0].every(c => c.suit === '♥' || c.suit === '♦')).toBe(true)
+  })
+
   test('オセラ: 場札が一番多いスートに統一される', () => {
     const wave = baseWave({
       tableau: [[card(1, '♣', 3), card(2, '♣', 4), card(3, '♦', 5)]],

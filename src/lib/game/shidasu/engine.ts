@@ -1141,7 +1141,7 @@ export function useRite(params: ShidasuParams, run: RunState, riteId: RiteId, ra
   if (!canUseRite(params, run.wave, riteId)) return run
   const idx = run.rites.indexOf(riteId)
   if (idx === -1) return run
-  const wave = applyRiteEffect(params, run.wave, riteId, rand)
+  const wave = applyRiteEffect(params, run.wave, riteId, rand, run.items)
   const rites = [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)]
   return { ...run, wave, rites }
 }
