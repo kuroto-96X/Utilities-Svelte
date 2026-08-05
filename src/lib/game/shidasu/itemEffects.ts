@@ -70,7 +70,7 @@ export function applyItemEffects(
     const entry = ITEM_EFFECTS[id]
     if (entry && entry.channel === channel) {
       const result = entry.effect(value, ctx, params)
-      if (result.part) parts.push(result.part)
+      if (result.part) parts.push({ ...result.part, itemId: id })
       value = result.value
     }
     // 水鏡: 自分の左隣(i-1番目)の護符の効果を、追加でもう一度この時点の値に適用する
@@ -79,7 +79,7 @@ export function applyItemEffects(
       const leftEntry = ITEM_EFFECTS[leftId]
       if (leftEntry && leftEntry.channel === channel) {
         const echoResult = leftEntry.effect(value, ctx, params)
-        if (echoResult.part) parts.push(echoResult.part)
+        if (echoResult.part) parts.push({ ...echoResult.part, itemId: id }) // idはwaterMirror自身
         value = echoResult.value
       }
     }

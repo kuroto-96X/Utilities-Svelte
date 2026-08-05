@@ -28,6 +28,11 @@ describe('applyItemEffects', () => {
     expect(result.value).toBe(1000)
     expect(result.parts).toEqual([])
   })
+
+  test('護符効果パーツにはitemIdが付与される', () => {
+    const result = applyItemEffects('clearBonus', 1000, ['purify', 'temperance'], ctx({ stockRemaining: 4 }), params)
+    expect(result.parts.map(p => p.itemId)).toEqual(['purify', 'temperance'])
+  })
 })
 
 describe('水鏡(waterMirror): 左隣の護符の効果をもう一度発動させる', () => {
@@ -37,6 +42,11 @@ describe('水鏡(waterMirror): 左隣の護符の効果をもう一度発動さ�
     const result = applyItemEffects('clearBonus', 0, ['patience', 'waterMirror'], ctx({ stockRemaining: 5 }), params)
     const perApplication = 5 * params.talismans.patience.x
     expect(result.value).toBe(perApplication * 2)
+  })
+
+  test('水鏡のエコー分パーツのitemIdは水鏡自身(waterMirror)になる', () => {
+    const result = applyItemEffects('clearBonus', 0, ['patience', 'waterMirror'], ctx({ stockRemaining: 5 }), params)
+    expect(result.parts.map(p => p.itemId)).toEqual(['patience', 'waterMirror'])
   })
 
   test('水鏡が先頭にある場合(左隣が存在しない)、何も追加されない', () => {
