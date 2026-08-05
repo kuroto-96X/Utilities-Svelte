@@ -1,3 +1,5 @@
+import type { ItemId } from './types'
+
 // 得点内訳の1ステップを表す構造化データ。kind='add'は加算量、kind='multiply'は倍率をamountに持つ。
 // kind='lock'は特殊ステップで、それまでの仮合計に関わらず以降の合計を0にする(ボス得点ロック用)。
 // textは従来通りの表示用文字列(例: "基礎点+10")で、既存のテスト・非対応箇所での表示に使う。
@@ -7,6 +9,7 @@ export interface ScorePart {
   amount: number
   text: string
   cardIds?: number[] // ハイライト対象カードのCard.id一覧。対象カードが無いパーツ(基礎点・護符効果等)では省略する
+  itemId?: ItemId // ハイライト対象護符のID。護符効果パーツ以外(基礎点・パターン/役パーツ等)では省略する
 }
 
 // 護符の内訳表示用に倍率を丸めて整形する(浮動小数の誤差で末尾が長くなるのを防ぐ)
