@@ -13,6 +13,14 @@ describe('addPart / multiplyPart / lockPart', () => {
     expect(addPart('基礎点', 10)).toEqual({ label: '基礎点', kind: 'add', amount: 10, text: '基礎点+10' })
   })
 
+  it('addPartはcardIdsを渡すとScorePart.cardIdsに反映する', () => {
+    expect(addPart('同スート', 50, [1, 2, 3])).toEqual({ label: '同スート', kind: 'add', amount: 50, text: '同スート+50', cardIds: [1, 2, 3] })
+  })
+
+  it('addPartはcardIdsを省略するとcardIdsがundefinedになる', () => {
+    expect(addPart('基礎点', 10).cardIds).toBeUndefined()
+  })
+
   it('multiplyPartはkind=multiplyとtextを生成する', () => {
     expect(multiplyPart('コンボ倍率', 1.5)).toEqual({ label: 'コンボ倍率', kind: 'multiply', amount: 1.5, text: 'コンボ倍率×1.5' })
   })

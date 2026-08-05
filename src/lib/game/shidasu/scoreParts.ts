@@ -6,6 +6,7 @@ export interface ScorePart {
   kind: 'add' | 'multiply' | 'lock'
   amount: number
   text: string
+  cardIds?: number[] // ハイライト対象カードのCard.id一覧。対象カードが無いパーツ(基礎点・護符効果等)では省略する
 }
 
 // 護符の内訳表示用に倍率を丸めて整形する(浮動小数の誤差で末尾が長くなるのを防ぐ)
@@ -13,8 +14,8 @@ export function fmtMultiplier(n: number): string {
   return String(Math.round(n * 100) / 100)
 }
 
-export function addPart(label: string, amount: number): ScorePart {
-  return { label, kind: 'add', amount, text: `${label}+${amount}` }
+export function addPart(label: string, amount: number, cardIds?: number[]): ScorePart {
+  return { label, kind: 'add', amount, text: `${label}+${amount}`, cardIds }
 }
 
 export function multiplyPart(label: string, factor: number): ScorePart {
