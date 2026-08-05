@@ -24,6 +24,7 @@
     onTargetColumn,
     chainAreaExtra,
     onScoreRevealDone, waveKey, onCleanupDone,
+    onScorePartHighlight,
   }: {
     wave: WaveState
     params: ShidasuParams
@@ -48,6 +49,7 @@
     onScoreRevealDone?: () => void
     waveKey?: string
     onCleanupDone?: () => void
+    onScorePartHighlight?: (itemId: ItemId | null) => void
   } = $props()
 
   let tableauEl: HTMLDivElement | undefined = $state()
@@ -653,6 +655,7 @@
       if (scoreReveal) landPart(index)
       return
     }
+    onScorePartHighlight?.(part.itemId ?? null)
     const hintRect = noPlayableHintEl.getBoundingClientRect()
     partFlyIn = {
       text: part.text,
@@ -684,6 +687,7 @@
   function landPart(index: number) {
     if (!scoreReveal) return
     partFlyIn = null
+    onScorePartHighlight?.(null)
     scoreReveal = { ...scoreReveal, revealedCount: index + 1, totalScale: TOTAL_PULSE_SCALE, totalTransitionMs: 0 }
     // transitionMs:0でのスタイル変更をブラウザが実際に描画へ反映してから次のtransitionを開始するために
     // 2段rAFが必要。1段のrAFだけだと同一フレーム内でスタイル変更がバッチ処理され、
