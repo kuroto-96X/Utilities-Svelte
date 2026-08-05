@@ -33,6 +33,7 @@
   }
 
   let items = $state<ItemId[]>(loadSavedItems())
+  let highlightedItemId = $state<ItemId | null>(null)
   let deckComposition = $state<DeckCard[]>(standardDeckComposition())
   let oracleLevels = $state<Record<RoleName, number>>(defaultOracleLevels())
   let wave = $state<WaveState>(startWave(params, 0, 0, items, deckComposition, undefined, 0, oracleLevels).wave)
@@ -273,7 +274,7 @@
   <div class="flex-1 flex flex-wrap gap-1 justify-end">
     {#each [...new Set(items)] as id (id)}
       {@const n = items.filter(x => x === id).length}
-      <span class="text-xs bg-emerald-900 text-yellow-200/90 border border-yellow-600/40 rounded px-1.5 py-0.5" title={itemDesc(id, params)}>
+      <span class="text-xs bg-emerald-900 text-yellow-200/90 border border-yellow-600/40 rounded px-1.5 py-0.5 {highlightedItemId === id ? 'ring-2 ring-yellow-400' : ''}" title={itemDesc(id, params)}>
         {itemName(id, params)}{n > 1 ? `×${n}` : ''}
       </span>
     {/each}
@@ -305,6 +306,7 @@
           columnTargetMode={pendingDebugRevelation !== null}
           canTargetColumn={canTargetDebugColumn}
           onTargetColumn={handleTargetDebugColumn}
+          onScorePartHighlight={id => (highlightedItemId = id)}
         />
         <div class="mt-4 flex-1 min-h-0 overflow-y-auto">
           <DebugStatePanel {wave} {items} onForceDraw={handleForceDraw} />

@@ -54,6 +54,7 @@
   let measuredPlayHeight = $state(0)
 
   let run = $state<RunState>(createInitialRun())
+  let highlightedItemId = $state<ItemId | null>(null)
 
   // ショップ画面の「次のWaveへ」を押した後、ステージ画面を表示するかどうかのフラグ。
   // run.phaseとは独立したUI制御用のローカルstate。
@@ -531,7 +532,7 @@
     <div class="flex flex-wrap gap-1 justify-end">
       {#each [...new Set(run.items)] as id (id)}
         {@const n = run.items.filter(x => x === id).length}
-        <span class="text-xs bg-emerald-900 text-yellow-200/90 border border-yellow-600/40 rounded px-1.5 py-0.5" title={itemDesc(id, params)}>
+        <span class="text-xs bg-emerald-900 text-yellow-200/90 border border-yellow-600/40 rounded px-1.5 py-0.5 {highlightedItemId === id ? 'ring-2 ring-yellow-400' : ''}" title={itemDesc(id, params)}>
           {itemName(id, params)}{n > 1 ? `×${n}` : ''}
         </span>
       {/each}
@@ -663,6 +664,7 @@
     canTargetColumn={canTargetRevelationColumn}
     onTargetColumn={handleTargetColumn}
     chainAreaExtra={pendingRevelationTarget ? revelationTargetPrompt : undefined}
+    onScorePartHighlight={id => (highlightedItemId = id)}
   />
   <RoleStatusPanel {params} oracleLevels={run.oracleLevels} />
 {/if}
