@@ -684,6 +684,15 @@ describe('evaluateChainBonus', () => {
     expect(sameRankPart?.cardIds).toHaveLength(3)
   })
 
+  test('ワイルド自身をプレイした場合、同ランクパーツのcardIdsは既発生の最大ランク群の実カード+チェーン内の全ワイルド+今回のワイルドを持つ', () => {
+    const chainBefore = [card(1, '♠', 5), card(2, '♥', 5), card(3, '♦', 3), card(4, '♣', 3)]
+    // 5が2枚(id:1,2)・3が2枚(id:3,4) → Mapの挿入順で先に見つかる5が対象ランクとして選ばれる
+    const result = evaluateChainBonus(scoring, chainBefore, card(5, '★', 0, true))
+    const sameRankPart = result.parts.find(p => p.label === '同ランク')
+    expect(sameRankPart?.cardIds).toEqual(expect.arrayContaining([1, 2, 5]))
+    expect(sameRankPart?.cardIds).toHaveLength(3)
+  })
+
   test('コンプリートランパーツのcardIdsはチェーン全体のidを持つ', () => {
     const chainBefore = Array.from({ length: 12 }, (_, i) => card(i + 1, i % 2 === 0 ? '♠' : '♥', (i + 1) as Card['rank']))
     const result = evaluateChainBonus(scoring, chainBefore, card(13, '♦', 13))

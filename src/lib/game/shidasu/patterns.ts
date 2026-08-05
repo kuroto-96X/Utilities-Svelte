@@ -256,7 +256,27 @@ export function evaluateChainBonus(
   if (sameRankCount > 0) {
     const sameRankGain = Math.floor(scoring.sameRankBonusUnit * sameRankCount * oracleLevel('sameRank') * roleBonusMultiplier('sameRank'))
     bonus += sameRankGain
-    const sameRankCardIds = chainBefore.filter(c => c.wild || c.rank === card.rank).map(c => c.id).concat(card.id)
+    // ワイルド自身をプレイした場合、countSameRankForWildPlayが対象にする「既存の実カードのうち
+    // 最も多いランク」の実カード群+チェーン内の全ワイルド+今回のワイルドをハイライト対象にする
+    // (通常時は単純に「今回のカードと同ランクの実カード+ワイルド」でよい)
+    let sameRankCardIds: number[]
+    if (card.wild) {
+      const realRankCounts = new Map<Card['rank'], number>()
+      for (const c of chainBefore) {
+        if (!c.wild) realRankCounts.set(c.rank, (realRankCounts.get(c.rank) ?? 0) + 1)
+      }
+      let maxRank: Card['rank'] | null = null
+      let maxCount = 0
+      for (const [rank, count] of realRankCounts) {
+        if (count > maxCount) {
+          maxRank = rank
+          maxCount = count
+        }
+      }
+      sameRankCardIds = chainBefore.filter(c => c.wild || c.rank === maxRank).map(c => c.id).concat(card.id)
+    } else {
+      sameRankCardIds = chainBefore.filter(c => c.wild || c.rank === card.rank).map(c => c.id).concat(card.id)
+    }
     parts.push(addPart('同ランク', sameRankGain, sameRankCardIds))
     const sameRankUsedWild = card.wild || chainBefore.some(c => c.wild)
     roleFired.push({ name: 'sameRank', usedWild: sameRankUsedWild, amount: sameRankGain })
