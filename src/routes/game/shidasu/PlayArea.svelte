@@ -111,6 +111,7 @@
 
   interface PartFlyInState {
     text: string
+    cardIds: number[]
     phase: 'center' | 'toRow'
     left: number
     top: number
@@ -120,6 +121,7 @@
 
   let scoreReveal = $state<ScoreRevealState | null>(null)
   let partFlyIn = $state<PartFlyInState | null>(null)
+  let highlightedCardIds = $derived(new Set(partFlyIn?.cardIds ?? []))
   let displayedScore = $state(wave.score)
   // 捨て札常設UIの表示用スナップショット。wave.discardPileを直接参照すると、
   // チェーンリセットアニメーション実行中でもengine側は既に移動後の内容に
@@ -654,6 +656,7 @@
     const hintRect = noPlayableHintEl.getBoundingClientRect()
     partFlyIn = {
       text: part.text,
+      cardIds: part.cardIds ?? [],
       phase: 'center',
       left: hintRect.left + hintRect.width / 2,
       top: hintRect.top + hintRect.height / 2,
@@ -970,7 +973,7 @@
         <div class="relative" style="height:116px; width:{64 + (row.length - 1) * params.ui.chainCardOffsetX}px;">
           {#each row as entry, j (entry.card.id)}
             <div
-              class="absolute"
+              class="absolute rounded-lg {highlightedCardIds.has(entry.card.id) ? 'ring-4 ring-yellow-400' : ''}"
               data-chain-card-id={entry.card.id}
               style="left:{j * params.ui.chainCardOffsetX}px; top:{entry.origin === 'draw' ? 20 : 0}px; z-index:{j + 1}; width:64px;"
             >
