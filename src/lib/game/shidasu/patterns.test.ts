@@ -625,6 +625,79 @@ describe('evaluateChainBonus', () => {
     const result = evaluateChainBonus(DEFAULT_PARAMS.scoring, chainBefore, card(21, '♦', 9))
     expect(result.patternFiredCount).toBe(0)
   })
+
+  test('同スートパーツのcardIdsはチェーン全体(chainIncludingThis)のidを持つ', () => {
+    const chainBefore = [card(1, '♠', 5), card(2, '♠', 6)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♠', 7))
+    const suitPart = result.parts.find(p => p.label === '同スート')
+    expect(suitPart?.cardIds).toEqual([1, 2, 3])
+  })
+
+  test('同色パーツのcardIdsはチェーン全体のidを持つ', () => {
+    const chainBefore = [card(1, '♠', 5), card(2, '♣', 6)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♠', 7))
+    const colorPart = result.parts.find(p => p.label === '同色')
+    expect(colorPart?.cardIds).toEqual([1, 2, 3])
+  })
+
+  test('階段パーツのcardIdsはチェーン全体のidを持つ', () => {
+    const chainBefore = [card(1, '♠', 3), card(2, '♣', 4), card(3, '♦', 5), card(4, '♠', 6)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(5, '♣', 7))
+    const stairPart = result.parts.find(p => p.label.startsWith('階段'))
+    expect(stairPart?.cardIds).toEqual([1, 2, 3, 4, 5])
+  })
+
+  test('フラッシュパーツのcardIdsは直近4枚のidを持つ', () => {
+    const chainBefore = [card(1, '♦', 3), card(2, '♠', 5), card(3, '♣', 9)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(4, '♥', 2))
+    const flushPart = result.parts.find(p => p.label === 'フラッシュ')
+    expect(flushPart?.cardIds).toEqual([1, 2, 3, 4])
+  })
+
+  test('フラッシュが5枚目のチェーンで成立しても直近4枚のみがcardIdsになる', () => {
+    const chainBefore = [card(1, '♠', 1), card(2, '♦', 3), card(3, '♠', 5), card(4, '♣', 9)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(5, '♥', 2))
+    const flushPart = result.parts.find(p => p.label === 'フラッシュ')
+    expect(flushPart?.cardIds).toEqual([2, 3, 4, 5])
+  })
+
+  test('ロイヤルパーツのcardIdsは直近3枚のidを持つ', () => {
+    const chainBefore = [card(1, '♠', 13), card(2, '♥', 11)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 12))
+    const royalPart = result.parts.find(p => p.label === 'ロイヤル')
+    expect(royalPart?.cardIds).toEqual([1, 2, 3])
+  })
+
+  test('同ランクパーツのcardIdsは同ランクの実カード+今回のcardのidを持つ(順不同で比較)', () => {
+    const chainBefore = [card(1, '♠', 5), card(2, '♥', 9), card(3, '♦', 5)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(4, '♣', 5))
+    const sameRankPart = result.parts.find(p => p.label === '同ランク')
+    expect(sameRankPart?.cardIds).toEqual(expect.arrayContaining([1, 3, 4]))
+    expect(sameRankPart?.cardIds).toHaveLength(3)
+  })
+
+  test('同ランクパーツのcardIdsはワイルドを含む場合、ワイルドのidも含める', () => {
+    const chainBefore = [card(1, '♠', 5), card(2, '★', 0, true)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♥', 5))
+    const sameRankPart = result.parts.find(p => p.label === '同ランク')
+    expect(sameRankPart?.cardIds).toEqual(expect.arrayContaining([1, 2, 3]))
+    expect(sameRankPart?.cardIds).toHaveLength(3)
+  })
+
+  test('コンプリートランパーツのcardIdsはチェーン全体のidを持つ', () => {
+    const chainBefore = Array.from({ length: 12 }, (_, i) => card(i + 1, i % 2 === 0 ? '♠' : '♥', (i + 1) as Card['rank']))
+    const result = evaluateChainBonus(scoring, chainBefore, card(13, '♦', 13))
+    const completeRunPart = result.parts.find(p => p.label === 'コンプリートラン')
+    expect(completeRunPart?.cardIds).toHaveLength(13)
+    expect(completeRunPart?.cardIds).toContain(13)
+  })
+
+  test('コンプリートラン(同スート)パーツのcardIdsもチェーン全体のidを持つ', () => {
+    const chainBefore = Array.from({ length: 12 }, (_, i) => card(i + 1, '♠', (i + 1) as Card['rank']))
+    const result = evaluateChainBonus(scoring, chainBefore, card(13, '♠', 13))
+    const completeRunSuitPart = result.parts.find(p => p.label === 'コンプリートラン(同スート)')
+    expect(completeRunSuitPart?.cardIds).toHaveLength(13)
+  })
 })
 
 describe('evaluateChainBonus: 神託レベル(oracleLevel)による得点上昇', () => {
