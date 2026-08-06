@@ -559,7 +559,9 @@ export function playCard(
   if (frostFactor !== 1) parts.push(multiplyPart('星霜', frostFactor))
   const echoFactor = items.includes('echo') ? wave.echoX : 1
   if (echoFactor !== 1) parts.push(multiplyPart('残響', echoFactor))
-  let gained = Math.floor((itemResult.value + discretionAdd) * multiplier * mannazFactor * dedicationFactor * diligenceFactor * divineProtectionFactor * frostFactor * echoFactor)
+  const arroganceFactor = items.includes('arrogance') && wave.stock.length === 0 ? params.talismans.arrogance.x : 1
+  if (arroganceFactor !== 1) parts.push(multiplyPart('慢心', arroganceFactor))
+  let gained = Math.floor((itemResult.value + discretionAdd) * multiplier * mannazFactor * dedicationFactor * diligenceFactor * divineProtectionFactor * frostFactor * echoFactor * arroganceFactor)
   if (scoreLock && isBossScoreLocked(scoreLock, effectiveCombo, card)) {
     parts.length = 0
     parts.push(lockPart(bossScoreLockMessage(scoreLock)))
@@ -733,44 +735,7 @@ export function drawStock(
   const benevolenceFires = !wouldContinue && items.includes('benevolence') && !wave.benevolenceUsedThisCombo
   const patternContinues = wouldContinue || benevolenceFires
 
-  let scoreAfterStockEmpty = wave.score
-  let stockEmptyResult: { value: number; parts: ScorePart[] } = { value: 0, parts: [] }
-  if (newStock.length === 0) {
-    const stockEmptyCtx: DirectEffectContext = {
-      comboBeforeReset: 0,
-      hasPlayableColumns: true,
-      roleFiredThisChain: false,
-      remainingTableauCount: remainingCount(wave.tableau),
-      combo: wave.combo,
-      colorHeld: false,
-      previousCombo: wave.combo,
-      scoreAfterGained: wave.score,
-    }
-    stockEmptyResult = applyDirectEffects('stockEmptyDirect', items, stockEmptyCtx, params)
-    scoreAfterStockEmpty += stockEmptyResult.value
-  }
-
-  // 山札切れ時の直接加算だけで目標に達したら、以降の得点計算を行わず即座に終了する。
-  if (scoreAfterStockEmpty >= target) {
-    // この分岐で発生する得点は慢心等の直接加算のみ。lastGain/lastBonusGainsを更新しないと
-    // 直前プレイの古い内訳が残ってしまうため、他の即時終了箇所と同様に新しい値を明示的に設定する。
-    const stockEmptyBonusGains: BonusGain[] =
-      stockEmptyResult.parts.length > 0
-        ? [{ label: '護符による直接加算', points: stockEmptyResult.value, parts: stockEmptyResult.parts }]
-        : []
-    return {
-      wave: {
-        ...wave,
-        stock: newStock,
-        score: scoreAfterStockEmpty,
-        lastGain: null,
-        lastBonusGains: stockEmptyBonusGains,
-        status: 'ended',
-        endReason: 'target',
-      },
-      deckComposition,
-    }
-  }
+  const scoreAfterStockEmpty = wave.score
 
   if (patternContinues) {
     const { colorHeld, suitHeld } = analyzeSuitColor([...wave.chain, drawnCard], items)
@@ -861,9 +826,6 @@ export function drawStock(
     }
 
     const patternContinueBonusGains: BonusGain[] = []
-    if (stockEmptyResult.parts.length > 0) {
-      patternContinueBonusGains.push({ label: '護符による直接加算', points: stockEmptyResult.value, parts: stockEmptyResult.parts })
-    }
     if (drawContinueResult.parts.length > 0) {
       patternContinueBonusGains.push({ label: '護符による直接加算', points: drawContinueResult.value, parts: drawContinueResult.parts })
     }
@@ -910,9 +872,6 @@ export function drawStock(
   const echoAdd = items.includes('echo') ? wave.combo * params.talismans.echo.n : 0
 
   const resetBonusGains: BonusGain[] = []
-  if (stockEmptyResult.parts.length > 0) {
-    resetBonusGains.push({ label: '護符による直接加算', points: stockEmptyResult.value, parts: stockEmptyResult.parts })
-  }
 
   let resetWave: WaveState = {
     ...resetComboFields(wave, params, card, 'draw'),

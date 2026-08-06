@@ -1459,6 +1459,26 @@ describe('playCard', () => {
     expect(next.score).toBe(Math.floor(scoring.basePoint * 1.1))
   })
 
+  test('慢心: playCard時、山札が0枚ならgainedがx倍になる', () => {
+    const wave = baseWave({
+      stock: [],
+      comboFrozenThisWave: true, // コンボ倍率をかけず単純倍算のみを検証するため固定
+    })
+    const withoutArrogance = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const withArrogance = playCard(DEFAULT_PARAMS, wave, 'none', ['arrogance'], 1000000, 0, standardDeckComposition())
+    expect(withArrogance.wave.score).toBe(Math.floor(withoutArrogance.wave.score * DEFAULT_PARAMS.talismans.arrogance.x))
+  })
+
+  test('慢心: 山札が1枚以上残っていればgainedは変化しない', () => {
+    const wave = baseWave({
+      stock: [card(9, '♠', 9)],
+      comboFrozenThisWave: true,
+    })
+    const withoutArrogance = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const withArrogance = playCard(DEFAULT_PARAMS, wave, 'none', ['arrogance'], 1000000, 0, standardDeckComposition())
+    expect(withArrogance.wave.score).toBe(withoutArrogance.wave.score)
+  })
+
   describe('playCard: BossScoreLock(ボス制約による得点0)', () => {
     test('scoreLockがkind:comboで、effectiveComboがmaxCombo以下なら獲得点が0になる', () => {
       // 列を単一にすると全消しボーナス(clearBonus)が別枠で加算され score の比較が崩れるため、
@@ -1901,7 +1921,7 @@ describe('drawStock', () => {
     expect(next.roleFiredThisChain).toBe(false)
   })
 
-  test('慢心: 山札が0枚になった瞬間、場札残数×xが直接加算される', () => {
+  test('慢心: 山札が0枚になっても、drawStockのスコアは変化しない(直接加算は廃止)', () => {
     const wave = makeWave({
       stock: [card(1, '♣', 9)],
       tableau: [[card(2, '♣', 8)], [card(4, '♦', 5)]],
@@ -1911,7 +1931,7 @@ describe('drawStock', () => {
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['arrogance'], 1000000, standardDeckComposition())
     expect(next.stock).toHaveLength(0)
-    expect(next.score).toBe(100 + 2 * DEFAULT_PARAMS.talismans.arrogance.x)
+    expect(next.score).toBe(100)
   })
 
   test('誠実: パターン継続めくりが同色パターンで成立すると直接点が加算される', () => {
@@ -1927,30 +1947,6 @@ describe('drawStock', () => {
     expect(next.linked).toBe(true)
     expect(next.score).toBe(100 + DEFAULT_PARAMS.talismans.sincerity.n)
     expect(next.drawContinueCountThisChain).toBe(1)
-  })
-
-  test('慢心(山札切れ直接加算)でスコアが目標に達したら即座にendReason=targetとなり、lastBonusGainsに慢心の加算が反映される(古い内訳が残らない)', () => {
-    const x = DEFAULT_PARAMS.talismans.arrogance.x
-    const wave = makeWave({
-      stock: [card(1, '♣', 9)], // 最後の1枚。引くと山札0枚になり慢心が発動
-      tableau: [[card(2, '♣', 8)], [card(4, '♦', 5)]], // 残数2 → 慢心+2x
-      chain: [card(3, '♥', 1)],
-      linked: false,
-      score: 100,
-      lastGain: { points: 888, parts: [{ label: '古い内訳', kind: 'add', amount: 0, text: '古い内訳' }] },
-      lastBonusGains: [{ label: '古い', points: 999, parts: [{ label: '古い', kind: 'add', amount: 0, text: '古い' }] }],
-    })
-    const result = drawStock(DEFAULT_PARAMS, wave, ['arrogance'], 100 + 2 * x, standardDeckComposition())
-    expect(result.wave.stock).toHaveLength(0)
-    expect(result.wave.status).toBe('ended')
-    expect(result.wave.endReason).toBe('target')
-    expect(result.wave.score).toBe(100 + 2 * x)
-    // 直前プレイの古い内訳が残らず、慢心の加算がlastBonusGainsに正しく反映される
-    expect(result.wave.lastGain).toBeNull()
-    expect(result.wave.lastBonusGains).toHaveLength(1)
-    const gain = result.wave.lastBonusGains[0]
-    expect(gain?.points).toBe(2 * x)
-    expect(gain?.parts.map(p => p.text)).toContain(`慢心+${2 * x}`)
   })
 
   test('誠実(パターン継続時の直接加算)でスコアが目標に達したら即座にendReason=targetとなりウェーブが終了する', () => {
@@ -2108,24 +2104,6 @@ describe('drawStock', () => {
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['mercy'], 1000000, standardDeckComposition())
     expect(next.mercyActiveNextCombo).toBe(false)
-  })
-
-  test('慢心の護符: 山札が尽きた瞬間、lastBonusGainsに直接加算が別枠で入る', () => {
-    const items: ItemId[] = ['arrogance']
-    const wave = makeWave({
-      foundation: card(0, '♠', 5),
-      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
-      stock: [card(9, '♠', 9)],
-      chain: [card(0, '♠', 5)],
-      linked: false,
-    })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition(), 'none')
-    const remainingTableau = 2
-    const expected = remainingTableau * DEFAULT_PARAMS.talismans.arrogance.x
-    expect(next.lastBonusGains.some(g => g.label === '護符による直接加算' && g.parts.map(p => p.text).includes(`慢心+${expected}`))).toBe(true)
-    // 回帰防止: lastGainとlastBonusGainsの合計が実際のスコア増分と一致することを確認する(二重計上防止)。
-    const bonusTotal = next.lastBonusGains.reduce((sum, g) => sum + g.points, 0)
-    expect((next.lastGain?.points ?? 0) + bonusTotal).toBe(next.score - wave.score)
   })
 
   test('誠実の護符: 山札めくりで同色(同スートではない)パターン継続した時、lastBonusGainsに直接加算が別枠で入る', () => {
