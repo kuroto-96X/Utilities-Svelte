@@ -1597,16 +1597,18 @@ describe('drawStock', () => {
     expect(drawStock(DEFAULT_PARAMS, wave, [], 1000000, composition).wave).toBe(wave)
   })
 
-  test('コンボリセット時の直接加算護符でスコアが目標に達したら、その時点でendReason=targetとなりウェーブが終了する', () => {
+  test('コンボリセット時、沈着はもう直接加算しないためスコアで目標に達することはない(baseComboCountの強化に置き換わったため)', () => {
     const wave = makeWave({
       stock: [card(1, '♣', 9)], // 差4、パターン不継続
       chain: [card(3, '♥', 5)],
       linked: true,
       score: 100,
+      baseComboCount: 0,
     })
     const result = drawStock(DEFAULT_PARAMS, wave, ['composure'], 100 + 1, standardDeckComposition())
-    expect(result.wave.status).toBe('ended')
-    expect(result.wave.endReason).toBe('target')
+    expect(result.wave.status).toBe('playing')
+    expect(result.wave.score).toBe(100)
+    expect(result.wave.baseComboCount).toBe(DEFAULT_PARAMS.talismans.composure.n)
   })
 
   test('通常時(継続条件なし): コンボ・チェーン・列一掃カウント・comboStreakColumnLengthsがリセットされ、捲った札1枚が新しい起点になる', () => {
@@ -1804,19 +1806,21 @@ describe('drawStock', () => {
     expect(next.foundation.wild).toBe(true)
   })
 
-  test('沈着: リセット時に取れる場札が無ければ直接点が加算される', () => {
+  test('沈着: リセット時に取れる場札が無ければbaseComboCountが+nされる', () => {
     const wave = makeWave({
       stock: [card(1, '♣', 9)],
       tableau: [[card(2, '♠', 2)]], // 差が大きく取れない
       chain: [card(3, '♥', 5)],
       linked: true,
       score: 100,
+      baseComboCount: 0,
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['composure'], 1000000, standardDeckComposition())
-    expect(next.score).toBe(100 + DEFAULT_PARAMS.talismans.composure.n)
+    expect(next.score).toBe(100)
+    expect(next.baseComboCount).toBe(DEFAULT_PARAMS.talismans.composure.n)
   })
 
-  test('冷静: リセットされるチェーンで役が一つも成立していなければ直接点が加算される', () => {
+  test('冷静: リセットされるチェーンで役が一つも成立していなければbaseComboCountが+nされる', () => {
     const wave = makeWave({
       stock: [card(1, '♣', 9)],
       tableau: [[card(2, '♣', 8)]],
@@ -1824,9 +1828,10 @@ describe('drawStock', () => {
       linked: true,
       roleFiredThisChain: false,
       score: 100,
+      baseComboCount: 0,
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['clarity'], 1000000, standardDeckComposition())
-    expect(next.score).toBe(100 + DEFAULT_PARAMS.talismans.clarity.n)
+    expect(next.baseComboCount).toBe(DEFAULT_PARAMS.talismans.clarity.n)
   })
 
   test('冷静: 役が成立していたチェーンのリセットでは発動しない', () => {
@@ -1837,12 +1842,13 @@ describe('drawStock', () => {
       linked: true,
       roleFiredThisChain: true,
       score: 100,
+      baseComboCount: 0,
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['clarity'], 1000000, standardDeckComposition())
-    expect(next.score).toBe(100)
+    expect(next.baseComboCount).toBe(0)
   })
 
-  test('残響: リセット時、リセット前のコンボ数×nが直接加算される', () => {
+  test('残響: リセット時、リセット前のコンボ数×nがechoXに永続加算される', () => {
     const wave = makeWave({
       stock: [card(1, '♣', 9)],
       tableau: [[card(2, '♣', 8)]],
@@ -1850,9 +1856,38 @@ describe('drawStock', () => {
       linked: true,
       combo: 4,
       score: 100,
+      echoX: 1,
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['echo'], 1000000, standardDeckComposition())
-    expect(next.score).toBe(100 + 4 * DEFAULT_PARAMS.talismans.echo.n)
+    expect(next.score).toBe(100)
+    expect(next.echoX).toBeCloseTo(1 + 4 * DEFAULT_PARAMS.talismans.echo.n)
+  })
+
+  test('沈着・冷静: 両方の条件が同時に成立すればbaseComboCountに両方分加算される', () => {
+    const items: ItemId[] = ['composure', 'clarity']
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(1, '♣', 6)]],
+      stock: [card(9, '♠', 9)],
+      chain: [card(0, '♠', 5)],
+      linked: false,
+      roleFiredThisChain: false,
+      baseComboCount: 0,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition(), 'none')
+    expect(next.baseComboCount).toBe(DEFAULT_PARAMS.talismans.composure.n + DEFAULT_PARAMS.talismans.clarity.n)
+  })
+
+  test('残響: 獲得点にechoXが乗算される', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      echoX: 2,
+      comboFrozenThisWave: true, // コンボ倍率をかけず単純倍算のみを検証するため固定
+    })
+    const withoutEcho = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const withEcho = playCard(DEFAULT_PARAMS, wave, 'none', ['echo'], 1000000, 0, standardDeckComposition())
+    expect(withEcho.wave.score).toBe(withoutEcho.wave.score * 2)
   })
 
   test('リセット時、roleFiredThisChainがfalseに戻る', () => {
@@ -2088,28 +2123,6 @@ describe('drawStock', () => {
     const remainingTableau = 2
     const expected = remainingTableau * DEFAULT_PARAMS.talismans.arrogance.x
     expect(next.lastBonusGains.some(g => g.label === '護符による直接加算' && g.parts.map(p => p.text).includes(`慢心+${expected}`))).toBe(true)
-    // 回帰防止: lastGainとlastBonusGainsの合計が実際のスコア増分と一致することを確認する(二重計上防止)。
-    const bonusTotal = next.lastBonusGains.reduce((sum, g) => sum + g.points, 0)
-    expect((next.lastGain?.points ?? 0) + bonusTotal).toBe(next.score - wave.score)
-  })
-
-  test('沈着・冷静の護符: コンボリセット時、lastBonusGainsに直接加算がまとめて別枠で入る', () => {
-    const items: ItemId[] = ['composure', 'clarity']
-    const wave = makeWave({
-      foundation: card(0, '♠', 5),
-      // 新しいfoundationになるdrawnCard(rank9)との差が1でも12でもないため、
-      // drawStockのリセット分岐でhasPlayableColumns=falseになる(沈着の発火条件)
-      tableau: [[card(1, '♣', 6)]],
-      stock: [card(9, '♠', 9)],
-      chain: [card(0, '♠', 5)],
-      linked: false,
-      roleFiredThisChain: false,
-    })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition(), 'none')
-    const entry = next.lastBonusGains.find(g => g.label === '護符による直接加算')
-    expect(entry).toBeDefined()
-    expect(entry?.parts.map(p => p.text)).toContain(`沈着+${DEFAULT_PARAMS.talismans.composure.n}`)
-    expect(entry?.parts.map(p => p.text)).toContain(`冷静+${DEFAULT_PARAMS.talismans.clarity.n}`)
     // 回帰防止: lastGainとlastBonusGainsの合計が実際のスコア増分と一致することを確認する(二重計上防止)。
     const bonusTotal = next.lastBonusGains.reduce((sum, g) => sum + g.points, 0)
     expect((next.lastGain?.points ?? 0) + bonusTotal).toBe(next.score - wave.score)

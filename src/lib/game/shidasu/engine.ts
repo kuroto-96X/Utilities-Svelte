@@ -557,7 +557,9 @@ export function playCard(
   if (discretionAdd !== 0) parts.push(addPart('果断', discretionAdd))
   const frostFactor = items.includes('frost') ? wave.frostX : 1
   if (frostFactor !== 1) parts.push(multiplyPart('星霜', frostFactor))
-  let gained = Math.floor((itemResult.value + discretionAdd) * multiplier * mannazFactor * dedicationFactor * diligenceFactor * divineProtectionFactor * frostFactor)
+  const echoFactor = items.includes('echo') ? wave.echoX : 1
+  if (echoFactor !== 1) parts.push(multiplyPart('残響', echoFactor))
+  let gained = Math.floor((itemResult.value + discretionAdd) * multiplier * mannazFactor * dedicationFactor * diligenceFactor * divineProtectionFactor * frostFactor * echoFactor)
   if (scoreLock && isBossScoreLocked(scoreLock, effectiveCombo, card)) {
     parts.length = 0
     parts.push(lockPart(bossScoreLockMessage(scoreLock)))
@@ -623,6 +625,7 @@ export function playCard(
     divineProtectionX: newDivineProtectionX,
     discretionN: wave.discretionN,
     frostX: wave.frostX,
+    echoX: wave.echoX,
     roleOccurrenceCountThisWave: newRoleOccurrenceCountThisWave,
     pendingRoleEcho: newPendingRoleEcho,
     roleEchoUsedThisCombo: newRoleEchoUsedThisCombo,
@@ -899,25 +902,16 @@ export function drawStock(
   const card = silenceFires ? { ...drawnCard, wild: true } : drawnCard
   const newDeckComposition = silenceFires ? convertCardToWildByDeckId(deckComposition, drawnCard.deckId) : deckComposition
 
-  const resetCtx: DirectEffectContext = {
-    comboBeforeReset: wave.combo,
-    hasPlayableColumns,
-    roleFiredThisChain: wave.roleFiredThisChain,
-    remainingTableauCount: remainingCount(wave.tableau),
-    combo: wave.combo,
-    colorHeld: false,
-    previousCombo: wave.combo,
-    scoreAfterGained: wave.score,
-  }
-  const resetResult = applyDirectEffects('resetDirect', items, resetCtx, params)
-  const resetDirectGain = resetResult.value
+  // 沈着: リセット時、取れる場札が無ければ基礎コンボ数(baseComboCount)を永続+nする
+  const composureAdd = !hasPlayableColumns && items.includes('composure') ? params.talismans.composure.n : 0
+  // 冷静: リセット時、そのチェーンで役が一つも成立していなければ基礎コンボ数を永続+nする
+  const clarityAdd = !wave.roleFiredThisChain && items.includes('clarity') ? params.talismans.clarity.n : 0
+  // 残響: リセット時、リセット前のコンボ数×nを永続倍率echoXとして蓄積する(以後gainedに乗算)
+  const echoAdd = items.includes('echo') ? wave.combo * params.talismans.echo.n : 0
 
   const resetBonusGains: BonusGain[] = []
   if (stockEmptyResult.parts.length > 0) {
     resetBonusGains.push({ label: '護符による直接加算', points: stockEmptyResult.value, parts: stockEmptyResult.parts })
-  }
-  if (resetResult.parts.length > 0) {
-    resetBonusGains.push({ label: '護符による直接加算', points: resetDirectGain, parts: resetResult.parts })
   }
 
   let resetWave: WaveState = {
@@ -925,8 +919,10 @@ export function drawStock(
     stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [card], effectiveStairMinLen, effectiveSuitColorMinLen, items) : newStock,
     lastDrawEffect: null,
     lastGain: null,
-    score: scoreAfterStockEmpty + resetDirectGain,
+    score: scoreAfterStockEmpty,
     lastBonusGains: resetBonusGains,
+    baseComboCount: wave.baseComboCount + composureAdd + clarityAdd,
+    echoX: wave.echoX + echoAdd,
   }
 
   // コンボリセット時の直接加算だけで目標に達していれば、治癒等の後続処理を行わず即座に終了する。
