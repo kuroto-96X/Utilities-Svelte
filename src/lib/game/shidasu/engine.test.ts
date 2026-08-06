@@ -2000,6 +2000,20 @@ describe('drawStock', () => {
     expect(next.benevolenceUsedThisCombo).toBe(true)
   })
 
+  test('誠実: 博愛による救済継続では発動しない(コンボは+nされない)', () => {
+    const wave = makeWave({
+      stock: [card(1, '♣', 9)], // 同スートでも階段でもなく本来リセットする
+      chain: [card(2, '♥', 5)],
+      linked: true,
+      combo: 2,
+      benevolenceUsedThisCombo: false,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['benevolence', 'sincerity'], 1000000, standardDeckComposition())
+    expect(next.combo).toBe(2) // 博愛による救済継続であり、誠実分は加算されない
+    expect(next.linked).toBe(true)
+    expect(next.benevolenceUsedThisCombo).toBe(true)
+  })
+
   test('博愛: 既に今のコンボで使っていれば通常通りリセットされる', () => {
     const wave = makeWave({
       stock: [card(1, '♣', 9)],

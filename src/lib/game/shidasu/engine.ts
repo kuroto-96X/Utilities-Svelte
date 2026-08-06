@@ -778,7 +778,7 @@ export function drawStock(
         effectiveSuitColorMinLen,
         sameColumnStreak: wave.sameColumnStreak,
         totalColumnsEmptiedThisWave: wave.totalColumnsEmptiedThisWave,
-        maxComboThisWave: Math.max(wave.maxComboThisWave, newCombo),
+        maxComboThisWave: Math.max(wave.maxComboThisWave, newCombo + sincerityAdd),
         flushActiveThisCombo: naiveFlushActiveThisCombo,
         columnSweepActiveThisWave: wave.columnSweepActiveThisWave,
         drawContinueCountThisChain: newDrawContinueCount,
