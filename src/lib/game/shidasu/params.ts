@@ -222,6 +222,8 @@ export interface ShidasuParams {
     suit: { name: string; desc: string }
     columnSweep: { name: string; desc: string }
     sameRank: { name: string; desc: string }
+    pair: { name: string; desc: string }
+    alternating: { name: string; desc: string }
   }
   flow: {
     wavesPerStage: number
@@ -441,14 +443,16 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     aya: { name: '危', desc: '場札から選んだ1列の一番上に、ワイルドを1枚追加する' },
   },
   oracles: {
-    completeRun: { name: '乾', desc: 'コンプリートラン　レベル+1' },
-    royalSet: { name: '兌', desc: 'ロイヤルセット　レベル+1' },
-    flush: { name: '離', desc: 'フラッシュ　レベル+1' },
-    stair: { name: '震', desc: '階段　レベル+1' },
-    color: { name: '巽', desc: '同色　レベル+1' },
-    suit: { name: '坎', desc: '同スート　レベル+1' },
-    columnSweep: { name: '艮', desc: '列一掃　レベル+1' },
-    sameRank: { name: '坤', desc: '同ランク　レベル+1' },
+    completeRun: { name: '乾為天', desc: 'コンプリートラン　レベル+1' },
+    royalSet: { name: '兌為沢', desc: 'ロイヤルセット　レベル+1' },
+    flush: { name: '離為火', desc: 'フラッシュ　レベル+1' },
+    stair: { name: '震為雷', desc: '階段　レベル+1' },
+    color: { name: '巽為風', desc: '同色　レベル+1' },
+    suit: { name: '坎為水', desc: '同スート　レベル+1' },
+    columnSweep: { name: '艮為山', desc: '列一掃　レベル+1' },
+    sameRank: { name: '坤為地', desc: '同ランク　レベル+1' },
+    pair: { name: '沢山咸', desc: 'ペア　レベル+1' },
+    alternating: { name: '水火既済', desc: '交互　レベル+1' },
   },
   flow: { wavesPerStage: 3, clearDelayMs: 450, stageTargetBase: 2000, stageTargetMultiplier: 1.8, stagesPerRun: 8, rerollCost: 30 },
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },

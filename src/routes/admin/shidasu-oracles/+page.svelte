@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from 'svelte'
   import { DEFAULT_PARAMS, type ShidasuParams } from '$lib/game/shidasu/params'
   import { oracleDesc, ORACLE_POOL } from '$lib/game/shidasu/oracles'
-  import { TRIGRAMS } from '$lib/game/shidasu/trigrams'
+  import { HEXAGRAMS } from '$lib/game/shidasu/hexagrams'
   import { ORACLE_ACTUAL_EFFECTS } from '$lib/game/shidasu/oracleActualEffects'
   import type { RoleName } from '$lib/game/shidasu/types'
 
@@ -122,8 +122,8 @@
               <tr>
                 <td class="px-2 py-1.5 align-top">
                   <select bind:value={entry.name} class="w-full border border-slate-200 rounded px-1.5 py-0.5">
-                    {#each TRIGRAMS as trigram (trigram.kanji)}
-                      <option value={trigram.kanji}>{trigram.kanji} {trigram.reading}</option>
+                    {#each HEXAGRAMS as hexagram (hexagram.kanji)}
+                      <option value={hexagram.kanji}>{hexagram.kanji} {hexagram.reading}</option>
                     {/each}
                   </select>
                 </td>
