@@ -5,7 +5,6 @@ import { createRng, shuffle, shuffleInPlace, standardDeckComposition } from './d
 import { isFace, chainContinuesPattern, evaluateChainBonus, countSameRankBefore, countSameRankForWildPlay, cardColors } from './patterns'
 import { addPart, multiplyPart, lockPart, type ScorePart } from './scoreParts'
 import { rollItemOffer } from './items'
-import { applyDirectEffects, type DirectEffectContext } from './directEffects'
 import { applyItemEffects, type ItemEffectContext } from './itemEffects'
 import { applyRiteEffect, canUseRite } from './riteEffects'
 import { rollRiteOffer } from './rites'

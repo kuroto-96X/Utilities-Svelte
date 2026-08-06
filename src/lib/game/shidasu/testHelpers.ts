@@ -1,25 +1,10 @@
 // src/lib/game/shidasu/testHelpers.ts
 import type { Card } from './types'
-import type { DirectEffectContext } from './directEffects'
 import type { ItemEffectContext } from './itemEffects'
 import { DEFAULT_PARAMS } from './params'
 
 export function card(id: number, suit: Card['suit'], rank: Card['rank'], wild = false, deckId = id): Card {
   return { id, deckId, suit, rank, wild }
-}
-
-export function directCtx(overrides: Partial<DirectEffectContext> = {}): DirectEffectContext {
-  return {
-    comboBeforeReset: 0,
-    hasPlayableColumns: true,
-    roleFiredThisChain: false,
-    remainingTableauCount: 10,
-    combo: 1,
-    colorHeld: false,
-    previousCombo: 0,
-    scoreAfterGained: 0,
-    ...overrides,
-  }
 }
 
 export function ctx(overrides: Partial<ItemEffectContext> = {}, params = DEFAULT_PARAMS): ItemEffectContext {
