@@ -70,7 +70,7 @@ import { card } from './testHelpers'
 import { defaultOracleLevels } from './oracles'
 import { ITEM_POOL } from './items'
 import { itemBuyPrice, riteBuyPrice, revelationBuyPrice, packPrice, itemSellPrice, riteSellPrice, revelationSellPrice, oracleSellPrice, rollShop } from './shop'
-import { addPart, finalScoreFromScoreParts } from './scoreParts'
+import { addPart, finalScoreFromScoreParts, runningTotalsFromScoreParts } from './scoreParts'
 
 describe('isFace / rankLabel', () => {
   test('J/Q/Kはisface、それ以外はfalse', () => {
@@ -523,6 +523,22 @@ describe('果断・星霜: gained計算への反映', () => {
     const withoutFrost = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
     const withFrost = playCard(DEFAULT_PARAMS, wave, 'none', ['frost'], 1000000, 0, standardDeckComposition())
     expect(withFrost.wave.score).toBe(Math.floor(withoutFrost.wave.score * 1.5))
+  })
+
+  test('回帰防止: discretionAdd等の加算項が乗算項より前にpartsへpushされ、runningTotalsFromScorePartsの最終値がlastGain.pointsと一致する', () => {
+    // 献身(dedicationX)のような「果断より前にpushされていた乗算項」と果断(discretionAdd)を同時に有効化し、
+    // 加算項が乗算項より後にpushされていると仮合計の途中値がズレる状況を再現する
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      discretionN: 30,
+      dedicationX: 2,
+      comboFrozenThisWave: false,
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['discretion', 'dedication'], 1000000, 0, standardDeckComposition())
+    expect(next.lastGain).not.toBeNull()
+    const totals = runningTotalsFromScoreParts(next.lastGain!.parts)
+    expect(Math.floor(totals[totals.length - 1])).toBe(next.lastGain!.points)
   })
 })
 

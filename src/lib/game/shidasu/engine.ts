@@ -546,6 +546,10 @@ export function playCard(
   const itemResult = applyItemEffects('gained', base, items, itemEffectCtx, params)
   parts.push(...itemResult.parts)
 
+  const discretionAdd = items.includes('discretion') ? wave.discretionN : 0
+  if (discretionAdd !== 0) parts.push(addPart('果断', discretionAdd))
+  const shootingStarGainedAdd = items.includes('shootingStar') ? wave.shootingStarN : 0
+  if (shootingStarGainedAdd !== 0) parts.push(addPart('流星', shootingStarGainedAdd))
   const comboMultiplierStep = params.scoring.comboMultiplierStep
   const multiplier = 1 + effectiveCombo * comboMultiplierStep
   if (multiplier !== 1) parts.push(multiplyPart('コンボ倍率', multiplier))
@@ -557,10 +561,6 @@ export function playCard(
   if (diligenceFactor !== 1) parts.push(multiplyPart('勤勉', diligenceFactor))
   const divineProtectionFactor = items.includes('divineProtection') ? wave.divineProtectionX : 1
   if (divineProtectionFactor !== 1) parts.push(multiplyPart('加護', divineProtectionFactor))
-  const discretionAdd = items.includes('discretion') ? wave.discretionN : 0
-  if (discretionAdd !== 0) parts.push(addPart('果断', discretionAdd))
-  const shootingStarGainedAdd = items.includes('shootingStar') ? wave.shootingStarN : 0
-  if (shootingStarGainedAdd !== 0) parts.push(addPart('流星', shootingStarGainedAdd))
   const frostFactor = items.includes('frost') ? wave.frostX : 1
   if (frostFactor !== 1) parts.push(multiplyPart('星霜', frostFactor))
   const echoFactor = items.includes('echo') ? wave.echoX : 1
