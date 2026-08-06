@@ -199,6 +199,14 @@ export interface WaveState {
   // WaveState側に正本を持ち、startWaveでRunStateからコピー・resolveWaveEndでRunStateへ書き戻す。
   discretionN: number
   frostX: number
+  // 残響用: コンボリセットのたびリセット前コンボ数に応じて永続的に加算される倍率(1から開始)。
+  // ラン全体で永続する値だが、drawStock内でのみ更新されるためWaveState側に正本を持ち、
+  // startWaveでRunStateからコピー・resolveWaveEndでRunStateへ書き戻す。
+  echoX: number
+  // 流星用: コンボがc(talismans.shootingStar.c)に到達するたび永続的に加算される値。
+  // ラン全体で永続する値だが、playCard内でのみ更新されるためWaveState側に正本を持ち、
+  // startWaveでRunStateからコピー・resolveWaveEndでRunStateへ書き戻す。
+  shootingStarN: number
   // 鋼鉄用: 役の種類ごと(sameRank以外)に、今コンボで遅延複製をスケジュール済みか
   roleEchoUsedThisCombo: Partial<Record<RoleName, boolean>>
   // 鋼鉄用: sameRankは枚数段階(sameRankCountの値)ごとに使用済みかを記録する
@@ -315,6 +323,10 @@ export interface RunState {
   // beginRunで初期化され(discretionN=10, frostX=1)、resolveWaveEnd成功時にwaveの値で更新される。
   discretionN: number
   frostX: number
+  // 残響・流星の累積値の永続値。WaveState側のechoX/shootingStarNの正本。
+  // beginRunで初期化され(echoX=1, shootingStarN=50)、resolveWaveEnd成功時にwaveの値で更新される。
+  echoX: number
+  shootingStarN: number
   // 温存中の神託(合算上限2をrevelationsと共有)。同じ役を複数所持できる
   oracles: RoleName[]
   // 現在のショップの商品構成。'shop'フェーズおよびそこから派生する福袋中身選択フェーズの間のみ非null

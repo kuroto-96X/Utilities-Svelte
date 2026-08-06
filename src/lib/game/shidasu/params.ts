@@ -140,7 +140,7 @@ export interface ShidasuParams {
     clarity: { name: string; n: number; rarity: Rarity; desc: string }
     arrogance: { name: string; x: number; rarity: Rarity; desc: string }
     echo: { name: string; n: number; rarity: Rarity; desc: string }
-    shootingStar: { name: string; c: number; p: number; rarity: Rarity; desc: string }
+    shootingStar: { name: string; c: number; n: number; rarity: Rarity; desc: string }
     naive: { name: string; rarity: Rarity; desc: string }
     intuition: { name: string; x: number; rarity: Rarity; desc: string }
     sincerity: { name: string; n: number; rarity: Rarity; desc: string }
@@ -365,14 +365,14 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     resonance: { name: '共鳴', x: 0.3, rarity: 'U', desc: '同じ列を連続でプレイしたとき(2回目以降)、連続回数×{x}分獲得点を倍加' },
     azureSky: { name: '蒼穹', x: 0.3, rarity: 'U', desc: 'ウェーブ内で列一掃した累計回数×{x}分、獲得点を倍加' },
     amber: { name: '琥珀', x: 0.1, rarity: 'R', desc: 'ウェーブ内の最大到達コンボ数×{x}分、獲得点を倍加' },
-    composure: { name: '沈着', n: 500, rarity: 'C', desc: '山札めくりでコンボリセットされた時、取れる場札が無ければ直接{n}点加算' },
-    clarity: { name: '冷静', n: 500, rarity: 'C', desc: 'コンボリセット時、そのチェーンで役が一つも成立していなければ直接{n}点加算' },
-    arrogance: { name: '慢心', x: 50, rarity: 'C', desc: '山札が無くなった時、場札の残り枚数×{x}点を直接加算' },
-    echo: { name: '残響', n: 200, rarity: 'U', desc: 'コンボがリセットされる瞬間、リセット前のコンボ数×{n}点を直接加算' },
-    shootingStar: { name: '流星', c: 10, p: 10, rarity: 'R', desc: 'コンボ数が{c}に到達した瞬間、獲得点を加算した後の現在スコアの{p}%を直接加算' },
+    composure: { name: '沈着', n: 1, rarity: 'C', desc: 'コンボリセット時、取れる場札が無ければ基礎コンボ数+{n}' },
+    clarity: { name: '冷静', n: 1, rarity: 'C', desc: 'コンボリセット時、そのチェーンで役が一つも成立していなければ基礎コンボ数+{n}' },
+    arrogance: { name: '慢心', x: 1.5, rarity: 'C', desc: 'カードプレイ時、山札が0枚なら獲得点を{x}倍' },
+    echo: { name: '残響', n: 0.001, rarity: 'U', desc: 'コンボリセット時、リセット前のコンボ数×{n}を永続倍率として蓄積(以後の獲得点に乗算)' },
+    shootingStar: { name: '流星', c: 10, n: 50, rarity: 'R', desc: 'コンボ数が{c}に到達するたび、永続加算{n}が蓄積(以後の獲得点に加算)' },
     naive: { name: '素朴', rarity: 'C', desc: '山札めくりがパターン継続だった場合、通常のプレイと同様に得点計算する(コンボ数も加算)' },
     intuition: { name: '直感', x: 0.3, rarity: 'U', desc: '(素朴と組み合わせて機能)現在のチェーン中に山札めくりでコンボ継続した回数×{x}分、獲得点を倍加' },
-    sincerity: { name: '誠実', n: 300, rarity: 'C', desc: '山札めくりで同色パターンによりコンボ継続した時、直接{n}点加算' },
+    sincerity: { name: '誠実', n: 1, rarity: 'C', desc: 'パターン継続(同スート・同色・階段いずれか)でコンボ継続時、コンボ数+{n}' },
     promise: { name: '約束', rarity: 'R', desc: '山札の次のカードが、今のコンボが継続できるカードになる' },
     darkClouds: { name: '暗雲', r: 1, rarity: 'U', desc: 'ウェーブ開始時、場札が{r}行多く配られる' },
     regeneration: { name: '再生', p: 50, rarity: 'R', desc: '全消し時、スコアの{p}%を消費して捨て札から場札を復活させる(復活すればウェーブ継続)' },

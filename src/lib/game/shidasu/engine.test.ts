@@ -125,6 +125,8 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     divineProtectionX: 1,
     discretionN: 10,
     frostX: 1,
+    echoX: 1,
+    shootingStarN: 50,
     roleEchoUsedThisCombo: {},
     sameRankEchoUsedThisCombo: [],
     pendingRoleEcho: null,
@@ -2253,14 +2255,14 @@ describe('DEFAULT_PARAMS.talismans (グループ9〜16)', () => {
     expect(DEFAULT_PARAMS.talismans.resonance.x).toBe(0.3)
     expect(DEFAULT_PARAMS.talismans.azureSky.x).toBe(0.3)
     expect(DEFAULT_PARAMS.talismans.amber.x).toBe(0.1)
-    expect(DEFAULT_PARAMS.talismans.composure.n).toBe(500)
-    expect(DEFAULT_PARAMS.talismans.clarity.n).toBe(500)
-    expect(DEFAULT_PARAMS.talismans.arrogance.x).toBe(50)
-    expect(DEFAULT_PARAMS.talismans.echo.n).toBe(200)
+    expect(DEFAULT_PARAMS.talismans.composure.n).toBe(1)
+    expect(DEFAULT_PARAMS.talismans.clarity.n).toBe(1)
+    expect(DEFAULT_PARAMS.talismans.arrogance.x).toBe(1.5)
+    expect(DEFAULT_PARAMS.talismans.echo.n).toBe(0.001)
     expect(DEFAULT_PARAMS.talismans.shootingStar.c).toBe(10)
-    expect(DEFAULT_PARAMS.talismans.shootingStar.p).toBe(10)
+    expect(DEFAULT_PARAMS.talismans.shootingStar.n).toBe(50)
     expect(DEFAULT_PARAMS.talismans.intuition.x).toBe(0.3)
-    expect(DEFAULT_PARAMS.talismans.sincerity.n).toBe(300)
+    expect(DEFAULT_PARAMS.talismans.sincerity.n).toBe(1)
     expect(DEFAULT_PARAMS.talismans.darkClouds.r).toBe(1)
     expect(DEFAULT_PARAMS.talismans.regeneration.p).toBe(50)
     expect(DEFAULT_PARAMS.talismans.passion.x).toBe(1.5)
@@ -3019,6 +3021,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
       dedicationX: 1, diligenceX: 1, divineProtectionX: 1, discretionN: 10, frostX: 1,
+      echoX: 1, shootingStarN: 50,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     }
@@ -3048,6 +3051,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
       dedicationX: 1, diligenceX: 1, divineProtectionX: 1, discretionN: 10, frostX: 1,
+      echoX: 1, shootingStarN: 50,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     }
@@ -3071,6 +3075,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
       dedicationX: 1, diligenceX: 1, divineProtectionX: 1, discretionN: 10, frostX: 1,
+      echoX: 1, shootingStarN: 50,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     }
@@ -3095,6 +3100,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
       dedicationX: 1, diligenceX: 1, divineProtectionX: 1, discretionN: 10, frostX: 1,
+      echoX: 1, shootingStarN: 50,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     }
@@ -3120,6 +3126,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
       dedicationX: 1, diligenceX: 1, divineProtectionX: 1, discretionN: 10, frostX: 1,
+      echoX: 1, shootingStarN: 50,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     }
@@ -3144,6 +3151,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
       dedicationX: 1, diligenceX: 1, divineProtectionX: 1, discretionN: 10, frostX: 1,
+      echoX: 1, shootingStarN: 50,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     }
