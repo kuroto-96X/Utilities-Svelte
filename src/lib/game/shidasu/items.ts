@@ -4,7 +4,7 @@ import type { ShidasuParams } from './params'
 import { rollOffer } from './deck'
 
 // rollItemOfferは重み付けなしの完全均等抽選(レアリティによる出現率差は未実装)。
-// docs/shidasu-gofu-candidates.mdのC/U/Rレアリティ区分は検討用の分類であり、抽選確率には反映されていない。
+// docs/shidasu/done/shidasu-gofu-candidates.mdのC/U/Rレアリティ区分は検討用の分類であり、抽選確率には反映されていない。
 export const ITEM_POOL: ItemId[] = [
   'bridge', 'grace',
   'patience', 'purify', 'temperance',
