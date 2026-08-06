@@ -1910,6 +1910,26 @@ describe('drawStock', () => {
     expect(next.baseComboCount).toBe(DEFAULT_PARAMS.talismans.composure.n + DEFAULT_PARAMS.talismans.clarity.n)
   })
 
+  test('沈着・冷静・残響: リセット時に3つ同時発動しても、baseComboCountとechoXがそれぞれ独立に加算される(scoreは不変)', () => {
+    const items: ItemId[] = ['composure', 'clarity', 'echo']
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(1, '♣', 6)]],
+      stock: [card(9, '♠', 9)],
+      chain: [card(0, '♠', 5)],
+      linked: false,
+      roleFiredThisChain: false,
+      combo: 3,
+      score: 100,
+      baseComboCount: 2,
+      echoX: 1.5,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition(), 'none')
+    expect(next.baseComboCount).toBe(wave.baseComboCount + DEFAULT_PARAMS.talismans.composure.n + DEFAULT_PARAMS.talismans.clarity.n)
+    expect(next.echoX).toBeCloseTo(wave.echoX + wave.combo * DEFAULT_PARAMS.talismans.echo.n)
+    expect(next.score).toBe(wave.score)
+  })
+
   test('残響: 獲得点にechoXが乗算される', () => {
     const wave = makeWave({
       foundation: card(0, '♠', 5),
@@ -1944,6 +1964,21 @@ describe('drawStock', () => {
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['arrogance'], 1000000, standardDeckComposition())
     expect(next.stock).toHaveLength(0)
     expect(next.score).toBe(100)
+  })
+
+  test('慢心・流星・残響: 3つ同時に有効な場合、gainedは(base+shootingStarN)にechoXとarrogance.xを乗算した値になる', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      stock: [], // 慢心: 山札0枚で発動
+      comboFrozenThisWave: true, // コンボ倍率をかけず単純な加算・乗算のみを検証するため固定
+      echoX: 2,
+      shootingStarN: 80,
+    })
+    const withoutItems = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const withItems = playCard(DEFAULT_PARAMS, wave, 'none', ['arrogance', 'shootingStar', 'echo'], 1000000, 0, standardDeckComposition())
+    const expectedGained = Math.floor((withoutItems.wave.score + wave.shootingStarN) * wave.echoX * DEFAULT_PARAMS.talismans.arrogance.x)
+    expect(withItems.wave.score).toBe(expectedGained)
   })
 
   test('誠実: パターン継続(同色)でコンボが直接+nされる', () => {

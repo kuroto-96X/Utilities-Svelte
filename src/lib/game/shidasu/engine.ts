@@ -627,7 +627,7 @@ export function playCard(
     sowiloBoostedRole: wave.sowiloBoostedRole ?? sowiloCommittedThisPlay,
   }
 
-  // gained確定時点で目標達成なら、コンボ到達直接加算・全消し判定等を行わず即座に終了する。
+  // gained確定時点で目標達成なら、全消し判定を行わず即座に終了する。
   if (targetReachedOnGained) {
     return { wave: { ...next, status: 'ended', endReason: 'target' }, deckComposition }
   }
@@ -858,7 +858,7 @@ export function drawStock(
     echoX: wave.echoX + echoAdd,
   }
 
-  // コンボリセット時の直接加算だけで目標に達していれば、治癒等の後続処理を行わず即座に終了する。
+  // このリセット処理に入る時点でresetWave.score>=targetになることは通常起こらないが(他の得点増加経路で既に終了しているため)、念のための防御的チェックとして残す。
   if (resetWave.score >= target) {
     return { wave: { ...resetWave, status: 'ended', endReason: 'target' }, deckComposition: newDeckComposition }
   }
