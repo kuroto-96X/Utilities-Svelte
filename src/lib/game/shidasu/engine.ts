@@ -481,6 +481,11 @@ export function playCard(
   // 祝福: 役成立ごとに基礎コンボ数(baseComboCount)を永続的に+1する
   const newBaseComboCount = items.includes('sanctify') && roleFired.length > 0 ? wave.baseComboCount + 1 : wave.baseComboCount
 
+  // 流星: コンボがc(shootingStar.c)に到達した瞬間、永続加算shootingStarNをc到達のたびに蓄積する
+  // (到達した同じプレイのgainedには反映されず、次のプレイから効く。果断・星霜と同じ挙動)
+  const shootingStarReached = items.includes('shootingStar') && wave.combo < params.talismans.shootingStar.c && newCombo >= params.talismans.shootingStar.c
+  const newShootingStarN = shootingStarReached ? wave.shootingStarN + params.talismans.shootingStar.n : wave.shootingStarN
+
   // 献身: フラッシュ成立のたびdedicationXにnを加算する(永続的に積み上がる)
   const newDedicationX = items.includes('dedication') && roleFired.some(r => r.name === 'flush')
     ? wave.dedicationX + params.talismans.dedication.n
@@ -555,13 +560,15 @@ export function playCard(
   if (divineProtectionFactor !== 1) parts.push(multiplyPart('加護', divineProtectionFactor))
   const discretionAdd = items.includes('discretion') ? wave.discretionN : 0
   if (discretionAdd !== 0) parts.push(addPart('果断', discretionAdd))
+  const shootingStarGainedAdd = items.includes('shootingStar') ? wave.shootingStarN : 0
+  if (shootingStarGainedAdd !== 0) parts.push(addPart('流星', shootingStarGainedAdd))
   const frostFactor = items.includes('frost') ? wave.frostX : 1
   if (frostFactor !== 1) parts.push(multiplyPart('星霜', frostFactor))
   const echoFactor = items.includes('echo') ? wave.echoX : 1
   if (echoFactor !== 1) parts.push(multiplyPart('残響', echoFactor))
   const arroganceFactor = items.includes('arrogance') && wave.stock.length === 0 ? params.talismans.arrogance.x : 1
   if (arroganceFactor !== 1) parts.push(multiplyPart('慢心', arroganceFactor))
-  let gained = Math.floor((itemResult.value + discretionAdd) * multiplier * mannazFactor * dedicationFactor * diligenceFactor * divineProtectionFactor * frostFactor * echoFactor * arroganceFactor)
+  let gained = Math.floor((itemResult.value + discretionAdd + shootingStarGainedAdd) * multiplier * mannazFactor * dedicationFactor * diligenceFactor * divineProtectionFactor * frostFactor * echoFactor * arroganceFactor)
   if (scoreLock && isBossScoreLocked(scoreLock, effectiveCombo, card)) {
     parts.length = 0
     parts.push(lockPart(bossScoreLockMessage(scoreLock)))
@@ -571,29 +578,12 @@ export function playCard(
   const scoreAfterGained = wave.score + gained
 
   // 護符gained+コンボ倍率適用後のスコアが確定した時点で目標に達していれば、
-  // コンボ到達時の直接加算(流星等)や全消し判定を一切行わず、その時点のスコアで終了する。
+  // 全消し判定を一切行わず、その時点のスコアで終了する。
   const targetReachedOnGained = scoreAfterGained >= target
 
-  const milestoneCtx: DirectEffectContext = {
-    comboBeforeReset: 0,
-    hasPlayableColumns: true,
-    roleFiredThisChain: newRoleFiredThisChain,
-    remainingTableauCount: remaining,
-    combo: newCombo,
-    colorHeld: false,
-    previousCombo: wave.combo,
-    scoreAfterGained,
-  }
-  const milestoneResult = targetReachedOnGained
-    ? { value: 0, parts: [] as ScorePart[] }
-    : applyDirectEffects('comboMilestoneDirect', items, milestoneCtx, params)
-
-  const newScore = scoreAfterGained + milestoneResult.value
+  const newScore = scoreAfterGained
 
   const bonusGains: BonusGain[] = []
-  if (milestoneResult.parts.length > 0) {
-    bonusGains.push({ label: '護符による直接加算', points: milestoneResult.value, parts: milestoneResult.parts })
-  }
 
   const next: WaveState = {
     ...wave,
@@ -628,6 +618,7 @@ export function playCard(
     discretionN: wave.discretionN,
     frostX: wave.frostX,
     echoX: wave.echoX,
+    shootingStarN: newShootingStarN,
     roleOccurrenceCountThisWave: newRoleOccurrenceCountThisWave,
     pendingRoleEcho: newPendingRoleEcho,
     roleEchoUsedThisCombo: newRoleEchoUsedThisCombo,

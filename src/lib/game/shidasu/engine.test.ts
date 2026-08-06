@@ -741,50 +741,61 @@ describe('playCard', () => {
     expect(next.score).toBe(expectedPlayGain + expectedClearBonus)
   })
 
-  test('流星の護符: コンボが閾値に到達した瞬間、獲得点加算後のスコアのp%がlastBonusGainsに別枠で入る', () => {
+  test('流星: コンボが閾値に到達した瞬間、shootingStarNが永続加算される(この時点のgainedにはまだ反映されない)', () => {
     const items: ItemId[] = ['shootingStar']
     const wave = baseWave({
       score: 5000,
       combo: DEFAULT_PARAMS.talismans.shootingStar.c - 1,
+      shootingStarN: 50,
       chain: [card(20, '♥', 3), card(21, '♦', 4)],
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 100000000, 0, standardDeckComposition())
     expect(next.combo).toBe(DEFAULT_PARAMS.talismans.shootingStar.c)
-    const scoreAfterGained = wave.score + (next.lastGain?.points ?? 0)
-    const expectedBonus = Math.floor(scoreAfterGained * DEFAULT_PARAMS.talismans.shootingStar.p / 100)
-    expect(next.lastBonusGains).toHaveLength(1)
-    expect(next.lastBonusGains[0].label).toBe('護符による直接加算')
-    expect(next.lastBonusGains[0].points).toBe(expectedBonus)
-    expect(next.lastBonusGains[0].parts.map(p => p.text)).toContain(`流星+${expectedBonus}`)
-    // 回帰防止: 流星の加算額がlastGainとlastBonusGainsの両方に二重計上されていないことを確認する。
-    const bonusTotal = next.lastBonusGains.reduce((sum, g) => sum + g.points, 0)
-    expect((next.lastGain?.points ?? 0) + bonusTotal).toBe(next.score - wave.score)
+    expect(next.shootingStarN).toBe(50 + DEFAULT_PARAMS.talismans.shootingStar.n)
+    // gainedへの加算はプレイ開始時点のshootingStarN(50)のみが反映され、
+    // このプレイ内で新たに加算された分(合計100)はまだ反映されない。
+    expect(next.lastGain?.parts.some(p => p.text === '流星+50')).toBe(true)
+    expect(next.lastGain?.parts.some(p => p.text === `流星+${50 + DEFAULT_PARAMS.talismans.shootingStar.n}`)).toBe(false)
   })
 
-  test('流星の護符: 黄金と併用しコンボが閾値をまたいでジャンプしても発動する', () => {
+  test('流星: 黄金と併用しコンボが閾値をまたいでジャンプしても発動する', () => {
     const items: ItemId[] = ['shootingStar', 'golden']
     const c = DEFAULT_PARAMS.talismans.shootingStar.c
     const wave = baseWave({
       score: 5000,
       combo: c - 1, // 黄金の+2適用でc+1へジャンプし、cをちょうど踏まない
+      shootingStarN: 50,
       chain: [card(20, '♥', 3), card(21, '♦', 4)],
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 100000000, 0, standardDeckComposition())
     expect(next.combo).toBe(c + 1)
-    expect(next.lastBonusGains.some(g => g.parts.some(p => p.text.startsWith('流星')))).toBe(true)
+    expect(next.shootingStarN).toBe(50 + DEFAULT_PARAMS.talismans.shootingStar.n)
   })
 
-  test('流星の護符: 既に閾値以上の状態が続いている間は再発動しない', () => {
+  test('流星: 既に閾値以上の状態が続いている間は再発動しない', () => {
     const items: ItemId[] = ['shootingStar']
     const c = DEFAULT_PARAMS.talismans.shootingStar.c
     const wave = baseWave({
       score: 5000,
       combo: c, // 既に閾値以上
+      shootingStarN: 50,
       chain: [card(20, '♥', 3), card(21, '♦', 4)],
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 100000000, 0, standardDeckComposition())
     expect(next.combo).toBe(c + 1)
-    expect(next.lastBonusGains.some(g => g.parts.some(p => p.text.startsWith('流星')))).toBe(false)
+    expect(next.shootingStarN).toBe(50)
+  })
+
+  test('流星: 蓄積されたshootingStarNは次のプレイのgainedに加算される', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      shootingStarN: 80,
+      comboFrozenThisWave: true,
+    })
+    const withoutShootingStar = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const withShootingStar = playCard(DEFAULT_PARAMS, wave, 'none', ['shootingStar'], 1000000, 0, standardDeckComposition())
+    expect(withShootingStar.wave.score).toBe(withoutShootingStar.wave.score + 80)
   })
 
   test('スコアが目標に達したらendReason=targetでstatus=ended', () => {
@@ -1399,18 +1410,19 @@ describe('playCard', () => {
   // 計算式自体の実質的な検証は、Task 8/9で序章・幕間がこれらのフィールドを消費するように
   // なった時点で、その挙動テストが担うことになる。
 
-  test('護符gainedの時点で目標スコアに達したら、コンボ到達直接加算(流星等)は適用されずその時点でendReason=targetとなる', () => {
+  test('護符gainedの時点で目標スコアに達した場合でも、コンボ到達によるshootingStarNの蓄積は行われる(蓄積は得点確定と独立)', () => {
     const items: ItemId[] = ['shootingStar']
     const wave = baseWave({
       score: 0,
       combo: DEFAULT_PARAMS.talismans.shootingStar.c - 1,
+      shootingStarN: 50,
       chain: [card(20, '♥', 3), card(21, '♦', 4)],
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, scoring.basePoint, 0, standardDeckComposition())
     expect(next.status).toBe('ended')
     expect(next.endReason).toBe('target')
-    expect(next.lastBonusGains).toEqual([]) // 流星の直接加算は行われていない
+    expect(next.shootingStarN).toBe(50 + DEFAULT_PARAMS.talismans.shootingStar.n)
   })
 
   test('イサ: comboFrozenThisWave中はplayCardでもコンボ数が変わらない', () => {
