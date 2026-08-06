@@ -20,9 +20,7 @@
   type OracleEntry = { name: string; desc: string } & Record<string, number | string>
 
   function oracleEntry(roleName: RoleName): OracleEntry {
-    // config.oracles(=ShidasuParams['oracles'])はpair・alternatingを含まない(YAGNI判断、
-    // 実装計画のTask 1参照)。RoleName型はpair・alternatingを含むためRecordへキャストしてアクセスする。
-    return (config!.oracles as unknown as Record<RoleName, OracleEntry>)[roleName]
+    return config!.oracles[roleName] as unknown as OracleEntry
   }
 
   function oracleParamKeys(roleName: RoleName): string[] {

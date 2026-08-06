@@ -3,25 +3,18 @@ import type { RoleName } from './types'
 import type { ShidasuParams } from './params'
 import { rollOffer } from './deck'
 
-// rollOracleOfferは重み付けなしの完全均等抽選。8役すべてが対象(将来の追加余地なし)。
+// rollOracleOfferは重み付けなしの完全均等抽選。10役すべてが対象。
 export const ORACLE_POOL: RoleName[] = [
   'completeRun', 'royalSet', 'flush', 'stair', 'color', 'suit', 'columnSweep', 'sameRank',
+  'pair', 'alternating',
 ]
 
-// params.oraclesはpair・alternatingを含まない(YAGNI判断、実装計画のTask 1参照)。
-// RoleName型はpair・alternatingを含むため、インデックスアクセスは型エラーになる。
-// ORACLE_POOLにpair・alternatingが含まれない限り実行時にこの分岐へは入らないが、
-// 型安全のためPartialでキャストしフォールバックを用意する。
-function oracleEntry(roleName: RoleName, params: ShidasuParams): { name: string; desc: string } | undefined {
-  return (params.oracles as Partial<Record<RoleName, { name: string; desc: string }>>)[roleName]
-}
-
 export function oracleName(roleName: RoleName, params: ShidasuParams): string {
-  return oracleEntry(roleName, params)?.name ?? roleName
+  return params.oracles[roleName].name
 }
 
 export function oracleDesc(roleName: RoleName, params: ShidasuParams): string {
-  return oracleEntry(roleName, params)?.desc ?? ''
+  return params.oracles[roleName].desc
 }
 
 // 神託プールから均等ランダムに3つ選ぶ(天啓のrollRevelationOfferと同じ方式。重複除外は無いが、
