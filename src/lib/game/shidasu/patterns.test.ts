@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/patterns.test.ts
 import { describe, test, expect } from 'vitest'
-import { isRed, analyzeSuitColor, analyzeStair, checkFlush, checkRoyalSet, countSameRankBefore, countSameRankForWildPlay, checkCompleteRun, evaluateChainBonus, stairUsesKALoop, chainContinuesPattern, cardColors } from './patterns'
+import { isRed, analyzeSuitColor, analyzeStair, checkFlush, checkRoyalSet, countSameRankBefore, countSameRankForWildPlay, checkCompleteRun, evaluateChainBonus, stairUsesKALoop, chainContinuesPattern, cardColors, analyzeAlternatingColor } from './patterns'
 import type { Card, RoleName } from './types'
 import { DEFAULT_PARAMS } from './params'
 import { card } from './testHelpers'
@@ -112,6 +112,11 @@ describe('chainContinuesPattern', () => {
     expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(21, '♠', 4), DEFAULT_PARAMS.scoring.stairMinLen, 2)).toBe(true)
     expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(21, '♠', 4), DEFAULT_PARAMS.scoring.stairMinLen, 3)).toBe(false)
   })
+
+  test('交互パターンが成立していれば、山札めくりでもコンボが継続する', () => {
+    const chain = [card(1, '♥', 1), card(2, '♠', 2), card(3, '♦', 3)]
+    expect(chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(4, '♣', 9))).toBe(true)
+  })
 })
 
 describe('stairUsesKALoop', () => {
@@ -209,6 +214,43 @@ describe('evaluateChainBonus (patternFired/roleFired)', () => {
     const result = evaluateChainBonus(scoring, [card(1, '♠', 2)], card(2, '♥', 9))
     expect(result.patternFired).toBe(false)
     expect(result.roleFired).toEqual([])
+  })
+})
+
+describe('analyzeAlternatingColor', () => {
+  test('実カード3枚では不成立', () => {
+    const chain = [card(1, '♥', 1), card(2, '♠', 2), card(3, '♦', 3)]
+    expect(analyzeAlternatingColor(chain).held).toBe(false)
+  })
+
+  test('実カード4枚が赤黒交互に並べば成立', () => {
+    const chain = [card(1, '♥', 1), card(2, '♠', 2), card(3, '♦', 3), card(4, '♣', 4)]
+    expect(analyzeAlternatingColor(chain).held).toBe(true)
+  })
+
+  test('隣接する2枚が同色なら不成立', () => {
+    const chain = [card(1, '♥', 1), card(2, '♦', 2), card(3, '♠', 3), card(4, '♣', 4)]
+    expect(analyzeAlternatingColor(chain).held).toBe(false)
+  })
+
+  test('ワイルドを挟んでも実カード同士が交互なら成立', () => {
+    const chain = [card(1, '♥', 1), card(2, '★', 0, true), card(3, '♠', 2), card(4, '♦', 3), card(5, '♣', 4)]
+    expect(analyzeAlternatingColor(chain).held).toBe(true)
+  })
+
+  test('5枚以上でも交互が続けば成立、途中で崩れれば不成立', () => {
+    const alternating = [card(1, '♥', 1), card(2, '♠', 2), card(3, '♦', 3), card(4, '♣', 4), card(5, '♥', 5)]
+    expect(analyzeAlternatingColor(alternating).held).toBe(true)
+    // 5枚目(id:5)を4枚目(♣=黒)と同じ黒スート(♠)にして、赤黒交互を意図的に崩す
+    // (♦は♥と同じ赤のため、♦のままだと交互が崩れない点に注意)
+    const broken = [card(1, '♥', 1), card(2, '♠', 2), card(3, '♦', 3), card(4, '♣', 4), card(5, '♠', 5)]
+    expect(analyzeAlternatingColor(broken).held).toBe(false)
+  })
+
+  test('紅蓮所持時、黒札も赤として扱われるため、赤黒交互のはずが共通色を持ち不成立になる', () => {
+    const chain = [card(1, '♥', 1), card(2, '♠', 2), card(3, '♦', 3), card(4, '♣', 4)]
+    expect(analyzeAlternatingColor(chain, []).held).toBe(true)
+    expect(analyzeAlternatingColor(chain, ['crimson']).held).toBe(false)
   })
 })
 
@@ -706,6 +748,32 @@ describe('evaluateChainBonus', () => {
     const result = evaluateChainBonus(scoring, chainBefore, card(13, '♠', 13))
     const completeRunSuitPart = result.parts.find(p => p.label === 'コンプリートラン(同スート)')
     expect(completeRunSuitPart?.cardIds).toHaveLength(13)
+  })
+
+  test('交互パターン: 4枚未満では成立しない', () => {
+    const chainBefore = [card(1, '♥', 1), card(2, '♠', 2)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 3))
+    expect(result.parts.some(p => p.label === '交互')).toBe(false)
+  })
+
+  test('交互パターン: 4枚以上が赤黒交互なら成立し、alternatingBonus分加点される', () => {
+    const chainBefore = [card(1, '♥', 1), card(2, '♠', 2), card(3, '♦', 3)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(4, '♣', 4))
+    expect(result.parts.map(p => p.text)).toContain(`交互+${scoring.alternatingBonus}`)
+    expect(result.patternFiredCount).toBe(1)
+  })
+
+  test('交互パターン: 同色が続く場合は成立しない', () => {
+    const chainBefore = [card(1, '♥', 1), card(2, '♦', 2), card(3, '♠', 3)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(4, '♣', 4))
+    expect(result.parts.some(p => p.label === '交互')).toBe(false)
+  })
+
+  test('交互パターン: 神託レベルが乗算される', () => {
+    const chainBefore = [card(1, '♥', 1), card(2, '♠', 2), card(3, '♦', 3)]
+    const oracleLevel = (name: RoleName) => (name === 'alternating' ? 3 : 1)
+    const result = evaluateChainBonus(scoring, chainBefore, card(4, '♣', 4), undefined, undefined, undefined, oracleLevel)
+    expect(result.parts.map(p => p.text)).toContain(`交互+${scoring.alternatingBonus * 3}`)
   })
 })
 

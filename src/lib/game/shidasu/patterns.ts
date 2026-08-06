@@ -61,6 +61,29 @@ function stepRank(rank: number, dir: -1 | 1, steps: number): number {
   return shifted + 1
 }
 
+export interface AlternatingColorAnalysis {
+  held: boolean
+}
+
+// チェーン内の実カード(ワイルド除く)がminLen枚以上、隣接するカード同士の色が常に異なる
+// (赤黒交互)かどうかを判定する。ワイルドは実カードの並びから除外して(位置を飛ばして)判定する
+// (analyzeStairのワイルド跨ぎと同じ考え方)。紅蓮・漆黒所持時は都合の良い解釈により、
+// 拡張された色同士が共通性を持ちやすくなる分、交互は成立しにくくなる
+// (同色パターンとは逆方向の影響を受ける)。minLenの既定値4はscoring.alternatingMinLenの
+// デフォルト値と一致させている(呼び出し元がscoring.alternatingMinLenを明示的に渡すため、
+// 実際にはこのデフォルト値はテストコードから直接呼ぶ場合にのみ使われる)。
+export function analyzeAlternatingColor(chain: Card[], items: ItemId[] = [], minLen: number = 4): AlternatingColorAnalysis {
+  const realCards = chain.filter(c => !c.wild)
+  if (realCards.length < minLen) return { held: false }
+  for (let i = 1; i < realCards.length; i++) {
+    const prevColors = cardColors(realCards[i - 1], items)
+    const currColors = cardColors(realCards[i], items)
+    const sharesColor = (prevColors.red && currColors.red) || (prevColors.black && currColors.black)
+    if (sharesColor) return { held: false }
+  }
+  return { held: true }
+}
+
 export function analyzeStair(chain: Card[]): StairAnalysis {
   if (chain.length === 0) return { held: true, dir: 0, len: 1 }
 
@@ -171,7 +194,7 @@ export interface ChainBonusResult {
   parts: ScorePart[]
   // 同スート/同色/階段のいずれかの「パターンボーナス」が成立したか
   patternFired: boolean
-  // 成立したパターンボーナスの種類数(同スート/同色のいずれかで+1、階段でさらに+1。最大2)。瑠璃が参照する。
+  // 成立したパターンボーナスの種類数(同スート/同色のいずれかで+1、階段で+1、交互で+1。最大3)。瑠璃が参照する。
   patternFiredCount: number
   // 成立した「役ボーナス」の一覧。usedWildの意味はrole名によって異なる:
   // flush/royalSet/completeRunは「実カードだけでは成立せずワイルドの穴埋めが必須だったか」(必要性ベース)。
@@ -220,6 +243,14 @@ export function evaluateChainBonus(
       patternFired = true
       patternFiredCount += 1
     }
+  }
+
+  if (analyzeAlternatingColor(chainIncludingThis, items, scoring.alternatingMinLen).held) {
+    const alternatingGain = Math.floor(scoring.alternatingBonus * oracleLevel('alternating'))
+    bonus += alternatingGain
+    parts.push(addPart('交互', alternatingGain, chainIncludingThisIds))
+    patternFired = true
+    patternFiredCount += 1
   }
 
   const stairInfo = analyzeStair(chainIncludingThis)
@@ -319,6 +350,8 @@ export function chainContinuesPattern(
 
   const stairInfo = analyzeStair(chainIncludingThis)
   if (stairInfo.held && stairInfo.dir !== 0 && stairInfo.len >= stairMinLen) return true
+
+  if (analyzeAlternatingColor(chainIncludingThis, items, scoring.alternatingMinLen).held) return true
 
   return false
 }

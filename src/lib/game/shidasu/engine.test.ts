@@ -201,7 +201,9 @@ describe('isPlayable', () => {
   })
 
   test('エワズが有効でも、階段パターンの継続判定はランク差1のみを認識する(ランク差2は継続しない)', () => {
-    const chain = [card(1, '♠', 1), card(2, '♥', 2), card(3, '♣', 3), card(4, '♦', 4)]
+    // card(2)を♣(黒)にして隣接する1・2枚目を黒黒にし、赤黒交互パターン(新規実装)が
+    // 偶然成立してしまわないようにしている(この点を除けばスート・色は元々不成立のまま)
+    const chain = [card(1, '♠', 1), card(2, '♣', 2), card(3, '♣', 3), card(4, '♦', 4)]
     const result = chainContinuesPattern(DEFAULT_PARAMS.scoring, chain, card(5, '♠', 6))
     expect(result).toBe(false)
   })
