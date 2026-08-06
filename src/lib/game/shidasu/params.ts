@@ -23,6 +23,9 @@ export interface ShidasuParams {
     completeRunBonus: number
     completeRunSuitBonus: number
     columnSweepBonus: number
+    pairBonusUnit: number
+    alternatingBonus: number
+    alternatingMinLen: number
   }
   // Wave単位の新概念「星」の定義一覧。waveSlot(1/2/3)が一致する星の中からランダムに1つ選ばれる。
   // idは一意な文字列(管理画面での編集・参照に使う)。
@@ -257,6 +260,9 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     completeRunBonus: 1000,
     completeRunSuitBonus: 1000,
     columnSweepBonus: 150,
+    pairBonusUnit: 50,
+    alternatingBonus: 80,
+    alternatingMinLen: 4,
   },
   stars: [
     { id: 'ordinary-moon', name: '普通の衛星', waveSlot: 1, targetMultiplier: 1, reward: 3, restrictionKind: 'none', descTemplate: '' },

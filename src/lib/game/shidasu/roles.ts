@@ -20,6 +20,8 @@ export const ROLE_LIST: RoleEntry[] = [
   { name: 'sameRank', label: '同ランク', desc: 'チェーン内に同じランクが複数出現' },
   { name: 'completeRun', label: 'コンプリートラン', desc: '13ランクが出揃った瞬間(同スートなら追加ボーナスも)' },
   { name: 'columnSweep', label: '列一掃', desc: '場札の列を最後の1枚まで取り切る' },
+  { name: 'pair', label: 'ペア', desc: 'チェーン全体で同ランクの組が2組以上成立' },
+  { name: 'alternating', label: '交互', desc: 'チェーンが4枚以上かつ赤黒交互に並ぶ' },
 ]
 
 // 役の基礎点(神託レベルを乗算する前の値)をparams.scoringから引く。
@@ -33,5 +35,7 @@ export function roleBasePoint(params: ShidasuParams, roleName: RoleName): number
     case 'sameRank': return params.scoring.sameRankBonusUnit
     case 'completeRun': return params.scoring.completeRunBonus
     case 'columnSweep': return params.scoring.columnSweepBonus
+    case 'pair': return params.scoring.pairBonusUnit
+    case 'alternating': return params.scoring.alternatingBonus
   }
 }

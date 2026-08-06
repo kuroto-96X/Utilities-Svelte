@@ -18,7 +18,10 @@
     "sameRankBonusUnit": 100,
     "completeRunBonus": 1000,
     "completeRunSuitBonus": 1000,
-    "columnSweepBonus": 500
+    "columnSweepBonus": 500,
+    "pairBonusUnit": 50,
+    "alternatingBonus": 80,
+    "alternatingMinLen": 4
   },
   "stars": [
     {

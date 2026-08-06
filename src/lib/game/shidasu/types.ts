@@ -34,7 +34,7 @@ export interface Star {
   descTemplate: string
 }
 export type Rarity = 'C' | 'U' | 'R'
-export type RoleName = 'flush' | 'royalSet' | 'sameRank' | 'completeRun' | 'columnSweep' | 'suit' | 'color' | 'stair'
+export type RoleName = 'flush' | 'royalSet' | 'sameRank' | 'completeRun' | 'columnSweep' | 'suit' | 'color' | 'stair' | 'pair' | 'alternating'
 export type ItemId =
   | 'bridge' | 'grace'
   | 'patience' | 'purify' | 'temperance'

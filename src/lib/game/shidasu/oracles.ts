@@ -8,12 +8,20 @@ export const ORACLE_POOL: RoleName[] = [
   'completeRun', 'royalSet', 'flush', 'stair', 'color', 'suit', 'columnSweep', 'sameRank',
 ]
 
+// params.oraclesはpair・alternatingを含まない(YAGNI判断、実装計画のTask 1参照)。
+// RoleName型はpair・alternatingを含むため、インデックスアクセスは型エラーになる。
+// ORACLE_POOLにpair・alternatingが含まれない限り実行時にこの分岐へは入らないが、
+// 型安全のためPartialでキャストしフォールバックを用意する。
+function oracleEntry(roleName: RoleName, params: ShidasuParams): { name: string; desc: string } | undefined {
+  return (params.oracles as Partial<Record<RoleName, { name: string; desc: string }>>)[roleName]
+}
+
 export function oracleName(roleName: RoleName, params: ShidasuParams): string {
-  return params.oracles[roleName].name
+  return oracleEntry(roleName, params)?.name ?? roleName
 }
 
 export function oracleDesc(roleName: RoleName, params: ShidasuParams): string {
-  return params.oracles[roleName].desc
+  return oracleEntry(roleName, params)?.desc ?? ''
 }
 
 // 神託プールから均等ランダムに3つ選ぶ(天啓のrollRevelationOfferと同じ方式。重複除外は無いが、
@@ -27,5 +35,6 @@ export function defaultOracleLevels(): Record<RoleName, number> {
   return {
     flush: 1, royalSet: 1, sameRank: 1, completeRun: 1, columnSweep: 1,
     suit: 1, color: 1, stair: 1,
+    pair: 1, alternating: 1,
   }
 }
