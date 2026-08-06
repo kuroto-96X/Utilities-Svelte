@@ -1946,7 +1946,7 @@ describe('drawStock', () => {
     expect(next.score).toBe(100)
   })
 
-  test('誠実: パターン継続めくりが同色パターンで成立すると直接点が加算される', () => {
+  test('誠実: パターン継続(同色)でコンボが直接+nされる', () => {
     const wave = makeWave({
       stock: [card(1, '♠', 6)], // 黒(色継続)
       chain: [card(2, '♣', 4), card(3, '♠', 5)], // 黒2枚、同色成立中
@@ -1957,35 +1957,32 @@ describe('drawStock', () => {
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['sincerity'], 1000000, standardDeckComposition())
     expect(next.linked).toBe(true)
-    expect(next.score).toBe(100 + DEFAULT_PARAMS.talismans.sincerity.n)
+    expect(next.score).toBe(100)
+    expect(next.combo).toBe(2 + DEFAULT_PARAMS.talismans.sincerity.n)
     expect(next.drawContinueCountThisChain).toBe(1)
   })
 
-  test('誠実(パターン継続時の直接加算)でスコアが目標に達したら即座にendReason=targetとなりウェーブが終了する', () => {
-    const n = DEFAULT_PARAMS.talismans.sincerity.n
-    const wave = makeWave({
-      stock: [card(1, '♠', 6)], // 黒(色継続)。引くとパターン継続する
-      chain: [card(2, '♣', 4), card(3, '♠', 5)], // 黒2枚、同色成立中
-      linked: true,
-      combo: 2,
-      score: 100,
-    })
-    const result = drawStock(DEFAULT_PARAMS, wave, ['sincerity'], 100 + n, standardDeckComposition())
-    expect(result.wave.linked).toBe(true)
-    expect(result.wave.score).toBe(100 + n)
-    expect(result.wave.status).toBe('ended')
-    expect(result.wave.endReason).toBe('target')
-  })
-
-  test('パターン継続めくりが同スートパターンで成立した場合、誠実は発動しない(同色専用)', () => {
+  test('誠実: パターン継続(同スート)でも発動する(同色限定ではなくなった)', () => {
     const wave = makeWave({
       stock: [card(1, '♠', 6)],
       chain: [card(2, '♠', 4), card(3, '♠', 5)], // 同スート成立中
       linked: true,
-      score: 100,
+      combo: 2,
     })
     const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['sincerity'], 1000000, standardDeckComposition())
-    expect(next.score).toBe(100)
+    expect(next.combo).toBe(2 + DEFAULT_PARAMS.talismans.sincerity.n)
+  })
+
+  test('誠実: パターン継続(階段、架橋併用で短い階段でも判定)でも発動する', () => {
+    const wave = makeWave({
+      stock: [card(1, '♦', 7)], // 階段継続: 5→6→7(長さ3)
+      combo: 2,
+      chain: [card(2, '♠', 5), card(3, '♣', 6)],
+      chainOrigin: ['play', 'play'],
+      linked: true,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['bridge', 'sincerity'], 1000000, standardDeckComposition())
+    expect(next.combo).toBe(2 + DEFAULT_PARAMS.talismans.sincerity.n)
   })
 
   test('博愛: コンボごとに1回だけリセットを無効化し、パターン継続と同じ扱いになる', () => {
@@ -2118,29 +2115,7 @@ describe('drawStock', () => {
     expect(next.mercyActiveNextCombo).toBe(false)
   })
 
-  test('誠実の護符: 山札めくりで同色(同スートではない)パターン継続した時、lastBonusGainsに直接加算が別枠で入る', () => {
-    const items: ItemId[] = ['sincerity']
-    // sincerityはctx.colorHeld(=colorHeld && !suitHeld、つまり「同色だが同スートではない」)でのみ
-    // 発火する。チェーンを赤2スート(♥・♦)混在にして、同スートは崩しつつ同色は保つ。
-    const wave = makeWave({
-      foundation: card(0, '♥', 3),
-      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
-      stock: [card(9, '♦', 7)],
-      chain: [card(20, '♥', 3), card(21, '♦', 9), card(22, '♥', 2)],
-      linked: true,
-    })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition(), 'none')
-    expect(next.lastDrawEffect).toBe('pattern')
-    expect(next.lastBonusGains.some(g => g.label === '護符による直接加算' && g.parts.map(p => p.text).includes(`誠実+${DEFAULT_PARAMS.talismans.sincerity.n}`))).toBe(true)
-    // 回帰防止: lastGainとlastBonusGainsの合計が実際のスコア増分と一致することを確認する(二重計上防止)。
-    const bonusTotal = next.lastBonusGains.reduce((sum, g) => sum + g.points, 0)
-    expect((next.lastGain?.points ?? 0) + bonusTotal).toBe(next.score - wave.score)
-  })
-
-  test('素朴+誠実を併用してもlastGain(山札めくり得点)とlastBonusGains(誠実の直接加算)が二重計上されない', () => {
-    // Task 3で発見された二重計上バグ(直接加算の値がlastGainの元になる変数にも混入する)は、
-    // naive(素朴)による山札めくり得点計算パスを通さないと検知できない回帰テストになるため、
-    // 単体のsincerityテストとは別に、naiveを併用したケースを検証する。
+  test('誠実: 素朴を併用すると、そのめくりのgained計算にも誠実によるコンボ上昇が反映される', () => {
     const items: ItemId[] = ['naive', 'sincerity']
     const wave = makeWave({
       foundation: card(0, '♥', 3),
@@ -2149,15 +2124,25 @@ describe('drawStock', () => {
       chain: [card(20, '♥', 3), card(21, '♦', 9), card(22, '♥', 2)],
       linked: true,
     })
-    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition(), 'none')
+    const withoutSincerity = drawStock(DEFAULT_PARAMS, wave, ['naive'], 1000000, standardDeckComposition(), 'none')
+    const withSincerity = drawStock(DEFAULT_PARAMS, wave, items, 1000000, standardDeckComposition(), 'none')
+    expect(withSincerity.wave.lastDrawEffect).toBe('pattern')
+    expect(withSincerity.wave.combo).toBe(withoutSincerity.wave.combo + DEFAULT_PARAMS.talismans.sincerity.n)
+    expect(withSincerity.wave.lastGain?.points ?? 0).toBeGreaterThan(withoutSincerity.wave.lastGain?.points ?? 0)
+  })
+
+  test('誠実: 素朴を持たなくても、パターン継続のたびコンボは押し上げられる(得点計算は発生しない)', () => {
+    const wave = makeWave({
+      foundation: card(0, '♥', 3),
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      stock: [card(9, '♦', 7)],
+      chain: [card(20, '♥', 3), card(21, '♦', 9), card(22, '♥', 2)],
+      linked: true,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['sincerity'], 1000000, standardDeckComposition(), 'none')
     expect(next.lastDrawEffect).toBe('pattern')
-    // naiveによる山札めくり得点計算が実際に発生している(lastGainがnullでない)ことを確認した上で、
-    // 誠実の直接加算がlastBonusGainsにも別枠で入っていることを確認する。
-    expect(next.lastGain).not.toBeNull()
-    expect(next.lastGain?.points).toBeGreaterThan(0)
-    expect(next.lastBonusGains.some(g => g.label === '護符による直接加算' && g.parts.map(p => p.text).includes(`誠実+${DEFAULT_PARAMS.talismans.sincerity.n}`))).toBe(true)
-    const bonusTotal = next.lastBonusGains.reduce((sum, g) => sum + g.points, 0)
-    expect((next.lastGain?.points ?? 0) + bonusTotal).toBe(next.score - wave.score)
+    expect(next.lastGain).toBeNull()
+    expect(next.combo).toBe(wave.combo + DEFAULT_PARAMS.talismans.sincerity.n)
   })
 })
 

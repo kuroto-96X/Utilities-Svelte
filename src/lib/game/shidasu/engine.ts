@@ -2,7 +2,7 @@
 import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, Star, StarRestriction } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
-import { isFace, chainContinuesPattern, evaluateChainBonus, analyzeSuitColor, countSameRankBefore, countSameRankForWildPlay, cardColors } from './patterns'
+import { isFace, chainContinuesPattern, evaluateChainBonus, countSameRankBefore, countSameRankForWildPlay, cardColors } from './patterns'
 import { addPart, multiplyPart, lockPart, type ScorePart } from './scoreParts'
 import { rollItemOffer } from './items'
 import { applyDirectEffects, type DirectEffectContext } from './directEffects'
@@ -729,29 +729,16 @@ export function drawStock(
   const scoreAfterStockEmpty = wave.score
 
   if (patternContinues) {
-    const { colorHeld, suitHeld } = analyzeSuitColor([...wave.chain, drawnCard], items)
-    const drawContinueCtx: DirectEffectContext = {
-      comboBeforeReset: 0,
-      hasPlayableColumns: true,
-      roleFiredThisChain: false,
-      remainingTableauCount: remainingCount(wave.tableau),
-      combo: wave.combo,
-      colorHeld: colorHeld && !suitHeld,
-      previousCombo: wave.combo,
-      scoreAfterGained: wave.score,
-    }
-    // 誠実(drawContinueDirect)はwouldContinue(実際のパターン継続)でのみ発火する。
-    // benevolenceFiresによる継続扱いは「本来リセットするところの救済」であり、
-    // パターン継続そのものの報酬である誠実の対象にはしない。
-    const drawContinueResult = wouldContinue
-      ? applyDirectEffects('drawContinueDirect', items, drawContinueCtx, params)
-      : { value: 0, parts: [] as ScorePart[] }
-    const directGain = drawContinueResult.value
+    // 誠実: パターン継続全般(同スート・同色・階段問わず)によりコンボが継続したとき、
+    // wave.comboに直接+nする(naiveの有無に関わらず適用、次のプレイのeffectiveComboにも反映される)。
+    // wouldContinue(実際のパターン継続)でのみ発火する。benevolenceFiresによる継続扱いは
+    // 「本来リセットするところの救済」であり、パターン継続そのものの報酬である誠実の対象にはしない。
+    const sincerityAdd = wouldContinue && items.includes('sincerity') ? params.talismans.sincerity.n : 0
     const newDrawContinueCount = wouldContinue ? wave.drawContinueCountThisChain + 1 : wave.drawContinueCountThisChain
 
     let naiveGained = 0
     let naiveParts: ScorePart[] = []
-    let naiveCombo = wave.combo
+    let naiveCombo = wave.combo + sincerityAdd
     let naiveRoleFiredThisChain = wave.roleFiredThisChain
     let naiveFlushActiveThisCombo = wave.flushActiveThisCombo
     if (wouldContinue && items.includes('naive')) {
@@ -767,7 +754,7 @@ export function drawStock(
       naiveRoleFiredThisChain = wave.roleFiredThisChain || chainResult.roleFired.length > 0
       naiveFlushActiveThisCombo = wave.flushActiveThisCombo || chainResult.roleFired.some(r => r.name === 'flush')
       // 基礎コンボ数は計算用のコンボ数に常に加算する(素朴パスでは祝福による基礎コンボ数の増加は発生しない)。
-      let effectiveCombo = newCombo + wave.baseComboCount
+      let effectiveCombo = newCombo + sincerityAdd + wave.baseComboCount
       for (const id of items) {
         if (id === 'protection' && effectiveCombo < params.talismans.protection.c) {
           effectiveCombo = params.talismans.protection.c
@@ -813,13 +800,10 @@ export function drawStock(
         naiveGained = 0
       }
       naiveParts = parts
-      naiveCombo = newCombo
+      naiveCombo = newCombo + sincerityAdd
     }
 
     const patternContinueBonusGains: BonusGain[] = []
-    if (drawContinueResult.parts.length > 0) {
-      patternContinueBonusGains.push({ label: '護符による直接加算', points: drawContinueResult.value, parts: drawContinueResult.parts })
-    }
 
     const continueWave: WaveState = {
       ...wave,
@@ -831,7 +815,7 @@ export function drawStock(
       linked: true,
       lastDrawEffect: drawnCard.wild ? 'wild' : 'pattern',
       lastGain: naiveParts.length > 0 ? { points: naiveGained, parts: naiveParts } : null,
-      score: scoreAfterStockEmpty + directGain + naiveGained,
+      score: scoreAfterStockEmpty + naiveGained,
       drawContinueCountThisChain: newDrawContinueCount,
       benevolenceUsedThisCombo: benevolenceFires ? true : wave.benevolenceUsedThisCombo,
       maxComboThisWave: Math.max(wave.maxComboThisWave, naiveCombo),
