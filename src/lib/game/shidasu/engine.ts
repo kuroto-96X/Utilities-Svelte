@@ -555,6 +555,7 @@ export function playCard(
   if (frostFactor !== 1) parts.push(multiplyPart('星霜', frostFactor))
   let gained = Math.floor((itemResult.value + discretionAdd) * multiplier * mannazFactor * dedicationFactor * diligenceFactor * divineProtectionFactor * frostFactor)
   if (scoreLock && isBossScoreLocked(scoreLock, effectiveCombo, card)) {
+    parts.length = 0
     parts.push(lockPart(bossScoreLockMessage(scoreLock)))
     gained = 0
   }
@@ -844,6 +845,7 @@ export function drawStock(
       if (mannazFactor !== 1) parts.push(multiplyPart('マンナズ', mannazFactor))
       naiveGained = Math.floor(itemResult.value * multiplier * mannazFactor)
       if (scoreLock && isBossScoreLocked(scoreLock, effectiveCombo, drawnCard)) {
+        parts.length = 0
         parts.push(lockPart(bossScoreLockMessage(scoreLock)))
         naiveGained = 0
       }

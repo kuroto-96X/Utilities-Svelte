@@ -1443,6 +1443,17 @@ describe('playCard', () => {
       expect(next.lastGain?.points).toBe(0)
     })
 
+    test('scoreLockが成立した場合、lastGain.partsは惑星ロックパーツ1件のみになる(基礎点等の他パーツは含まれない)', () => {
+      const wave = baseWave({
+        foundation: card(0, '♠', 5),
+        tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+        combo: 1, // このプレイでnewCombo=2、baseComboCount=0によりeffectiveCombo=2
+      })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'combo', maxCombo: 2, tierLabel: 'test-tier' })
+      expect(next.lastGain?.parts).toHaveLength(1)
+      expect(next.lastGain?.parts[0]).toEqual({ label: 'test-tier: 獲得点0', kind: 'lock', amount: 0, text: 'test-tier: 獲得点0' })
+    })
+
     test('scoreLockがkind:comboで、effectiveComboがmaxComboを超えるなら通常通り得点する', () => {
       const wave = baseWave({
         foundation: card(0, '♠', 5),
@@ -3498,6 +3509,19 @@ describe('drawStock (素朴の得点ルール変更)', () => {
     expect(next.lastGain).not.toBeNull() // メッセージは欠落しない
     expect(next.lastGain?.points).toBe(0)
     expect(next.lastGain?.parts.map(p => p.text)).toContain('test-tier: 獲得点0')
+  })
+
+  test('素朴+scoreLock(kind:combo): 惑星ロックが成立した場合、lastGain.partsは惑星ロックパーツ1件のみになる', () => {
+    const wave = makeWave({
+      stock: [card(1, '♠', 9)],
+      combo: 2, // このめくりでnewCombo=3、baseComboCount=0によりeffectiveCombo=3
+      chain: [card(2, '♠', 4), card(3, '♠', 5)],
+      linked: true,
+      score: 0,
+    })
+    const { wave: next } = drawStock(DEFAULT_PARAMS, wave, ['naive'], 1000000, standardDeckComposition(), 'none', Math.random, { kind: 'combo', maxCombo: 3, tierLabel: 'test-tier' })
+    expect(next.lastGain?.parts).toHaveLength(1)
+    expect(next.lastGain?.parts[0]).toEqual({ label: 'test-tier: 獲得点0', kind: 'lock', amount: 0, text: 'test-tier: 獲得点0' })
   })
 
   test('素朴を持たない場合は、パターン継続めくりで得点もコンボ加算も発生しない(既存挙動)', () => {
