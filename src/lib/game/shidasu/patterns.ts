@@ -332,6 +332,39 @@ export function evaluateChainBonus(
     roleFired.push({ name: 'completeRun', usedWild: completeRunUsedWild, amount: completeRunTotalGain })
   }
 
+  // ペア: チェーン全体でランクごとに集計し、2枚以上あるランクが2組以上あれば成立する累積型役。
+  // ワイルドは「今回プレイしたカードのランク」(ワイルド自身の場合は最大枚数の実ランク)にのみ
+  // 加算し、複数ランクへの二重カウントを避ける(countSameRankBefore/countSameRankForWildPlayと同じ思想)。
+  const pairRankCounts = new Map<Card['rank'], number>()
+  for (const c of chainBefore) {
+    if (!c.wild) pairRankCounts.set(c.rank, (pairRankCounts.get(c.rank) ?? 0) + 1)
+  }
+  const pairWildCountInChain = chainBefore.filter(c => c.wild).length
+  if (card.wild) {
+    let maxRank: Card['rank'] | null = null
+    let maxCount = 0
+    for (const [rank, count] of pairRankCounts) {
+      if (count > maxCount) {
+        maxRank = rank
+        maxCount = count
+      }
+    }
+    if (maxRank !== null) {
+      pairRankCounts.set(maxRank, Math.max(maxCount + pairWildCountInChain, 1) + 1)
+    }
+  } else {
+    const currentCount = pairRankCounts.get(card.rank) ?? 0
+    pairRankCounts.set(card.rank, currentCount + pairWildCountInChain + 1)
+  }
+  const pairCount = [...pairRankCounts.values()].filter(c => c >= 2).length
+  if (pairCount >= 2) {
+    const pairGain = Math.floor(scoring.pairBonusUnit * pairCount * oracleLevel('pair') * roleBonusMultiplier('pair'))
+    bonus += pairGain
+    parts.push(addPart('ペア', pairGain, chainIncludingThisIds))
+    const pairUsedWild = card.wild || pairWildCountInChain > 0
+    roleFired.push({ name: 'pair', usedWild: pairUsedWild, amount: pairGain })
+  }
+
   return { bonus, parts, patternFired, patternFiredCount, roleFired }
 }
 

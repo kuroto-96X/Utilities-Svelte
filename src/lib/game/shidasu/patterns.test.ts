@@ -775,6 +775,55 @@ describe('evaluateChainBonus', () => {
     const result = evaluateChainBonus(scoring, chainBefore, card(4, '♣', 4), undefined, undefined, undefined, oracleLevel)
     expect(result.parts.map(p => p.text)).toContain(`交互+${scoring.alternatingBonus * 3}`)
   })
+
+  test('ペア: 組数0では加点なし', () => {
+    const chainBefore = [card(1, '♠', 3), card(2, '♥', 6)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(3, '♦', 9))
+    expect(result.roleFired.find(r => r.name === 'pair')).toBeUndefined()
+  })
+
+  test('ペア: 組数1(1組のみ)では加点なし', () => {
+    const chainBefore = [card(1, '♠', 3), card(2, '♥', 3), card(3, '♦', 6)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(4, '♣', 9))
+    expect(result.roleFired.find(r => r.name === 'pair')).toBeUndefined()
+  })
+
+  test('ペア: 組数2で成立し、組数×pairBonusUnit分加点される', () => {
+    const chainBefore = [card(1, '♠', 3), card(2, '♥', 3), card(3, '♦', 9)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(4, '♣', 9))
+    const pairEntry = result.roleFired.find(r => r.name === 'pair')
+    expect(pairEntry?.amount).toBe(scoring.pairBonusUnit * 2)
+  })
+
+  test('ペア: チェーン内のワイルドは今回プレイしたカードのランクにのみ加算される', () => {
+    const chainBefore = [card(1, '♠', 3), card(2, '♥', 3), card(3, '★', 0, true), card(4, '♦', 6)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(5, '♣', 6))
+    // ランク3: 実カード2枚(組成立)、ランク6: 実カード1枚+ワイルド1枚+今回1枚=3枚(組成立)
+    const pairEntry = result.roleFired.find(r => r.name === 'pair')
+    expect(pairEntry?.amount).toBe(scoring.pairBonusUnit * 2)
+  })
+
+  test('ペア: ワイルド自身をプレイした場合、最大枚数の実ランクにワイルド分が加算される', () => {
+    const chainBefore = [card(1, '♠', 3), card(2, '♥', 3), card(3, '♦', 9)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(4, '★', 0, true))
+    // ランク3: 実カード2枚+今回のワイルド1枚=3枚(組成立)、ランク9: 実カード1枚のまま(組不成立)
+    expect(result.roleFired.find(r => r.name === 'pair')).toBeUndefined()
+  })
+
+  test('ペア: ワイルド自身をプレイし、複数組が成立していれば加点される', () => {
+    const chainBefore = [card(1, '♠', 3), card(2, '♥', 3), card(3, '♦', 9), card(4, '♣', 9)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(5, '★', 0, true))
+    const pairEntry = result.roleFired.find(r => r.name === 'pair')
+    expect(pairEntry?.amount).toBe(scoring.pairBonusUnit * 2)
+  })
+
+  test('ペア: 神託レベルが乗算される', () => {
+    const chainBefore = [card(1, '♠', 3), card(2, '♥', 3), card(3, '♦', 9)]
+    const oracleLevel = (name: RoleName) => (name === 'pair' ? 2 : 1)
+    const result = evaluateChainBonus(scoring, chainBefore, card(4, '♣', 9), undefined, undefined, undefined, oracleLevel)
+    const pairEntry = result.roleFired.find(r => r.name === 'pair')
+    expect(pairEntry?.amount).toBe(scoring.pairBonusUnit * 2 * 2)
+  })
 })
 
 describe('evaluateChainBonus: 神託レベル(oracleLevel)による得点上昇', () => {
