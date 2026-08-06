@@ -128,7 +128,9 @@ export function startWave(
   diligenceX: number = 1,
   divineProtectionX: number = 1,
   discretionN: number = 10,
-  frostX: number = 1
+  frostX: number = 1,
+  echoX: number = 1,
+  shootingStarN: number = 50
 ): { wave: WaveState; deckComposition: DeckCard[] } {
   const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
   let idSeq = 0
@@ -198,8 +200,8 @@ export function startWave(
     divineProtectionX,
     discretionN,
     frostX,
-    echoX: 1,
-    shootingStarN: 50,
+    echoX,
+    shootingStarN,
     roleEchoUsedThisCombo: {},
     sameRankEchoUsedThisCombo: [],
     pendingRoleEcho: null,
@@ -1145,6 +1147,8 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
     divineProtectionX: wave.divineProtectionX,
     discretionN: wave.discretionN,
     frostX: wave.frostX,
+    echoX: wave.echoX,
+    shootingStarN: wave.shootingStarN,
   }
 
   // 8ステージクリア(stageIndex === stagesPerRun - 1のwaveSlot 3クリア)時のみ、ショップ突入を
@@ -1198,7 +1202,7 @@ function enterShop(params: ShidasuParams, run: RunState, _seed: number | undefin
 // ダミー値(0, 0)を渡す。生成したWaveStateは本番run.waveとは無関係な一時オブジェクトであり、
 // 呼び出し元(+page.svelte)がローカルstateとして保持・破棄する。
 export function startRevelationPreview(params: ShidasuParams, run: RunState, seed?: number): WaveState {
-  const { wave } = startWave(params, 0, 0, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX)
+  const { wave } = startWave(params, 0, 0, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX, run.echoX, run.shootingStarN)
   return wave
 }
 
@@ -1206,7 +1210,7 @@ export function startRevelationPreview(params: ShidasuParams, run: RunState, see
 // 更新されている可能性がある)から実際のウェーブを配り直してプレイ画面へ進む。「次のWaveへ」ボタンから呼ぶ。
 export function finishShop(params: ShidasuParams, run: RunState, seed?: number): RunState {
   if (run.phase !== 'shop') return run
-  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX)
+  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX, run.echoX, run.shootingStarN)
   return { ...run, phase: 'playing', wave, waveGeneration: run.waveGeneration + 1, deckComposition, shop: null }
 }
 

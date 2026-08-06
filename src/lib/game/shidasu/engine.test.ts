@@ -435,6 +435,32 @@ describe('果断・星霜の基盤(startWave/resolveWaveEndでの同期)', () =>
   })
 })
 
+describe('残響・流星の基盤(startWave/resolveWaveEndでの同期)', () => {
+  test('startWaveのechoX・shootingStarNのデフォルト値はそれぞれ1・50', () => {
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1)
+    expect(wave.echoX).toBe(1)
+    expect(wave.shootingStarN).toBe(50)
+  })
+
+  test('startWaveに渡した値がそのままwaveに反映される', () => {
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels(), 1, 1, 1, 10, 1, 1.5, 90)
+    expect(wave.echoX).toBe(1.5)
+    expect(wave.shootingStarN).toBe(90)
+  })
+
+  test('resolveWaveEndでクリア成功時、wave側のechoX・shootingStarNがrunへ書き戻される', () => {
+    const base = beginRun(DEFAULT_PARAMS, 1)
+    const { wave } = startWave(DEFAULT_PARAMS, base.stageIndex, base.waveIndex, base.items, base.deckComposition, 1, base.extraTableauRows, base.oracleLevels)
+    const run: RunState = {
+      ...base,
+      wave: { ...wave, echoX: 3, shootingStarN: 120, score: waveTarget(DEFAULT_PARAMS, 0, 0, base.stageStars), status: 'ended', endReason: 'target' },
+    }
+    const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
+    expect(result.echoX).toBe(3)
+    expect(result.shootingStarN).toBe(120)
+  })
+})
+
 describe('果断・星霜: 秘儀/天啓/神託使用でdiscretionN・frostXが加算される', () => {
   test('秘儀使用後、discretionNが10から20になる(果断所持時)', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, ['discretion'], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
