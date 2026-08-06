@@ -18,7 +18,7 @@ export function oracleDesc(roleName: RoleName, params: ShidasuParams): string {
 }
 
 // 神託プールから均等ランダムに3つ選ぶ(天啓のrollRevelationOfferと同じ方式。重複除外は無いが、
-// 8種類中3つをシャッフルして先頭から取るため、1回のオファー内で同じ役が重複することはない)。
+// 10種類中3つをシャッフルして先頭から取るため、1回のオファー内で同じ役が重複することはない)。
 export function rollOracleOffer(rand: () => number = Math.random, count = 3): RoleName[] {
   return rollOffer(ORACLE_POOL, count, rand)
 }
