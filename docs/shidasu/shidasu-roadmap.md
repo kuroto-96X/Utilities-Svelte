@@ -12,7 +12,8 @@
 4. **報酬の計算方法の検討**
 5. **役の再検討**
    役の種類の見直しを検討する。→神託も変更
-   難易度別(簡単・中・難しい)の新規役・パターン候補12個を洗い出し済み(2026-08-06)。詳細は`docs/shidasu/shidasu-role-candidates.md`を参照。実装対象の選定・実装は未着手
+   難易度別(簡単・中・難しい)の新規役・パターン候補12個を洗い出し済み(2026-08-06)。詳細は`docs/shidasu/shidasu-role-candidates.md`を参照。うちペア(役)・交互(パターン)の2個は実装完了(2026-08-06)。残り10個は実装対象の選定・実装は未着手。
+   神託(oracle)の対象化(ORACLE_POOLへのペア・交互の追加)も未着手
 6. **星の妨害行動の検討**
    Wave3の星は一定ターンごとに妨害行動が発動するようにする。
    例えば、「場札の１列をランダムに選び山札に戻してシャッフル、その後裏向きで戻す」など
@@ -37,3 +38,4 @@
 - **護符100個の実装完了**: `docs/shidasu/shidasu-gofu-candidates.md`記載の護符候補100個すべてを実装済み。誓約・契り・紅蓮・漆黒(色/スート拡張解釈を含む)は`docs/superpowers/specs/2026-08-02-shidasu-color-suit-lock-and-enablers-design.md`、白銀・果断・星霜は`docs/superpowers/specs/2026-08-03-shidasu-remaining-talismans-silver-audacity-frost-design.md`を参照。
 - **得点内訳パーツの対象カードハイライト**: 得点内訳アニメーションで、同スート・同色・階段・フラッシュ・ロイヤル・同ランク・コンプリートランのパーツが中央表示されている間、対象カードを黄色枠で強調表示するようにした。`docs/superpowers/specs/2026-08-06-shidasu-score-part-card-highlight-design.md`。
 - **得点内訳パーツの対象護符ハイライト**: 得点内訳アニメーションで、護符効果由来のパーツ(gained・clearBonus両チャンネル)が中央表示されている間、対応する護符バッジを黄色枠で強調表示するようにした。水鏡のエコー分は水鏡自身をハイライトする。`docs/superpowers/specs/2026-08-06-shidasu-score-part-item-highlight-design.md`。
+- **ペア役・交互パターンの追加**: `docs/shidasu/shidasu-role-candidates.md`の候補から、新規役「ペア」(チェーン全体で同ランク組が2組以上成立で組数×50点加算)と新規パターン「交互」(チェーン内の実カードが4枚以上赤黒交互で80点加算、同スート・同色・階段に並ぶ第4のパターン)を実装した。`docs/superpowers/specs/2026-08-06-shidasu-pair-alternating-roles-design.md`。
