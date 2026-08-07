@@ -63,9 +63,10 @@ waveSlot3の星はショップ画面で通貨`flow.rerollCost`(既定**30**)を�
 4. 列一掃ボーナス(4.3節、成立時)を加算
 5. 所持護符を**並び順(左→右、プレイヤーがドラッグ&ドロップで変更可能)に走査**し、加算・倍算系の護符効果を逐次適用(`applyItemEffects`)
 6. 果断(discretion)の永続加算値`discretionN`、流星(shootingStar)の永続加算値`shootingStarN`を加算
-7. 最終乗算チェーン(所持順に依らず固定順で適用): コンボ倍率 × マンナズ(秘儀) × 献身(dedicationX) × 勤勉(diligenceX) × 加護(divineProtectionX) × 星霜(frostX) × 残響(echoX) × 慢心(arroganceX、山札0枚時のみ)
-8. 最後に`Math.floor`で切り捨て
-9. 星の得点ロック(`BossScoreLock`)が成立している場合は、それまでの内訳を破棄し獲得点0にする
+7. このプレイで場札が0枚になった場合のみ、全消しボーナス(4.4節)を加算
+8. 最終乗算チェーン(所持順に依らず固定順で適用): コンボ倍率 × マンナズ(秘儀) × 献身(dedicationX) × 勤勉(diligenceX) × 加護(divineProtectionX) × 星霜(frostX) × 残響(echoX) × 慢心(arroganceX、山札0枚時のみ)
+9. 最後に`Math.floor`で切り捨て
+10. 星の得点ロック(`BossScoreLock`)が成立している場合は、それまでの内訳を破棄し獲得点0にする(全消しボーナスも含めて0になる)
 
 コンボ倍率は`1 + effectiveCombo × comboMultiplierStep(0.1)`。`effectiveCombo`は実際のコンボ数(`wave.combo`)に基礎コンボ数(`baseComboCount`、祝福・剛毅等で永続的に加算される)を足した計算専用値で、さらに庇護(下限を保証)・大地(固定加算)を所持順に適用したもの。
 
@@ -98,7 +99,7 @@ waveSlot3の星はショップ画面で通貨`flow.rerollCost`(既定**30**)を�
 
 ### 4.4 全消しボーナス
 
-場札が0枚になった瞬間、ウェーブは即座に終了(`endReason: 'fullClear'`)し、`clearBonus(既定2000) + 残り山札枚数 × clearBonusPerStock(既定50)`がコンボ倍率を通さず加算される(忍耐・浄化・節制の護符のみこのチャンネルに介入できる)。
+場札が0枚になった瞬間、ウェーブは即座に終了(`endReason: 'fullClear'`)する。`clearBonus(既定2000) + 残り山札枚数 × clearBonusPerStock(既定50)`(忍耐・浄化・節制の護符のみが加算・倍算で介入できる)は、そのプレイの獲得点(gained)計算に加算項として統合される(4.1節ステップ7)。コンボ倍率・献身・勤勉・加護・星霜・残響・慢心などの乗算、および星の得点ロックの影響を受ける(以前は加点式の外側で別枠加算されコンボ倍率の影響を受けなかったが、2026-08-06に統合された)。
 
 ### 4.5 目標スコア到達
 
