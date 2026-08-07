@@ -979,6 +979,31 @@ describe('playCard', () => {
     expect(next.score).toBe(wave.score)
   })
 
+  test('clearBonusチャンネルの護符(purify)は、全消しにならない通常プレイでは発動しない', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]], // ダミー列を残し全消しにならないようにする
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['purify'], 1000000, 0, standardDeckComposition())
+    expect(next.endReason).not.toBe('fullClear')
+    expect(next.lastGain?.parts.map(p => p.text)).not.toContain('全消し基礎+' + scoring.clearBonus)
+    const multiplier = 1 + 1 * scoring.comboMultiplierStep
+    expect(next.lastGain?.points).toBe(Math.floor(scoring.basePoint * multiplier))
+  })
+
+  test('全消し時、clearBonusチャンネルの護符(purify)と独立した乗算護符(frost)を組み合わせても正しい順序で計算される', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♣', 6)]],
+      stock: [card(9, '♠', 1), card(10, '♠', 2)],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
+      frostX: 1.5,
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['purify', 'frost'], 100000000, 0, standardDeckComposition())
+    expect(next.endReason).toBe('fullClear')
+    const expectedClearBonus = scoring.clearBonus + 2 * scoring.clearBonusPerStock + DEFAULT_PARAMS.talismans.purify.n
+    const expectedScore = Math.floor((scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus) * 1.1 * 1.5)
+    expect(next.score).toBe(expectedScore)
+  })
+
   test('複数のclearBonus護符は所持順に適用される(purify→temperanceとtemperance→purifyで結果が異なる)', () => {
     const wave = baseWave({
       tableau: [[card(1, '♣', 6)]],
