@@ -149,7 +149,7 @@
       const idx = wave.stock.length - 1
       const newCard: Card = { id: wave.stock[idx].id, deckId: wave.stock[idx].deckId, suit: source.suit, rank: source.rank, wild: source.wild }
       lastSnapshot = wave
-      wave = { ...wave, stock: wave.stock.map((c, i) => (i === idx ? newCard : c)), lastGain: null, lastBonusGains: [] }
+      wave = { ...wave, stock: wave.stock.map((c, i) => (i === idx ? newCard : c)), lastGain: null }
     } else {
       const { col, row } = target
       const column = wave.tableau[col]
@@ -160,7 +160,6 @@
         ...wave,
         tableau: wave.tableau.map((c, ci) => (ci === col ? c.map((cc, ri) => (ri === row ? newCard : cc)) : c)),
         lastGain: null,
-        lastBonusGains: [],
       }
     }
   }
@@ -171,7 +170,6 @@
       ...wave,
       tableau: wave.tableau.map(col => col.map(c => (c.wild ? c : { ...c, suit }))),
       lastGain: null,
-      lastBonusGains: [],
     }
   }
 
@@ -230,13 +228,12 @@
       ...wave,
       tableau: wave.tableau.map((col, ci) => col.map((c, ri) => ({ ...c, rank: newRanks.get(`${ci}-${ri}`) as Rank }))),
       lastGain: null,
-      lastBonusGains: [],
     }
   }
 
   function handleUndo() {
     if (!lastSnapshot) return
-    wave = { ...lastSnapshot, lastGain: null, lastBonusGains: [] }
+    wave = { ...lastSnapshot, lastGain: null }
     lastSnapshot = null
   }
 

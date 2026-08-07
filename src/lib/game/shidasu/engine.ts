@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, BonusGain, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, Star, StarRestriction } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, Star, StarRestriction } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
 import { isFace, chainContinuesPattern, evaluateChainBonus, countSameRankBefore, countSameRankForWildPlay, cardColors } from './patterns'
@@ -181,7 +181,6 @@ export function startWave(
     status: 'playing',
     endReason: null as WaveEndReason,
     lastGain: null,
-    lastBonusGains: [],
     firstPlayDone: false,
     discardPile: [],
     lastPlayedColumn: null,
@@ -595,8 +594,6 @@ export function playCard(
 
   const newScore = scoreAfterGained
 
-  const bonusGains: BonusGain[] = []
-
   const next: WaveState = {
     ...wave,
     tableau: newTableau,
@@ -635,7 +632,6 @@ export function playCard(
     pendingRoleEcho: newPendingRoleEcho,
     roleEchoUsedThisCombo: newRoleEchoUsedThisCombo,
     sameRankEchoUsedThisCombo: newSameRankEchoUsedThisCombo,
-    lastBonusGains: bonusGains,
     sweptColumnsThisCombo: newSweptColumnsThisCombo,
     sowiloBoostedRole: wave.sowiloBoostedRole ?? sowiloCommittedThisPlay,
   }
@@ -795,8 +791,6 @@ export function drawStock(
       naiveCombo = newCombo + sincerityAdd
     }
 
-    const patternContinueBonusGains: BonusGain[] = []
-
     const continueWave: WaveState = {
       ...wave,
       stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [...wave.chain, drawnCard], effectiveStairMinLen, effectiveSuitColorMinLen, items) : newStock,
@@ -813,7 +807,6 @@ export function drawStock(
       maxComboThisWave: Math.max(wave.maxComboThisWave, naiveCombo),
       roleFiredThisChain: naiveRoleFiredThisChain,
       flushActiveThisCombo: naiveFlushActiveThisCombo,
-      lastBonusGains: patternContinueBonusGains,
     }
 
     // パターン継続分のスコア確定後、目標に達していれば即座に終了する。
@@ -838,15 +831,12 @@ export function drawStock(
   // 残響: リセット時、リセット前のコンボ数×nを永続倍率echoXとして蓄積する(以後gainedに乗算)
   const echoAdd = items.includes('echo') ? wave.combo * params.talismans.echo.n : 0
 
-  const resetBonusGains: BonusGain[] = []
-
   let resetWave: WaveState = {
     ...resetComboFields(wave, params, card, 'draw'),
     stock: items.includes('promise') ? arrangeNextCardForContinuation(params.scoring, newStock, [card], effectiveStairMinLen, effectiveSuitColorMinLen, items) : newStock,
     lastDrawEffect: null,
     lastGain: null,
     score: scoreAfterStockEmpty,
-    lastBonusGains: resetBonusGains,
     baseComboCount: wave.baseComboCount + composureAdd + clarityAdd,
     echoX: wave.echoX + echoAdd,
   }

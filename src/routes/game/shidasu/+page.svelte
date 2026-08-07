@@ -150,7 +150,7 @@
   function handlePlayCard(colIndex: number, rowIndex: number): PlayCardResult | void {
     if (run.phase !== 'playing' || run.wave?.status !== 'playing') return
     run = applyPlayCard(params, run, colIndex, undefined, rowIndex)
-    return { lastGain: run.wave?.lastGain ?? null, lastBonusGains: run.wave?.lastBonusGains ?? [] }
+    return { lastGain: run.wave?.lastGain ?? null }
   }
 
   // PlayArea側の得点内訳アニメーション(パーツ拡大→移動→SCOREへの飛び込み)が完了した後に

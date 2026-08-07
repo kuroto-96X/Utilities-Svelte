@@ -2,7 +2,7 @@
   import type { Snippet } from 'svelte'
   import { onDestroy, tick } from 'svelte'
   import { getPlayableColumns, isPlayable, remainingCount } from '$lib/game/shidasu/engine'
-  import type { WaveState, StageModifier, ItemId, RiteId, RevelationId, Card, PlayCardResult, ScoreGain, BonusGain } from '$lib/game/shidasu/types'
+  import type { WaveState, StageModifier, ItemId, RiteId, RevelationId, Card, PlayCardResult, ScoreGain } from '$lib/game/shidasu/types'
   import type { ShidasuParams } from '$lib/game/shidasu/params'
   import { canUseRite } from '$lib/game/shidasu/riteEffects'
   import { riteDesc } from '$lib/game/shidasu/rites'
@@ -618,8 +618,8 @@
     })
   })
 
-  function startScoreReveal(lastGain: ScoreGain | null, lastBonusGains: BonusGain[]) {
-    const allParts = [...(lastGain?.parts ?? []), ...lastBonusGains.flatMap(g => g.parts)]
+  function startScoreReveal(lastGain: ScoreGain | null) {
+    const allParts = lastGain?.parts ?? []
     if (allParts.length === 0) {
       displayedScore = wave.score
       onScoreRevealDone?.()
@@ -627,7 +627,7 @@
       return
     }
     const runningTotals = runningTotalsFromScoreParts(allParts)
-    const totalGain = (lastGain?.points ?? 0) + lastBonusGains.reduce((sum, g) => sum + g.points, 0)
+    const totalGain = lastGain?.points ?? 0
     clearTimeout(scoreRevealTimer)
     scoreReveal = {
       parts: allParts,
@@ -791,7 +791,7 @@
     animationTimer2 = setTimeout(() => {
       playingAnimation = null
       const result = onPlayCard(colIndex, rowIndex)
-      if (result) startScoreReveal(result.lastGain, result.lastBonusGains)
+      if (result) startScoreReveal(result.lastGain)
     }, ANIMATION_UP_MS + ANIMATION_LEFT_MS)
   }
 
@@ -869,9 +869,9 @@
         style="transform: scale({scoreReveal.totalScale}); transition-property: transform; transition-duration:{scoreReveal.totalTransitionMs}ms;"
       >+{currentTotal}</span>
     </div>
-  {:else if wave.lastGain || wave.lastBonusGains.length > 0}
-    {@const totalPoints = (wave.lastGain?.points ?? 0) + wave.lastBonusGains.reduce((sum, g) => sum + g.points, 0)}
-    {@const allParts = [...(wave.lastGain?.parts ?? []), ...wave.lastBonusGains.flatMap(g => g.parts)]}
+  {:else if wave.lastGain}
+    {@const totalPoints = wave.lastGain?.points ?? 0}
+    {@const allParts = wave.lastGain?.parts ?? []}
     <div class="flex items-center justify-between text-sm h-5">
       {#if allParts.length > 0}
         <span class="text-emerald-200 text-xs">{allParts.map(p => p.text).join(' ')}</span>

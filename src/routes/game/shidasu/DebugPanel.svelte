@@ -22,11 +22,9 @@
 
   $effect(() => {
     const gain = wave.lastGain
-    const bonusGains = wave.lastBonusGains
     const combo = wave.combo
     const newEntries: GainLogEntry[] = []
     if (gain) newEntries.push({ combo, label: '', points: gain.points, parts: partsToText(gain.parts) })
-    for (const b of bonusGains) newEntries.push({ combo, label: b.label, points: b.points, parts: partsToText(b.parts) })
     // gainLogの読み取り(スプレッド)をuntrackで囲まないと、この$effect自身が
     // gainLogの変化に依存してしまい、書き込むたびに自分自身を再実行する無限ループになる
     if (newEntries.length > 0) {
