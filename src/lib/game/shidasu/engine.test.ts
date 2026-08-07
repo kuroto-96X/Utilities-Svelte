@@ -724,7 +724,7 @@ describe('playCard', () => {
     expect(next.lastGain?.parts.map(p => p.text)).toContain(`列一掃+${scoring.columnSweepBonus * 2}`)
   })
 
-  test('場札が0枚になったら全消しボーナス(clearBonus+残り山札×clearBonusPerStock)が加算されendReason=fullClear', () => {
+  test('場札が0枚になったら全消しボーナス(clearBonus+残り山札×clearBonusPerStock)がgained計算に統合され、コンボ倍率もかかった上でendReason=fullClear', () => {
     const wave = baseWave({
       tableau: [[card(1, '♣', 6)]],
       stock: [card(9, '♠', 1), card(10, '♠', 2)],
@@ -735,10 +735,11 @@ describe('playCard', () => {
     expect(next.status).toBe('ended')
     expect(next.endReason).toBe('fullClear')
     const expectedClearBonus = scoring.clearBonus + 2 * scoring.clearBonusPerStock
-    expect(next.score).toBe(Math.floor((scoring.basePoint + scoring.columnSweepBonus * 1) * 1.1) + expectedClearBonus)
+    const expectedScore = Math.floor((scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus) * 1.1)
+    expect(next.score).toBe(expectedScore)
   })
 
-  test('全消し時、lastBonusGainsに全消しボーナスが別枠で入る(lastGainはプレイ得点のみ)', () => {
+  test('全消し時、全消しボーナスがlastGain.partsに統合され、コンボ倍率込みの1つの獲得点として扱われる', () => {
     const wave = baseWave({
       tableau: [[card(1, '♣', 6)]],
       stock: [card(9, '♠', 1), card(10, '♠', 2)],
@@ -746,15 +747,11 @@ describe('playCard', () => {
     })
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0, standardDeckComposition())
     const expectedClearBonus = scoring.clearBonus + 2 * scoring.clearBonusPerStock
-    const expectedPlayGain = Math.floor((scoring.basePoint + scoring.columnSweepBonus * 1) * 1.1)
-    expect(next.lastGain?.points).toBe(expectedPlayGain)
-    expect(next.lastGain?.parts.map(p => p.text)).not.toContain(`全消しボーナス+${expectedClearBonus}`)
-    expect(next.lastBonusGains).toHaveLength(1)
-    expect(next.lastBonusGains[0].label).toBe('全消しボーナス')
-    expect(next.lastBonusGains[0].points).toBe(expectedClearBonus)
-    expect(next.lastBonusGains[0].parts.map(p => p.text)).toContain(`基礎+${scoring.clearBonus}`)
-    expect(next.lastBonusGains[0].parts.map(p => p.text)).toContain(`山札残数+${2 * scoring.clearBonusPerStock}`)
-    expect(next.score).toBe(expectedPlayGain + expectedClearBonus)
+    const expectedScore = Math.floor((scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus) * 1.1)
+    expect(next.lastGain?.points).toBe(expectedScore)
+    expect(next.lastGain?.parts.map(p => p.text)).toContain(`全消し基礎+${scoring.clearBonus}`)
+    expect(next.lastGain?.parts.map(p => p.text)).toContain(`全消し山札残数+${2 * scoring.clearBonusPerStock}`)
+    expect(next.score).toBe(expectedScore)
   })
 
   test('流星: コンボが閾値に到達した瞬間、shootingStarNが永続加算される(この時点のgainedにはまだ反映されない)', () => {
@@ -939,7 +936,7 @@ describe('playCard', () => {
     expect(next.lastGain?.points).toBe(expectedGained)
   })
 
-  test('clearBonusチャンネルの護符(purify)は全消し時のみclearBonusに加算される', () => {
+  test('clearBonusチャンネルの護符(purify)は全消し時のみgained計算内の全消しボーナスに加算され、コンボ倍率もかかる', () => {
     const wave = baseWave({
       tableau: [[card(1, '♣', 6)]],
       stock: [card(9, '♠', 1), card(10, '♠', 2)],
@@ -948,7 +945,38 @@ describe('playCard', () => {
     const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['purify'], 100000000, 0, standardDeckComposition())
     expect(next.endReason).toBe('fullClear')
     const expectedClearBonus = scoring.clearBonus + 2 * scoring.clearBonusPerStock + DEFAULT_PARAMS.talismans.purify.n
-    expect(next.score).toBe(Math.floor((scoring.basePoint + scoring.columnSweepBonus * 1) * 1.1) + expectedClearBonus)
+    const expectedScore = Math.floor((scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus) * 1.1)
+    expect(next.score).toBe(expectedScore)
+  })
+
+  test('全消しボーナスにもコンボ倍率がかかる(基礎点等と同じ乗算チェーンの内側にある)', () => {
+    const wave = baseWave({
+      foundation: card(0, '♠', 5),
+      combo: 4, // このプレイでnewCombo=5、effectiveCombo=5、コンボ倍率=1+5*0.1=1.5
+      tableau: [[card(1, '♣', 6)]],
+      stock: [card(9, '♠', 1)],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0, standardDeckComposition())
+    expect(next.endReason).toBe('fullClear')
+    const expectedClearBonus = scoring.clearBonus + 1 * scoring.clearBonusPerStock
+    const multiplier = 1 + 5 * scoring.comboMultiplierStep
+    const expectedScore = Math.floor((scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus) * multiplier)
+    expect(next.score).toBe(expectedScore)
+  })
+
+  test('ボス得点ロック成立時、全消しボーナスも含めてgainedが0になる', () => {
+    const wave = baseWave({
+      foundation: card(0, '♠', 5),
+      combo: 1, // このプレイでnewCombo=2、effectiveCombo=2
+      tableau: [[card(1, '♣', 6)]],
+      stock: [card(9, '♠', 1)],
+      comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0, standardDeckComposition(), Math.random, { kind: 'combo', maxCombo: 2, tierLabel: 'test-tier' })
+    expect(next.endReason).toBe('fullClear')
+    expect(next.lastGain?.points).toBe(0)
+    expect(next.score).toBe(wave.score)
   })
 
   test('複数のclearBonus護符は所持順に適用される(purify→temperanceとtemperance→purifyで結果が異なる)', () => {

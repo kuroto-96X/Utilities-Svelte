@@ -550,6 +550,19 @@ export function playCard(
   if (discretionAdd !== 0) parts.push(addPart('果断', discretionAdd))
   const shootingStarGainedAdd = items.includes('shootingStar') ? wave.shootingStarN : 0
   if (shootingStarGainedAdd !== 0) parts.push(addPart('流星', shootingStarGainedAdd))
+  // 全消しボーナス: 場札が0枚になった場合のみ、基礎値にclearBonusチャンネルの護符効果
+  // (忍耐・浄化・節制)を適用した上で、通常のgained計算に加算項として合流させる。
+  // 加算項は乗算項より前にpushすること(runningTotalsFromScorePartsの逐次計算と整合させるため)。
+  const isFullClear = remainingBeforeRevival === 0
+  let clearBonusAdd = 0
+  if (isFullClear) {
+    const rawClearBonus = params.scoring.clearBonus + wave.stock.length * params.scoring.clearBonusPerStock
+    const clearBonusResult = applyItemEffects('clearBonus', rawClearBonus, items, itemEffectCtx, params)
+    clearBonusAdd = Math.floor(clearBonusResult.value)
+    parts.push(addPart('全消し基礎', params.scoring.clearBonus))
+    parts.push(addPart('全消し山札残数', wave.stock.length * params.scoring.clearBonusPerStock))
+    parts.push(...clearBonusResult.parts)
+  }
   const comboMultiplierStep = params.scoring.comboMultiplierStep
   const multiplier = 1 + effectiveCombo * comboMultiplierStep
   if (multiplier !== 1) parts.push(multiplyPart('コンボ倍率', multiplier))
@@ -567,7 +580,7 @@ export function playCard(
   if (echoFactor !== 1) parts.push(multiplyPart('残響', echoFactor))
   const arroganceFactor = items.includes('arrogance') && wave.stock.length === 0 ? params.talismans.arrogance.x : 1
   if (arroganceFactor !== 1) parts.push(multiplyPart('慢心', arroganceFactor))
-  let gained = Math.floor((itemResult.value + discretionAdd + shootingStarGainedAdd) * multiplier * mannazFactor * dedicationFactor * diligenceFactor * divineProtectionFactor * frostFactor * echoFactor * arroganceFactor)
+  let gained = Math.floor((itemResult.value + discretionAdd + shootingStarGainedAdd + clearBonusAdd) * multiplier * mannazFactor * dedicationFactor * diligenceFactor * divineProtectionFactor * frostFactor * echoFactor * arroganceFactor)
   if (scoreLock && isBossScoreLocked(scoreLock, effectiveCombo, card)) {
     parts.length = 0
     parts.push(lockPart(bossScoreLockMessage(scoreLock)))
@@ -627,37 +640,17 @@ export function playCard(
     sowiloBoostedRole: wave.sowiloBoostedRole ?? sowiloCommittedThisPlay,
   }
 
-  // gained確定時点で目標達成なら、全消し判定を行わず即座に終了する。
+  // gained確定時点(全消しボーナス込み)で目標達成なら即座に終了する。
   if (targetReachedOnGained) {
     return { wave: { ...next, status: 'ended', endReason: 'target' }, deckComposition }
   }
 
-  if (remainingBeforeRevival === 0) {
-    const rawClearBonus = params.scoring.clearBonus + wave.stock.length * params.scoring.clearBonusPerStock
-    const clearBonusResult = applyItemEffects('clearBonus', rawClearBonus, items, itemEffectCtx, params)
-    const clearBonus = Math.floor(clearBonusResult.value)
-    const scoreAfterClear = newScore + clearBonus
-    const clearBonusGain: BonusGain = {
-      label: '全消しボーナス',
-      points: clearBonus,
-      parts: [
-        addPart('基礎', params.scoring.clearBonus),
-        addPart('山札残数', wave.stock.length * params.scoring.clearBonusPerStock),
-        ...clearBonusResult.parts,
-      ],
-    }
-    const bonusGainsWithClear = [...bonusGains, clearBonusGain]
-    const waveAfterClearBonus: WaveState = { ...next, score: scoreAfterClear, lastBonusGains: bonusGainsWithClear }
-
-    if (scoreAfterClear >= target) {
-      return { wave: { ...waveAfterClearBonus, status: 'ended', endReason: 'target' }, deckComposition }
-    }
-
-    let resetWave = resetComboFields(waveAfterClearBonus, params)
+  if (isFullClear) {
+    let resetWave = resetComboFields(next, params)
 
     for (const id of items) {
       if (id === 'healing') {
-        resetWave = resolveHealingRestoration(resetWave, waveAfterClearBonus.sweptColumnsThisCombo, rand)
+        resetWave = resolveHealingRestoration(resetWave, next.sweptColumnsThisCombo, rand)
       } else if (
         id === 'regeneration' &&
         remainingCount(resetWave.tableau) === 0 &&
