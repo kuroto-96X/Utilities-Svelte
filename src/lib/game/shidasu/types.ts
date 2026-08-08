@@ -232,9 +232,9 @@ export interface WaveState {
   oracleLevels: Record<RoleName, number>
 }
 
-export type RunPhase = 'title' | 'playing' | 'shop' | 'itemSelect' | 'riteSelect' | 'revelationSelect' | 'oracleSelect' | 'continueChoice' | 'allClear' | 'gameOver'
+export type RunPhase = 'title' | 'playing' | 'shop' | 'itemSelect' | 'riteSelect' | 'revelationSelect' | 'oracleSelect' | 'cardSetSelect' | 'continueChoice' | 'allClear' | 'gameOver'
 
-export type ShopSlotKind = 'item' | 'rite' | 'revelation' | 'oracle'
+export type ShopSlotKind = 'item' | 'rite' | 'revelation' | 'oracle' | 'cardSet'
 
 // バラ売り枠: shop突入時に種類と個体が1つ確定し、以後入れ替わらない。購入するとsoldがtrueになるだけで
 // 配列自体(枠の並び)は変化しない。idはkindに応じてItemId | RiteId | RevelationId | RoleNameのいずれか。
@@ -242,6 +242,29 @@ export interface ShopIndividualSlot {
   kind: ShopSlotKind
   id: string
   sold: boolean
+}
+
+// トランプセット福袋のセットジャンル識別子。枚数バリエーションを持つジャンルは
+// 識別子の末尾に枚数(または組数×2など)を含める(例: stair3/stair5/stair7)。
+export type CardSetGenreId =
+  | 'stair3' | 'stair5' | 'stair7'
+  | 'sameRank2' | 'sameRank3' | 'sameRank4'
+  | 'faceCards'
+  | 'sameSuit3' | 'sameSuit5' | 'sameSuit7'
+  | 'royal'
+  | 'flush'
+  | 'completeRunSameSuit' | 'completeRunRandomSuit'
+  | 'pair2' | 'pair3'
+  | 'redBlack4Random' | 'redBlack4Fixed' | 'redBlack6Random' | 'redBlack6Fixed' | 'redBlack8Random' | 'redBlack8Fixed'
+  | 'wildCard'
+
+// 福袋を開けた瞬間に確定する、1オファー分の中身(ジャンルIDと具体的なカード内容)。
+// cardsはこの時点ではdeckIdを持たない(deckIdは実際に選択が確定しdeckCompositionへ
+// 追加する瞬間に採番する。福袋を開けてから選ぶまでの間に他の処理でdeckCompositionの
+// 長さが変わる可能性を考慮し、確定時点で採番することで常に一意性を保証する)。
+export interface CardSetOffer {
+  genreId: CardSetGenreId
+  cards: { suit: Suit; rank: Rank; wild: boolean }[]
 }
 
 export type PackOfferCount = 3 | 5 | 7
@@ -329,4 +352,6 @@ export interface RunState {
   pendingNewRevelation: RevelationId | null
   // 神託の福袋中身選択で温存を選び上限到達時、選ばれたが未確定の神託(スワップ待ち)。待機中でなければnull
   pendingNewOracle: RoleName | null
+  // カードセット福袋('cardSetSelect'フェーズ)で提示中のオファー。それ以外のフェーズでは空配列
+  cardSetOffer: CardSetOffer[]
 }

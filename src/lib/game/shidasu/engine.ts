@@ -944,7 +944,7 @@ function rollStageStars(params: ShidasuParams, rand: () => number): Star[] {
 
 // 秘儀・天啓・神託の使用がショップ滞在中(shop本体および福袋の各中身選択画面)でも
 // 行えるようにするためのフェーズ集合。useRite/useRevelationのガードで使う。
-export const SHOP_FLOW_PHASES: RunPhase[] = ['shop', 'itemSelect', 'riteSelect', 'revelationSelect', 'oracleSelect']
+export const SHOP_FLOW_PHASES: RunPhase[] = ['shop', 'itemSelect', 'riteSelect', 'revelationSelect', 'oracleSelect', 'cardSetSelect']
 
 // 現在のstageIndexから次のウェーブの(stageIndex, waveIndex)を算出する。
 // waveIndexがwavesPerStageに達したら次のステージ(stageIndex+1・waveIndex0)へ繰り上がる。
@@ -995,6 +995,7 @@ export function createInitialRun(): RunState {
     echoX: 1, shootingStarN: 50,
     oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
     pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
+    cardSetOffer: [],
   }
 }
 
@@ -1035,6 +1036,7 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
     pendingNewRite: null,
     pendingNewRevelation: null,
     pendingNewOracle: null,
+    cardSetOffer: [],
   }
 }
 
@@ -1105,6 +1107,7 @@ function enterShop(params: ShidasuParams, run: RunState, _seed: number | undefin
     oracleOffer: [],
     riteOffer: [],
     offerPickRemaining: 0,
+    cardSetOffer: [],
   }
   return { ...next, shop: rollShop(next, rand) }
 }
