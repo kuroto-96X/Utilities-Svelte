@@ -45,6 +45,7 @@
     if (!Number.isFinite(config.shop.packPrice.cardSet.threeOne) || config.shop.packPrice.cardSet.threeOne < 0) return true
     if (!Number.isFinite(config.shop.packPrice.cardSet.fiveOne) || config.shop.packPrice.cardSet.fiveOne < 0) return true
     if (!Number.isFinite(config.shop.packPrice.cardSet.sevenTwo) || config.shop.packPrice.cardSet.sevenTwo < 0) return true
+    if (!Number.isFinite(config.shop.rerollCostStep) || config.shop.rerollCostStep < 0) return true
     return false
   })
 
@@ -257,6 +258,16 @@
           <label class="text-xs text-slate-500">
             トランプセット 7-2
             <input type="number" step="1" bind:value={config.shop.packPrice.cardSet.sevenTwo} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <p class="text-xs text-slate-500 mb-1">ショップリロールのコスト刻み幅(1回目はこの値、2回目は2倍、3回目は3倍…と同一ショップ訪問中に増額)</p>
+        <div class="grid grid-cols-3 gap-3">
+          <label class="text-xs text-slate-500">
+            リロールコスト刻み幅
+            <input type="number" step="1" bind:value={config.shop.rerollCostStep} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
           </label>
         </div>
       </div>
