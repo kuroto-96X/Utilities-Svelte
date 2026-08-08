@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { createDeck, createRng, rollOffer, shuffle, standardDeckComposition } from './deck'
+import { createDeck, createRng, rollOffer, shuffle, standardDeckComposition, addCardsToDeckComposition } from './deck'
 
 function idGen() {
   let n = 0
@@ -118,5 +118,49 @@ describe('rollOffer', () => {
     const copy = [...pool]
     rollOffer(pool, 3, createRng(1))
     expect(pool).toEqual(copy)
+  })
+})
+
+describe('addCardsToDeckComposition', () => {
+  test('既存のdeckCompositionにカードを追加した長さになる', () => {
+    const composition = standardDeckComposition()
+    const result = addCardsToDeckComposition(composition, [
+      { suit: '♠', rank: 1, wild: false },
+      { suit: '♥', rank: 13, wild: false },
+    ])
+    expect(result).toHaveLength(54)
+  })
+
+  test('追加されたカードのdeckIdは既存の最大値の続きから連番で振られる', () => {
+    const composition = standardDeckComposition()
+    const result = addCardsToDeckComposition(composition, [
+      { suit: '♠', rank: 1, wild: false },
+      { suit: '♥', rank: 13, wild: false },
+      { suit: '★', rank: 0, wild: true },
+    ])
+    const addedIds = result.slice(52).map(c => c.deckId)
+    expect(addedIds).toEqual([52, 53, 54])
+  })
+
+  test('追加されたカードのsuit/rank/wildが入力通りに反映される', () => {
+    const composition = standardDeckComposition()
+    const result = addCardsToDeckComposition(composition, [{ suit: '♦', rank: 7, wild: false }])
+    const added = result[result.length - 1]
+    expect(added.suit).toBe('♦')
+    expect(added.rank).toBe(7)
+    expect(added.wild).toBe(false)
+  })
+
+  test('元のdeckCompositionを書き換えない(イミュータブル)', () => {
+    const composition = standardDeckComposition()
+    const copy = composition.map(c => ({ ...c }))
+    addCardsToDeckComposition(composition, [{ suit: '♠', rank: 1, wild: false }])
+    expect(composition).toEqual(copy)
+  })
+
+  test('deckIdが既に飛び飛びの場合でも配列長を基準に採番する(既存の永劫等と同じ方式)', () => {
+    const composition = [{ deckId: 0, suit: '♠' as const, rank: 1 as const, wild: false }]
+    const result = addCardsToDeckComposition(composition, [{ suit: '♥', rank: 2, wild: false }])
+    expect(result[1].deckId).toBe(1)
   })
 })

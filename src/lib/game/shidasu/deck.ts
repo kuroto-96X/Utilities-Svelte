@@ -1,5 +1,7 @@
 import type { Card, Suit, Rank, DeckCard } from './types'
 
+export type NewCardSpec = { suit: Suit; rank: Rank; wild: boolean }
+
 const SUITS: Suit[] = ['♠', '♥', '♦', '♣']
 
 export function createDeck(nextId: () => number): Card[] {
@@ -22,6 +24,14 @@ export function standardDeckComposition(): DeckCard[] {
     }
   }
   return composition
+}
+
+// deckCompositionに複数枚のカードを一括追加する。deckIdは既存の配列長を基準に連番で振る
+// (天啓のワイルド供給処理revelationEffects.tsのnewDeckIdと同じ採番方式)。
+export function addCardsToDeckComposition(deckComposition: DeckCard[], cards: NewCardSpec[]): DeckCard[] {
+  let nextDeckId = deckComposition.length
+  const added: DeckCard[] = cards.map(c => ({ deckId: nextDeckId++, suit: c.suit, rank: c.rank, wild: c.wild }))
+  return [...deckComposition, ...added]
 }
 
 export function createRng(seed: number): () => number {
