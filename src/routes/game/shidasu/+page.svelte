@@ -6,7 +6,7 @@
     resolveWaveEnd, continueAfterGreatMisfortune, stopAfterGreatMisfortune, startWave, forceStockTop, useRite,
     useRevelation,
     SHOP_FLOW_PHASES, startRevelationPreview,
-    waveTarget, stageModifierFor, isBossWave, skipWave, rerollStageStars,
+    waveTarget, stageModifierFor, isBossWave, skipWave, rerollStageStars, rerollShop, shopRerollCost,
     finishShop, buyIndividualItem, buyIndividualRite, buyIndividualRevelationUse, buyIndividualRevelationHold,
     buyIndividualOracleUse, buyIndividualOracleHold, buyPack,
     pickPackItem, confirmPackItemSwap, cancelPackItemSwap, closePackItemSelect,
@@ -218,6 +218,10 @@
 
   function handleRerollStageStars() {
     run = rerollStageStars(params, run)
+  }
+
+  function handleRerollShop() {
+    run = rerollShop(params, run)
   }
 
   function handleProceedToWave() {
@@ -718,6 +722,14 @@
         <h2 class="text-lg font-bold text-slate-800">ショップ</h2>
         <p class="text-sm text-teal-700 font-semibold">{params.currency.symbol}{run.currency}</p>
       </div>
+
+      <button
+        onclick={handleRerollShop}
+        disabled={run.currency < shopRerollCost(params, run)}
+        class="w-full px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        リロール({shopRerollCost(params, run)})
+      </button>
 
       <div class="space-y-2">
         <p class="text-xs text-slate-500">バラ売り</p>
