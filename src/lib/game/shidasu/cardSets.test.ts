@@ -1,7 +1,7 @@
 // src/lib/game/shidasu/cardSets.test.ts
 import { describe, test, expect } from 'vitest'
 import { createRng } from './deck'
-import { generateCardSet, CARD_SET_GENRE_NAMES } from './cardSets'
+import { generateCardSet, CARD_SET_GENRE_NAMES, rollCardSetOffer } from './cardSets'
 import type { CardSetGenreId } from './types'
 
 describe('generateCardSet: stair3/stair5/stair7(階段セット)', () => {
@@ -252,5 +252,46 @@ describe('CARD_SET_GENRE_NAMES', () => {
       expect(CARD_SET_GENRE_NAMES[id]).toBeTruthy()
       expect(typeof CARD_SET_GENRE_NAMES[id]).toBe('string')
     })
+  })
+})
+
+describe('rollCardSetOffer', () => {
+  test('countで指定した件数のオファーを返す', () => {
+    const offers = rollCardSetOffer(createRng(1), 3)
+    expect(offers).toHaveLength(3)
+  })
+
+  test('各オファーはgenreIdとcards(生成済みカード内容)を持つ', () => {
+    const offers = rollCardSetOffer(createRng(1), 3)
+    offers.forEach(o => {
+      expect(typeof o.genreId).toBe('string')
+      expect(Array.isArray(o.cards)).toBe(true)
+      expect(o.cards.length).toBeGreaterThan(0)
+    })
+  })
+
+  test('同じ福袋内でジャンルが重複しない', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const offers = rollCardSetOffer(createRng(seed), 7)
+      const genreIds = offers.map(o => o.genreId)
+      expect(new Set(genreIds).size).toBe(genreIds.length)
+    }
+  })
+
+  test('同じシードなら同じ結果になる(再現性)', () => {
+    const a = rollCardSetOffer(createRng(7), 5)
+    const b = rollCardSetOffer(createRng(7), 5)
+    expect(a).toEqual(b)
+  })
+
+  test('枚数が少ないジャンルほど出現しやすい(統計的検証: 1000回中、階段セット3枚の出現数が階段セット7枚の出現数を上回る)', () => {
+    let stair3Count = 0
+    let stair7Count = 0
+    for (let seed = 1; seed <= 1000; seed++) {
+      const offers = rollCardSetOffer(createRng(seed), 1)
+      if (offers[0].genreId === 'stair3') stair3Count++
+      if (offers[0].genreId === 'stair7') stair7Count++
+    }
+    expect(stair3Count).toBeGreaterThan(stair7Count)
   })
 })

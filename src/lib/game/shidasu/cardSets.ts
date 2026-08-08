@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/cardSets.ts
-import type { Suit, Rank, CardSetGenreId } from './types'
+import type { Suit, Rank, CardSetGenreId, CardSetOffer } from './types'
 import type { NewCardSpec } from './deck'
 
 const SUITS: Suit[] = ['♠', '♥', '♦', '♣']
@@ -172,4 +172,45 @@ export function generateCardSet(genreId: CardSetGenreId, rand: () => number = Ma
     case 'redBlack8Fixed': return generateRedBlackFixedSet(8, rand)
     case 'wildCard': return generateWildCardSet()
   }
+}
+
+// 各ジャンルの抽選重み(1/枚数)。ワイルドカードは1枚だが例外的に6枚相当(1/6)とする。
+const CARD_SET_GENRE_WEIGHTS: Record<CardSetGenreId, number> = {
+  stair3: 1 / 3, stair5: 1 / 5, stair7: 1 / 7,
+  sameRank2: 1 / 2, sameRank3: 1 / 3, sameRank4: 1 / 4,
+  faceCards: 1 / 3,
+  sameSuit3: 1 / 3, sameSuit5: 1 / 5, sameSuit7: 1 / 7,
+  royal: 1 / 3,
+  flush: 1 / 4,
+  completeRunSameSuit: 1 / 13, completeRunRandomSuit: 1 / 13,
+  pair2: 1 / 4, pair3: 1 / 6,
+  redBlack4Random: 1 / 4, redBlack4Fixed: 1 / 4,
+  redBlack6Random: 1 / 6, redBlack6Fixed: 1 / 6,
+  redBlack8Random: 1 / 8, redBlack8Fixed: 1 / 8,
+  wildCard: 1 / 6,
+}
+
+// 重み付き非復元抽選でcount個のジャンルIDを選ぶ。選ばれた候補は次の抽選対象から除外し、
+// 残りの重みで再正規化して繰り返す(ルーレット選択の逐次適用)。
+function weightedSampleGenres(count: number, rand: () => number): CardSetGenreId[] {
+  const remaining = (Object.keys(CARD_SET_GENRE_WEIGHTS) as CardSetGenreId[]).map(id => ({ id, weight: CARD_SET_GENRE_WEIGHTS[id] }))
+  const result: CardSetGenreId[] = []
+  for (let i = 0; i < count && remaining.length > 0; i++) {
+    const totalWeight = remaining.reduce((sum, r) => sum + r.weight, 0)
+    let roll = rand() * totalWeight
+    let idx = remaining.length - 1
+    for (let j = 0; j < remaining.length; j++) {
+      roll -= remaining[j].weight
+      if (roll <= 0) { idx = j; break }
+    }
+    result.push(remaining[idx].id)
+    remaining.splice(idx, 1)
+  }
+  return result
+}
+
+// トランプセット福袋を開けた瞬間に呼ぶ。count個のジャンルを重み付き抽選し、
+// 各ジャンルの具体的なカード内容もその場で確定する。
+export function rollCardSetOffer(rand: () => number = Math.random, count: number): CardSetOffer[] {
+  return weightedSampleGenres(count, rand).map(genreId => ({ genreId, cards: generateCardSet(genreId, rand) }))
 }
