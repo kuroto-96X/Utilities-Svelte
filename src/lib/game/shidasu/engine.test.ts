@@ -34,6 +34,8 @@ import {
   buyIndividualOracleUse,
   buyIndividualOracleHold,
   buyPack,
+  pickPackCardSet,
+  closePackCardSetSelect,
   pickPackItem,
   confirmPackItemSwap,
   cancelPackItemSwap,
@@ -2503,6 +2505,76 @@ describe('createInitialRun / beginRun', () => {
     expect(run.pendingNewRite).toBeNull()
     expect(run.pendingNewRevelation).toBeNull()
     expect(run.pendingNewOracle).toBeNull()
+  })
+})
+
+describe('トランプセット福袋の購入・選択フロー', () => {
+  test('buyPackでcardSet福袋を購入すると、cardSetSelectフェーズへ遷移しcardSetOfferが確定する', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop', currency: 100, shop: { individual: [], packs: [{ packKind: 'cardSet', offerCount: 3, pickCount: 1, sold: false }] } }
+    const result = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    expect(result.phase).toBe('cardSetSelect')
+    expect(result.cardSetOffer).toHaveLength(3)
+    expect(result.offerPickRemaining).toBe(1)
+  })
+
+  test('buyPackでcardSet福袋を購入すると通貨が価格分減る', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop', currency: 100, shop: { individual: [], packs: [{ packKind: 'cardSet', offerCount: 3, pickCount: 1, sold: false }] } }
+    const result = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
+    expect(result.currency).toBe(100 - packPrice(DEFAULT_PARAMS, 'cardSet', 3))
+  })
+
+  test('pickPackCardSetで選んだジャンルのカードがdeckCompositionに追加される', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'cardSetSelect', offerPickRemaining: 1, cardSetOffer: [{ genreId: 'wildCard', cards: [{ suit: '★', rank: 0, wild: true }] }] }
+    const result = pickPackCardSet(run, 'wildCard')
+    expect(result.deckComposition).toHaveLength(53)
+    expect(result.deckComposition[52].wild).toBe(true)
+  })
+
+  test('pickPackCardSetで選択後、offerPickRemainingが0ならshopフェーズへ戻る', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'cardSetSelect', offerPickRemaining: 1, cardSetOffer: [{ genreId: 'wildCard', cards: [{ suit: '★', rank: 0, wild: true }] }] }
+    const result = pickPackCardSet(run, 'wildCard')
+    expect(result.phase).toBe('shop')
+    expect(result.cardSetOffer).toEqual([])
+  })
+
+  test('pickPackCardSetで選択後、offerPickRemainingが残っていればcardSetSelectのまま残りオファーを保持する', () => {
+    const run: RunState = {
+      ...beginRun(DEFAULT_PARAMS, 1),
+      phase: 'cardSetSelect',
+      offerPickRemaining: 2,
+      cardSetOffer: [
+        { genreId: 'wildCard', cards: [{ suit: '★', rank: 0, wild: true }] },
+        { genreId: 'royal', cards: [{ suit: '♠', rank: 11, wild: false }, { suit: '♠', rank: 12, wild: false }, { suit: '♠', rank: 13, wild: false }] },
+      ],
+    }
+    const result = pickPackCardSet(run, 'wildCard')
+    expect(result.phase).toBe('cardSetSelect')
+    expect(result.offerPickRemaining).toBe(1)
+    expect(result.cardSetOffer).toHaveLength(1)
+    expect(result.cardSetOffer[0].genreId).toBe('royal')
+    expect(result.deckComposition).toHaveLength(53)
+  })
+
+  test('pickPackCardSetで追加されたカードのdeckIdは既存の続きから採番される', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'cardSetSelect', offerPickRemaining: 1, cardSetOffer: [{ genreId: 'flush', cards: [{ suit: '♠', rank: 1, wild: false }, { suit: '♥', rank: 2, wild: false }, { suit: '♦', rank: 3, wild: false }, { suit: '♣', rank: 4, wild: false }] }] }
+    const result = pickPackCardSet(run, 'flush')
+    const addedIds = result.deckComposition.slice(52).map(c => c.deckId)
+    expect(addedIds).toEqual([52, 53, 54, 55])
+  })
+
+  test('cardSetSelectフェーズ以外でpickPackCardSetを呼んでも何も起きない', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop' }
+    const result = pickPackCardSet(run, 'wildCard')
+    expect(result).toBe(run)
+  })
+
+  test('closePackCardSetSelectで残りの選択を放棄しshopフェーズへ戻る', () => {
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'cardSetSelect', offerPickRemaining: 1, cardSetOffer: [{ genreId: 'wildCard', cards: [{ suit: '★', rank: 0, wild: true }] }] }
+    const result = closePackCardSetSelect(run)
+    expect(result.phase).toBe('shop')
+    expect(result.cardSetOffer).toEqual([])
+    expect(result.offerPickRemaining).toBe(0)
+    expect(result.deckComposition).toHaveLength(52)
   })
 })
 

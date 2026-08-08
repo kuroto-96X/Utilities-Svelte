@@ -1,7 +1,7 @@
 // src/lib/game/shidasu/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, Star, StarRestriction } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, Star, StarRestriction, CardSetGenreId } from './types'
 import type { ShidasuParams } from './params'
-import { createRng, shuffle, shuffleInPlace, standardDeckComposition } from './deck'
+import { createRng, shuffle, shuffleInPlace, standardDeckComposition, addCardsToDeckComposition } from './deck'
 import { isFace, chainContinuesPattern, evaluateChainBonus, countSameRankBefore, countSameRankForWildPlay, cardColors } from './patterns'
 import { addPart, multiplyPart, lockPart, type ScorePart } from './scoreParts'
 import { rollItemOffer } from './items'
@@ -11,6 +11,7 @@ import { rollRiteOffer } from './rites'
 import { rollRevelationOffer } from './revelations'
 import { applyRevelationEffect, canUseRevelation } from './revelationEffects'
 import { rollOracleOffer, defaultOracleLevels } from './oracles'
+import { rollCardSetOffer } from './cardSets'
 import { rollShop, itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice, oracleBuyPrice, oracleSellPrice, packPrice } from './shop'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
@@ -1254,7 +1255,8 @@ export function buyPack(params: ShidasuParams, run: RunState, slotIndex: number,
   if (slot.packKind === 'item') return { ...base, phase: 'itemSelect', offer: rollItemOffer(run.items, rand, slot.offerCount) }
   if (slot.packKind === 'rite') return { ...base, phase: 'riteSelect', riteOffer: rollRiteOffer(rand, slot.offerCount) }
   if (slot.packKind === 'revelation') return { ...base, phase: 'revelationSelect', revelationOffer: rollRevelationOffer(rand, slot.offerCount) }
-  return { ...base, phase: 'oracleSelect', oracleOffer: rollOracleOffer(rand, slot.offerCount) }
+  if (slot.packKind === 'oracle') return { ...base, phase: 'oracleSelect', oracleOffer: rollOracleOffer(rand, slot.offerCount) }
+  return { ...base, phase: 'cardSetSelect', cardSetOffer: rollCardSetOffer(rand, slot.offerCount) }
 }
 
 function resolvePackItemPick(run: RunState, newItems: ItemId[], pickedId: ItemId): RunState {
@@ -1457,6 +1459,33 @@ export function cancelPackOracleSwap(run: RunState): RunState {
 export function closePackOracleSelect(run: RunState): RunState {
   if (run.phase !== 'oracleSelect') return run
   return { ...run, phase: 'shop', oracleOffer: [], pendingNewOracle: null, offerPickRemaining: 0 }
+}
+
+function resolvePackCardSetPick(run: RunState, pickedGenreId: CardSetGenreId): RunState {
+  const idx = run.cardSetOffer.findIndex(o => o.genreId === pickedGenreId)
+  const cardSetOffer = idx === -1 ? run.cardSetOffer : [...run.cardSetOffer.slice(0, idx), ...run.cardSetOffer.slice(idx + 1)]
+  const offerPickRemaining = run.offerPickRemaining - 1
+  if (offerPickRemaining <= 0) {
+    return { ...run, phase: 'shop', cardSetOffer: [], offerPickRemaining: 0 }
+  }
+  return { ...run, cardSetOffer, offerPickRemaining }
+}
+
+// カードセットの福袋(cardSetSelect)から1つ選び、そのカードをdeckCompositionへ即座に追加する。
+// 護符・秘儀・天啓/神託と異なり所持枠・スワップ処理は無い(選択即確定)。
+// deckIdはこの時点のdeckComposition長を基準に採番する(addCardsToDeckComposition、deck.ts参照)。
+export function pickPackCardSet(run: RunState, genreId: CardSetGenreId): RunState {
+  if (run.phase !== 'cardSetSelect') return run
+  const offer = run.cardSetOffer.find(o => o.genreId === genreId)
+  if (!offer) return run
+  const deckComposition = addCardsToDeckComposition(run.deckComposition, offer.cards)
+  return resolvePackCardSetPick({ ...run, deckComposition }, genreId)
+}
+
+// 残りの選択を放棄してshopへ戻る。
+export function closePackCardSetSelect(run: RunState): RunState {
+  if (run.phase !== 'cardSetSelect') return run
+  return { ...run, phase: 'shop', cardSetOffer: [], offerPickRemaining: 0 }
 }
 
 // 所持中の神託を1つ消費する。playingフェーズでのみ呼べる(ショップ内フェーズでは呼べない)。
