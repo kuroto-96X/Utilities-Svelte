@@ -205,6 +205,37 @@ export interface ChainBonusResult {
   roleFired: { name: RoleName; usedWild: boolean; amount: number }[]
 }
 
+// ペア役: cardsBeforeまでのランク別集計にplayedCardを1枚加えた状態で、2枚以上あるランクの
+// 組数(pairCount)を返す。ワイルドは「playedCardのランク」(playedCard自身がワイルドの場合は
+// cardsBefore時点で最大枚数の実ランク)にのみ加算し、複数ランクへの二重カウントを避ける
+// (countSameRankBefore/countSameRankForWildPlayと同じ思想)。evaluateChainBonus内で、現在の
+// プレイ時点だけでなく、チェーン内の各過去の一手を「その時点のplayedCard」として再計算し、
+// 過去に到達済みの最大pairCountを求めるためにも使う(同一マイルストーンの重複加点を防ぐ)。
+function computePairCount(cardsBefore: Card[], playedCard: Card): number {
+  const pairRankCounts = new Map<Card['rank'], number>()
+  for (const c of cardsBefore) {
+    if (!c.wild) pairRankCounts.set(c.rank, (pairRankCounts.get(c.rank) ?? 0) + 1)
+  }
+  const wildCountInChain = cardsBefore.filter(c => c.wild).length
+  if (playedCard.wild) {
+    let maxRank: Card['rank'] | null = null
+    let maxCount = 0
+    for (const [rank, count] of pairRankCounts) {
+      if (count > maxCount) {
+        maxRank = rank
+        maxCount = count
+      }
+    }
+    if (maxRank !== null) {
+      pairRankCounts.set(maxRank, Math.max(maxCount + wildCountInChain, 1) + 1)
+    }
+  } else {
+    const currentCount = pairRankCounts.get(playedCard.rank) ?? 0
+    pairRankCounts.set(playedCard.rank, currentCount + wildCountInChain + 1)
+  }
+  return [...pairRankCounts.values()].filter(c => c >= 2).length
+}
+
 export function evaluateChainBonus(
   scoring: ShidasuParams['scoring'],
   chainBefore: Card[],
@@ -333,34 +364,19 @@ export function evaluateChainBonus(
   }
 
   // ペア: チェーン全体でランクごとに集計し、2枚以上あるランクが2組以上あれば成立する累積型役。
-  // ワイルドは「今回プレイしたカードのランク」(ワイルド自身の場合は最大枚数の実ランク)にのみ
-  // 加算し、複数ランクへの二重カウントを避ける(countSameRankBefore/countSameRankForWildPlayと同じ思想)。
-  const pairRankCounts = new Map<Card['rank'], number>()
-  for (const c of chainBefore) {
-    if (!c.wild) pairRankCounts.set(c.rank, (pairRankCounts.get(c.rank) ?? 0) + 1)
+  // 同一チェーン内で一度到達した組数(pairCount)は2度目以降発火しない。組数2→3→4…と新たな
+  // マイルストーンに到達した瞬間にのみ、その時点の組数×pairBonusUnit分を1回だけ加点する。
+  const pairCount = computePairCount(chainBefore, card)
+  let maxPairCountBefore = 0
+  for (let i = 0; i < chainBefore.length; i++) {
+    const stepPairCount = computePairCount(chainBefore.slice(0, i), chainBefore[i])
+    if (stepPairCount > maxPairCountBefore) maxPairCountBefore = stepPairCount
   }
-  const pairWildCountInChain = chainBefore.filter(c => c.wild).length
-  if (card.wild) {
-    let maxRank: Card['rank'] | null = null
-    let maxCount = 0
-    for (const [rank, count] of pairRankCounts) {
-      if (count > maxCount) {
-        maxRank = rank
-        maxCount = count
-      }
-    }
-    if (maxRank !== null) {
-      pairRankCounts.set(maxRank, Math.max(maxCount + pairWildCountInChain, 1) + 1)
-    }
-  } else {
-    const currentCount = pairRankCounts.get(card.rank) ?? 0
-    pairRankCounts.set(card.rank, currentCount + pairWildCountInChain + 1)
-  }
-  const pairCount = [...pairRankCounts.values()].filter(c => c >= 2).length
-  if (pairCount >= 2) {
+  if (pairCount >= 2 && pairCount > maxPairCountBefore) {
     const pairGain = Math.floor(scoring.pairBonusUnit * pairCount * oracleLevel('pair') * roleBonusMultiplier('pair'))
     bonus += pairGain
     parts.push(addPart('ペア', pairGain, chainIncludingThisIds))
+    const pairWildCountInChain = chainBefore.filter(c => c.wild).length
     const pairUsedWild = card.wild || pairWildCountInChain > 0
     roleFired.push({ name: 'pair', usedWild: pairUsedWild, amount: pairGain })
   }

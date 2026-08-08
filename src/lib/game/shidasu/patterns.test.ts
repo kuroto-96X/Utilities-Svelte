@@ -796,9 +796,11 @@ describe('evaluateChainBonus', () => {
   })
 
   test('ペア: チェーン内のワイルドは今回プレイしたカードのランクにのみ加算される', () => {
-    const chainBefore = [card(1, '♠', 3), card(2, '♥', 3), card(3, '★', 0, true), card(4, '♦', 6)]
-    const result = evaluateChainBonus(scoring, chainBefore, card(5, '♣', 6))
-    // ランク3: 実カード2枚(組成立)、ランク6: 実カード1枚+ワイルド1枚+今回1枚=3枚(組成立)
+    // ランク3は実カード2枚で既に組成立(組数1、まだ加点なし)。ランク6はワイルド分と合わせて
+    // 今回のプレイでちょうど組成立し、組数2に到達する(=このプレイで初めて加点)。
+    const chainBefore = [card(1, '♠', 3), card(2, '♥', 3), card(3, '★', 0, true)]
+    const result = evaluateChainBonus(scoring, chainBefore, card(4, '♦', 6))
+    // ランク6: 実カード0枚+ワイルド1枚+今回1枚=2枚(組成立)
     const pairEntry = result.roleFired.find(r => r.name === 'pair')
     expect(pairEntry?.amount).toBe(scoring.pairBonusUnit * 2)
   })
@@ -810,11 +812,13 @@ describe('evaluateChainBonus', () => {
     expect(result.roleFired.find(r => r.name === 'pair')).toBeUndefined()
   })
 
-  test('ペア: ワイルド自身をプレイし、複数組が成立していれば加点される', () => {
+  test('ペア: 既に到達済みの組数では、ワイルド自身をプレイしても再加点されない', () => {
+    // ランク3・ランク9がそれぞれ実カード2枚で既に組数2に到達済み(4枚目のプレイで既に加点済みの状態)。
+    // ここでワイルドをプレイして最大枚数のランク(3)をさらに補強しても、組数は2のまま変わらないため
+    // 再加点されない(同一チェーン内で一度成立した組数は2度目以降発火しない)。
     const chainBefore = [card(1, '♠', 3), card(2, '♥', 3), card(3, '♦', 9), card(4, '♣', 9)]
     const result = evaluateChainBonus(scoring, chainBefore, card(5, '★', 0, true))
-    const pairEntry = result.roleFired.find(r => r.name === 'pair')
-    expect(pairEntry?.amount).toBe(scoring.pairBonusUnit * 2)
+    expect(result.roleFired.find(r => r.name === 'pair')).toBeUndefined()
   })
 
   test('ペア: 神託レベルが乗算される', () => {
@@ -823,6 +827,31 @@ describe('evaluateChainBonus', () => {
     const result = evaluateChainBonus(scoring, chainBefore, card(4, '♣', 9), undefined, undefined, undefined, oracleLevel)
     const pairEntry = result.roleFired.find(r => r.name === 'pair')
     expect(pairEntry?.amount).toBe(scoring.pairBonusUnit * 2 * 2)
+  })
+
+  test('ペア: 同一チェーン上で一度成立した組数は2度目以降発火しない(組数2→無関係な札→組数3で再度発火)', () => {
+    // 1,2枚目: ランク3の組成立(組数1、加点なし)。3,4枚目: ランク9の組成立(組数2に到達、加点)。
+    // 5枚目: 無関係なランク(15はrank型に無いため12=Qを使う単発カード、組数据え置き、加点なし)。
+    // 6,7枚目: ランク5の組成立(組数3に到達、再度加点)。
+    let chain: Card[] = []
+    const plays = [
+      card(1, '♠', 3), card(2, '♥', 3),
+      card(3, '♦', 9), card(4, '♣', 9),
+      card(5, '♠', 12),
+      card(6, '♥', 5), card(7, '♦', 5),
+    ]
+    const fires: (number | undefined)[] = []
+    for (const c of plays) {
+      const result = evaluateChainBonus(scoring, chain, c)
+      fires.push(result.roleFired.find(r => r.name === 'pair')?.amount)
+      chain = [...chain, c]
+    }
+    expect(fires).toEqual([
+      undefined, undefined, // 1,2枚目: 組数0→1、未成立
+      undefined, scoring.pairBonusUnit * 2, // 3枚目: 組数1のまま未成立、4枚目: 組数2到達で加点
+      undefined, // 5枚目: 無関係な単発カード、組数据え置きで加点なし
+      undefined, scoring.pairBonusUnit * 3, // 6枚目: 組数2のまま未成立、7枚目: 組数3到達で再度加点
+    ])
   })
 })
 
