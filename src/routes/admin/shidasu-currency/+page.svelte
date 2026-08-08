@@ -42,6 +42,9 @@
     if (!Number.isFinite(config.shop.packPrice.revelation.sevenTwo) || config.shop.packPrice.revelation.sevenTwo < 0) return true
     if (!Number.isFinite(config.shop.packPrice.oracle.threeOne) || config.shop.packPrice.oracle.threeOne < 0) return true
     if (!Number.isFinite(config.shop.packPrice.oracle.fiveOne) || config.shop.packPrice.oracle.fiveOne < 0) return true
+    if (!Number.isFinite(config.shop.packPrice.cardSet.threeOne) || config.shop.packPrice.cardSet.threeOne < 0) return true
+    if (!Number.isFinite(config.shop.packPrice.cardSet.fiveOne) || config.shop.packPrice.cardSet.fiveOne < 0) return true
+    if (!Number.isFinite(config.shop.packPrice.cardSet.sevenTwo) || config.shop.packPrice.cardSet.sevenTwo < 0) return true
     return false
   })
 
@@ -197,7 +200,7 @@
       </div>
 
       <div>
-        <p class="text-xs text-slate-500 mb-1">福袋価格(護符・秘儀・天啓は3-1/5-1/7-2、神託は3-1/5-1のみ)</p>
+        <p class="text-xs text-slate-500 mb-1">福袋価格(護符・秘儀・天啓・トランプセットは3-1/5-1/7-2、神託は3-1/5-1のみ)</p>
         <div class="grid grid-cols-3 gap-3">
           <label class="text-xs text-slate-500">
             護符 3-1
@@ -242,6 +245,18 @@
           <label class="text-xs text-slate-500">
             神託 5-1
             <input type="number" step="1" bind:value={config.shop.packPrice.oracle.fiveOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            トランプセット 3-1
+            <input type="number" step="1" bind:value={config.shop.packPrice.cardSet.threeOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            トランプセット 5-1
+            <input type="number" step="1" bind:value={config.shop.packPrice.cardSet.fiveOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
+          </label>
+          <label class="text-xs text-slate-500">
+            トランプセット 7-2
+            <input type="number" step="1" bind:value={config.shop.packPrice.cardSet.sevenTwo} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
           </label>
         </div>
       </div>
