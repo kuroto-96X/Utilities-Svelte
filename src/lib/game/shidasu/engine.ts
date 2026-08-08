@@ -1159,6 +1159,24 @@ export function rerollStageStars(params: ShidasuParams, run: RunState, rand: () 
   return { ...run, currency: run.currency - params.flow.rerollCost, stageStars }
 }
 
+// ショップの品ぞろえ(バラ売り3枠+福袋2枠)全体を再抽選するリロールのコスト。同一ショップ訪問中の
+// リロール回数(shopRerollCount)に応じて回数ごとにrerollCostStep分ずつ増額する
+// (1回目はrerollCostStep、2回目は2倍、3回目は3倍…)。
+export function shopRerollCost(params: ShidasuParams, run: RunState): number {
+  return (run.shopRerollCount + 1) * params.shop.rerollCostStep
+}
+
+// ショップ画面のリロールボタンから呼ぶ。バラ売り3枠+福袋2枠を丸ごと再抽選する(売り切れ済みの
+// 枠も含めて全て新しい商品に入れ替わる、既存のrollShopをそのまま再利用)。通貨からshopRerollCost分を
+// 差し引き、shopRerollCountを+1する。phaseがshop以外、shopがnull、通貨不足のいずれかの場合は
+// runをそのまま返す。
+export function rerollShop(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
+  if (run.phase !== 'shop' || !run.shop) return run
+  const cost = shopRerollCost(params, run)
+  if (run.currency < cost) return run
+  return { ...run, currency: run.currency - cost, shop: rollShop(run, rand), shopRerollCount: run.shopRerollCount + 1 }
+}
+
 // バラ売り護符購入。所持上限(maxItems)到達時・通貨不足時・売り切れ時は何もしない(スワップは発生しない)。
 export function buyIndividualItem(params: ShidasuParams, run: RunState, slotIndex: number): RunState {
   if (run.phase !== 'shop' || !run.shop) return run

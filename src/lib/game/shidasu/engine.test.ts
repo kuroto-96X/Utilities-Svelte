@@ -62,6 +62,8 @@ import {
   reorderItems,
   skipWave,
   rerollStageStars,
+  rerollShop,
+  shopRerollCost,
   startRevelationPreview,
 } from './engine'
 import { isFace, chainContinuesPattern } from './patterns'
@@ -2629,6 +2631,12 @@ describe('resolveWaveEnd', () => {
     expect(result.shop).toBeNull()
   })
 
+  test('新しいショップに入るたび、shopRerollCountは0にリセットされる', () => {
+    const run = endedRun({ waveIndex: 0, shopRerollCount: 3 }, waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars))
+    const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
+    expect(result.shopRerollCount).toBe(0)
+  })
+
   test('beginRun直後、currencyは初期所持数になる', () => {
     const run = beginRun(DEFAULT_PARAMS, 1)
     expect(run.currency).toBe(DEFAULT_PARAMS.currency.initialAmount)
@@ -2785,6 +2793,75 @@ describe('rerollStageStars', () => {
   test('phaseがshop以外のとき、何も変化しない', () => {
     const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'playing', waveIndex: 2, currency: 100 }
     const result = rerollStageStars(DEFAULT_PARAMS, run, () => 0.9)
+    expect(result).toEqual(run)
+  })
+})
+
+describe('shopRerollCost', () => {
+  test('shopRerollCountが0のとき、rerollCostStepそのままの値になる', () => {
+    const run = { ...beginRun(DEFAULT_PARAMS, 1), shopRerollCount: 0 }
+    expect(shopRerollCost(DEFAULT_PARAMS, run)).toBe(DEFAULT_PARAMS.shop.rerollCostStep)
+  })
+
+  test('shopRerollCountが増えるたびに、rerollCostStep×(回数+1)になる', () => {
+    const run = { ...beginRun(DEFAULT_PARAMS, 1), shopRerollCount: 2 }
+    expect(shopRerollCost(DEFAULT_PARAMS, run)).toBe(DEFAULT_PARAMS.shop.rerollCostStep * 3)
+  })
+})
+
+describe('rerollShop', () => {
+  function shopRun(currency: number, shopRerollCount = 0): RunState {
+    const base = shopStateAfterWaveClear()
+    return { ...base, currency, shopRerollCount }
+  }
+
+  // enterShopはmodule非公開のため、resolveWaveEndを経由してshopが確定したRunStateを用意する
+  function shopStateAfterWaveClear(): RunState {
+    const begun = beginRun(DEFAULT_PARAMS, 1)
+    const { wave } = startWave(DEFAULT_PARAMS, begun.stageIndex, begun.waveIndex, begun.items, begun.deckComposition, 1, begun.extraTableauRows, begun.oracleLevels)
+    const ended: RunState = { ...begun, wave: { ...wave, score: waveTarget(DEFAULT_PARAMS, 0, 0, begun.stageStars), status: 'ended', endReason: 'target' } }
+    return resolveWaveEnd(DEFAULT_PARAMS, ended, createRng(5))
+  }
+
+  test('コスト以上の通貨があるとき、通貨が減りshopが入れ替わりshopRerollCountが1増える', () => {
+    const run = shopRun(100)
+    const originalShop = run.shop
+    const result = rerollShop(DEFAULT_PARAMS, run, () => 0.9)
+    expect(result.currency).toBe(100 - DEFAULT_PARAMS.shop.rerollCostStep)
+    expect(result.shop).not.toBe(originalShop)
+    expect(result.shop!.individual).toHaveLength(3)
+    expect(result.shop!.packs).toHaveLength(2)
+    expect(result.shopRerollCount).toBe(1)
+  })
+
+  test('通貨がコスト未満のとき、何も変化しない', () => {
+    const run = shopRun(DEFAULT_PARAMS.shop.rerollCostStep - 1)
+    const result = rerollShop(DEFAULT_PARAMS, run, () => 0.9)
+    expect(result).toEqual(run)
+  })
+
+  test('リロールを繰り返すたびにコストが増額する(1回目5、2回目10、3回目15)', () => {
+    let current = shopRun(1000)
+    expect(shopRerollCost(DEFAULT_PARAMS, current)).toBe(DEFAULT_PARAMS.shop.rerollCostStep)
+    current = rerollShop(DEFAULT_PARAMS, current, () => 0.9)
+    expect(current.currency).toBe(1000 - DEFAULT_PARAMS.shop.rerollCostStep)
+    expect(shopRerollCost(DEFAULT_PARAMS, current)).toBe(DEFAULT_PARAMS.shop.rerollCostStep * 2)
+    const currencyBeforeSecond = current.currency
+    current = rerollShop(DEFAULT_PARAMS, current, () => 0.9)
+    expect(current.currency).toBe(currencyBeforeSecond - DEFAULT_PARAMS.shop.rerollCostStep * 2)
+    expect(shopRerollCost(DEFAULT_PARAMS, current)).toBe(DEFAULT_PARAMS.shop.rerollCostStep * 3)
+  })
+
+  test('phaseがshop以外のとき、何も変化しない', () => {
+    const run: RunState = { ...shopRun(100), phase: 'playing' }
+    const result = rerollShop(DEFAULT_PARAMS, run, () => 0.9)
+    expect(result).toEqual(run)
+  })
+
+  test('shopがnull(ラン開始直後でまだ品ぞろえが確定していない状態)のとき、何も変化しない', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    expect(run.shop).toBeNull()
+    const result = rerollShop(DEFAULT_PARAMS, run, () => 0.9)
     expect(result).toEqual(run)
   })
 })
