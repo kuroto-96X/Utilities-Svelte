@@ -27,6 +27,32 @@ function randomRank(rand: () => number): Rank {
   return ALL_RANKS[Math.floor(rand() * ALL_RANKS.length)]
 }
 
+// 階段セット(length枚): 開始ランクをランダムに1つ決定(A⇔Kループを跨いでよい)、
+// そこからlength枚連続するランクを生成。各カードのスートは個別にランダム。
+function generateStairSet(length: number, rand: () => number): NewCardSpec[] {
+  const startRank = Math.floor(rand() * 13) + 1
+  const cards: NewCardSpec[] = []
+  for (let i = 0; i < length; i++) {
+    const rank = (((startRank - 1 + i) % 13) + 1) as Rank
+    cards.push({ suit: pickRandom(SUITS, rand), rank, wild: false })
+  }
+  return cards
+}
+
+// 同ランクセット(count枚): ランクをランダムに1つ決定。4スートから重複無くcount個を選択。
+function generateSameRankSet(count: number, rand: () => number): NewCardSpec[] {
+  const rank = randomRank(rand)
+  const suits = pickRandomDistinct(SUITS, count, rand)
+  return suits.map(suit => ({ suit, rank, wild: false }))
+}
+
+// 同スートセット(count枚): スートをランダムに1つ決定。13ランクから重複無くcount個を選択。
+function generateSameSuitSet(count: number, rand: () => number): NewCardSpec[] {
+  const suit = pickRandom(SUITS, rand)
+  const ranks = pickRandomDistinct(ALL_RANKS, count, rand)
+  return ranks.map(rank => ({ suit, rank, wild: false }))
+}
+
 // 絵札セット: J・Q・K固定。スートは各カード個別ランダム。
 function generateFaceCardsSet(rand: () => number): NewCardSpec[] {
   return ([11, 12, 13] as Rank[]).map(rank => ({ suit: pickRandom(SUITS, rand), rank, wild: false }))
@@ -87,7 +113,16 @@ export const CARD_SET_GENRE_NAMES: Record<CardSetGenreId, string> = {
 
 export function generateCardSet(genreId: CardSetGenreId, rand: () => number = Math.random): NewCardSpec[] {
   switch (genreId) {
+    case 'stair3': return generateStairSet(3, rand)
+    case 'stair5': return generateStairSet(5, rand)
+    case 'stair7': return generateStairSet(7, rand)
+    case 'sameRank2': return generateSameRankSet(2, rand)
+    case 'sameRank3': return generateSameRankSet(3, rand)
+    case 'sameRank4': return generateSameRankSet(4, rand)
     case 'faceCards': return generateFaceCardsSet(rand)
+    case 'sameSuit3': return generateSameSuitSet(3, rand)
+    case 'sameSuit5': return generateSameSuitSet(5, rand)
+    case 'sameSuit7': return generateSameSuitSet(7, rand)
     case 'royal': return generateRoyalSet(rand)
     case 'flush': return generateFlushSet(rand)
     case 'completeRunSameSuit': return generateCompleteRunSameSuitSet(rand)
