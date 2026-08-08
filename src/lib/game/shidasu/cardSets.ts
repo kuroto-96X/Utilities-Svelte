@@ -80,6 +80,41 @@ function generateCompleteRunRandomSuitSet(rand: () => number): NewCardSpec[] {
   return ALL_RANKS.map(rank => ({ suit: pickRandom(SUITS, rand), rank, wild: false }))
 }
 
+// ペアセット(groups組): 13ランクから重複無くgroups個を選択、各ランクにつき2枚(計2*groups枚)。
+// 各組の2枚は異なるスートになるよう個別にランダム。
+function generatePairSet(groups: number, rand: () => number): NewCardSpec[] {
+  const ranks = pickRandomDistinct(ALL_RANKS, groups, rand)
+  const cards: NewCardSpec[] = []
+  for (const rank of ranks) {
+    const suits = pickRandomDistinct(SUITS, 2, rand)
+    cards.push({ suit: suits[0], rank, wild: false })
+    cards.push({ suit: suits[1], rank, wild: false })
+  }
+  return cards
+}
+
+// 赤黒バランスセット(totalCount枚・スート個別ランダム): 赤totalCount/2枚(♥♦から個別ランダム)・
+// 黒totalCount/2枚(♠♣から個別ランダム)。ランクは各カード個別にランダム。
+function generateRedBlackRandomSet(totalCount: number, rand: () => number): NewCardSpec[] {
+  const half = totalCount / 2
+  const cards: NewCardSpec[] = []
+  for (let i = 0; i < half; i++) cards.push({ suit: pickRandom(RED_SUITS, rand), rank: randomRank(rand), wild: false })
+  for (let i = 0; i < half; i++) cards.push({ suit: pickRandom(BLACK_SUITS, rand), rank: randomRank(rand), wild: false })
+  return cards
+}
+
+// 赤黒バランスセット(totalCount枚・スート統一): 赤totalCount/2枚は♥/♦のどちらか1つにランダムに
+// 統一、黒totalCount/2枚は♠/♣のどちらか1つにランダムに統一。ランクは各カード個別にランダム。
+function generateRedBlackFixedSet(totalCount: number, rand: () => number): NewCardSpec[] {
+  const half = totalCount / 2
+  const redSuit = pickRandom(RED_SUITS, rand)
+  const blackSuit = pickRandom(BLACK_SUITS, rand)
+  const cards: NewCardSpec[] = []
+  for (let i = 0; i < half; i++) cards.push({ suit: redSuit, rank: randomRank(rand), wild: false })
+  for (let i = 0; i < half; i++) cards.push({ suit: blackSuit, rank: randomRank(rand), wild: false })
+  return cards
+}
+
 // ワイルドカード: wild: true固定1枚(スート・ランク概念なし)。
 function generateWildCardSet(): NewCardSpec[] {
   return [{ suit: '★', rank: 0, wild: true }]
@@ -127,8 +162,14 @@ export function generateCardSet(genreId: CardSetGenreId, rand: () => number = Ma
     case 'flush': return generateFlushSet(rand)
     case 'completeRunSameSuit': return generateCompleteRunSameSuitSet(rand)
     case 'completeRunRandomSuit': return generateCompleteRunRandomSuitSet(rand)
+    case 'pair2': return generatePairSet(2, rand)
+    case 'pair3': return generatePairSet(3, rand)
+    case 'redBlack4Random': return generateRedBlackRandomSet(4, rand)
+    case 'redBlack4Fixed': return generateRedBlackFixedSet(4, rand)
+    case 'redBlack6Random': return generateRedBlackRandomSet(6, rand)
+    case 'redBlack6Fixed': return generateRedBlackFixedSet(6, rand)
+    case 'redBlack8Random': return generateRedBlackRandomSet(8, rand)
+    case 'redBlack8Fixed': return generateRedBlackFixedSet(8, rand)
     case 'wildCard': return generateWildCardSet()
-    default:
-      throw new Error(`generateCardSet: 未対応のジャンルID: ${genreId}`)
   }
 }

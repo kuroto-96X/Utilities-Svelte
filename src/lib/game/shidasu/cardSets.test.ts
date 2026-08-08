@@ -152,6 +152,80 @@ describe('generateCardSet: completeRunRandomSuit(コンプリートランセッ�
   })
 })
 
+describe('generateCardSet: pair2/pair3(ペアセット)', () => {
+  test('pair2は4枚(2組)、pair3は6枚(3組)になる', () => {
+    expect(generateCardSet('pair2', createRng(1))).toHaveLength(4)
+    expect(generateCardSet('pair3', createRng(1))).toHaveLength(6)
+  })
+
+  test('pair3は3種類の異なるランクが各2枚ずつになる', () => {
+    const cards = generateCardSet('pair3', createRng(1))
+    const rankCounts = new Map<number, number>()
+    cards.forEach(c => rankCounts.set(c.rank, (rankCounts.get(c.rank) ?? 0) + 1))
+    expect(rankCounts.size).toBe(3)
+    expect([...rankCounts.values()]).toEqual([2, 2, 2])
+  })
+
+  test('各組の2枚は異なるスートになる', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const cards = generateCardSet('pair3', createRng(seed))
+      const rankGroups = new Map<number, string[]>()
+      cards.forEach(c => {
+        const list = rankGroups.get(c.rank) ?? []
+        list.push(c.suit)
+        rankGroups.set(c.rank, list)
+      })
+      rankGroups.forEach(suits => expect(new Set(suits).size).toBe(2))
+    }
+  })
+})
+
+describe('generateCardSet: redBlack4Random/redBlack4Fixed/redBlack6Random/redBlack6Fixed/redBlack8Random/redBlack8Fixed(赤黒バランスセット)', () => {
+  test('4枚/6枚/8枚それぞれ正しい枚数になる', () => {
+    expect(generateCardSet('redBlack4Random', createRng(1))).toHaveLength(4)
+    expect(generateCardSet('redBlack6Random', createRng(1))).toHaveLength(6)
+    expect(generateCardSet('redBlack8Random', createRng(1))).toHaveLength(8)
+    expect(generateCardSet('redBlack4Fixed', createRng(1))).toHaveLength(4)
+    expect(generateCardSet('redBlack6Fixed', createRng(1))).toHaveLength(6)
+    expect(generateCardSet('redBlack8Fixed', createRng(1))).toHaveLength(8)
+  })
+
+  function isRed(suit: string): boolean {
+    return suit === '♥' || suit === '♦'
+  }
+
+  test('赤黒が同数になる(6枚なら赤3・黒3)', () => {
+    const cards = generateCardSet('redBlack6Random', createRng(1))
+    const redCount = cards.filter(c => isRed(c.suit)).length
+    expect(redCount).toBe(3)
+    expect(cards.length - redCount).toBe(3)
+  })
+
+  test('スートランダム版は赤2種・黒2種のスートが個別に決まりうる(複数シードで両方のスートが出るケースを確認)', () => {
+    const redSuitsSeen = new Set<string>()
+    const blackSuitsSeen = new Set<string>()
+    for (let seed = 1; seed <= 30; seed++) {
+      const cards = generateCardSet('redBlack6Random', createRng(seed))
+      cards.forEach(c => {
+        if (isRed(c.suit)) redSuitsSeen.add(c.suit)
+        else blackSuitsSeen.add(c.suit)
+      })
+    }
+    expect(redSuitsSeen.size).toBe(2)
+    expect(blackSuitsSeen.size).toBe(2)
+  })
+
+  test('スート統一版は赤3枚が同一スート、黒3枚が同一スートになる', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const cards = generateCardSet('redBlack6Fixed', createRng(seed))
+      const redSuits = new Set(cards.filter(c => isRed(c.suit)).map(c => c.suit))
+      const blackSuits = new Set(cards.filter(c => !isRed(c.suit)).map(c => c.suit))
+      expect(redSuits.size).toBe(1)
+      expect(blackSuits.size).toBe(1)
+    }
+  })
+})
+
 describe('generateCardSet: wildCard(ワイルドカード)', () => {
   test('1枚生成され、wild: trueになる', () => {
     const cards = generateCardSet('wildCard', createRng(1))
