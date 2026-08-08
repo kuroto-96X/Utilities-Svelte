@@ -3227,7 +3227,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       echoX: 1, shootingStarN: 50,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
-      cardSetOffer: [],
+      cardSetOffer: [], shopRerollCount: 0,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
     expect(next.wave!.status).toBe('playing') // 手詰まりが解消されている
@@ -3258,7 +3258,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       echoX: 1, shootingStarN: 50,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
-      cardSetOffer: [],
+      cardSetOffer: [], shopRerollCount: 0,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run)
     expect(next.wave!.status).toBe('ended')
@@ -3283,7 +3283,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       echoX: 1, shootingStarN: 50,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
-      cardSetOffer: [],
+      cardSetOffer: [], shopRerollCount: 0,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run)
     expect(next.wave!.status).toBe('ended')
@@ -3309,7 +3309,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       echoX: 1, shootingStarN: 50,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
-      cardSetOffer: [],
+      cardSetOffer: [], shopRerollCount: 0,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run)
     expect(next.wave!.status).toBe('ended')
@@ -3336,7 +3336,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       echoX: 1, shootingStarN: 50,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
-      cardSetOffer: [],
+      cardSetOffer: [], shopRerollCount: 0,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
     expect(next.wave!.tableau[1].length).toBeGreaterThan(0) // 治癒によって列1が復活している
@@ -3362,7 +3362,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       echoX: 1, shootingStarN: 50,
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
-      cardSetOffer: [],
+      cardSetOffer: [], shopRerollCount: 0,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
     expect(next.wave!.tableau[1].length).toBeGreaterThan(0) // 治癒によって列1は復活している

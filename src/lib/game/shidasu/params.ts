@@ -72,6 +72,9 @@ export interface ShidasuParams {
       oracle: { threeOne: number; fiveOne: number }
       cardSet: { threeOne: number; fiveOne: number; sevenTwo: number }
     }
+    // ショップの品ぞろえ全体(バラ売り3枠+福袋2枠)を再抽選するリロールのコスト刻み幅。
+    // 1回目はrerollCostStep、2回目は2倍、3回目は3倍…と、同一ショップ訪問中のリロール回数に応じて増額する
+    rerollCostStep: number
   }
   talismans: {
     bridge: { name: string; m: number; rarity: Rarity; desc: string }
@@ -302,6 +305,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
       oracle: { threeOne: 22, fiveOne: 33 },
       cardSet: { threeOne: 20, fiveOne: 30, sevenTwo: 50 },
     },
+    rerollCostStep: 5,
   },
   talismans: {
     bridge: { name: '架橋', m: 2, rarity: 'C', desc: '階段・同スート・同色の成立に必要な枚数を{m}枚緩和' },

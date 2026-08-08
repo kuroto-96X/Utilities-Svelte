@@ -354,4 +354,6 @@ export interface RunState {
   pendingNewOracle: RoleName | null
   // カードセット福袋('cardSetSelect'フェーズ)で提示中のオファー。それ以外のフェーズでは空配列
   cardSetOffer: CardSetOffer[]
+  // 現在のショップ訪問でリロール(品ぞろえの再抽選)した回数。次のショップに入る(enterShop)たびに0にリセットされる
+  shopRerollCount: number
 }

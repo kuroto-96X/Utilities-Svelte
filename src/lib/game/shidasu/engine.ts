@@ -996,7 +996,7 @@ export function createInitialRun(): RunState {
     echoX: 1, shootingStarN: 50,
     oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
     pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
-    cardSetOffer: [],
+    cardSetOffer: [], shopRerollCount: 0,
   }
 }
 
@@ -1038,6 +1038,7 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
     pendingNewRevelation: null,
     pendingNewOracle: null,
     cardSetOffer: [],
+    shopRerollCount: 0,
   }
 }
 
@@ -1109,6 +1110,7 @@ function enterShop(params: ShidasuParams, run: RunState, _seed: number | undefin
     riteOffer: [],
     offerPickRemaining: 0,
     cardSetOffer: [],
+    shopRerollCount: 0,
   }
   return { ...next, shop: rollShop(next, rand) }
 }

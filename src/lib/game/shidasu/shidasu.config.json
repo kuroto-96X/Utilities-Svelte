@@ -175,7 +175,8 @@
         "fiveOne": 6,
         "sevenTwo": 8
       }
-    }
+    },
+    "rerollCostStep": 2
   },
   "talismans": {
     "bridge": {
