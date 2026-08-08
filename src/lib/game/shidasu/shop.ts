@@ -15,7 +15,7 @@ interface PackDefinition {
   pickCount: 1 | 2
 }
 
-// 護符/秘儀/天啓は3-1・5-1・7-2の3パターン、神託は3-1・5-1の2パターン(7-2は無し)。計11パターン。
+// 護符/秘儀/天啓/カードセットは3-1・5-1・7-2の3パターン、神託は3-1・5-1の2パターン(7-2は無し)。計14パターン。
 export const PACK_DEFINITIONS: PackDefinition[] = [
   { packKind: 'item', offerCount: 3, pickCount: 1 },
   { packKind: 'item', offerCount: 5, pickCount: 1 },
@@ -28,6 +28,9 @@ export const PACK_DEFINITIONS: PackDefinition[] = [
   { packKind: 'revelation', offerCount: 7, pickCount: 2 },
   { packKind: 'oracle', offerCount: 3, pickCount: 1 },
   { packKind: 'oracle', offerCount: 5, pickCount: 1 },
+  { packKind: 'cardSet', offerCount: 3, pickCount: 1 },
+  { packKind: 'cardSet', offerCount: 5, pickCount: 1 },
+  { packKind: 'cardSet', offerCount: 7, pickCount: 2 },
 ]
 
 function poolFor(kind: ShopSlotKind): readonly string[] {

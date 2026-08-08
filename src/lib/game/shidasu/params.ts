@@ -64,12 +64,13 @@ export interface ShidasuParams {
     ritePrice: { buy: number; sell: number }
     revelationPrice: { buy: number; sell: number }
     oraclePrice: { buy: number; sell: number }
-    // 護符/秘儀/天啓は3-1・5-1・7-2の3パターン、神託は3-1・5-1のみ(7-2は無し)
+    // 護符/秘儀/天啓/カードセットは3-1・5-1・7-2の3パターン、神託は3-1・5-1のみ(7-2は無し)
     packPrice: {
       item: { threeOne: number; fiveOne: number; sevenTwo: number }
       rite: { threeOne: number; fiveOne: number; sevenTwo: number }
       revelation: { threeOne: number; fiveOne: number; sevenTwo: number }
       oracle: { threeOne: number; fiveOne: number }
+      cardSet: { threeOne: number; fiveOne: number; sevenTwo: number }
     }
   }
   talismans: {
@@ -299,6 +300,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
       rite: { threeOne: 20, fiveOne: 30, sevenTwo: 50 },
       revelation: { threeOne: 25, fiveOne: 38, sevenTwo: 63 },
       oracle: { threeOne: 22, fiveOne: 33 },
+      cardSet: { threeOne: 20, fiveOne: 30, sevenTwo: 50 },
     },
   },
   talismans: {

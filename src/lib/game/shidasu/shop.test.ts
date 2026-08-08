@@ -52,6 +52,14 @@ describe('rollShop', () => {
       expect(PACK_DEFINITIONS.some(d => d.packKind === p.packKind && d.offerCount === p.offerCount && d.pickCount === p.pickCount)).toBe(true)
     })
   })
+
+  test('PACK_DEFINITIONSにcardSetの3-1・5-1・7-2パターンが含まれる', () => {
+    const cardSetDefs = PACK_DEFINITIONS.filter(d => d.packKind === 'cardSet')
+    expect(cardSetDefs).toHaveLength(3)
+    expect(cardSetDefs.some(d => d.offerCount === 3 && d.pickCount === 1)).toBe(true)
+    expect(cardSetDefs.some(d => d.offerCount === 5 && d.pickCount === 1)).toBe(true)
+    expect(cardSetDefs.some(d => d.offerCount === 7 && d.pickCount === 2)).toBe(true)
+  })
 })
 
 describe('価格関数', () => {
@@ -82,5 +90,11 @@ describe('価格関数', () => {
     expect(packPrice(DEFAULT_PARAMS, 'revelation', 7)).toBe(63)
     expect(packPrice(DEFAULT_PARAMS, 'oracle', 3)).toBe(22)
     expect(packPrice(DEFAULT_PARAMS, 'oracle', 5)).toBe(33)
+  })
+
+  test('cardSetの福袋価格', () => {
+    expect(packPrice(DEFAULT_PARAMS, 'cardSet', 3)).toBe(20)
+    expect(packPrice(DEFAULT_PARAMS, 'cardSet', 5)).toBe(30)
+    expect(packPrice(DEFAULT_PARAMS, 'cardSet', 7)).toBe(50)
   })
 })

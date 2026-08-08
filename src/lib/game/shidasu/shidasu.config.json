@@ -169,6 +169,11 @@
       "oracle": {
         "threeOne": 2,
         "fiveOne": 4
+      },
+      "cardSet": {
+        "threeOne": 4,
+        "fiveOne": 6,
+        "sevenTwo": 8
       }
     }
   },
