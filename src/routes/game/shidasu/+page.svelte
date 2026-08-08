@@ -11,6 +11,7 @@
     buyIndividualOracleUse, buyIndividualOracleHold, buyPack,
     pickPackItem, confirmPackItemSwap, cancelPackItemSwap, closePackItemSelect,
     pickPackRite, confirmPackRiteSwap, cancelPackRiteSwap, closePackRiteSelect,
+    pickPackCardSet, closePackCardSetSelect,
     pickPackRevelationUse, pickPackRevelationHold, confirmPackRevelationSwap, cancelPackRevelationSwap, closePackRevelationSelect,
     pickPackOracleUse, pickPackOracleHold, confirmPackOracleSwap, cancelPackOracleSwap, closePackOracleSelect,
     useOracle, sellItem, sellRite, sellRevelation, sellOracle, reorderItems,
@@ -25,10 +26,12 @@
     itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice,
     oracleBuyPrice, oracleSellPrice, packPrice,
   } from '$lib/game/shidasu/shop'
-  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, ShopSlotKind, PlayCardResult, Star, WaveState } from '$lib/game/shidasu/types'
+  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, ShopSlotKind, PlayCardResult, Star, WaveState, CardSetGenreId } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
   import RoleStatusPanel from './RoleStatusPanel.svelte'
+  import CardFace from './CardFace.svelte'
+  import { CARD_SET_GENRE_NAMES } from '$lib/game/shidasu/cardSets'
 
   const params = loadParams()
 
@@ -46,7 +49,7 @@
   }
 
   const SHOP_SLOT_KIND_LABEL: Record<ShopSlotKind, string> = {
-    item: '護符', rite: '秘儀', revelation: '天啓', oracle: '神託',
+    item: '護符', rite: '秘儀', revelation: '天啓', oracle: '神託', cardSet: 'トランプセット',
   }
 
   // タイトル画面の高さをプレイ画面に揃えるための計測専用ダミーウェーブ(実際のゲームには使わない)
@@ -276,6 +279,14 @@
   }
   function handleClosePackRiteSelect() {
     run = closePackRiteSelect(run)
+  }
+
+  function handlePickPackCardSet(genreId: CardSetGenreId) {
+    run = pickPackCardSet(run, genreId)
+  }
+
+  function handleClosePackCardSetSelect() {
+    run = closePackCardSetSelect(run)
   }
 
   // revelationSelectフェーズを離れた(=福袋での天啓選択が完了しshopへ戻った)場合、
@@ -842,6 +853,27 @@
         </div>
         <button onclick={handleClosePackRiteSelect} class="text-xs text-slate-500 underline">選択を終える</button>
       {/if}
+    </div>
+  </div>
+{:else if run.phase === 'cardSetSelect'}
+  <div class="fixed inset-0 z-50 bg-emerald-950/90 backdrop-blur-sm flex items-center justify-center p-6">
+    <div class="bg-white rounded-2xl p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto space-y-3">
+      <h2 class="text-lg font-bold text-slate-800">トランプセット福袋(残り{run.offerPickRemaining}個選べます)</h2>
+      <div class="space-y-2">
+        {#each run.cardSetOffer as offer (offer.genreId)}
+          <button onclick={() => handlePickPackCardSet(offer.genreId)} class="w-full text-left px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-sm space-y-1">
+            <div class="font-semibold text-slate-700">{CARD_SET_GENRE_NAMES[offer.genreId]}</div>
+            <div class="flex flex-wrap gap-1">
+              {#each offer.cards as c, i (i)}
+                <div class="w-8">
+                  <CardFace card={{ id: i, deckId: i, suit: c.suit, rank: c.rank, wild: c.wild }} covered={false} />
+                </div>
+              {/each}
+            </div>
+          </button>
+        {/each}
+      </div>
+      <button onclick={handleClosePackCardSetSelect} class="text-xs text-slate-500 underline">選択を終える</button>
     </div>
   </div>
 {:else if run.phase === 'itemSelect'}
