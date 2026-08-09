@@ -4,7 +4,7 @@ import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition, addCardsToDeckComposition } from './deck'
 import { isFace, chainContinuesPattern, evaluateChainBonus, countSameRankBefore, countSameRankForWildPlay, cardColors } from './patterns'
 import { addPart, multiplyPart, lockPart, type ScorePart } from './scoreParts'
-import { rollItemOffer } from './items'
+import { rollItemOffer, ITEM_POOL } from './items'
 import { applyItemEffects, type ItemEffectContext } from './itemEffects'
 import { applyRiteEffect, canUseRite } from './riteEffects'
 import { rollRiteOffer } from './rites'
@@ -1409,6 +1409,29 @@ export function closePackRevelationSelect(run: RunState): RunState {
   return { ...run, phase: 'shop', revelationOffer: [], pendingNewRevelation: null, offerPickRemaining: 0 }
 }
 
+// Phase B(即時報酬獲得系)天啓の付与ロジック。使用した天啓自身をrevelationsから取り除いた後の
+// runState(runAfterRemoval)を受け取り、変化するフィールドだけを部分的に返す。対象外のIDには{}を返す
+// (defaultケースがあるため、このswitchはRevelationIdに対して網羅的である必要はない)。
+// wave/deckCompositionには影響しないため、applyRevelationEffect側は全てno-opになっている。
+function grantRevelationReward(
+  params: ShidasuParams,
+  runAfterRemoval: RunState,
+  revelationId: RevelationId,
+  rand: () => number
+): Partial<RunState> {
+  switch (revelationId) {
+    case 'subaru': {
+      if (runAfterRemoval.items.length >= params.items.maxItems) return {}
+      const available = ITEM_POOL.filter(id => !runAfterRemoval.items.includes(id))
+      if (available.length === 0) return {}
+      const picked = available[Math.floor(rand() * available.length)]
+      return { items: [...runAfterRemoval.items, picked] }
+    }
+    default:
+      return {}
+  }
+}
+
 // 所持中の天啓を1つ使用する(消費される)。プレイ中・天啓選択画面のどちらでも動作し、
 // フェーズは変えない(秘儀のuseRiteと同じ位置づけ)。
 export function useRevelation(
@@ -1428,7 +1451,8 @@ export function useRevelation(
   if (run.items.includes('frost')) wave = { ...wave, frostX: wave.frostX + params.talismans.frost.x }
   const extraTableauRows = revelationId === 'kyo' ? run.extraTableauRows + params.revelations.kyo.n : run.extraTableauRows
   const revelations = [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
-  return { ...run, wave, deckComposition, revelations, extraTableauRows, lastUsedRevelationId: revelationId }
+  const reward = grantRevelationReward(params, { ...run, revelations }, revelationId, rand)
+  return { ...run, wave, deckComposition, revelations, extraTableauRows, lastUsedRevelationId: revelationId, ...reward }
 }
 
 function resolvePackOraclePick(run: RunState, pickedRole: RoleName): RunState {

@@ -4214,6 +4214,26 @@ describe('useRevelation(所持天啓の使用、playing/shopフロー両対応)'
   })
 })
 
+describe('useRevelation: 昴(subaru・護符獲得)', () => {
+  test('護符を1つランダムに獲得し、所持中の護符は選ばれない', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['subaru'], items: ['discretion', 'frost'] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'subaru', null, createRng(1))
+    expect(result.items).toHaveLength(3)
+    expect(result.items.slice(0, 2)).toEqual(['discretion', 'frost'])
+    expect(result.items[2]).not.toBe('discretion')
+    expect(result.items[2]).not.toBe('frost')
+  })
+
+  test('護符の所持上限に達していれば何も獲得しない', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const fiveItems: ItemId[] = ITEM_POOL.slice(0, DEFAULT_PARAMS.items.maxItems)
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['subaru'], items: fiveItems }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'subaru', null, createRng(1))
+    expect(result.items).toEqual(fiveItems)
+  })
+})
+
 describe('神託の福袋(oracleSelect)', () => {
   function shopRunWithOraclePack(overrides: Partial<RunState> = {}): RunState {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave

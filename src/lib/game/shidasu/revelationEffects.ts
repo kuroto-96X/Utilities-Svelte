@@ -292,5 +292,7 @@ export function applyRevelationEffect(
       return wildifyChainTop(wave, deckComposition)
     case 'sei':
       return wildifyRandomTableauCards(wave, deckComposition, params.revelations.sei.n, rand)
+    case 'subaru':
+      return { wave, deckComposition }
   }
 }

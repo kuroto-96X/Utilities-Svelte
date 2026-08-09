@@ -218,6 +218,7 @@ export interface ShidasuParams {
     hitsu: { name: string; desc: string }
     shi: { name: string; desc: string }
     sei: { name: string; n: number; desc: string }
+    subaru: { name: string; desc: string }
   }
   oracles: {
     completeRun: { name: string; desc: string }
@@ -466,6 +467,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     hitsu: { name: '畢', desc: '場札から選んだ1列を、先頭のカードを起点とした階段状のランクに再配置する(昇順・降順はランダム)' },
     shi: { name: '觜', desc: '現在のチェーンの一番上のカードをワイルド化する' },
     sei: { name: '井', n: 1, desc: '場札の中からランダムに{n}枚選んでワイルド化する' },
+    subaru: { name: '昴', desc: '護符を1つ、所持中を除いてランダムに獲得する(所持上限に達していれば何も起こらない)' },
   },
   oracles: {
     completeRun: { name: '乾為天', desc: 'コンプリートラン　レベル+1' },
