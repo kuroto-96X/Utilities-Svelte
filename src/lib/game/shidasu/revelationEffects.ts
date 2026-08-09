@@ -170,6 +170,7 @@ function wildifyExtremeRanks(wave: WaveState, deckComposition: DeckCard[], rand:
 
 // 選んだ列を、先頭カードのランクを起点に階段状のランク(A⇔Kループ)へ再配置する。方向(昇順/降順)は使用ごとにランダム。
 // 秘儀「雷光(raidho)」と同じアルゴリズムだが、deckCompositionにも書き込んで効果を永続化する点が異なる。
+// 他の天啓関数と異なり、ワイルドカードもスキップせずランク変換の対象にする(秘儀「雷光」の挙動に合わせるため意図的な仕様。skip忘れではない)。
 function convertColumnToStair(wave: WaveState, deckComposition: DeckCard[], colIndex: number, rand: () => number): { wave: WaveState; deckComposition: DeckCard[] } {
   const col = wave.tableau[colIndex]
   if (!col || col.length === 0) return { wave, deckComposition }
