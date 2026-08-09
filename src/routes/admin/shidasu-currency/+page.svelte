@@ -31,20 +31,6 @@
     if (!Number.isFinite(config.shop.revelationPrice.sell) || config.shop.revelationPrice.sell < 0) return true
     if (!Number.isFinite(config.shop.oraclePrice.buy) || config.shop.oraclePrice.buy < 0) return true
     if (!Number.isFinite(config.shop.oraclePrice.sell) || config.shop.oraclePrice.sell < 0) return true
-    if (!Number.isFinite(config.shop.packPrice.item.threeOne) || config.shop.packPrice.item.threeOne < 0) return true
-    if (!Number.isFinite(config.shop.packPrice.item.fiveOne) || config.shop.packPrice.item.fiveOne < 0) return true
-    if (!Number.isFinite(config.shop.packPrice.item.sevenTwo) || config.shop.packPrice.item.sevenTwo < 0) return true
-    if (!Number.isFinite(config.shop.packPrice.rite.threeOne) || config.shop.packPrice.rite.threeOne < 0) return true
-    if (!Number.isFinite(config.shop.packPrice.rite.fiveOne) || config.shop.packPrice.rite.fiveOne < 0) return true
-    if (!Number.isFinite(config.shop.packPrice.rite.sevenTwo) || config.shop.packPrice.rite.sevenTwo < 0) return true
-    if (!Number.isFinite(config.shop.packPrice.revelation.threeOne) || config.shop.packPrice.revelation.threeOne < 0) return true
-    if (!Number.isFinite(config.shop.packPrice.revelation.fiveOne) || config.shop.packPrice.revelation.fiveOne < 0) return true
-    if (!Number.isFinite(config.shop.packPrice.revelation.sevenTwo) || config.shop.packPrice.revelation.sevenTwo < 0) return true
-    if (!Number.isFinite(config.shop.packPrice.oracle.threeOne) || config.shop.packPrice.oracle.threeOne < 0) return true
-    if (!Number.isFinite(config.shop.packPrice.oracle.fiveOne) || config.shop.packPrice.oracle.fiveOne < 0) return true
-    if (!Number.isFinite(config.shop.packPrice.cardSet.threeOne) || config.shop.packPrice.cardSet.threeOne < 0) return true
-    if (!Number.isFinite(config.shop.packPrice.cardSet.fiveOne) || config.shop.packPrice.cardSet.fiveOne < 0) return true
-    if (!Number.isFinite(config.shop.packPrice.cardSet.sevenTwo) || config.shop.packPrice.cardSet.sevenTwo < 0) return true
     if (!Number.isFinite(config.shop.rerollCostStep) || config.shop.rerollCostStep < 0) return true
     return false
   })
@@ -201,65 +187,7 @@
       </div>
 
       <div>
-        <p class="text-xs text-slate-500 mb-1">福袋価格(護符・秘儀・天啓・トランプセットは3-1/5-1/7-2、神託は3-1/5-1のみ)</p>
-        <div class="grid grid-cols-3 gap-3">
-          <label class="text-xs text-slate-500">
-            護符 3-1
-            <input type="number" step="1" bind:value={config.shop.packPrice.item.threeOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            護符 5-1
-            <input type="number" step="1" bind:value={config.shop.packPrice.item.fiveOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            護符 7-2
-            <input type="number" step="1" bind:value={config.shop.packPrice.item.sevenTwo} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            秘儀 3-1
-            <input type="number" step="1" bind:value={config.shop.packPrice.rite.threeOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            秘儀 5-1
-            <input type="number" step="1" bind:value={config.shop.packPrice.rite.fiveOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            秘儀 7-2
-            <input type="number" step="1" bind:value={config.shop.packPrice.rite.sevenTwo} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            天啓 3-1
-            <input type="number" step="1" bind:value={config.shop.packPrice.revelation.threeOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            天啓 5-1
-            <input type="number" step="1" bind:value={config.shop.packPrice.revelation.fiveOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            天啓 7-2
-            <input type="number" step="1" bind:value={config.shop.packPrice.revelation.sevenTwo} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            神託 3-1
-            <input type="number" step="1" bind:value={config.shop.packPrice.oracle.threeOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            神託 5-1
-            <input type="number" step="1" bind:value={config.shop.packPrice.oracle.fiveOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            トランプセット 3-1
-            <input type="number" step="1" bind:value={config.shop.packPrice.cardSet.threeOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            トランプセット 5-1
-            <input type="number" step="1" bind:value={config.shop.packPrice.cardSet.fiveOne} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-          <label class="text-xs text-slate-500">
-            トランプセット 7-2
-            <input type="number" step="1" bind:value={config.shop.packPrice.cardSet.sevenTwo} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-          </label>
-        </div>
+        <p class="text-xs text-slate-500 mb-1">福袋の価格・種類・出現比率は<a href="/admin/shidasu-packs" class="text-teal-600 underline">福袋カタログ設定</a>で編集する。</p>
       </div>
 
       <div>
