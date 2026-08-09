@@ -3,7 +3,7 @@ import type { RevelationId } from './types'
 import type { ShidasuParams } from './params'
 import { rollOffer } from './deck'
 
-// rollRevelationOfferは重み付けなしの完全均等抽選。効果が実装済みの20種のみが対象。
+// rollRevelationOfferは重み付けなしの完全均等抽選。効果が実装済みの27種のみが対象。
 export const REVELATION_POOL: RevelationId[] = [
   'kaku', 'kou', 'tei', 'bou',
   'shin', 'bi', 'ki', 'to',

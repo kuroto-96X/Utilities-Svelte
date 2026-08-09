@@ -1,5 +1,5 @@
 // 二十八宿(中国・日本の伝統的な天文体系)全28宿の参照データ。
-// RevelationId(効果実装済み20種)とは独立しており、管理画面の「名前」<select>の
+// RevelationId(効果実装済み27種)とは独立しており、管理画面の「名前」<select>の
 // 選択肢・読み方ラベル表示にのみ使う。将来天啓を追加する際、ここから未使用の宿を選んで割り当てる。
 export interface MansionEntry {
   kanji: string

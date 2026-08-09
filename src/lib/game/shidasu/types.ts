@@ -83,7 +83,7 @@ export type RiteId =
   | 'ehwaz'
 
 // 天啓(Revelation): いつでも使用可能で、場札・デッキ構成の両方に永続的な効果を発揮する消費アイテム。
-// 二十八宿のうち今回効果を実装した20種のみをメンバーとする(残り8種はmansions.tsの見た目候補にのみ存在)。
+// 二十八宿のうち今回効果を実装した27種のみをメンバーとする(残り1種はmansions.tsの見た目候補にのみ存在)。
 export type RevelationId =
   | 'kaku' | 'kou' | 'tei' | 'bou'
   | 'shin' | 'bi' | 'ki' | 'to'
