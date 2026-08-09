@@ -23,8 +23,8 @@
     if (!config) return false
     return config.shop.packCatalog.some(entry => {
       if (!entry.name.trim()) return true
-      if (!Number.isFinite(entry.offerCount) || entry.offerCount < 1) return true
-      if (!Number.isFinite(entry.pickCount) || entry.pickCount < 1 || entry.pickCount > entry.offerCount) return true
+      if (!Number.isInteger(entry.offerCount) || entry.offerCount < 1) return true
+      if (!Number.isInteger(entry.pickCount) || entry.pickCount < 1 || entry.pickCount > entry.offerCount) return true
       if (!Number.isFinite(entry.price) || entry.price < 0) return true
       return false
     })
@@ -88,7 +88,7 @@
         リロード
       </button>
       {#if hasValidationError}
-        <p class="text-xs text-red-600 self-center">名前が空、選択肢数が1未満、取得数が範囲外、または価格が負の行があります</p>
+        <p class="text-xs text-red-600 self-center">名前が空、選択肢数・取得数が整数でない/範囲外、または価格が負の行があります</p>
       {/if}
       <button
         onclick={save}
