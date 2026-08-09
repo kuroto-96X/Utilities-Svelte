@@ -296,7 +296,7 @@ describe('revelationEffects', () => {
   test('胃: 実カードが全て同ランクで複数枚ある場合、異なる2枚がワイルド化される(同じカードの二重選出を防ぐ)', () => {
     const wave = baseWave({ tableau: [[card(1, '♠', 7), card(2, '♥', 7), card(3, '♦', 7)]] })
     const deckComposition: DeckCard[] = [deckCard(1, '♠', 7), deckCard(2, '♥', 7), deckCard(3, '♦', 7)]
-    const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'i', null, createRng(1))
+    const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'i', null, createRng(5))
     const wildCards = result.wave.tableau[0].filter(c => c.wild)
     expect(wildCards).toHaveLength(2) // target1とtarget2は異なる2枚のカード
     const wildDeckIds = new Set(wildCards.map(c => c.deckId))
