@@ -26,7 +26,7 @@
     itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice,
     oracleBuyPrice, oracleSellPrice,
   } from '$lib/game/shidasu/shop'
-  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, PlayCardResult, Star, WaveState, CardSetGenreId } from '$lib/game/shidasu/types'
+  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, PlayCardResult, Star, WaveState, CardSetGenreId, ShopSlotKind } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
   import RoleStatusPanel from './RoleStatusPanel.svelte'
@@ -46,6 +46,11 @@
       if (typeof value === 'number' || typeof value === 'string') context[key] = String(value)
     }
     return star.descTemplate.replace(/\{(\w+)\}/g, (match, key) => (key in context ? context[key] : match))
+  }
+
+  // バラ売り枠の種類表示用ラベル(カードセットは福袋限定のためバラ売りには出現しない)
+  const SHOP_SLOT_KIND_LABEL: Record<ShopSlotKind, string> = {
+    item: '護符', rite: '秘儀', revelation: '天啓', oracle: '神託', cardSet: 'トランプセット',
   }
 
   // タイトル画面の高さをプレイ画面に揃えるための計測専用ダミーウェーブ(実際のゲームには使わない)
@@ -742,6 +747,7 @@
                 {:else if slot.kind === 'oracle'}
                   {oracleName(slot.id as RoleName, params)}
                 {/if}
+                <span class="text-[10px] text-slate-400">({SHOP_SLOT_KIND_LABEL[slot.kind]})</span>
               </p>
               <p class="text-[11px] text-slate-500">
                 {#if slot.kind === 'item'}
