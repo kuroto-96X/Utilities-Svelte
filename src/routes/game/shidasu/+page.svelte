@@ -24,9 +24,9 @@
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
   import {
     itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice,
-    oracleBuyPrice, oracleSellPrice, packPrice,
+    oracleBuyPrice, oracleSellPrice,
   } from '$lib/game/shidasu/shop'
-  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, ShopSlotKind, PlayCardResult, Star, WaveState, CardSetGenreId } from '$lib/game/shidasu/types'
+  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, PlayCardResult, Star, WaveState, CardSetGenreId } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
   import RoleStatusPanel from './RoleStatusPanel.svelte'
@@ -46,10 +46,6 @@
       if (typeof value === 'number' || typeof value === 'string') context[key] = String(value)
     }
     return star.descTemplate.replace(/\{(\w+)\}/g, (match, key) => (key in context ? context[key] : match))
-  }
-
-  const SHOP_SLOT_KIND_LABEL: Record<ShopSlotKind, string> = {
-    item: '護符', rite: '秘儀', revelation: '天啓', oracle: '神託', cardSet: 'トランプセット',
   }
 
   // タイトル画面の高さをプレイ画面に揃えるための計測専用ダミーウェーブ(実際のゲームには使わない)
@@ -790,12 +786,12 @@
         <div class="grid grid-cols-2 gap-2">
           {#each run.shop.packs as slot, i}
             <div class="border border-slate-200 rounded-lg p-2 text-xs space-y-1">
-              <p class="font-semibold text-slate-800">{SHOP_SLOT_KIND_LABEL[slot.packKind]}福袋 {slot.offerCount}択{slot.pickCount}</p>
+              <p class="font-semibold text-slate-800">{slot.name}({slot.offerCount}択{slot.pickCount})</p>
               {#if slot.sold}
                 <p class="text-slate-400">売り切れ</p>
               {:else}
-                <button onclick={() => handleBuyPack(i)} disabled={run.currency < packPrice(params, slot.packKind, slot.offerCount)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
-                  購入({packPrice(params, slot.packKind, slot.offerCount)})
+                <button onclick={() => handleBuyPack(i)} disabled={run.currency < slot.price} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                  購入({slot.price})
                 </button>
               {/if}
             </div>
