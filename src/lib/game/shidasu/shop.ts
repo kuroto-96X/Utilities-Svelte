@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/shop.ts
-import type { RunState, ItemId, ShopState, ShopIndividualSlot, ShopPackSlot, ShopSlotKind, PackOfferCount } from './types'
+import type { RunState, ItemId, ShopState, ShopIndividualSlot, ShopPackSlot, ShopSlotKind } from './types'
 import type { ShidasuParams } from './params'
 import { ITEM_POOL } from './items'
 import { RITE_POOL } from './rites'
@@ -8,30 +8,6 @@ import { ORACLE_POOL } from './oracles'
 import { shuffleInPlace } from './deck'
 
 const SHOP_SLOT_KINDS: ShopSlotKind[] = ['item', 'rite', 'revelation', 'oracle']
-
-interface PackDefinition {
-  packKind: ShopSlotKind
-  offerCount: PackOfferCount
-  pickCount: 1 | 2
-}
-
-// 護符/秘儀/天啓/カードセットは3-1・5-1・7-2の3パターン、神託は3-1・5-1の2パターン(7-2は無し)。計14パターン。
-export const PACK_DEFINITIONS: PackDefinition[] = [
-  { packKind: 'item', offerCount: 3, pickCount: 1 },
-  { packKind: 'item', offerCount: 5, pickCount: 1 },
-  { packKind: 'item', offerCount: 7, pickCount: 2 },
-  { packKind: 'rite', offerCount: 3, pickCount: 1 },
-  { packKind: 'rite', offerCount: 5, pickCount: 1 },
-  { packKind: 'rite', offerCount: 7, pickCount: 2 },
-  { packKind: 'revelation', offerCount: 3, pickCount: 1 },
-  { packKind: 'revelation', offerCount: 5, pickCount: 1 },
-  { packKind: 'revelation', offerCount: 7, pickCount: 2 },
-  { packKind: 'oracle', offerCount: 3, pickCount: 1 },
-  { packKind: 'oracle', offerCount: 5, pickCount: 1 },
-  { packKind: 'cardSet', offerCount: 3, pickCount: 1 },
-  { packKind: 'cardSet', offerCount: 5, pickCount: 1 },
-  { packKind: 'cardSet', offerCount: 7, pickCount: 2 },
-]
 
 function poolFor(kind: ShopSlotKind): readonly string[] {
   if (kind === 'item') return ITEM_POOL
@@ -57,20 +33,22 @@ function rollIndividualSlot(run: RunState, usedItemIds: Set<ItemId>, rand: () =>
   return { kind, id, sold: false }
 }
 
-function rollPackSlots(rand: () => number): ShopPackSlot[] {
-  const defs = [...PACK_DEFINITIONS]
-  shuffleInPlace(defs, rand)
-  return defs.slice(0, 2).map(d => ({ packKind: d.packKind, offerCount: d.offerCount, pickCount: d.pickCount, sold: false }))
+// params.shop.packCatalogをシャッフルし、先頭2件を選ぶ(均等抽選)。選ばれたエントリの
+// name・priceはこの時点でShopPackSlotにスナップショットとしてコピーする。
+function rollPackSlots(params: ShidasuParams, rand: () => number): ShopPackSlot[] {
+  const entries = [...params.shop.packCatalog]
+  shuffleInPlace(entries, rand)
+  return entries.slice(0, 2).map(e => ({ packKind: e.packKind, offerCount: e.offerCount, pickCount: e.pickCount, name: e.name, price: e.price, sold: false }))
 }
 
-export function rollShop(run: RunState, rand: () => number = Math.random): ShopState {
+export function rollShop(params: ShidasuParams, run: RunState, rand: () => number = Math.random): ShopState {
   const usedItemIds = new Set<ItemId>()
   const individual: ShopIndividualSlot[] = [
     rollIndividualSlot(run, usedItemIds, rand),
     rollIndividualSlot(run, usedItemIds, rand),
     rollIndividualSlot(run, usedItemIds, rand),
   ]
-  return { individual, packs: rollPackSlots(rand) }
+  return { individual, packs: rollPackSlots(params, rand) }
 }
 
 export function itemBuyPrice(params: ShidasuParams, id: ItemId): number {
@@ -103,12 +81,4 @@ export function oracleBuyPrice(params: ShidasuParams): number {
 
 export function oracleSellPrice(params: ShidasuParams): number {
   return params.shop.oraclePrice.sell
-}
-
-// 福袋の価格。神託はsevenTwoパターンが存在しないため、rollPackSlots/PACK_DEFINITIONSの制約により
-// packKind==='oracle'のときofferCountは3か5にしかならない前提でテーブル参照する。
-export function packPrice(params: ShidasuParams, packKind: ShopSlotKind, offerCount: PackOfferCount): number {
-  const key = offerCount === 3 ? 'threeOne' : offerCount === 5 ? 'fiveOne' : 'sevenTwo'
-  const table = params.shop.packPrice[packKind] as unknown as Record<string, number>
-  return table[key]
 }
