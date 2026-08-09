@@ -4328,6 +4328,7 @@ describe('useRevelation: 軫(mitsu・護符換金)', () => {
     const expectedTotal = itemSellPrice(DEFAULT_PARAMS, 'discretion') + itemSellPrice(DEFAULT_PARAMS, 'frost')
     const result = useRevelation(DEFAULT_PARAMS, run, 'mitsu', null, createRng(1))
     expect(result.currency).toBe(10 + expectedTotal)
+    expect(result.items).toEqual(['discretion', 'frost']) // 護符は消費されない(換金であり売却ではない)
   })
 
   test('護符を所持していなければ星片は変化しない', () => {
