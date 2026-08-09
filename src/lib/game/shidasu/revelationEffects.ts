@@ -187,6 +187,17 @@ function convertColumnToStair(wave: WaveState, deckComposition: DeckCard[], colI
   return { wave: { ...wave, tableau }, deckComposition: newComposition }
 }
 
+// チェーンの末尾1枚をワイルド化する。秘儀「対話(perthro)」と同じ効果だが、deckCompositionにも
+// 書き込んで永続化する点が異なる。チェーンが空の場合は何もしない。
+function wildifyChainTop(wave: WaveState, deckComposition: DeckCard[]): { wave: WaveState; deckComposition: DeckCard[] } {
+  if (wave.chain.length === 0) return { wave, deckComposition }
+  const chain = [...wave.chain]
+  const target = chain[chain.length - 1]
+  chain[chain.length - 1] = { ...target, wild: true }
+  const newComposition = deckComposition.map(entry => (entry.deckId === target.deckId && !entry.wild ? { ...entry, wild: true } : entry))
+  return { wave: { ...wave, chain, foundation: chain[chain.length - 1] }, deckComposition: newComposition }
+}
+
 // 天啓が現在の盤面状態で使用可能か判定する(場札拡張の山札枚数不足のみ判定対象)。
 export function canUseRevelation(params: ShidasuParams, wave: WaveState, revelationId: RevelationId): boolean {
   switch (revelationId) {
@@ -262,5 +273,7 @@ export function applyRevelationEffect(
       return wildifyExtremeRanks(wave, deckComposition, rand)
     case 'hitsu':
       return targetCol === null ? { wave, deckComposition } : convertColumnToStair(wave, deckComposition, targetCol, rand)
+    case 'shi':
+      return wildifyChainTop(wave, deckComposition)
   }
 }

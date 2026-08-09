@@ -324,6 +324,25 @@ describe('revelationEffects', () => {
     expect(result.deckComposition).toBe(deckComposition)
   })
 
+  test('觜: チェーン末尾1枚がワイルド化され、foundationも更新され、deckCompositionにも反映される', () => {
+    const wave = baseWave({ chain: [card(1, '♠', 5), card(2, '♥', 6)], foundation: card(2, '♥', 6) })
+    const deckComposition: DeckCard[] = [deckCard(1, '♠', 5), deckCard(2, '♥', 6)]
+    const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'shi', null, createRng(1))
+    expect(result.wave.chain[1].wild).toBe(true)
+    expect(result.wave.chain[0].wild).toBe(false)
+    expect(result.wave.foundation.wild).toBe(true)
+    expect(result.deckComposition.find(c => c.deckId === 2)?.wild).toBe(true)
+    expect(result.deckComposition.find(c => c.deckId === 1)?.wild).toBe(false)
+  })
+
+  test('觜: チェーンが空なら何もしない', () => {
+    const wave = baseWave({ chain: [] })
+    const deckComposition: DeckCard[] = []
+    const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'shi', null, createRng(1))
+    expect(result.wave).toBe(wave)
+    expect(result.deckComposition).toBe(deckComposition)
+  })
+
   test('revelationNeedsTarget: 列選択が必要な種類とそうでない種類を正しく区別する', () => {
     expect(revelationNeedsTarget('kaku')).toBe(true)
     expect(revelationNeedsTarget('gyu')).toBe(true)
