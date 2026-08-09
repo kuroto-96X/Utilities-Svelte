@@ -92,6 +92,7 @@ describe('standardDeckComposition', () => {
   test('全エントリがremoved:falseで初期化される', () => {
     const composition = standardDeckComposition()
     expect(composition[0]).toEqual({ deckId: 0, suit: '♠', rank: 1, wild: false, removed: false })
+    expect(composition.every(c => c.removed === false)).toBe(true)
   })
 })
 
