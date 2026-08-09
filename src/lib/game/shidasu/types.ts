@@ -90,6 +90,7 @@ export type RevelationId =
   | 'gyu' | 'jo'
   | 'kyo'
   | 'aya'
+  | 'shitsu'
 
 export interface Card {
   id: number

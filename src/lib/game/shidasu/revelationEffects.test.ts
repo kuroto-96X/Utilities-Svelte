@@ -162,11 +162,55 @@ describe('revelationEffects', () => {
     expect(result.deckComposition[1].wild).toBe(true)
   })
 
+  test('室: 選んだ列の各カードが1つ左の列の同じ位置のランク+1に変換され、deckCompositionにも反映される', () => {
+    const wave = baseWave({
+      tableau: [
+        [card(1, '♠', 5), card(2, '♠', 13)],
+        [card(3, '♥', 1), card(4, '♥', 2, true)],
+      ],
+    })
+    const deckComposition: DeckCard[] = [
+      deckCard(1, '♠', 5), deckCard(2, '♠', 13), deckCard(3, '♥', 1), deckCard(4, '♥', 2, true),
+    ]
+    const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'shitsu', 1, createRng(1))
+    expect(result.wave.tableau[1][0].rank).toBe(6) // 左列位置0(rank5)+1
+    expect(result.wave.tableau[1][1].wild).toBe(true) // 選択列側がワイルドならスキップ
+    expect(result.wave.tableau[1][1].rank).toBe(2) // 変換されず元のまま
+    expect(result.deckComposition.find(c => c.deckId === 3)?.rank).toBe(6)
+  })
+
+  test('室: 左端の列を選んだ場合は右端の列を参照する(A⇔Kループ)', () => {
+    const wave = baseWave({
+      tableau: [
+        [card(1, '♠', 5)],
+        [card(2, '♥', 1)],
+        [card(3, '♦', 13)],
+      ],
+    })
+    const deckComposition: DeckCard[] = [deckCard(1, '♠', 5), deckCard(2, '♥', 1), deckCard(3, '♦', 13)]
+    const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'shitsu', 0, createRng(1))
+    expect(result.wave.tableau[0][0].rank).toBe(1) // 右端列(rank13)+1 = ループで1
+  })
+
+  test('室: 参照列の方が短い場合、はみ出した位置は変換されない', () => {
+    const wave = baseWave({
+      tableau: [
+        [card(1, '♠', 5)],
+        [card(2, '♥', 1), card(3, '♥', 2)],
+      ],
+    })
+    const deckComposition: DeckCard[] = [deckCard(1, '♠', 5), deckCard(2, '♥', 1), deckCard(3, '♥', 2)]
+    const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'shitsu', 1, createRng(1))
+    expect(result.wave.tableau[1][0].rank).toBe(6) // 位置0は左列(rank5)+1
+    expect(result.wave.tableau[1][1].rank).toBe(2) // 位置1は左列に対応するカードが無いため変換されない
+  })
+
   test('revelationNeedsTarget: 列選択が必要な種類とそうでない種類を正しく区別する', () => {
     expect(revelationNeedsTarget('kaku')).toBe(true)
     expect(revelationNeedsTarget('gyu')).toBe(true)
     expect(revelationNeedsTarget('jo')).toBe(true)
     expect(revelationNeedsTarget('aya')).toBe(true)
+    expect(revelationNeedsTarget('shitsu')).toBe(true)
     expect(revelationNeedsTarget('shin')).toBe(false)
     expect(revelationNeedsTarget('kyo')).toBe(false)
   })

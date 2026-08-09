@@ -77,6 +77,28 @@ function addWildToColumnTop(wave: WaveState, deckComposition: DeckCard[], colInd
   return { wave: { ...wave, tableau }, deckComposition: newComposition }
 }
 
+// 選択列の各位置iのカードを、1つ左の列の同じ位置iのカードのランク+1(A⇔Kループ)に変換する。
+// 左端の列を選んだ場合は右端の列を参照する。参照列側がワイルド・存在しない位置(参照列の方が短い場合)はスキップする。
+function convertColumnChainFromLeft(wave: WaveState, deckComposition: DeckCard[], colIndex: number): { wave: WaveState; deckComposition: DeckCard[] } {
+  const col = wave.tableau[colIndex]
+  if (!col) return { wave, deckComposition }
+  const cols = wave.tableau.length
+  const refIndex = colIndex === 0 ? cols - 1 : colIndex - 1
+  const refCol = wave.tableau[refIndex]
+  const rankByDeckId = new Map<number, Rank>()
+  const newCol = col.map((cardEl, i) => {
+    if (cardEl.wild) return cardEl
+    const refCard = refCol?.[i]
+    if (!refCard || refCard.wild) return cardEl
+    const newRank = (refCard.rank === 13 ? 1 : refCard.rank + 1) as Rank
+    rankByDeckId.set(cardEl.deckId, newRank)
+    return { ...cardEl, rank: newRank }
+  })
+  const tableau = wave.tableau.map((c, i) => (i === colIndex ? newCol : c))
+  const newComposition = deckComposition.map(entry => (rankByDeckId.has(entry.deckId) ? { ...entry, rank: rankByDeckId.get(entry.deckId) as Rank } : entry))
+  return { wave: { ...wave, tableau }, deckComposition: newComposition }
+}
+
 // 天啓が現在の盤面状態で使用可能か判定する(場札拡張の山札枚数不足のみ判定対象)。
 export function canUseRevelation(params: ShidasuParams, wave: WaveState, revelationId: RevelationId): boolean {
   switch (revelationId) {
@@ -97,6 +119,7 @@ export function revelationNeedsTarget(revelationId: RevelationId): boolean {
     case 'gyu':
     case 'jo':
     case 'aya':
+    case 'shitsu':
       return true
     default:
       return false
@@ -138,5 +161,7 @@ export function applyRevelationEffect(
       return { wave: expandTableauRows(wave, params.revelations.kyo.n), deckComposition }
     case 'aya':
       return targetCol === null ? { wave, deckComposition } : addWildToColumnTop(wave, deckComposition, targetCol)
+    case 'shitsu':
+      return targetCol === null ? { wave, deckComposition } : convertColumnChainFromLeft(wave, deckComposition, targetCol)
   }
 }
