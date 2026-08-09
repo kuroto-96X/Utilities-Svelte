@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/params.ts
 import shidasuConfigJson from './shidasu.config.json'
-import type { Rarity } from './types'
+import type { Rarity, PackCatalogEntry } from './types'
 
 export interface ShidasuParams {
   layout: {
@@ -64,14 +64,8 @@ export interface ShidasuParams {
     ritePrice: { buy: number; sell: number }
     revelationPrice: { buy: number; sell: number }
     oraclePrice: { buy: number; sell: number }
-    // 護符/秘儀/天啓/カードセットは3-1・5-1・7-2の3パターン、神託は3-1・5-1のみ(7-2は無し)
-    packPrice: {
-      item: { threeOne: number; fiveOne: number; sevenTwo: number }
-      rite: { threeOne: number; fiveOne: number; sevenTwo: number }
-      revelation: { threeOne: number; fiveOne: number; sevenTwo: number }
-      oracle: { threeOne: number; fiveOne: number }
-      cardSet: { threeOne: number; fiveOne: number; sevenTwo: number }
-    }
+    // 福袋のカタログ。管理画面(/admin/shidasu-packs)で自由に追加・削除・編集できる可変長リスト
+    packCatalog: PackCatalogEntry[]
     // ショップの品ぞろえ全体(バラ売り3枠+福袋2枠)を再抽選するリロールのコスト刻み幅。
     // 1回目はrerollCostStep、2回目は2倍、3回目は3倍…と、同一ショップ訪問中のリロール回数に応じて増額する
     rerollCostStep: number
@@ -298,13 +292,22 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     ritePrice: { buy: 12, sell: 6 },
     revelationPrice: { buy: 18, sell: 9 },
     oraclePrice: { buy: 15, sell: 7 },
-    packPrice: {
-      item: { threeOne: 20, fiveOne: 30, sevenTwo: 50 },
-      rite: { threeOne: 20, fiveOne: 30, sevenTwo: 50 },
-      revelation: { threeOne: 25, fiveOne: 38, sevenTwo: 63 },
-      oracle: { threeOne: 22, fiveOne: 33 },
-      cardSet: { threeOne: 20, fiveOne: 30, sevenTwo: 50 },
-    },
+    packCatalog: [
+      { name: '護符の福袋', packKind: 'item', offerCount: 3, pickCount: 1, price: 20 },
+      { name: '護符の福袋', packKind: 'item', offerCount: 5, pickCount: 1, price: 30 },
+      { name: '護符の福袋', packKind: 'item', offerCount: 7, pickCount: 2, price: 50 },
+      { name: '秘儀の福袋', packKind: 'rite', offerCount: 3, pickCount: 1, price: 20 },
+      { name: '秘儀の福袋', packKind: 'rite', offerCount: 5, pickCount: 1, price: 30 },
+      { name: '秘儀の福袋', packKind: 'rite', offerCount: 7, pickCount: 2, price: 50 },
+      { name: '天啓の福袋', packKind: 'revelation', offerCount: 3, pickCount: 1, price: 25 },
+      { name: '天啓の福袋', packKind: 'revelation', offerCount: 5, pickCount: 1, price: 38 },
+      { name: '天啓の福袋', packKind: 'revelation', offerCount: 7, pickCount: 2, price: 63 },
+      { name: '神託の福袋', packKind: 'oracle', offerCount: 3, pickCount: 1, price: 22 },
+      { name: '神託の福袋', packKind: 'oracle', offerCount: 5, pickCount: 1, price: 33 },
+      { name: 'トランプセットの福袋', packKind: 'cardSet', offerCount: 3, pickCount: 1, price: 20 },
+      { name: 'トランプセットの福袋', packKind: 'cardSet', offerCount: 5, pickCount: 1, price: 30 },
+      { name: 'トランプセットの福袋', packKind: 'cardSet', offerCount: 7, pickCount: 2, price: 50 },
+    ],
     rerollCostStep: 5,
   },
   talismans: {

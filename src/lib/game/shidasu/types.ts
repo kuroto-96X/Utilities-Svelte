@@ -267,15 +267,28 @@ export interface CardSetOffer {
   cards: { suit: Suit; rank: Rank; wild: boolean }[]
 }
 
-export type PackOfferCount = 3 | 5 | 7
-export type PackPickCount = 1 | 2
+// 福袋カタログの1エントリ。管理画面(/admin/shidasu-packs)で自由に追加・削除・編集できる。
+// 同じ内容(種別・選択肢数・取得数・価格)のエントリを名前だけ変えて複数用意すると、
+// 抽選プール内での比率が上がるため、その福袋が相対的に出現しやすくなる
+// (各エントリの抽選確率自体は常に均等)。
+export interface PackCatalogEntry {
+  name: string
+  packKind: ShopSlotKind
+  offerCount: number
+  pickCount: number
+  price: number
+}
 
-// 福袋枠: shop突入時にパターン(kind×offerCount×pickCount)が1つ確定し、以後入れ替わらない。
-// 購入時にofferCount択からpickCount個を選ぶ中身選択画面(itemSelect等)へ遷移する。
+// 福袋枠: shop突入時にpackCatalogから1エントリが確定し、以後入れ替わらない。選ばれた時点の
+// name・priceをスナップショットとしてコピーするため、抽選後に管理画面でカタログを編集しても
+// 既に提示中のショップには影響しない。購入時にofferCount択からpickCount個を選ぶ
+// 中身選択画面(itemSelect等)へ遷移する。
 export interface ShopPackSlot {
   packKind: ShopSlotKind
-  offerCount: PackOfferCount
-  pickCount: PackPickCount
+  offerCount: number
+  pickCount: number
+  name: string
+  price: number
   sold: boolean
 }
 

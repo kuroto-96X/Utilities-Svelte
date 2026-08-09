@@ -150,32 +150,22 @@
       "buy": 3,
       "sell": 1
     },
-    "packPrice": {
-      "item": {
-        "threeOne": 4,
-        "fiveOne": 7,
-        "sevenTwo": 10
-      },
-      "rite": {
-        "threeOne": 4,
-        "fiveOne": 6,
-        "sevenTwo": 8
-      },
-      "revelation": {
-        "threeOne": 4,
-        "fiveOne": 6,
-        "sevenTwo": 8
-      },
-      "oracle": {
-        "threeOne": 2,
-        "fiveOne": 4
-      },
-      "cardSet": {
-        "threeOne": 4,
-        "fiveOne": 6,
-        "sevenTwo": 8
-      }
-    },
+    "packCatalog": [
+      { "name": "護符の福袋", "packKind": "item", "offerCount": 3, "pickCount": 1, "price": 4 },
+      { "name": "護符の福袋", "packKind": "item", "offerCount": 5, "pickCount": 1, "price": 7 },
+      { "name": "護符の福袋", "packKind": "item", "offerCount": 7, "pickCount": 2, "price": 10 },
+      { "name": "秘儀の福袋", "packKind": "rite", "offerCount": 3, "pickCount": 1, "price": 4 },
+      { "name": "秘儀の福袋", "packKind": "rite", "offerCount": 5, "pickCount": 1, "price": 6 },
+      { "name": "秘儀の福袋", "packKind": "rite", "offerCount": 7, "pickCount": 2, "price": 8 },
+      { "name": "天啓の福袋", "packKind": "revelation", "offerCount": 3, "pickCount": 1, "price": 4 },
+      { "name": "天啓の福袋", "packKind": "revelation", "offerCount": 5, "pickCount": 1, "price": 6 },
+      { "name": "天啓の福袋", "packKind": "revelation", "offerCount": 7, "pickCount": 2, "price": 8 },
+      { "name": "神託の福袋", "packKind": "oracle", "offerCount": 3, "pickCount": 1, "price": 2 },
+      { "name": "神託の福袋", "packKind": "oracle", "offerCount": 5, "pickCount": 1, "price": 4 },
+      { "name": "トランプセットの福袋", "packKind": "cardSet", "offerCount": 3, "pickCount": 1, "price": 4 },
+      { "name": "トランプセットの福袋", "packKind": "cardSet", "offerCount": 5, "pickCount": 1, "price": 6 },
+      { "name": "トランプセットの福袋", "packKind": "cardSet", "offerCount": 7, "pickCount": 2, "price": 8 }
+    ],
     "rerollCostStep": 5
   },
   "talismans": {
