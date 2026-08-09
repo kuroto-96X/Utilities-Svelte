@@ -146,7 +146,7 @@ export function startWave(
     composition = convertRandomCardToWild(composition, rand)
   }
 
-  const deck = shuffle(composition.map(c => ({ id: nextId(), ...c })), rand)
+  const deck = shuffle(composition.filter(c => !c.removed).map(c => ({ id: nextId(), ...c })), rand)
   const { cols } = params.layout
   const rows = params.layout.rows + (items.includes('darkClouds') ? params.talismans.darkClouds.r : 0) + extraTableauRows
   const tableau: Card[][] = []
@@ -163,7 +163,7 @@ export function startWave(
   // 剛毅: Wave開始時、山札+場札の合計枚数(deckComposition.length、ワイルド生成後の値)が
   // n枚ごとに基礎コンボ数+1する
   const fortitudeBaseCombo = items.includes('fortitude')
-    ? Math.floor(composition.length / params.talismans.fortitude.n)
+    ? Math.floor(composition.filter(c => !c.removed).length / params.talismans.fortitude.n)
     : 0
 
   const wave: WaveState = {

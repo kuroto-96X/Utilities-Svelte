@@ -404,6 +404,20 @@ describe('startWave', () => {
   })
 })
 
+describe('removed:trueのdeckComposition要素はstartWaveの山札構築から除外される', () => {
+  test('removedのカードは場札・山札・foundationのどこにも現れない', () => {
+    const composition = standardDeckComposition().map((c, i) => (i === 0 ? { ...c, removed: true } : c))
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], composition, 1)
+    const dealtDeckIds = [
+      ...wave.tableau.flat().map(c => c.deckId),
+      ...wave.stock.map(c => c.deckId),
+      wave.foundation.deckId,
+    ]
+    expect(dealtDeckIds).not.toContain(composition[0].deckId)
+    expect(dealtDeckIds).toHaveLength(51)
+  })
+})
+
 describe('剛毅(fortitude): Wave開始時、山札+場札の合計枚数に応じてbaseComboCountが加算される', () => {
   test('デッキ枚数が30枚未満なら加算なし', () => {
     const smallDeck = standardDeckComposition().slice(0, 29)
@@ -420,6 +434,12 @@ describe('剛毅(fortitude): Wave開始時、山札+場札の合計枚数に応�
   test('剛毅を所持していなければ加算されない', () => {
     const midDeck = standardDeckComposition().slice(0, 40)
     const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], midDeck, 1)
+    expect(wave.baseComboCount).toBe(0)
+  })
+
+  test('removedのカードはデッキ枚数カウントから除外される(実質29枚なら加算なし)', () => {
+    const composition = standardDeckComposition().slice(0, 40).map((c, i) => (i < 11 ? { ...c, removed: true } : c))
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, ['fortitude'], composition, 1)
     expect(wave.baseComboCount).toBe(0)
   })
 })
