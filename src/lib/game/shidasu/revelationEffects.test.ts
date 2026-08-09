@@ -243,6 +243,27 @@ describe('revelationEffects', () => {
     expect(result.deckComposition.find(c => c.deckId === 5)?.rank).toBe(9)
   })
 
+  test('婁: 場札の全ての列の一番上のカード(ワイルド含む)が廃棄され、wave.tableauから取り除かれdeckCompositionがremoved:trueになる', () => {
+    const wave = baseWave({
+      tableau: [
+        [card(1, '♠', 5), card(2, '♠', 6)],
+        [],
+        [card(3, '♥', 9, true)],
+      ],
+    })
+    const deckComposition: DeckCard[] = [
+      deckCard(1, '♠', 5), deckCard(2, '♠', 6), deckCard(3, '♥', 9, true),
+    ]
+    const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'rou', null, createRng(1))
+    expect(result.wave.tableau[0]).toEqual([card(1, '♠', 5)]) // 一番上(rank6)が廃棄され1枚だけ残る
+    expect(result.wave.tableau[1]).toEqual([]) // 空列はそのまま
+    expect(result.wave.tableau[2]).toEqual([]) // ワイルドも廃棄される
+    expect(result.deckComposition.find(c => c.deckId === 2)?.removed).toBe(true)
+    expect(result.deckComposition.find(c => c.deckId === 3)?.removed).toBe(true)
+    expect(result.deckComposition.find(c => c.deckId === 1)?.removed).toBe(false)
+    expect(result.deckComposition).toHaveLength(3) // 削除ではなくフラグなので要素数は変わらない
+  })
+
   test('revelationNeedsTarget: 列選択が必要な種類とそうでない種類を正しく区別する', () => {
     expect(revelationNeedsTarget('kaku')).toBe(true)
     expect(revelationNeedsTarget('gyu')).toBe(true)

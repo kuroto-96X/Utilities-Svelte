@@ -137,6 +137,19 @@ function stairAlignTopCards(wave: WaveState, deckComposition: DeckCard[]): { wav
   return { wave: { ...wave, tableau }, deckComposition: newComposition }
 }
 
+// 場札の全ての列の一番上(末尾)のカード(ワイルド含む)を廃棄する。deckComposition側は削除せず
+// removed:trueにする(deckIdの採番が配列長基準のため、削除すると新規カード追加時に衝突しうる)。
+function discardColumnTops(wave: WaveState, deckComposition: DeckCard[]): { wave: WaveState; deckComposition: DeckCard[] } {
+  const discardedDeckIds = new Set<number>()
+  const tableau = wave.tableau.map(col => {
+    if (col.length === 0) return col
+    discardedDeckIds.add(col[col.length - 1].deckId)
+    return col.slice(0, -1)
+  })
+  const newComposition = deckComposition.map(entry => (discardedDeckIds.has(entry.deckId) ? { ...entry, removed: true } : entry))
+  return { wave: { ...wave, tableau }, deckComposition: newComposition }
+}
+
 // 天啓が現在の盤面状態で使用可能か判定する(場札拡張の山札枚数不足のみ判定対象)。
 export function canUseRevelation(params: ShidasuParams, wave: WaveState, revelationId: RevelationId): boolean {
   switch (revelationId) {
@@ -205,5 +218,7 @@ export function applyRevelationEffect(
       return convertTableauSuitCycle(wave, deckComposition)
     case 'kei':
       return stairAlignTopCards(wave, deckComposition)
+    case 'rou':
+      return discardColumnTops(wave, deckComposition)
   }
 }
