@@ -85,7 +85,7 @@ function mannazWeightSum(items: ItemId[], params: ShidasuParams): number {
 
 // デッキ構成のうち非ワイルドの1枚をランダムに選びワイルドへ変換した新しい配列を返す(候補が無ければそのまま返す)
 function convertRandomCardToWild(composition: DeckCard[], rand: () => number): DeckCard[] {
-  const candidates = composition.map((c, i) => i).filter(i => !composition[i].wild)
+  const candidates = composition.map((c, i) => i).filter(i => !composition[i].wild && !composition[i].removed)
   if (candidates.length === 0) return composition
   const target = candidates[Math.floor(rand() * candidates.length)]
   return composition.map((c, i) => (i === target ? { ...c, wild: true } : c))

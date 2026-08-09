@@ -396,6 +396,13 @@ describe('startWave', () => {
     expect(deckComposition.filter(c => c.wild)).toHaveLength(1)
   })
 
+  test('豊穣はremoved:trueのカードを対象から除外する', () => {
+    const composition = standardDeckComposition().map((c, i) => (i < 51 ? { ...c, removed: true } : c))
+    const { deckComposition } = startWave(DEFAULT_PARAMS, 0, 0, ['abundance'], composition, 1)
+    const wildEntry = deckComposition.find(c => c.wild)
+    expect(wildEntry?.removed).toBe(false)
+  })
+
   test('永劫・豊穣を複数ウェーブ保持し続けると効果が蓄積する', () => {
     const first = startWave(DEFAULT_PARAMS, 0, 0, ['eternity', 'abundance'], standardDeckComposition(), 1)
     const second = startWave(DEFAULT_PARAMS, 0, 1, ['eternity', 'abundance'], first.deckComposition, 2)
