@@ -997,6 +997,7 @@ export function createInitialRun(): RunState {
     oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
     pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     cardSetOffer: [], shopRerollCount: 0,
+    lastUsedRevelationId: null, recentUsedRiteIds: [],
   }
 }
 
@@ -1039,6 +1040,8 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
     pendingNewOracle: null,
     cardSetOffer: [],
     shopRerollCount: 0,
+    lastUsedRevelationId: null,
+    recentUsedRiteIds: [],
   }
 }
 
@@ -1088,7 +1091,8 @@ export function useRite(params: ShidasuParams, run: RunState, riteId: RiteId, ra
   if (run.items.includes('discretion')) wave = { ...wave, discretionN: wave.discretionN + params.talismans.discretion.n }
   if (run.items.includes('frost')) wave = { ...wave, frostX: wave.frostX + params.talismans.frost.x }
   const rites = [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)]
-  return { ...run, wave, rites }
+  const recentUsedRiteIds = [riteId, ...run.recentUsedRiteIds].slice(0, 2)
+  return { ...run, wave, rites, recentUsedRiteIds }
 }
 
 // Waveクリア確定後(resolveWaveEnd)・大凶続行後(continueAfterGreatMisfortune)に呼ぶ。
@@ -1424,7 +1428,7 @@ export function useRevelation(
   if (run.items.includes('frost')) wave = { ...wave, frostX: wave.frostX + params.talismans.frost.x }
   const extraTableauRows = revelationId === 'kyo' ? run.extraTableauRows + params.revelations.kyo.n : run.extraTableauRows
   const revelations = [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
-  return { ...run, wave, deckComposition, revelations, extraTableauRows }
+  return { ...run, wave, deckComposition, revelations, extraTableauRows, lastUsedRevelationId: revelationId }
 }
 
 function resolvePackOraclePick(run: RunState, pickedRole: RoleName): RunState {

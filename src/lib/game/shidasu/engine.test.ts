@@ -3331,6 +3331,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
       cardSetOffer: [], shopRerollCount: 0,
+      lastUsedRevelationId: null, recentUsedRiteIds: [],
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
     expect(next.wave!.status).toBe('playing') // 手詰まりが解消されている
@@ -3362,6 +3363,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
       cardSetOffer: [], shopRerollCount: 0,
+      lastUsedRevelationId: null, recentUsedRiteIds: [],
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run)
     expect(next.wave!.status).toBe('ended')
@@ -3387,6 +3389,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
       cardSetOffer: [], shopRerollCount: 0,
+      lastUsedRevelationId: null, recentUsedRiteIds: [],
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run)
     expect(next.wave!.status).toBe('ended')
@@ -3413,6 +3416,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
       cardSetOffer: [], shopRerollCount: 0,
+      lastUsedRevelationId: null, recentUsedRiteIds: [],
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run)
     expect(next.wave!.status).toBe('ended')
@@ -3440,6 +3444,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
       cardSetOffer: [], shopRerollCount: 0,
+      lastUsedRevelationId: null, recentUsedRiteIds: [],
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
     expect(next.wave!.tableau[1].length).toBeGreaterThan(0) // 治癒によって列1が復活している
@@ -3466,6 +3471,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
       cardSetOffer: [], shopRerollCount: 0,
+      lastUsedRevelationId: null, recentUsedRiteIds: [],
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
     expect(next.wave!.tableau[1].length).toBeGreaterThan(0) // 治癒によって列1は復活している
@@ -3481,6 +3487,20 @@ describe('useRite', () => {
     const next = useRite(DEFAULT_PARAMS, run, 'uruz', createRng(1))
     expect(next.wave!.combo).toBe(2 + DEFAULT_PARAMS.rites.uruz.n)
     expect(next.rites).toEqual([])
+  })
+
+  test('使用した秘儀のIDがrecentUsedRiteIdsの先頭に追加される', () => {
+    const wave = makeWave({ combo: 2, maxComboThisWave: 2 })
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: ['uruz'], recentUsedRiteIds: ['ingwaz'] }
+    const next = useRite(DEFAULT_PARAMS, run, 'uruz', createRng(1))
+    expect(next.recentUsedRiteIds).toEqual(['uruz', 'ingwaz'])
+  })
+
+  test('recentUsedRiteIdsは3件目以降を切り詰める(最大2件)', () => {
+    const wave = makeWave({ combo: 2, maxComboThisWave: 2 })
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: ['uruz'], recentUsedRiteIds: ['ingwaz', 'eihwaz'] }
+    const next = useRite(DEFAULT_PARAMS, run, 'uruz', createRng(1))
+    expect(next.recentUsedRiteIds).toEqual(['uruz', 'ingwaz'])
   })
 
   test('所持していない秘儀は使用できない(何も起こらない)', () => {
@@ -4184,6 +4204,13 @@ describe('useRevelation(所持天啓の使用、playing/shopフロー両対応)'
     const run: RunState = { ...createInitialRun(), phase: 'shop', wave, revelations: ['kaku'] }
     const result = useRevelation(DEFAULT_PARAMS, run, 'kaku', null, createRng(1))
     expect(result.revelations).toEqual([])
+  })
+
+  test('使用した天啓のIDがlastUsedRevelationIdに記録される', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['kaku'] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'kaku', null, createRng(1))
+    expect(result.lastUsedRevelationId).toBe('kaku')
   })
 })
 
