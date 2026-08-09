@@ -4339,6 +4339,29 @@ describe('useRevelation: 軫(mitsu・護符換金)', () => {
   })
 })
 
+describe('useRevelation: 参(karasu・秘儀回帰)', () => {
+  test('直近に使用した秘儀を最大2つ獲得する', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['karasu'], recentUsedRiteIds: ['uruz', 'ingwaz'] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'karasu', null, createRng(1))
+    expect(result.rites).toEqual(['uruz', 'ingwaz'])
+  })
+
+  test('秘儀の所持上限(3)を超える分は獲得しない', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['karasu'], rites: ['eihwaz', 'ansuz'], recentUsedRiteIds: ['uruz', 'ingwaz'] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'karasu', null, createRng(1))
+    expect(result.rites).toEqual(['eihwaz', 'ansuz', 'uruz'])
+  })
+
+  test('使用履歴が無ければ何も獲得しない', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['karasu'], recentUsedRiteIds: [] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'karasu', null, createRng(1))
+    expect(result.rites).toEqual([])
+  })
+})
+
 describe('神託の福袋(oracleSelect)', () => {
   function shopRunWithOraclePack(overrides: Partial<RunState> = {}): RunState {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave

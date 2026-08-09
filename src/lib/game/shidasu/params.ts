@@ -224,6 +224,7 @@ export interface ShidasuParams {
     chou: { name: string; desc: string }
     yoku: { name: string; desc: string }
     mitsu: { name: string; desc: string }
+    karasu: { name: string; desc: string }
   }
   oracles: {
     completeRun: { name: string; desc: string }
@@ -478,6 +479,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     chou: { name: '張', desc: '神託を最大2つランダムに獲得する(天啓・神託の所持枠の空き数までに制限される)' },
     yoku: { name: '翼', desc: '天啓を最大2つランダムに獲得する(天啓・神託の所持枠の空き数までに制限される)' },
     mitsu: { name: '軫', desc: '所持している護符の売値の合計を星片として獲得する' },
+    karasu: { name: '参', desc: '直近に使用した秘儀を最大2つ獲得する(秘儀の所持枠の空き数までに制限される)' },
   },
   oracles: {
     completeRun: { name: '乾為天', desc: 'コンプリートラン　レベル+1' },

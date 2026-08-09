@@ -1455,6 +1455,11 @@ function grantRevelationReward(
       const total = runAfterRemoval.items.reduce((sum, id) => sum + itemSellPrice(params, id), 0)
       return { currency: runAfterRemoval.currency + total }
     }
+    case 'karasu': {
+      const slotsLeft = Math.max(0, 3 - runAfterRemoval.rites.length)
+      if (slotsLeft === 0) return {}
+      return { rites: [...runAfterRemoval.rites, ...runAfterRemoval.recentUsedRiteIds.slice(0, slotsLeft)] }
+    }
     default:
       return {}
   }

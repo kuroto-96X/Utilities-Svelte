@@ -304,5 +304,7 @@ export function applyRevelationEffect(
       return { wave, deckComposition }
     case 'mitsu':
       return { wave, deckComposition }
+    case 'karasu':
+      return { wave, deckComposition }
   }
 }

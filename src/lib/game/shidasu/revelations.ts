@@ -24,6 +24,7 @@ export const REVELATION_POOL: RevelationId[] = [
   'chou',
   'yoku',
   'mitsu',
+  'karasu',
 ]
 
 export function revelationName(id: RevelationId, params: ShidasuParams): string {
