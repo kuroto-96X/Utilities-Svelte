@@ -29,4 +29,5 @@ export const REVELATION_ACTUAL_EFFECTS: Record<RevelationId, string> = {
   hotori: 'run.lastUsedRevelationId(hotori自身を使った場合は更新されない)を読み、revelations+oraclesの合算枚数(使用中の天啓自身を取り除いた後)が上限2未満なら追加する。履歴が無ければ何もしない',
   chou: 'ORACLE_POOLからrollOfferで2つ抽選し、revelations+oraclesの合算枚数(使用中の天啓自身を取り除いた後)の残り枠数までoraclesに追加する',
   yoku: 'REVELATION_POOLからrollOfferで2つ抽選し、revelations+oraclesの合算枚数(使用中の天啓自身を取り除いた後)の残り枠数までrevelationsに追加する',
+  mitsu: '所持する各護符のitemSellPrice(params, id)を合計し、currencyに加算する',
 }

@@ -402,6 +402,14 @@ describe('revelationEffects', () => {
     expect(result.deckComposition).toBe(deckComposition)
   })
 
+  test('軫(mitsu): wave/deckCompositionを変更しない(実際の報酬付与はengine.tsのuseRevelation側)', () => {
+    const wave = baseWave()
+    const deckComposition: DeckCard[] = []
+    const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'mitsu', null, createRng(1))
+    expect(result.wave).toBe(wave)
+    expect(result.deckComposition).toBe(deckComposition)
+  })
+
   test('revelationNeedsTarget: 列選択が必要な種類とそうでない種類を正しく区別する', () => {
     expect(revelationNeedsTarget('kaku')).toBe(true)
     expect(revelationNeedsTarget('gyu')).toBe(true)

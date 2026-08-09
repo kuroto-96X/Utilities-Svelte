@@ -1451,6 +1451,10 @@ function grantRevelationReward(
       if (slotsLeft === 0) return {}
       return { revelations: [...runAfterRemoval.revelations, ...rollOffer(REVELATION_POOL, slotsLeft, rand)] }
     }
+    case 'mitsu': {
+      const total = runAfterRemoval.items.reduce((sum, id) => sum + itemSellPrice(params, id), 0)
+      return { currency: runAfterRemoval.currency + total }
+    }
     default:
       return {}
   }

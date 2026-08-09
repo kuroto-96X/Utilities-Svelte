@@ -4321,6 +4321,23 @@ describe('useRevelation: 翼(yoku・天啓連続獲得)', () => {
   })
 })
 
+describe('useRevelation: 軫(mitsu・護符換金)', () => {
+  test('所持護符の売値合計が星片に加算される', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['mitsu'], items: ['discretion', 'frost'], currency: 10 }
+    const expectedTotal = itemSellPrice(DEFAULT_PARAMS, 'discretion') + itemSellPrice(DEFAULT_PARAMS, 'frost')
+    const result = useRevelation(DEFAULT_PARAMS, run, 'mitsu', null, createRng(1))
+    expect(result.currency).toBe(10 + expectedTotal)
+  })
+
+  test('護符を所持していなければ星片は変化しない', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['mitsu'], items: [], currency: 10 }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'mitsu', null, createRng(1))
+    expect(result.currency).toBe(10)
+  })
+})
+
 describe('神託の福袋(oracleSelect)', () => {
   function shopRunWithOraclePack(overrides: Partial<RunState> = {}): RunState {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
