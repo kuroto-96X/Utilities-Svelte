@@ -1427,6 +1427,8 @@ function grantRevelationReward(
       const picked = available[Math.floor(rand() * available.length)]
       return { items: [...runAfterRemoval.items, picked] }
     }
+    case 'ryuu':
+      return { currency: runAfterRemoval.currency * 2 }
     default:
       return {}
   }

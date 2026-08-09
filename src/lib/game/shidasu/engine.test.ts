@@ -4234,6 +4234,22 @@ describe('useRevelation: 昴(subaru・護符獲得)', () => {
   })
 })
 
+describe('useRevelation: 柳(ryuu・星片倍化)', () => {
+  test('所持している星片が倍になる', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['ryuu'], currency: 30 }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'ryuu', null, createRng(1))
+    expect(result.currency).toBe(60)
+  })
+
+  test('星片が0の場合は0のまま', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['ryuu'], currency: 0 }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'ryuu', null, createRng(1))
+    expect(result.currency).toBe(0)
+  })
+})
+
 describe('神託の福袋(oracleSelect)', () => {
   function shopRunWithOraclePack(overrides: Partial<RunState> = {}): RunState {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave

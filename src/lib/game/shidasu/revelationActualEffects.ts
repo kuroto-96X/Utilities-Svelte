@@ -25,4 +25,5 @@ export const REVELATION_ACTUAL_EFFECTS: Record<RevelationId, string> = {
   shi: 'wave.chainの末尾1枚をwild:trueに変換し、foundationも更新する(秘儀「対話」と同じ効果)。deckCompositionの対応する枠も書き換える(秘儀版と異なり永続化される)。チェーンが空の場合は何もしない',
   sei: '場札の非ワイルド実カードからランダムにn枚選んでwild:trueに変換する(秘儀「賜物」と同じ方式)。wave.tableau・deckComposition双方を更新する(秘儀版と異なり永続化される)',
   subaru: 'ITEM_POOLから所持中の護符を除いてランダムに1つ選び、items.length < maxItemsなら所持に追加する(useRevelation内のgrantRevelationRewardで実施、wave/deckCompositionは変更しない)',
+  ryuu: 'run.currencyを2倍にする(useRevelation内のgrantRevelationRewardで実施、wave/deckCompositionは変更しない)',
 }

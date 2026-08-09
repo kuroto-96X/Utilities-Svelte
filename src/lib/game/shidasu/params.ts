@@ -219,6 +219,7 @@ export interface ShidasuParams {
     shi: { name: string; desc: string }
     sei: { name: string; n: number; desc: string }
     subaru: { name: string; desc: string }
+    ryuu: { name: string; desc: string }
   }
   oracles: {
     completeRun: { name: string; desc: string }
@@ -468,6 +469,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     shi: { name: '觜', desc: '現在のチェーンの一番上のカードをワイルド化する' },
     sei: { name: '井', n: 1, desc: '場札の中からランダムに{n}枚選んでワイルド化する' },
     subaru: { name: '昴', desc: '護符を1つ、所持中を除いてランダムに獲得する(所持上限に達していれば何も起こらない)' },
+    ryuu: { name: '柳', desc: '現在所持している星片を倍にする' },
   },
   oracles: {
     completeRun: { name: '乾為天', desc: 'コンプリートラン　レベル+1' },
