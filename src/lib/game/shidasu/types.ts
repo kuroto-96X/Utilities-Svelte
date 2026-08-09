@@ -101,6 +101,7 @@ export type RevelationId =
   | 'subaru'
   | 'ryuu'
   | 'hotori'
+  | 'chou'
 
 export interface Card {
   id: number

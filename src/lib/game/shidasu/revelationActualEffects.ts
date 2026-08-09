@@ -27,4 +27,5 @@ export const REVELATION_ACTUAL_EFFECTS: Record<RevelationId, string> = {
   subaru: 'ITEM_POOLから所持中の護符を除いてランダムに1つ選び、items.length < maxItemsなら所持に追加する(useRevelation内のgrantRevelationRewardで実施、wave/deckCompositionは変更しない)',
   ryuu: 'run.currencyを2倍にする(useRevelation内のgrantRevelationRewardで実施、wave/deckCompositionは変更しない)',
   hotori: 'run.lastUsedRevelationId(hotori自身を使った場合は更新されない)を読み、revelations+oraclesの合算枚数(使用中の天啓自身を取り除いた後)が上限2未満なら追加する。履歴が無ければ何もしない',
+  chou: 'ORACLE_POOLからrollOfferで2つ抽選し、revelations+oraclesの合算枚数(使用中の天啓自身を取り除いた後)の残り枠数までoraclesに追加する',
 }

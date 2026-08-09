@@ -1,7 +1,7 @@
 // src/lib/game/shidasu/engine.ts
 import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, Star, StarRestriction, CardSetGenreId } from './types'
 import type { ShidasuParams } from './params'
-import { createRng, shuffle, shuffleInPlace, standardDeckComposition, addCardsToDeckComposition } from './deck'
+import { createRng, shuffle, shuffleInPlace, standardDeckComposition, addCardsToDeckComposition, rollOffer } from './deck'
 import { isFace, chainContinuesPattern, evaluateChainBonus, countSameRankBefore, countSameRankForWildPlay, cardColors } from './patterns'
 import { addPart, multiplyPart, lockPart, type ScorePart } from './scoreParts'
 import { rollItemOffer, ITEM_POOL } from './items'
@@ -10,7 +10,7 @@ import { applyRiteEffect, canUseRite } from './riteEffects'
 import { rollRiteOffer } from './rites'
 import { rollRevelationOffer } from './revelations'
 import { applyRevelationEffect, canUseRevelation } from './revelationEffects'
-import { rollOracleOffer, defaultOracleLevels } from './oracles'
+import { rollOracleOffer, defaultOracleLevels, ORACLE_POOL } from './oracles'
 import { rollCardSetOffer } from './cardSets'
 import { rollShop, itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice, oracleBuyPrice, oracleSellPrice } from './shop'
 
@@ -1435,6 +1435,11 @@ function grantRevelationReward(
       const slotsLeft = 2 - (runAfterRemoval.revelations.length + runAfterRemoval.oracles.length)
       if (slotsLeft <= 0) return {}
       return { revelations: [...runAfterRemoval.revelations, target] }
+    }
+    case 'chou': {
+      const slotsLeft = Math.max(0, 2 - (runAfterRemoval.revelations.length + runAfterRemoval.oracles.length))
+      if (slotsLeft === 0) return {}
+      return { oracles: [...runAfterRemoval.oracles, ...rollOffer(ORACLE_POOL, slotsLeft, rand)] }
     }
     default:
       return {}
