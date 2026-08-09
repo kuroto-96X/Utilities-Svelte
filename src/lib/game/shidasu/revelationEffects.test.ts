@@ -264,6 +264,35 @@ describe('revelationEffects', () => {
     expect(result.deckComposition).toHaveLength(3) // 削除ではなくフラグなので要素数は変わらない
   })
 
+  test('胃: 場札の最大ランクと最小ランクのカードがそれぞれ1枚ずつワイルド化される', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♠', 3), card(2, '♥', 13), card(3, '♦', 1)]],
+    })
+    const deckComposition: DeckCard[] = [deckCard(1, '♠', 3), deckCard(2, '♥', 13), deckCard(3, '♦', 1)]
+    const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'i', null, createRng(1))
+    const wildCards = result.wave.tableau[0].filter(c => c.wild)
+    expect(wildCards.map(c => c.rank).sort()).toEqual([1, 13])
+    expect(result.wave.tableau[0].find(c => c.rank === 3)?.wild).toBe(false) // 中間ランクは対象外
+    const wildDeckIds = result.deckComposition.filter(c => c.wild).map(c => c.deckId).sort()
+    expect(wildDeckIds).toEqual([2, 3])
+  })
+
+  test('胃: 実カードが1枚しかない場合は1枚だけワイルド化される(最大=最小)', () => {
+    const wave = baseWave({ tableau: [[card(1, '♠', 7)]] })
+    const deckComposition: DeckCard[] = [deckCard(1, '♠', 7)]
+    const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'i', null, createRng(1))
+    expect(result.wave.tableau[0].filter(c => c.wild)).toHaveLength(1)
+  })
+
+  test('胃: 最大ランクの該当が複数ある場合はランダムに1枚だけ選ばれる', () => {
+    const wave = baseWave({ tableau: [[card(1, '♠', 13), card(2, '♥', 13), card(3, '♦', 1)]] })
+    const deckComposition: DeckCard[] = [deckCard(1, '♠', 13), deckCard(2, '♥', 13), deckCard(3, '♦', 1)]
+    const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'i', null, createRng(1))
+    const wildCards = result.wave.tableau[0].filter(c => c.wild)
+    expect(wildCards).toHaveLength(2) // 最大ランク側1枚+最小ランク側1枚
+    expect(wildCards.some(c => c.rank === 1)).toBe(true)
+  })
+
   test('revelationNeedsTarget: 列選択が必要な種類とそうでない種類を正しく区別する', () => {
     expect(revelationNeedsTarget('kaku')).toBe(true)
     expect(revelationNeedsTarget('gyu')).toBe(true)

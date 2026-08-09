@@ -150,6 +150,22 @@ function discardColumnTops(wave: WaveState, deckComposition: DeckCard[]): { wave
   return { wave: { ...wave, tableau }, deckComposition: newComposition }
 }
 
+// 場札の非ワイルド実カードから最大ランク・最小ランクをそれぞれ1枚(該当が複数あればランダムに1枚)選んでワイルド化する。
+function wildifyExtremeRanks(wave: WaveState, deckComposition: DeckCard[], rand: () => number): { wave: WaveState; deckComposition: DeckCard[] } {
+  const realCards = wave.tableau.flat().filter(c => !c.wild)
+  if (realCards.length === 0) return { wave, deckComposition }
+  const maxRank = Math.max(...realCards.map(c => c.rank))
+  const minRank = Math.min(...realCards.map(c => c.rank))
+  const maxCandidates = realCards.filter(c => c.rank === maxRank)
+  const target1 = pickRandom(maxCandidates, rand)
+  const minCandidates = realCards.filter(c => c.rank === minRank && c.deckId !== target1.deckId)
+  const target2 = minCandidates.length > 0 ? pickRandom(minCandidates, rand) : null
+  const targetDeckIds = new Set([target1.deckId, ...(target2 ? [target2.deckId] : [])])
+  const tableau = wave.tableau.map(col => col.map(cardEl => (targetDeckIds.has(cardEl.deckId) ? { ...cardEl, wild: true } : cardEl)))
+  const newComposition = deckComposition.map(entry => (targetDeckIds.has(entry.deckId) ? { ...entry, wild: true } : entry))
+  return { wave: { ...wave, tableau }, deckComposition: newComposition }
+}
+
 // 天啓が現在の盤面状態で使用可能か判定する(場札拡張の山札枚数不足のみ判定対象)。
 export function canUseRevelation(params: ShidasuParams, wave: WaveState, revelationId: RevelationId): boolean {
   switch (revelationId) {
@@ -220,5 +236,7 @@ export function applyRevelationEffect(
       return stairAlignTopCards(wave, deckComposition)
     case 'rou':
       return discardColumnTops(wave, deckComposition)
+    case 'i':
+      return wildifyExtremeRanks(wave, deckComposition, rand)
   }
 }

@@ -94,6 +94,7 @@ export type RevelationId =
   | 'heki'
   | 'kei'
   | 'rou'
+  | 'i'
 
 export interface Card {
   id: number

@@ -214,6 +214,7 @@ export interface ShidasuParams {
     heki: { name: string; desc: string }
     kei: { name: string; desc: string }
     rou: { name: string; desc: string }
+    i: { name: string; desc: string }
   }
   oracles: {
     completeRun: { name: string; desc: string }
@@ -458,6 +459,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     heki: { name: '壁', desc: '場札全体で♠→♥→♣→♦→♠の順にスートを循環変換する(ワイルドは対象外)' },
     kei: { name: '奎', desc: '空でない列を左から順に、一番左の列の一番上のカードのランクを起点とした階段状のランクに、各列の一番上のカードを変換する(空の列は無視。ワイルドは対象外)' },
     rou: { name: '婁', desc: '場札の全ての列の一番上のカードを廃棄する(デッキから永久に取り除く。ワイルドも対象)' },
+    i: { name: '胃', desc: '場札の中からランクが最大のカードと最小のカードをそれぞれ1枚(該当が複数あればランダムに1枚)選んでワイルド化する' },
   },
   oracles: {
     completeRun: { name: '乾為天', desc: 'コンプリートラン　レベル+1' },

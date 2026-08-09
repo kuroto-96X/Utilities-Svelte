@@ -20,4 +20,5 @@ export const REVELATION_ACTUAL_EFFECTS: Record<RevelationId, string> = {
   heki: '場札全体の非ワイルドカードを、変換前のスート基準の対応表(♠→♥、♥→♣、♣→♦、♦→♠)で1回だけ変換し、deckCompositionの対応する枠も書き換える(ワイルドは対象外、逐次適用ではないためカスケードしない)',
   kei: '空でない列を左から順に走査し、最初の列の一番上のカードのランクを起点に、i番目の列の一番上のカードをbase+i(A⇔Kループ)に変換する。deckCompositionの対応する枠も書き換える(空列はカウントしない、ワイルドの列はスキップするが順番はカウントする)',
   rou: '場札の全ての列の一番上のカード(ワイルド含む)をwave.tableauから取り除き、deckCompositionの対応する枠をremoved:trueにする(配列からは削除しない。空の列はスキップ)',
+  i: '場札の非ワイルド実カードから最大ランク・最小ランクを求め、それぞれ該当カード(複数あればランダムに1枚)をwild:trueに変換する。wave.tableau・deckComposition双方を更新する',
 }
