@@ -1461,6 +1461,7 @@ export function useRevelation(
   const extraTableauRows = revelationId === 'kyo' ? run.extraTableauRows + params.revelations.kyo.n : run.extraTableauRows
   const revelations = [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
   const reward = grantRevelationReward(params, { ...run, revelations }, revelationId, rand)
+  // 星(hotori)自身の使用は履歴に残さない(自己参照ループを防ぐ。詳細はtypes.tsのlastUsedRevelationIdコメント参照)
   const lastUsedRevelationId = revelationId === 'hotori' ? run.lastUsedRevelationId : revelationId
   return { ...run, wave, deckComposition, revelations, extraTableauRows, lastUsedRevelationId, ...reward }
 }

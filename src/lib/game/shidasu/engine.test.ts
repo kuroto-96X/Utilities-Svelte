@@ -4265,14 +4265,17 @@ describe('useRevelation: 星(hotori・天啓回帰)', () => {
     expect(result.revelations).toEqual([])
   })
 
-  test('候補16自身を使用してもlastUsedRevelationIdは更新されない(履歴に残らない)', () => {
+  test('hotori自身を使用してもlastUsedRevelationIdは更新されない(履歴に残らない)', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
     const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['hotori'], lastUsedRevelationId: 'kaku' }
     const result = useRevelation(DEFAULT_PARAMS, run, 'hotori', null, createRng(1))
     expect(result.lastUsedRevelationId).toBe('kaku')
   })
 
-  test('候補16を連続で使用しても自己参照しない', () => {
+  test('hotoriを連続で使用しても自己参照しない', () => {
+    // このテストが守っている不変条件: useRevelationの自己参照除外(lastUsedRevelationIdの
+    // 更新スキップ)が無ければ、1回目の使用でlastUsedRevelationIdが'hotori'になり、
+    // 2回目の使用がその'hotori'自身を再取得してしまう(無限に自己複製し続ける)。
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
     const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['hotori', 'hotori'], lastUsedRevelationId: 'kaku' }
     const first = useRevelation(DEFAULT_PARAMS, run, 'hotori', null, createRng(1))
