@@ -168,6 +168,24 @@ function wildifyExtremeRanks(wave: WaveState, deckComposition: DeckCard[], rand:
   return { wave: { ...wave, tableau }, deckComposition: newComposition }
 }
 
+// 選んだ列を、先頭カードのランクを起点に階段状のランク(A⇔Kループ)へ再配置する。方向(昇順/降順)は使用ごとにランダム。
+// 秘儀「雷光(raidho)」と同じアルゴリズムだが、deckCompositionにも書き込んで効果を永続化する点が異なる。
+function convertColumnToStair(wave: WaveState, deckComposition: DeckCard[], colIndex: number, rand: () => number): { wave: WaveState; deckComposition: DeckCard[] } {
+  const col = wave.tableau[colIndex]
+  if (!col || col.length === 0) return { wave, deckComposition }
+  const baseRank = col[0].rank
+  const dir = rand() < 0.5 ? 1 : -1
+  const rankByDeckId = new Map<number, Rank>()
+  const newCol = col.map((cardEl, i) => {
+    const newRank = (((baseRank - 1 + dir * i) % 13 + 13) % 13 + 1) as Rank
+    rankByDeckId.set(cardEl.deckId, newRank)
+    return { ...cardEl, rank: newRank }
+  })
+  const tableau = wave.tableau.map((c, i) => (i === colIndex ? newCol : c))
+  const newComposition = deckComposition.map(entry => (rankByDeckId.has(entry.deckId) ? { ...entry, rank: rankByDeckId.get(entry.deckId) as Rank } : entry))
+  return { wave: { ...wave, tableau }, deckComposition: newComposition }
+}
+
 // 天啓が現在の盤面状態で使用可能か判定する(場札拡張の山札枚数不足のみ判定対象)。
 export function canUseRevelation(params: ShidasuParams, wave: WaveState, revelationId: RevelationId): boolean {
   switch (revelationId) {
@@ -189,6 +207,7 @@ export function revelationNeedsTarget(revelationId: RevelationId): boolean {
     case 'jo':
     case 'aya':
     case 'shitsu':
+    case 'hitsu':
       return true
     default:
       return false
@@ -240,5 +259,7 @@ export function applyRevelationEffect(
       return discardColumnTops(wave, deckComposition)
     case 'i':
       return wildifyExtremeRanks(wave, deckComposition, rand)
+    case 'hitsu':
+      return targetCol === null ? { wave, deckComposition } : convertColumnToStair(wave, deckComposition, targetCol, rand)
   }
 }

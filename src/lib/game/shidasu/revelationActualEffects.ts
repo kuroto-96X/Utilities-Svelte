@@ -21,4 +21,5 @@ export const REVELATION_ACTUAL_EFFECTS: Record<RevelationId, string> = {
   kei: '空でない列を左から順に走査し、最初の列の一番上のカードのランクを起点に、i番目の列の一番上のカードをbase+i(A⇔Kループ)に変換する。deckCompositionの対応する枠も書き換える(空列はカウントしない、ワイルドの列はスキップするが順番はカウントする)',
   rou: '場札の全ての列の一番上のカード(ワイルド含む)をwave.tableauから取り除き、deckCompositionの対応する枠をremoved:trueにする(配列からは削除しない。空の列はスキップ)',
   i: '場札の非ワイルド実カードから最大ランク・最小ランクを求め、それぞれ該当カード(複数あればランダムに1枚)をwild:trueに変換する。wave.tableau・deckComposition双方を更新する',
+  hitsu: '選んだ列の先頭カードのランクを起点に、使用ごとにランダムな方向(昇順/降順)で階段状のランク(A⇔Kループ)へ再配置する(秘儀「雷光」と同じアルゴリズム)。deckCompositionの対応する枠も書き換える(秘儀版と異なり永続化される)',
 }

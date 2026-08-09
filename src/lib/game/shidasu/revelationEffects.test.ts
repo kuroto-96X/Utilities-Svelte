@@ -303,12 +303,34 @@ describe('revelationEffects', () => {
     expect(wildDeckIds.size).toBe(2) // 同じdeckIdが2回選ばれていない(重複無し)
   })
 
+  test('畢: 選んだ列が先頭カード起点の階段状ランクに再配置され、deckCompositionにも反映される', () => {
+    const wave = baseWave({ tableau: [[card(1, '♠', 5), card(2, '♥', 6), card(3, '♦', 7)]] })
+    const deckComposition: DeckCard[] = [deckCard(1, '♠', 5), deckCard(2, '♥', 6), deckCard(3, '♦', 7)]
+    const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'hitsu', 0, createRng(1))
+    const ranks = result.wave.tableau[0].map(c => c.rank)
+    expect(ranks[0]).toBe(5) // 起点は先頭カードのランク
+    const ascending = ranks[1] === 6
+    const descending = ranks[1] === 4
+    expect(ascending || descending).toBe(true)
+    expect(ranks[2]).toBe(ascending ? 7 : 3)
+    expect(result.deckComposition.find(c => c.deckId === 1)?.rank).toBe(5)
+  })
+
+  test('畢: targetColがnullなら何もしない', () => {
+    const wave = baseWave({ tableau: [[card(1, '♠', 5)]] })
+    const deckComposition: DeckCard[] = [deckCard(1, '♠', 5)]
+    const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'hitsu', null, createRng(1))
+    expect(result.wave).toBe(wave)
+    expect(result.deckComposition).toBe(deckComposition)
+  })
+
   test('revelationNeedsTarget: 列選択が必要な種類とそうでない種類を正しく区別する', () => {
     expect(revelationNeedsTarget('kaku')).toBe(true)
     expect(revelationNeedsTarget('gyu')).toBe(true)
     expect(revelationNeedsTarget('jo')).toBe(true)
     expect(revelationNeedsTarget('aya')).toBe(true)
     expect(revelationNeedsTarget('shitsu')).toBe(true)
+    expect(revelationNeedsTarget('hitsu')).toBe(true)
     expect(revelationNeedsTarget('shin')).toBe(false)
     expect(revelationNeedsTarget('kyo')).toBe(false)
   })
