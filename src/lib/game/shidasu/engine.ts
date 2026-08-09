@@ -1456,6 +1456,7 @@ function grantRevelationReward(
       return { currency: runAfterRemoval.currency + total }
     }
     case 'karasu': {
+      // 秘儀の所持枠は上限3で、天啓・神託の合算枠(上限2、sharedRevelationSlotsRemaining)とは独立している。
       const slotsLeft = Math.max(0, 3 - runAfterRemoval.rites.length)
       if (slotsLeft === 0) return {}
       return { rites: [...runAfterRemoval.rites, ...runAfterRemoval.recentUsedRiteIds.slice(0, slotsLeft)] }
