@@ -1,5 +1,6 @@
 import type { Card, DeckCard, Rank, Suit, WaveState, RevelationId } from './types'
 import type { ShidasuParams } from './params'
+import { shuffleInPlace } from './deck'
 
 function pickRandom<T>(arr: T[], rand: () => number): T {
   return arr[Math.floor(rand() * arr.length)]
@@ -198,6 +199,20 @@ function wildifyChainTop(wave: WaveState, deckComposition: DeckCard[]): { wave: 
   return { wave: { ...wave, chain, foundation: chain[chain.length - 1] }, deckComposition: newComposition }
 }
 
+// 場札の非ワイルド実カードからランダムにn枚選んでワイルド化する。秘儀「賜物(ansuz)」と同じ方式
+// (盤面上の位置(列・行)を2次元でランダム抽選する)だが、deckCompositionにも書き込んで永続化する点が異なる。
+function wildifyRandomTableauCards(wave: WaveState, deckComposition: DeckCard[], n: number, rand: () => number): { wave: WaveState; deckComposition: DeckCard[] } {
+  const positions: { ci: number; ri: number }[] = []
+  wave.tableau.forEach((col, ci) => col.forEach((c, ri) => { if (!c.wild) positions.push({ ci, ri }) }))
+  shuffleInPlace(positions, rand)
+  const picked = positions.slice(0, n)
+  const targetKeys = new Set(picked.map(p => `${p.ci}-${p.ri}`))
+  const targetDeckIds = new Set(picked.map(p => wave.tableau[p.ci][p.ri].deckId))
+  const tableau = wave.tableau.map((col, ci) => col.map((c, ri) => (targetKeys.has(`${ci}-${ri}`) ? { ...c, wild: true } : c)))
+  const newComposition = deckComposition.map(entry => (targetDeckIds.has(entry.deckId) ? { ...entry, wild: true } : entry))
+  return { wave: { ...wave, tableau }, deckComposition: newComposition }
+}
+
 // 天啓が現在の盤面状態で使用可能か判定する(場札拡張の山札枚数不足のみ判定対象)。
 export function canUseRevelation(params: ShidasuParams, wave: WaveState, revelationId: RevelationId): boolean {
   switch (revelationId) {
@@ -275,5 +290,7 @@ export function applyRevelationEffect(
       return targetCol === null ? { wave, deckComposition } : convertColumnToStair(wave, deckComposition, targetCol, rand)
     case 'shi':
       return wildifyChainTop(wave, deckComposition)
+    case 'sei':
+      return wildifyRandomTableauCards(wave, deckComposition, params.revelations.sei.n, rand)
   }
 }

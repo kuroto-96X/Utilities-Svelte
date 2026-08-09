@@ -23,4 +23,5 @@ export const REVELATION_ACTUAL_EFFECTS: Record<RevelationId, string> = {
   i: '場札の非ワイルド実カードから最大ランク・最小ランクを求め、それぞれ該当カード(複数あればランダムに1枚)をwild:trueに変換する。wave.tableau・deckComposition双方を更新する',
   hitsu: '選んだ列の先頭カードのランクを起点に、使用ごとにランダムな方向(昇順/降順)で階段状のランク(A⇔Kループ)へ再配置する(秘儀「雷光」と同じアルゴリズム)。deckCompositionの対応する枠も書き換える(秘儀版と異なり永続化される)',
   shi: 'wave.chainの末尾1枚をwild:trueに変換し、foundationも更新する(秘儀「対話」と同じ効果)。deckCompositionの対応する枠も書き換える(秘儀版と異なり永続化される)。チェーンが空の場合は何もしない',
+  sei: '場札の非ワイルド実カードからランダムにn枚選んでwild:trueに変換する(秘儀「賜物」と同じ方式)。wave.tableau・deckComposition双方を更新する(秘儀版と異なり永続化される)',
 }

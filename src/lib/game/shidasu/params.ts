@@ -217,6 +217,7 @@ export interface ShidasuParams {
     i: { name: string; desc: string }
     hitsu: { name: string; desc: string }
     shi: { name: string; desc: string }
+    sei: { name: string; n: number; desc: string }
   }
   oracles: {
     completeRun: { name: string; desc: string }
@@ -464,6 +465,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     i: { name: '胃', desc: '場札の中からランクが最大のカードと最小のカードをそれぞれ1枚(該当が複数あればランダムに1枚)選んでワイルド化する' },
     hitsu: { name: '畢', desc: '場札から選んだ1列を、先頭のカードを起点とした階段状のランクに再配置する(昇順・降順はランダム)' },
     shi: { name: '觜', desc: '現在のチェーンの一番上のカードをワイルド化する' },
+    sei: { name: '井', n: 1, desc: '場札の中からランダムに{n}枚選んでワイルド化する' },
   },
   oracles: {
     completeRun: { name: '乾為天', desc: 'コンプリートラン　レベル+1' },
