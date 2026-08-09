@@ -140,7 +140,7 @@ export function startWave(
   if (items.includes('eternity')) {
     // deckIdは既存エントリと重複しないよう、現在の配列長を新規idとして採番する(deckComposition
     // からエントリが削除されることは無いため、長さは単調増加でありidが枯渇・衝突することはない)
-    composition = [...composition, { deckId: composition.length, suit: '★', rank: 0 as Rank, wild: true }]
+    composition = [...composition, { deckId: composition.length, suit: '★', rank: 0 as Rank, wild: true, removed: false }]
   }
   if (items.includes('abundance')) {
     composition = convertRandomCardToWild(composition, rand)

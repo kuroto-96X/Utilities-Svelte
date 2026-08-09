@@ -109,6 +109,9 @@ export interface DeckCard {
   suit: Suit
   rank: Rank
   wild: boolean
+  // 廃棄された(デッキから永久に除外された)カードか。要素を削除するとdeckIdの採番ロジック
+  // (配列長を基準に採番する箇所が複数ある)が壊れるため、削除ではなくフラグで管理する。
+  removed: boolean
 }
 
 export interface ScoreGain {

@@ -71,7 +71,7 @@ function nextWaveCardId(wave: WaveState): number {
 function addWildToColumnTop(wave: WaveState, deckComposition: DeckCard[], colIndex: number): { wave: WaveState; deckComposition: DeckCard[] } {
   if (!wave.tableau[colIndex]) return { wave, deckComposition }
   const newDeckId = deckComposition.length
-  const newComposition: DeckCard[] = [...deckComposition, { deckId: newDeckId, suit: '★', rank: 0 as Rank, wild: true }]
+  const newComposition: DeckCard[] = [...deckComposition, { deckId: newDeckId, suit: '★', rank: 0 as Rank, wild: true, removed: false }]
   const newCard: Card = { id: nextWaveCardId(wave), deckId: newDeckId, suit: '★', rank: 0 as Rank, wild: true }
   const tableau = wave.tableau.map((c, i) => (i === colIndex ? [...c, newCard] : c))
   return { wave: { ...wave, tableau }, deckComposition: newComposition }

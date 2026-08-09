@@ -1876,12 +1876,12 @@ describe('drawStock', () => {
       linked: true,
     })
     const composition = standardDeckComposition()
-    expect(composition[47]).toEqual({ deckId: 47, suit: '♣', rank: 9, wild: false })
+    expect(composition[47]).toEqual({ deckId: 47, suit: '♣', rank: 9, wild: false, removed: false })
     const { wave: next, deckComposition } = drawStock(DEFAULT_PARAMS, wave, ['silence'], 1000000, composition, 'none', createRng(1))
     expect(next.foundation.wild).toBe(true)
     expect(next.chain).toEqual([{ ...card(1, '♣', 9, false, 47), wild: true }])
     const wildEntries = deckComposition.filter(c => c.wild)
-    expect(wildEntries).toEqual([{ deckId: 47, suit: '♣', rank: 9, wild: true }])
+    expect(wildEntries).toEqual([{ deckId: 47, suit: '♣', rank: 9, wild: true, removed: false }])
   })
 
   test('静寂を持っていても取れる場札があれば発動しない', () => {

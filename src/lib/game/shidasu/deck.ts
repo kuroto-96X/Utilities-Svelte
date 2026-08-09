@@ -20,7 +20,7 @@ export function standardDeckComposition(): DeckCard[] {
   let deckId = 0
   for (const suit of SUITS) {
     for (let rank = 1; rank <= 13; rank++) {
-      composition.push({ deckId: deckId++, suit, rank: rank as Rank, wild: false })
+      composition.push({ deckId: deckId++, suit, rank: rank as Rank, wild: false, removed: false })
     }
   }
   return composition
@@ -30,7 +30,7 @@ export function standardDeckComposition(): DeckCard[] {
 // (天啓のワイルド供給処理revelationEffects.tsのnewDeckIdと同じ採番方式)。
 export function addCardsToDeckComposition(deckComposition: DeckCard[], cards: NewCardSpec[]): DeckCard[] {
   let nextDeckId = deckComposition.length
-  const added: DeckCard[] = cards.map(c => ({ deckId: nextDeckId++, suit: c.suit, rank: c.rank, wild: c.wild }))
+  const added: DeckCard[] = cards.map(c => ({ deckId: nextDeckId++, suit: c.suit, rank: c.rank, wild: c.wild, removed: false }))
   return [...deckComposition, ...added]
 }
 

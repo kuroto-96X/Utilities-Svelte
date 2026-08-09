@@ -88,6 +88,11 @@ describe('standardDeckComposition', () => {
       expect(ranks).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
     })
   })
+
+  test('全エントリがremoved:falseで初期化される', () => {
+    const composition = standardDeckComposition()
+    expect(composition[0]).toEqual({ deckId: 0, suit: '♠', rank: 1, wild: false, removed: false })
+  })
 })
 
 describe('rollOffer', () => {
@@ -160,8 +165,8 @@ describe('addCardsToDeckComposition', () => {
 
   test('deckIdが既に飛び飛びの場合でも配列長を基準に採番する(既存の永劫等と同じ方式)', () => {
     const composition = [
-      { deckId: 0, suit: '♠' as const, rank: 1 as const, wild: false },
-      { deckId: 5, suit: '♥' as const, rank: 2 as const, wild: false },
+      { deckId: 0, suit: '♠' as const, rank: 1 as const, wild: false, removed: false },
+      { deckId: 5, suit: '♥' as const, rank: 2 as const, wild: false, removed: false },
     ]
     const result = addCardsToDeckComposition(composition, [{ suit: '♦', rank: 3, wild: false }])
     expect(result[2].deckId).toBe(2)

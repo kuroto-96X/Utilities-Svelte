@@ -9,8 +9,8 @@ function card(id: number, suit: Card['suit'], rank: Card['rank'], wild = false, 
   return { id, deckId, suit, rank, wild }
 }
 
-function deckCard(deckId: number, suit: DeckCard['suit'], rank: DeckCard['rank'], wild = false): DeckCard {
-  return { deckId, suit, rank, wild }
+function deckCard(deckId: number, suit: DeckCard['suit'], rank: DeckCard['rank'], wild = false, removed = false): DeckCard {
+  return { deckId, suit, rank, wild, removed }
 }
 
 function baseWave(overrides: Partial<WaveState> = {}): WaveState {
