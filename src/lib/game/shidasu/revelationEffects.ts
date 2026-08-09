@@ -115,6 +115,28 @@ function convertTableauSuitCycle(wave: WaveState, deckComposition: DeckCard[]): 
   return { wave: { ...wave, tableau }, deckComposition: newComposition }
 }
 
+// 空でない列を左から順に走査し、最初の列の一番上(末尾)のカードのランクを起点に、i番目(空列を除いた順番)の
+// 空でない列の一番上のカードをbase+i(A⇔Kループ)に変換する。空の列は無視(カウントしない)。
+// 一番上がワイルドの列は変換しない(ただし順番はカウントする)。
+function stairAlignTopCards(wave: WaveState, deckComposition: DeckCard[]): { wave: WaveState; deckComposition: DeckCard[] } {
+  const nonEmptyCols = wave.tableau.map((_, i) => i).filter(i => wave.tableau[i].length > 0)
+  if (nonEmptyCols.length === 0) return { wave, deckComposition }
+  const baseCol = wave.tableau[nonEmptyCols[0]]
+  const baseRank = baseCol[baseCol.length - 1].rank
+  const rankByDeckId = new Map<number, Rank>()
+  const tableau = wave.tableau.map((col, ci) => {
+    const order = nonEmptyCols.indexOf(ci)
+    if (order === -1) return col
+    const topCard = col[col.length - 1]
+    if (topCard.wild) return col
+    const newRank = (((baseRank - 1 + order) % 13) + 1) as Rank
+    rankByDeckId.set(topCard.deckId, newRank)
+    return [...col.slice(0, -1), { ...topCard, rank: newRank }]
+  })
+  const newComposition = deckComposition.map(entry => (rankByDeckId.has(entry.deckId) ? { ...entry, rank: rankByDeckId.get(entry.deckId) as Rank } : entry))
+  return { wave: { ...wave, tableau }, deckComposition: newComposition }
+}
+
 // 天啓が現在の盤面状態で使用可能か判定する(場札拡張の山札枚数不足のみ判定対象)。
 export function canUseRevelation(params: ShidasuParams, wave: WaveState, revelationId: RevelationId): boolean {
   switch (revelationId) {
@@ -181,5 +203,7 @@ export function applyRevelationEffect(
       return targetCol === null ? { wave, deckComposition } : convertColumnChainFromLeft(wave, deckComposition, targetCol)
     case 'heki':
       return convertTableauSuitCycle(wave, deckComposition)
+    case 'kei':
+      return stairAlignTopCards(wave, deckComposition)
   }
 }

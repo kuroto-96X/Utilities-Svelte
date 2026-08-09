@@ -212,6 +212,7 @@ export interface ShidasuParams {
     aya: { name: string; desc: string }
     shitsu: { name: string; desc: string }
     heki: { name: string; desc: string }
+    kei: { name: string; desc: string }
   }
   oracles: {
     completeRun: { name: string; desc: string }
@@ -454,6 +455,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     aya: { name: '危', desc: '場札から選んだ1列の一番上に、ワイルドを1枚追加する' },
     shitsu: { name: '室', desc: '場札から選んだ1列の各カードを、1つ左の列の同じ位置のカードのランク+1に変換する(左列がワイルドの位置・左列の枚数が足りない位置は対象外)。左端の列を選んだ場合は右端の列を参照する' },
     heki: { name: '壁', desc: '場札全体で♠→♥→♣→♦→♠の順にスートを循環変換する(ワイルドは対象外)' },
+    kei: { name: '奎', desc: '空でない列を左から順に、一番左の列の一番上のカードのランクを起点とした階段状のランクに、各列の一番上のカードを変換する(空の列は無視。ワイルドは対象外)' },
   },
   oracles: {
     completeRun: { name: '乾為天', desc: 'コンプリートラン　レベル+1' },
