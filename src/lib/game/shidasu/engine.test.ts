@@ -4304,6 +4304,23 @@ describe('useRevelation: 張(chou・神託獲得)', () => {
   })
 })
 
+describe('useRevelation: 翼(yoku・天啓連続獲得)', () => {
+  test('他に天啓・神託を所持していなければ天啓を2つ獲得する', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['yoku'] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'yoku', null, createRng(1))
+    expect(result.revelations).toHaveLength(2)
+  })
+
+  test('他に天啓・神託を1つ所持していれば天啓を1つだけ獲得する(合算上限2)', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['yoku'], oracles: ['flush'] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'yoku', null, createRng(1))
+    expect(result.revelations).toHaveLength(1)
+    expect(result.oracles).toEqual(['flush'])
+  })
+})
+
 describe('神託の福袋(oracleSelect)', () => {
   function shopRunWithOraclePack(overrides: Partial<RunState> = {}): RunState {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave

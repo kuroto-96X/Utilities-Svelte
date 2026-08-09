@@ -300,5 +300,7 @@ export function applyRevelationEffect(
       return { wave, deckComposition }
     case 'chou':
       return { wave, deckComposition }
+    case 'yoku':
+      return { wave, deckComposition }
   }
 }

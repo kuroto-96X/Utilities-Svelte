@@ -8,7 +8,7 @@ import { rollItemOffer, ITEM_POOL } from './items'
 import { applyItemEffects, type ItemEffectContext } from './itemEffects'
 import { applyRiteEffect, canUseRite } from './riteEffects'
 import { rollRiteOffer } from './rites'
-import { rollRevelationOffer } from './revelations'
+import { rollRevelationOffer, REVELATION_POOL } from './revelations'
 import { applyRevelationEffect, canUseRevelation } from './revelationEffects'
 import { rollOracleOffer, defaultOracleLevels, ORACLE_POOL } from './oracles'
 import { rollCardSetOffer } from './cardSets'
@@ -1445,6 +1445,11 @@ function grantRevelationReward(
       const slotsLeft = sharedRevelationSlotsRemaining(runAfterRemoval)
       if (slotsLeft === 0) return {}
       return { oracles: [...runAfterRemoval.oracles, ...rollOffer(ORACLE_POOL, slotsLeft, rand)] }
+    }
+    case 'yoku': {
+      const slotsLeft = sharedRevelationSlotsRemaining(runAfterRemoval)
+      if (slotsLeft === 0) return {}
+      return { revelations: [...runAfterRemoval.revelations, ...rollOffer(REVELATION_POOL, slotsLeft, rand)] }
     }
     default:
       return {}
