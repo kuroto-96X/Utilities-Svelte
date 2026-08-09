@@ -1409,6 +1409,12 @@ export function closePackRevelationSelect(run: RunState): RunState {
   return { ...run, phase: 'shop', revelationOffer: [], pendingNewRevelation: null, offerPickRemaining: 0 }
 }
 
+// 天啓・神託の合算所持枠(上限2)のうち、残り何枠使えるかを返す。使用中の天啓自身が
+// runAfterRemoval.revelationsから既に取り除かれている前提(呼び出し側で保証する)。
+function sharedRevelationSlotsRemaining(runAfterRemoval: RunState): number {
+  return Math.max(0, 2 - (runAfterRemoval.revelations.length + runAfterRemoval.oracles.length))
+}
+
 // Phase B(即時報酬獲得系)天啓の付与ロジック。使用した天啓自身をrevelationsから取り除いた後の
 // runState(runAfterRemoval)を受け取り、変化するフィールドだけを部分的に返す。対象外のIDには{}を返す
 // (defaultケースがあるため、このswitchはRevelationIdに対して網羅的である必要はない)。
@@ -1432,12 +1438,11 @@ function grantRevelationReward(
     case 'hotori': {
       const target = runAfterRemoval.lastUsedRevelationId
       if (target === null) return {}
-      const slotsLeft = 2 - (runAfterRemoval.revelations.length + runAfterRemoval.oracles.length)
-      if (slotsLeft <= 0) return {}
+      if (sharedRevelationSlotsRemaining(runAfterRemoval) <= 0) return {}
       return { revelations: [...runAfterRemoval.revelations, target] }
     }
     case 'chou': {
-      const slotsLeft = Math.max(0, 2 - (runAfterRemoval.revelations.length + runAfterRemoval.oracles.length))
+      const slotsLeft = sharedRevelationSlotsRemaining(runAfterRemoval)
       if (slotsLeft === 0) return {}
       return { oracles: [...runAfterRemoval.oracles, ...rollOffer(ORACLE_POOL, slotsLeft, rand)] }
     }
