@@ -40,6 +40,42 @@
     config.shop.packCatalog = config.shop.packCatalog.filter((_, i) => i !== index)
   }
 
+  function duplicateEntry(index: number) {
+    if (!config) return
+    const list = [...config.shop.packCatalog]
+    list.splice(index + 1, 0, { ...list[index] })
+    config.shop.packCatalog = list
+  }
+
+  function moveEntry(from: number, to: number) {
+    if (!config) return
+    const list = [...config.shop.packCatalog]
+    const [moved] = list.splice(from, 1)
+    list.splice(to, 0, moved)
+    config.shop.packCatalog = list
+  }
+
+  let draggingIndex = $state<number | null>(null)
+
+  function handleRowPointerDown(index: number, e: PointerEvent) {
+    draggingIndex = index
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+  }
+
+  function handleRowPointerMove(e: PointerEvent) {
+    if (draggingIndex === null) return
+    const el = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[data-row-index]')
+    if (!el) return
+    const targetIndex = Number(el.dataset.rowIndex)
+    if (Number.isNaN(targetIndex) || targetIndex === draggingIndex) return
+    moveEntry(draggingIndex, targetIndex)
+    draggingIndex = targetIndex
+  }
+
+  function handleRowPointerUp() {
+    draggingIndex = null
+  }
+
   async function loadConfig(toast = false) {
     try {
       const res = await fetch('/api/admin/shidasu-config')
@@ -111,17 +147,30 @@
         <table class="w-full text-xs border border-slate-200 rounded-lg overflow-hidden">
           <thead>
             <tr class="bg-slate-50 text-slate-500">
+              <th class="px-2 py-1.5 text-left" style="width:2rem;"></th>
               <th class="px-2 py-1.5 text-left" style="width:12rem;">名前</th>
               <th class="px-2 py-1.5 text-left" style="width:8rem;">アイテム種別</th>
               <th class="px-2 py-1.5 text-left" style="width:6rem;">選択肢数</th>
               <th class="px-2 py-1.5 text-left" style="width:6rem;">取得数</th>
               <th class="px-2 py-1.5 text-left" style="width:6rem;">価格</th>
-              <th class="px-2 py-1.5 text-left" style="width:4rem;"></th>
+              <th class="px-2 py-1.5 text-left" style="width:7rem;"></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            {#each config.shop.packCatalog as entry, i (i)}
-              <tr>
+            {#each config.shop.packCatalog as entry, i (entry)}
+              <tr data-row-index={i} class={draggingIndex === i ? 'bg-teal-50' : ''}>
+                <td class="px-2 py-1.5 align-top">
+                  <span
+                    role="button"
+                    tabindex="0"
+                    onpointerdown={(e) => handleRowPointerDown(i, e)}
+                    onpointermove={handleRowPointerMove}
+                    onpointerup={handleRowPointerUp}
+                    onpointercancel={handleRowPointerUp}
+                    title="ドラッグして並べ替え"
+                    class="inline-block px-1 select-none touch-none cursor-grab text-slate-400 hover:text-slate-600"
+                  >⠿</span>
+                </td>
                 <td class="px-2 py-1.5 align-top">
                   <input type="text" bind:value={entry.name} class="w-full border border-slate-200 rounded px-1.5 py-0.5" />
                 </td>
@@ -141,8 +190,9 @@
                 <td class="px-2 py-1.5 align-top">
                   <input type="number" step="1" bind:value={entry.price} class="w-full border border-slate-200 rounded px-1.5 py-0.5" />
                 </td>
-                <td class="px-2 py-1.5 align-top">
-                  <button onclick={() => removeEntry(i)} class="text-slate-400 hover:text-red-600">削除</button>
+                <td class="px-2 py-1.5 align-top whitespace-nowrap">
+                  <button onclick={() => duplicateEntry(i)} class="text-slate-400 hover:text-teal-600">複製</button>
+                  <button onclick={() => removeEntry(i)} class="text-slate-400 hover:text-red-600 ml-2">削除</button>
                 </td>
               </tr>
             {/each}
