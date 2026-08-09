@@ -99,6 +99,22 @@ function convertColumnChainFromLeft(wave: WaveState, deckComposition: DeckCard[]
   return { wave: { ...wave, tableau }, deckComposition: newComposition }
 }
 
+const SUIT_CYCLE: Record<Suit, Suit> = { '♠': '♥', '♥': '♣', '♣': '♦', '♦': '♠', '★': '★' }
+
+// 場札全体で♠→♥→♣→♦→♠の順にスートを循環変換する。変換前のスートを基準に対応表を1回だけ引くため、
+// 逐次適用によるカスケード(例: ♠→♥に変換した直後のカードがさらに♥→♣に変換される)は起きない。
+function convertTableauSuitCycle(wave: WaveState, deckComposition: DeckCard[]): { wave: WaveState; deckComposition: DeckCard[] } {
+  const suitByDeckId = new Map<number, Suit>()
+  const tableau = wave.tableau.map(col => col.map(cardEl => {
+    if (cardEl.wild) return cardEl
+    const newSuit = SUIT_CYCLE[cardEl.suit]
+    suitByDeckId.set(cardEl.deckId, newSuit)
+    return { ...cardEl, suit: newSuit }
+  }))
+  const newComposition = deckComposition.map(entry => (suitByDeckId.has(entry.deckId) ? { ...entry, suit: suitByDeckId.get(entry.deckId) as Suit } : entry))
+  return { wave: { ...wave, tableau }, deckComposition: newComposition }
+}
+
 // 天啓が現在の盤面状態で使用可能か判定する(場札拡張の山札枚数不足のみ判定対象)。
 export function canUseRevelation(params: ShidasuParams, wave: WaveState, revelationId: RevelationId): boolean {
   switch (revelationId) {
@@ -163,5 +179,7 @@ export function applyRevelationEffect(
       return targetCol === null ? { wave, deckComposition } : addWildToColumnTop(wave, deckComposition, targetCol)
     case 'shitsu':
       return targetCol === null ? { wave, deckComposition } : convertColumnChainFromLeft(wave, deckComposition, targetCol)
+    case 'heki':
+      return convertTableauSuitCycle(wave, deckComposition)
   }
 }

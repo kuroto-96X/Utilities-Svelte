@@ -211,6 +211,7 @@ export interface ShidasuParams {
     kyo: { name: string; n: number; desc: string }
     aya: { name: string; desc: string }
     shitsu: { name: string; desc: string }
+    heki: { name: string; desc: string }
   }
   oracles: {
     completeRun: { name: string; desc: string }
@@ -452,6 +453,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     kyo: { name: '虚', n: 1, desc: '場札に{n}行追加する(山札の上から配る)。以後のウェーブ開始時の配布行数も恒久的に{n}増える' },
     aya: { name: '危', desc: '場札から選んだ1列の一番上に、ワイルドを1枚追加する' },
     shitsu: { name: '室', desc: '場札から選んだ1列の各カードを、1つ左の列の同じ位置のカードのランク+1に変換する(左列がワイルドの位置・左列の枚数が足りない位置は対象外)。左端の列を選んだ場合は右端の列を参照する' },
+    heki: { name: '壁', desc: '場札全体で♠→♥→♣→♦→♠の順にスートを循環変換する(ワイルドは対象外)' },
   },
   oracles: {
     completeRun: { name: '乾為天', desc: 'コンプリートラン　レベル+1' },

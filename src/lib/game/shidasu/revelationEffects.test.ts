@@ -205,6 +205,21 @@ describe('revelationEffects', () => {
     expect(result.wave.tableau[1][1].rank).toBe(2) // 位置1は左列に対応するカードが無いため変換されない
   })
 
+  test('壁: 場札全体で♠→♥→♣→♦→♠と循環変換され、deckCompositionにも反映される(カスケードしない)', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♠', 3), card(2, '♥', 4), card(3, '♣', 5), card(4, '♦', 6), card(5, '♠', 7, true)]],
+    })
+    const deckComposition: DeckCard[] = [
+      deckCard(1, '♠', 3), deckCard(2, '♥', 4), deckCard(3, '♣', 5), deckCard(4, '♦', 6), deckCard(5, '♠', 7, true),
+    ]
+    const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'heki', null, createRng(1))
+    expect(result.wave.tableau[0].map(c => c.suit)).toEqual(['♥', '♣', '♦', '♠', '♠'])
+    expect(result.wave.tableau[0][4].wild).toBe(true) // ワイルドは対象外
+    expect(result.deckComposition.find(c => c.deckId === 1)?.suit).toBe('♥')
+    expect(result.deckComposition.find(c => c.deckId === 4)?.suit).toBe('♠')
+    expect(result.deckComposition.find(c => c.deckId === 5)?.suit).toBe('♠') // ワイルドのエントリは変更しない
+  })
+
   test('revelationNeedsTarget: 列選択が必要な種類とそうでない種類を正しく区別する', () => {
     expect(revelationNeedsTarget('kaku')).toBe(true)
     expect(revelationNeedsTarget('gyu')).toBe(true)
