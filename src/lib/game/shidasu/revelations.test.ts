@@ -17,7 +17,7 @@ describe('rollRevelationOffer', () => {
   })
 
   test('プール(20種)を超えるcountを指定してもプール全件までしか返らない', () => {
-    const offer = rollRevelationOffer(createRng(1), 20)
+    const offer = rollRevelationOffer(createRng(1), 25)
     expect(offer).toHaveLength(REVELATION_POOL.length)
   })
 })
