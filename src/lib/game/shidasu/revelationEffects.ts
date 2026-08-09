@@ -158,6 +158,8 @@ function wildifyExtremeRanks(wave: WaveState, deckComposition: DeckCard[], rand:
   const minRank = Math.min(...realCards.map(c => c.rank))
   const maxCandidates = realCards.filter(c => c.rank === maxRank)
   const target1 = pickRandom(maxCandidates, rand)
+  // maxRank === minRank(場札の実カードが全て同ランク等)の場合、target1自身がminCandidatesに
+  // 再度含まれてしまうと同じカードが二重に選ばれるため、target1のdeckIdを候補から除外する
   const minCandidates = realCards.filter(c => c.rank === minRank && c.deckId !== target1.deckId)
   const target2 = minCandidates.length > 0 ? pickRandom(minCandidates, rand) : null
   const targetDeckIds = new Set([target1.deckId, ...(target2 ? [target2.deckId] : [])])

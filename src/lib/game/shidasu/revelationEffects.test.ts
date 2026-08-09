@@ -293,6 +293,16 @@ describe('revelationEffects', () => {
     expect(wildCards.some(c => c.rank === 1)).toBe(true)
   })
 
+  test('胃: 実カードが全て同ランクで複数枚ある場合、異なる2枚がワイルド化される(同じカードの二重選出を防ぐ)', () => {
+    const wave = baseWave({ tableau: [[card(1, '♠', 7), card(2, '♥', 7), card(3, '♦', 7)]] })
+    const deckComposition: DeckCard[] = [deckCard(1, '♠', 7), deckCard(2, '♥', 7), deckCard(3, '♦', 7)]
+    const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'i', null, createRng(1))
+    const wildCards = result.wave.tableau[0].filter(c => c.wild)
+    expect(wildCards).toHaveLength(2) // target1とtarget2は異なる2枚のカード
+    const wildDeckIds = new Set(wildCards.map(c => c.deckId))
+    expect(wildDeckIds.size).toBe(2) // 同じdeckIdが2回選ばれていない(重複無し)
+  })
+
   test('revelationNeedsTarget: 列選択が必要な種類とそうでない種類を正しく区別する', () => {
     expect(revelationNeedsTarget('kaku')).toBe(true)
     expect(revelationNeedsTarget('gyu')).toBe(true)
