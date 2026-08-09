@@ -220,24 +220,27 @@ describe('revelationEffects', () => {
     expect(result.deckComposition.find(c => c.deckId === 5)?.suit).toBe('♠') // ワイルドのエントリは変更しない
   })
 
-  test('奎: 空でない列を左から順に、先頭列の一番上のランクを起点とした階段状に各列の一番上が変換される(空列は無視)', () => {
+  test('奎: 空でない列を左から順に、先頭列の一番上のランクを起点とした階段状に各列の一番上が変換される(空列は無視、ワイルド列は変換されないが順番はカウントする)', () => {
     const wave = baseWave({
       tableau: [
         [card(1, '♠', 5), card(2, '♠', 6)], // 一番上(末尾)はrank6
         [], // 空列は無視される
         [card(3, '♥', 9)], // 一番上
-        [card(4, '♦', 1, true)], // ワイルドは変換しない
+        [card(4, '♦', 1, true)], // ワイルドは変換しない(ただし順番はカウントする)
+        [card(5, '♣', 3)], // ワイルド列の次: base+3のはずになる(ワイルド列がカウントされていることの検証)
       ],
     })
     const deckComposition: DeckCard[] = [
-      deckCard(1, '♠', 5), deckCard(2, '♠', 6), deckCard(3, '♥', 9), deckCard(4, '♦', 1, true),
+      deckCard(1, '♠', 5), deckCard(2, '♠', 6), deckCard(3, '♥', 9), deckCard(4, '♦', 1, true), deckCard(5, '♣', 3),
     ]
     const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'kei', null, createRng(1))
     expect(result.wave.tableau[0][1].rank).toBe(6) // 起点(base)はそのまま
     expect(result.wave.tableau[2][0].rank).toBe(7) // 2番目の空でない列 → base+1
     expect(result.wave.tableau[3][0].wild).toBe(true)
     expect(result.wave.tableau[3][0].rank).toBe(1) // ワイルドは変換されない
+    expect(result.wave.tableau[4][0].rank).toBe(9) // ワイルド列も順番にカウントされるため base+3 = 6+3-13ループ無し=9
     expect(result.deckComposition.find(c => c.deckId === 3)?.rank).toBe(7)
+    expect(result.deckComposition.find(c => c.deckId === 5)?.rank).toBe(9)
   })
 
   test('revelationNeedsTarget: 列選択が必要な種類とそうでない種類を正しく区別する', () => {
