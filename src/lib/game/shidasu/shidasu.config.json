@@ -151,20 +151,230 @@
       "sell": 1
     },
     "packCatalog": [
-      { "name": "護符の福袋", "packKind": "item", "offerCount": 3, "pickCount": 1, "price": 4 },
-      { "name": "護符の福袋", "packKind": "item", "offerCount": 5, "pickCount": 1, "price": 7 },
-      { "name": "護符の福袋", "packKind": "item", "offerCount": 7, "pickCount": 2, "price": 10 },
-      { "name": "秘儀の福袋", "packKind": "rite", "offerCount": 3, "pickCount": 1, "price": 4 },
-      { "name": "秘儀の福袋", "packKind": "rite", "offerCount": 5, "pickCount": 1, "price": 6 },
-      { "name": "秘儀の福袋", "packKind": "rite", "offerCount": 7, "pickCount": 2, "price": 8 },
-      { "name": "天啓の福袋", "packKind": "revelation", "offerCount": 3, "pickCount": 1, "price": 4 },
-      { "name": "天啓の福袋", "packKind": "revelation", "offerCount": 5, "pickCount": 1, "price": 6 },
-      { "name": "天啓の福袋", "packKind": "revelation", "offerCount": 7, "pickCount": 2, "price": 8 },
-      { "name": "神託の福袋", "packKind": "oracle", "offerCount": 3, "pickCount": 1, "price": 2 },
-      { "name": "神託の福袋", "packKind": "oracle", "offerCount": 5, "pickCount": 1, "price": 4 },
-      { "name": "トランプセットの福袋", "packKind": "cardSet", "offerCount": 3, "pickCount": 1, "price": 4 },
-      { "name": "トランプセットの福袋", "packKind": "cardSet", "offerCount": 5, "pickCount": 1, "price": 6 },
-      { "name": "トランプセットの福袋", "packKind": "cardSet", "offerCount": 7, "pickCount": 2, "price": 8 }
+      {
+        "name": "小さな護符の福袋A",
+        "packKind": "item",
+        "offerCount": 2,
+        "pickCount": 1,
+        "price": 4
+      },
+      {
+        "name": "小さな護符の福袋B",
+        "packKind": "item",
+        "offerCount": 2,
+        "pickCount": 1,
+        "price": 4
+      },
+      {
+        "name": "小さな護符の福袋C",
+        "packKind": "item",
+        "offerCount": 2,
+        "pickCount": 1,
+        "price": 5
+      },
+      {
+        "name": "小さな護符の福袋D",
+        "packKind": "item",
+        "offerCount": 2,
+        "pickCount": 1,
+        "price": 5
+      },
+      {
+        "name": "普通な護符の福袋A",
+        "packKind": "item",
+        "offerCount": 3,
+        "pickCount": 1,
+        "price": 6
+      },
+      {
+        "name": "普通な護符の福袋B",
+        "packKind": "item",
+        "offerCount": 3,
+        "pickCount": 1,
+        "price": 7
+      },
+      {
+        "name": "普通な護符の福袋C",
+        "packKind": "item",
+        "offerCount": 3,
+        "pickCount": 1,
+        "price": 7
+      },
+      {
+        "name": "大きな護符の福袋A",
+        "packKind": "item",
+        "offerCount": 5,
+        "pickCount": 1,
+        "price": 9
+      },
+      {
+        "name": "大きな護符の福袋B",
+        "packKind": "item",
+        "offerCount": 5,
+        "pickCount": 1,
+        "price": 10
+      },
+      {
+        "name": "小さな秘儀の福袋A",
+        "packKind": "rite",
+        "offerCount": 3,
+        "pickCount": 1,
+        "price": 5
+      },
+      {
+        "name": "小さな秘儀の福袋B",
+        "packKind": "rite",
+        "offerCount": 3,
+        "pickCount": 1,
+        "price": 5
+      },
+      {
+        "name": "小さな秘儀の福袋C",
+        "packKind": "rite",
+        "offerCount": 3,
+        "pickCount": 1,
+        "price": 6
+      },
+      {
+        "name": "普通な秘儀の福袋A",
+        "packKind": "rite",
+        "offerCount": 5,
+        "pickCount": 1,
+        "price": 7
+      },
+      {
+        "name": "普通な秘儀の福袋B",
+        "packKind": "rite",
+        "offerCount": 5,
+        "pickCount": 1,
+        "price": 7
+      },
+      {
+        "name": "大きな秘儀の福袋",
+        "packKind": "rite",
+        "offerCount": 7,
+        "pickCount": 2,
+        "price": 10
+      },
+      {
+        "name": "小さな天啓の福袋A",
+        "packKind": "revelation",
+        "offerCount": 3,
+        "pickCount": 1,
+        "price": 5
+      },
+      {
+        "name": "小さな天啓の福袋B",
+        "packKind": "revelation",
+        "offerCount": 3,
+        "pickCount": 1,
+        "price": 5
+      },
+      {
+        "name": "小さな天啓の福袋C",
+        "packKind": "revelation",
+        "offerCount": 3,
+        "pickCount": 1,
+        "price": 6
+      },
+      {
+        "name": "普通な天啓の福袋A",
+        "packKind": "revelation",
+        "offerCount": 5,
+        "pickCount": 1,
+        "price": 7
+      },
+      {
+        "name": "普通な天啓の福袋B",
+        "packKind": "revelation",
+        "offerCount": 5,
+        "pickCount": 1,
+        "price": 7
+      },
+      {
+        "name": "大きな天啓の福袋",
+        "packKind": "revelation",
+        "offerCount": 7,
+        "pickCount": 2,
+        "price": 10
+      },
+      {
+        "name": "小さな神託の福袋A",
+        "packKind": "oracle",
+        "offerCount": 3,
+        "pickCount": 1,
+        "price": 3
+      },
+      {
+        "name": "小さな神託の福袋B",
+        "packKind": "oracle",
+        "offerCount": 3,
+        "pickCount": 1,
+        "price": 4
+      },
+      {
+        "name": "普通な神託の福袋",
+        "packKind": "oracle",
+        "offerCount": 5,
+        "pickCount": 1,
+        "price": 4
+      },
+      {
+        "name": "大きな神託の福袋",
+        "packKind": "oracle",
+        "offerCount": 7,
+        "pickCount": 2,
+        "price": 7
+      },
+      {
+        "name": "小さなトランプセットの福袋A",
+        "packKind": "cardSet",
+        "offerCount": 2,
+        "pickCount": 1,
+        "price": 4
+      },
+      {
+        "name": "小さなトランプセットの福袋B",
+        "packKind": "cardSet",
+        "offerCount": 2,
+        "pickCount": 1,
+        "price": 4
+      },
+      {
+        "name": "小さなトランプセットの福袋C",
+        "packKind": "cardSet",
+        "offerCount": 2,
+        "pickCount": 1,
+        "price": 5
+      },
+      {
+        "name": "普通なトランプセットの福袋A",
+        "packKind": "cardSet",
+        "offerCount": 3,
+        "pickCount": 1,
+        "price": 5
+      },
+      {
+        "name": "普通なトランプセットの福袋B",
+        "packKind": "cardSet",
+        "offerCount": 3,
+        "pickCount": 1,
+        "price": 6
+      },
+      {
+        "name": "大きなトランプセットの福袋A",
+        "packKind": "cardSet",
+        "offerCount": 5,
+        "pickCount": 1,
+        "price": 6
+      },
+      {
+        "name": "大きなトランプセットの福袋B",
+        "packKind": "cardSet",
+        "offerCount": 5,
+        "pickCount": 1,
+        "price": 7
+      }
     ],
     "rerollCostStep": 5
   },
@@ -706,14 +916,51 @@
       "rarity": "R",
       "desc": "Wave開始時、山札と場札の合計枚数が{n}枚ごとに基礎コンボ数+1される"
     },
-    "waterMirror": { "name": "水鏡", "rarity": "R", "desc": "護符の並び順で自分の左隣にある護符の効果を、追加でもう一度発動させる(自分が先頭の場合は何も起きない)" },
-    "vow": { "name": "誓約", "x": 2, "rarity": "U", "desc": "コンボ内の札と同じ色の札しか取れなくなるが、x倍算" },
-    "pact": { "name": "契り", "x": 3, "rarity": "R", "desc": "コンボ内の札と同じスートの札しか取れなくなるが、x倍算" },
-    "crimson": { "name": "紅蓮", "rarity": "U", "desc": "全ての札が赤の札としても扱われる" },
-    "jetBlack": { "name": "漆黒", "rarity": "U", "desc": "全ての札が黒の札としても扱われる" },
-    "silver": { "name": "白銀", "x": 1.5, "rarity": "U", "desc": "全ての札の色とスートが非表示になるが、x倍算(点数計算やコンボ継続の判定には引き続き色とスートが使われる)" },
-    "discretion": { "name": "果断", "n": 10, "rarity": "C", "desc": "n点加算。nは{n}から開始し、この護符を所持してから天啓・神託・秘儀を使用するたびn+={n}される" },
-    "frost": { "name": "星霜", "x": 0.01, "rarity": "R", "desc": "x倍算。xは1から開始し、この護符を所持してから天啓・神託・秘儀を使用するたびx+={x}される" },
+    "waterMirror": {
+      "name": "水鏡",
+      "rarity": "R",
+      "desc": "護符の並び順で自分の左隣にある護符の効果を、追加でもう一度発動させる(自分が先頭の場合は何も起きない)"
+    },
+    "vow": {
+      "name": "誓約",
+      "x": 2,
+      "rarity": "U",
+      "desc": "コンボ内の札と同じ色の札しか取れなくなるが、x倍算"
+    },
+    "pact": {
+      "name": "契り",
+      "x": 3,
+      "rarity": "R",
+      "desc": "コンボ内の札と同じスートの札しか取れなくなるが、x倍算"
+    },
+    "crimson": {
+      "name": "紅蓮",
+      "rarity": "U",
+      "desc": "全ての札が赤の札としても扱われる"
+    },
+    "jetBlack": {
+      "name": "漆黒",
+      "rarity": "U",
+      "desc": "全ての札が黒の札としても扱われる"
+    },
+    "silver": {
+      "name": "白銀",
+      "x": 1.5,
+      "rarity": "U",
+      "desc": "全ての札の色とスートが非表示になるが、x倍算(点数計算やコンボ継続の判定には引き続き色とスートが使われる)"
+    },
+    "discretion": {
+      "name": "果断",
+      "n": 10,
+      "rarity": "C",
+      "desc": "n点加算。nは{n}から開始し、この護符を所持してから天啓・神託・秘儀を使用するたびn+={n}される"
+    },
+    "frost": {
+      "name": "星霜",
+      "x": 0.01,
+      "rarity": "R",
+      "desc": "x倍算。xは1から開始し、この護符を所持してから天啓・神託・秘儀を使用するたびx+={x}される"
+    },
     "deadline": {
       "name": "刻限",
       "n": 50,
