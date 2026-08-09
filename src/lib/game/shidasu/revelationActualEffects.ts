@@ -26,4 +26,5 @@ export const REVELATION_ACTUAL_EFFECTS: Record<RevelationId, string> = {
   sei: '場札の非ワイルド実カードからランダムにn枚選んでwild:trueに変換する(秘儀「賜物」と同じ方式)。wave.tableau・deckComposition双方を更新する(秘儀版と異なり永続化される)',
   subaru: 'ITEM_POOLから所持中の護符を除いてランダムに1つ選び、items.length < maxItemsなら所持に追加する(useRevelation内のgrantRevelationRewardで実施、wave/deckCompositionは変更しない)',
   ryuu: 'run.currencyを2倍にする(useRevelation内のgrantRevelationRewardで実施、wave/deckCompositionは変更しない)',
+  hotori: 'run.lastUsedRevelationId(候補16自身を使った場合は更新されない)を読み、revelations+oraclesの合算枚数(使用中の天啓自身を取り除いた後)が上限2未満なら追加する。履歴が無ければ何もしない',
 }

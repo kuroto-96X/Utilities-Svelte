@@ -100,6 +100,7 @@ export type RevelationId =
   | 'sei'
   | 'subaru'
   | 'ryuu'
+  | 'hotori'
 
 export interface Card {
   id: number
@@ -382,11 +383,9 @@ export interface RunState {
   cardSetOffer: CardSetOffer[]
   // 現在のショップ訪問でリロール(品ぞろえの再抽選)した回数。次のショップに入る(enterShop)たびに0にリセットされる
   shopRerollCount: number
-  // 直前に使用した天啓のID(天啓回帰が参照する)。使用履歴が無ければnull。
-  // 現時点(このタスク)ではuseRevelationは全ての天啓についてこのフィールドを無条件で更新する。
-  // 天啓回帰を実装する際は、天啓回帰自身を使った場合にこのフィールドの更新をスキップする
-  // (履歴に残さない)ようuseRevelation側を変更すること。これにより天啓回帰が自分自身を
-  // 再取得する自己参照ループを構造的に防げる。
+  // 直前に使用した天啓のID(星・hotoriが参照する)。使用履歴が無ければnull。
+  // useRevelationは天啓回帰(hotori)自身を使った場合のみこのフィールドの更新をスキップする
+  // (履歴に残さない)。これにより天啓回帰が自分自身を再取得する自己参照ループを構造的に防いでいる。
   lastUsedRevelationId: RevelationId | null
   // 直近に使用した秘儀のID、新しい順で最大2件(秘儀回帰が参照する)。
   recentUsedRiteIds: RiteId[]

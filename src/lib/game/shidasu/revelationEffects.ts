@@ -296,5 +296,7 @@ export function applyRevelationEffect(
       return { wave, deckComposition }
     case 'ryuu':
       return { wave, deckComposition }
+    case 'hotori':
+      return { wave, deckComposition }
   }
 }

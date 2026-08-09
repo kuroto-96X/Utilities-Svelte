@@ -220,6 +220,7 @@ export interface ShidasuParams {
     sei: { name: string; n: number; desc: string }
     subaru: { name: string; desc: string }
     ryuu: { name: string; desc: string }
+    hotori: { name: string; desc: string }
   }
   oracles: {
     completeRun: { name: string; desc: string }
@@ -470,6 +471,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     sei: { name: '井', n: 1, desc: '場札の中からランダムに{n}枚選んでワイルド化する' },
     subaru: { name: '昴', desc: '護符を1つ、所持中を除いてランダムに獲得する(所持上限に達していれば何も起こらない)' },
     ryuu: { name: '柳', desc: '現在所持している星片を倍にする' },
+    hotori: { name: '星', desc: '直前に使用した天啓を1つ獲得する(直前の使用が無い、または天啓・神託の所持枠が空いていなければ何も起こらない)' },
   },
   oracles: {
     completeRun: { name: '乾為天', desc: 'コンプリートラン　レベル+1' },

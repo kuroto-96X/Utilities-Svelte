@@ -1429,6 +1429,13 @@ function grantRevelationReward(
     }
     case 'ryuu':
       return { currency: runAfterRemoval.currency * 2 }
+    case 'hotori': {
+      const target = runAfterRemoval.lastUsedRevelationId
+      if (target === null) return {}
+      const slotsLeft = 2 - (runAfterRemoval.revelations.length + runAfterRemoval.oracles.length)
+      if (slotsLeft <= 0) return {}
+      return { revelations: [...runAfterRemoval.revelations, target] }
+    }
     default:
       return {}
   }
@@ -1454,7 +1461,8 @@ export function useRevelation(
   const extraTableauRows = revelationId === 'kyo' ? run.extraTableauRows + params.revelations.kyo.n : run.extraTableauRows
   const revelations = [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
   const reward = grantRevelationReward(params, { ...run, revelations }, revelationId, rand)
-  return { ...run, wave, deckComposition, revelations, extraTableauRows, lastUsedRevelationId: revelationId, ...reward }
+  const lastUsedRevelationId = revelationId === 'hotori' ? run.lastUsedRevelationId : revelationId
+  return { ...run, wave, deckComposition, revelations, extraTableauRows, lastUsedRevelationId, ...reward }
 }
 
 function resolvePackOraclePick(run: RunState, pickedRole: RoleName): RunState {

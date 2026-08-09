@@ -4250,6 +4250,39 @@ describe('useRevelation: 柳(ryuu・星片倍化)', () => {
   })
 })
 
+describe('useRevelation: 星(hotori・天啓回帰)', () => {
+  test('直前に使用した天啓を1つ獲得する', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['hotori'], lastUsedRevelationId: 'kaku' }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'hotori', null, createRng(1))
+    expect(result.revelations).toEqual(['kaku'])
+  })
+
+  test('使用履歴が無ければ何も獲得しない', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['hotori'], lastUsedRevelationId: null }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'hotori', null, createRng(1))
+    expect(result.revelations).toEqual([])
+  })
+
+  test('候補16自身を使用してもlastUsedRevelationIdは更新されない(履歴に残らない)', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['hotori'], lastUsedRevelationId: 'kaku' }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'hotori', null, createRng(1))
+    expect(result.lastUsedRevelationId).toBe('kaku')
+  })
+
+  test('候補16を連続で使用しても自己参照しない', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['hotori', 'hotori'], lastUsedRevelationId: 'kaku' }
+    const first = useRevelation(DEFAULT_PARAMS, run, 'hotori', null, createRng(1))
+    expect(first.lastUsedRevelationId).toBe('kaku')
+    expect(first.revelations).toEqual(['hotori', 'kaku'])
+    const second = useRevelation(DEFAULT_PARAMS, first, 'hotori', null, createRng(1))
+    expect(second.revelations).toEqual(['kaku', 'kaku'])
+  })
+})
+
 describe('神託の福袋(oracleSelect)', () => {
   function shopRunWithOraclePack(overrides: Partial<RunState> = {}): RunState {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
