@@ -12,7 +12,7 @@ import { rollRevelationOffer } from './revelations'
 import { applyRevelationEffect, canUseRevelation } from './revelationEffects'
 import { rollOracleOffer, defaultOracleLevels } from './oracles'
 import { rollCardSetOffer } from './cardSets'
-import { rollShop, itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice, oracleBuyPrice, oracleSellPrice, packPrice } from './shop'
+import { rollShop, itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice, oracleBuyPrice, oracleSellPrice } from './shop'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
 
@@ -1112,7 +1112,7 @@ function enterShop(params: ShidasuParams, run: RunState, _seed: number | undefin
     cardSetOffer: [],
     shopRerollCount: 0,
   }
-  return { ...next, shop: rollShop(next, rand) }
+  return { ...next, shop: rollShop(params, next, rand) }
 }
 
 // ショップ系フェーズでの天啓ターゲット選択用に、現在のdeckCompositionから使い捨ての
@@ -1174,7 +1174,7 @@ export function rerollShop(params: ShidasuParams, run: RunState, rand: () => num
   if (run.phase !== 'shop' || !run.shop) return run
   const cost = shopRerollCost(params, run)
   if (run.currency < cost) return run
-  return { ...run, currency: run.currency - cost, shop: rollShop(run, rand), shopRerollCount: run.shopRerollCount + 1 }
+  return { ...run, currency: run.currency - cost, shop: rollShop(params, run, rand), shopRerollCount: run.shopRerollCount + 1 }
 }
 
 // バラ売り護符購入。所持上限(maxItems)到達時・通貨不足時・売り切れ時は何もしない(スワップは発生しない)。
@@ -1268,10 +1268,9 @@ export function buyPack(params: ShidasuParams, run: RunState, slotIndex: number,
   if (run.phase !== 'shop' || !run.shop) return run
   const slot = run.shop.packs[slotIndex]
   if (!slot || slot.sold) return run
-  const price = packPrice(params, slot.packKind, slot.offerCount)
-  if (run.currency < price) return run
+  if (run.currency < slot.price) return run
   const packs = run.shop.packs.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
-  const base: RunState = { ...run, currency: run.currency - price, shop: { ...run.shop, packs }, offerPickRemaining: slot.pickCount }
+  const base: RunState = { ...run, currency: run.currency - slot.price, shop: { ...run.shop, packs }, offerPickRemaining: slot.pickCount }
   if (slot.packKind === 'item') return { ...base, phase: 'itemSelect', offer: rollItemOffer(run.items, rand, slot.offerCount) }
   if (slot.packKind === 'rite') return { ...base, phase: 'riteSelect', riteOffer: rollRiteOffer(rand, slot.offerCount) }
   if (slot.packKind === 'revelation') return { ...base, phase: 'revelationSelect', revelationOffer: rollRevelationOffer(rand, slot.offerCount) }

@@ -73,7 +73,7 @@ import { createRng, standardDeckComposition } from './deck'
 import { card } from './testHelpers'
 import { defaultOracleLevels } from './oracles'
 import { ITEM_POOL } from './items'
-import { itemBuyPrice, riteBuyPrice, revelationBuyPrice, packPrice, itemSellPrice, riteSellPrice, revelationSellPrice, oracleSellPrice, rollShop } from './shop'
+import { itemBuyPrice, riteBuyPrice, revelationBuyPrice, itemSellPrice, riteSellPrice, revelationSellPrice, oracleSellPrice, rollShop } from './shop'
 import { addPart, finalScoreFromScoreParts, runningTotalsFromScoreParts } from './scoreParts'
 
 describe('isFace / rankLabel', () => {
@@ -2512,7 +2512,7 @@ describe('createInitialRun / beginRun', () => {
 
 describe('トランプセット福袋の購入・選択フロー', () => {
   test('buyPackでcardSet福袋を購入すると、cardSetSelectフェーズへ遷移しcardSetOfferが確定する', () => {
-    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop', currency: 100, shop: { individual: [], packs: [{ packKind: 'cardSet', offerCount: 3, pickCount: 1, sold: false }] } }
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop', currency: 100, shop: { individual: [], packs: [{ packKind: 'cardSet', offerCount: 3, pickCount: 1, name: 'トランプセットの福袋', price: 20, sold: false }] } }
     const result = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     expect(result.phase).toBe('cardSetSelect')
     expect(result.cardSetOffer).toHaveLength(3)
@@ -2520,9 +2520,9 @@ describe('トランプセット福袋の購入・選択フロー', () => {
   })
 
   test('buyPackでcardSet福袋を購入すると通貨が価格分減る', () => {
-    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop', currency: 100, shop: { individual: [], packs: [{ packKind: 'cardSet', offerCount: 3, pickCount: 1, sold: false }] } }
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), phase: 'shop', currency: 100, shop: { individual: [], packs: [{ packKind: 'cardSet', offerCount: 3, pickCount: 1, name: 'トランプセットの福袋', price: 20, sold: false }] } }
     const result = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
-    expect(result.currency).toBe(100 - packPrice(DEFAULT_PARAMS, 'cardSet', 3))
+    expect(result.currency).toBe(100 - 20)
   })
 
   test('pickPackCardSetで選んだジャンルのカードがdeckCompositionに追加される', () => {
@@ -2869,7 +2869,7 @@ describe('rerollShop', () => {
 describe('finishShop', () => {
   test('phaseがshopのとき、waveが新規生成されplayingへ遷移する', () => {
     const run = beginRun(DEFAULT_PARAMS, 1)
-    const shopRun = { ...run, shop: rollShop(run, () => 0.5) }
+    const shopRun = { ...run, shop: rollShop(DEFAULT_PARAMS, run, () => 0.5) }
     const result = finishShop(DEFAULT_PARAMS, shopRun, 1)
     expect(result.phase).toBe('playing')
     expect(result.wave).not.toBeNull()
@@ -2886,10 +2886,10 @@ describe('finishShop', () => {
   test('waveGenerationがWave生成のたびに1ずつ増える(waveKeyの配布アニメ発火キーとして使う)', () => {
     const run = beginRun(DEFAULT_PARAMS, 1)
     expect(run.waveGeneration).toBe(0)
-    const shopRun = { ...run, shop: rollShop(run, () => 0.5) }
+    const shopRun = { ...run, shop: rollShop(DEFAULT_PARAMS, run, () => 0.5) }
     const started = finishShop(DEFAULT_PARAMS, shopRun, 1)
     expect(started.waveGeneration).toBe(1)
-    const secondShopRun = { ...started, phase: 'shop' as const, shop: rollShop(started, () => 0.5) }
+    const secondShopRun = { ...started, phase: 'shop' as const, shop: rollShop(DEFAULT_PARAMS, started, () => 0.5) }
     const startedAgain = finishShop(DEFAULT_PARAMS, secondShopRun, 2)
     expect(startedAgain.waveGeneration).toBe(2)
   })
@@ -3085,16 +3085,15 @@ describe('buyPack / pickPackItem(護符の福袋)', () => {
       ...createInitialRun(),
       phase: 'shop',
       currency: 999,
-      shop: { individual: [], packs: [{ packKind: 'item', offerCount: 3, pickCount: 1, sold: false }] },
+      shop: { individual: [], packs: [{ packKind: 'item', offerCount: 3, pickCount: 1, name: '護符の福袋', price: 20, sold: false }] },
       ...overrides,
     }
   }
 
   test('buyPackは通貨を減らし、itemSelectフェーズへ遷移してoffer件数分の候補を提示する', () => {
     const run = shopRunWithItemPack()
-    const price = packPrice(DEFAULT_PARAMS, 'item', 3)
     const result = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
-    expect(result.currency).toBe(999 - price)
+    expect(result.currency).toBe(999 - 20)
     expect(result.phase).toBe('itemSelect')
     expect(result.offer).toHaveLength(3)
     expect(result.offerPickRemaining).toBe(1)
@@ -3168,7 +3167,7 @@ describe('buyPack / pickPackItem(護符の福袋)', () => {
   test('7-2パターンでは1個選んだ後もitemSelectのままで、2個目を選んでshopへ戻る', () => {
     const packRun: RunState = {
       ...createInitialRun(), phase: 'shop', currency: 999,
-      shop: { individual: [], packs: [{ packKind: 'item', offerCount: 7, pickCount: 2, sold: false }] },
+      shop: { individual: [], packs: [{ packKind: 'item', offerCount: 7, pickCount: 2, name: '護符の福袋', price: 50, sold: false }] },
     }
     const opened = buyPack(DEFAULT_PARAMS, packRun, 0, createRng(1))
     expect(opened.offer).toHaveLength(7)
@@ -3187,7 +3186,7 @@ describe('buyPack / pickPackRite(秘儀の福袋)', () => {
       ...createInitialRun(),
       phase: 'shop',
       currency: 999,
-      shop: { individual: [], packs: [{ packKind: 'rite', offerCount: 3, pickCount: 1, sold: false }] },
+      shop: { individual: [], packs: [{ packKind: 'rite', offerCount: 3, pickCount: 1, name: '秘儀の福袋', price: 20, sold: false }] },
       ...overrides,
     }
   }
@@ -4069,7 +4068,7 @@ describe('天啓の福袋(revelationSelect)', () => {
       phase: 'shop',
       currency: 999,
       wave,
-      shop: { individual: [], packs: [{ packKind: 'revelation', offerCount: 3, pickCount: 1, sold: false }] },
+      shop: { individual: [], packs: [{ packKind: 'revelation', offerCount: 3, pickCount: 1, name: '天啓の福袋', price: 25, sold: false }] },
       ...overrides,
     }
   }
@@ -4169,7 +4168,7 @@ describe('神託の福袋(oracleSelect)', () => {
       phase: 'shop',
       currency: 999,
       wave,
-      shop: { individual: [], packs: [{ packKind: 'oracle', offerCount: 3, pickCount: 1, sold: false }] },
+      shop: { individual: [], packs: [{ packKind: 'oracle', offerCount: 3, pickCount: 1, name: '神託の福袋', price: 22, sold: false }] },
       ...overrides,
     }
   }
