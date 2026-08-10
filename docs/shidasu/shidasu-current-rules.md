@@ -149,9 +149,9 @@ waveSlot3の星はショップ画面で通貨`flow.rerollCost`(既定**30**)を�
 
 ### 7.3 天啓(③Revelation)
 
-- モチーフは二十八宿。全28宿中**12宿**が効果実装済み(`REVELATION_POOL`)。残り16宿は`mansions.ts`に見た目候補として温存されている(未実装)。
-- いつでも使用可能で、場札・デッキ構成の両方に永続的な効果を発揮する消費アイテム。所持上限は神託と合算で**2**。
-- 未実装分の効果候補は`docs/shidasu/shidasu-revelation-candidates.md`を参照。
+- モチーフは二十八宿。全28宿中**27宿**が効果実装済み(`REVELATION_POOL`)。残り1宿(鬼)は`mansions.ts`に見た目候補として温存されている(未定)。
+- いつでも使用可能な消費アイテム。カード変換・場札操作系(`wave`・`deckComposition`を書き換える)と即時報酬獲得系(通貨・護符・秘儀・天啓・神託を即時獲得する、RunStateレベルの効果)の2系統がある。所持上限は神託と合算で**2**。
+- 詳細は`docs/shidasu/done/shidasu-revelation-candidates.md`(検討経緯・実装済み一覧)を参照。
 
 ### 7.4 神託(④Oracle)
 

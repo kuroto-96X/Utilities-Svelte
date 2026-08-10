@@ -11,14 +11,14 @@
    モチーフの北欧ルーン文字(エルダー・フサルク全24種)は既に全て実装済み(`RiteId`型・`RITE_POOL`とも24種完備、2026-07-20時点で全種の効果実装が完了)。余っているルーンは無いため、これ以上追加するには神託(八卦→六十四卦)と同様にモチーフ自体の拡張・変更が必要。
    2026-08-09、天啓候補審査(項目3)の過程で「天啓=カード変換系、秘儀=それ以外」という将来方針が決まった。実際に着手する際は`docs/shidasu/shidasu-rite-redesign-candidates.md`(不採用天啓候補10個の転用素材、既存秘儀のうちカード変換系9個の天啓移管候補)を参照
 3. **天啓の追加の検討**
-   モチーフの二十八宿は28宿中27宿が実装済み(Phase A: カード変換・場札操作系8個、Phase B: 即時報酬獲得系7個を追加実装完了)。残り1宿(鬼)は`mansions.ts`に温存済み。新規天啓の効果候補24個を洗い出し、2026-08-09に1つずつ採用・不採用・修正を判断済み(詳細は`docs/shidasu/shidasu-revelation-candidates.md`を参照)。
+   モチーフの二十八宿は28宿中27宿が実装済み(Phase A: カード変換・場札操作系8個、Phase B: 即時報酬獲得系7個を追加実装完了)。残り1宿(鬼)は`mansions.ts`に温存済み。新規天啓の効果候補24個を洗い出し、2026-08-09に1つずつ採用・不採用・修正を判断済み(詳細は`docs/shidasu/done/shidasu-revelation-candidates.md`を参照)。
 4. **報酬の計算方法の検討**
 5. **星の妨害行動の検討**
    Wave3の星は一定ターンごとに妨害行動が発動するようにする。
    例えば、「場札の１列をランダムに選び山札に戻してシャッフル、その後裏向きで戻す」など
 6. **レリックの実装**
    レリックは、ショップ販売価格の減少、ショップ商品提示数の増加、リロールコストの減少、秘儀・天啓・神託の所持上限増加などランを通して効果があり、護符の守備範囲外（ゲームプレイに直接かかわる部分以外）で有利になる効果を持つアイテム。
-   候補メモ: 天啓候補審査(項目3)で不採用となった「オファー拡張」(次回ショップのオファー数を一時的に増やす)は、天啓ではなくレリックの効果候補として転用できる(詳細は`docs/shidasu/shidasu-revelation-candidates.md`の候補24を参照)。
+   候補メモ: 天啓候補審査(項目3)で不採用となった「オファー拡張」(次回ショップのオファー数を一時的に増やす)は、天啓ではなくレリックの効果候補として転用できる(詳細は`docs/shidasu/done/shidasu-revelation-candidates.md`の候補24を参照)。
 
 ## 完了済み(履歴)
 
@@ -39,5 +39,5 @@
 - **トランプセット福袋の実装**: `docs/shidasu/shidasu-card-set-pack-candidates.md`の候補11ジャンルを再検討し、枚数バリエーションを独立ジャンルとして扱う方針のもと23種類のセットジャンル(階段・同ランク・絵札・同スート・ロイヤル・フラッシュ・コンプリートラン・ペア・赤黒バランス・ワイルド)を確定して実装した。新しい`packKind: 'cardSet'`の福袋(バラ売り無し、3-1/5-1/7-2パターン)を開けるとジャンルが重み付き抽選(重み=1/枚数、ワイルドのみ例外で1/6)で提示され、選ぶと即座に`RunState.deckComposition`へ永続追加される。`docs/superpowers/specs/2026-08-08-shidasu-card-set-pack-design.md`。
 - **ショップ品ぞろえリロールの実装**: ショップ画面にバラ売り3枠+福袋2枠を一括で再抽選する「リロール」ボタンを追加した。売り切れ済みの枠も含めて全て新しい商品に入れ替わる(既存の`rollShop`を再利用)。コストは通貨消費で、同一ショップ訪問中のリロール回数(`shopRerollCount`)に応じて`shop.rerollCostStep`(既定5)ずつ増額し、次のショップに入るたびにリセットされる。`/admin/shidasu-currency`でコスト刻み幅を編集可能。`docs/superpowers/specs/2026-08-08-shidasu-shop-reroll-design.md`。
 - **福袋のオブジェクト化**: ハードコードされていた福袋パターン(`PACK_DEFINITIONS`固定14種+`packPrice`価格表)を廃止し、`ShidasuParams.shop.packCatalog`という名前・種別・選択肢数・取得数・価格を持つ可変長リストに置き換えた。新規管理画面`/admin/shidasu-packs`から福袋の追加・削除・編集ができ、同じ内容のエントリを名前だけ変えて複数用意すると、その福袋の抽選確率を相対的に上げられる(各エントリの抽選確率自体は均等)。`docs/superpowers/specs/2026-08-08-shidasu-pack-catalog-design.md`。
-- **天啓候補の検討・Phase A実装(カード変換・場札操作系8個)**: `docs/shidasu/shidasu-revelation-candidates.md`の天啓候補33個(既存秘儀からの転用9個を含む)を1つずつ採用・不採用・修正判断し、採用15個をPhase A(8個)・Phase B(7個)に分割した。Phase Aは`wave`・`deckComposition`を書き換える効果(隣列連鎖変換・4色循環変換・階段整列・全列トップ廃棄・極値ワイルド化・雷光・対話・賜物)で、`DeckCard.removed`フラグ(廃棄=デッキから永久除外、配列は縮めずフラグ管理)を新設して実装した。`docs/superpowers/specs/2026-08-09-shidasu-revelation-phase-a-design.md`。
+- **天啓候補の検討・Phase A実装(カード変換・場札操作系8個)**: `docs/shidasu/done/shidasu-revelation-candidates.md`の天啓候補33個(既存秘儀からの転用9個を含む)を1つずつ採用・不採用・修正判断し、採用15個をPhase A(8個)・Phase B(7個)に分割した。Phase Aは`wave`・`deckComposition`を書き換える効果(隣列連鎖変換・4色循環変換・階段整列・全列トップ廃棄・極値ワイルド化・雷光・対話・賜物)で、`DeckCard.removed`フラグ(廃棄=デッキから永久除外、配列は縮めずフラグ管理)を新設して実装した。`docs/superpowers/specs/2026-08-09-shidasu-revelation-phase-a-design.md`。
 - **天啓Phase B実装(即時報酬獲得系7個)**: 護符獲得・星片倍化・天啓回帰・神託獲得・天啓連続獲得・護符換金・秘儀回帰の7個を実装した。`wave`/`deckComposition`ではなくRunStateレベル(通貨・護符・秘儀・天啓・神託の所持リスト)を操作するため、`applyRevelationEffect`側は全てno-opにし、新規関数`grantRevelationReward`(engine.ts)で実処理を行う構成にした。天啓回帰は自己参照ループ(使用するたび自分自身を再取得し続ける)を、使用履歴フィールドの更新を自分自身の使用時だけスキップする方式で構造的に防止した。天啓は28宿中27宿(Phase A・B合計15個追加、残り1宿は未定のまま温存)まで実装完了。`docs/superpowers/specs/2026-08-09-shidasu-revelation-phase-b-design.md`。
