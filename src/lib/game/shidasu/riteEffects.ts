@@ -96,6 +96,7 @@ function applyAnsuz(wave: WaveState): WaveState {
     columnsEmptiedThisCombo: 0,
     comboStreakColumnLengths: wave.tableau.map(col => col.length),
     drawContinueCountThisChain: 0,
+    roleFiredThisChain: false,
     flushActiveThisCombo: false,
     sameColumnStreak: 0,
     lastPlayedColumn: null,
@@ -217,6 +218,8 @@ export function canUseRite(_params: ShidasuParams, wave: WaveState, riteId: Rite
       return wave.stock.length > 0 && wave.tableau.some(col => col.length < wave.dealtRows)
     case 'laguz':
       return wave.stock.length > 0 && wave.tableau.some(col => col.length === 0)
+    case 'ansuz':
+      return wave.stock.length > 0
     default:
       return true
   }

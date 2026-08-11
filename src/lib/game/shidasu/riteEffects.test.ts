@@ -218,6 +218,26 @@ describe('riteEffects', () => {
     expect(next).toEqual(wave)
   })
 
+  test('アンスズ: 山札が空なら使用不可', () => {
+    const wave = baseWave({ chain: [card(1, '♠', 5)], stock: [] })
+    expect(canUseRite(DEFAULT_PARAMS, wave, 'ansuz')).toBe(false)
+  })
+
+  test('アンスズ: 山札があれば使用可', () => {
+    const wave = baseWave({ chain: [card(1, '♠', 5)], stock: [card(10, '♥', 1)] })
+    expect(canUseRite(DEFAULT_PARAMS, wave, 'ansuz')).toBe(true)
+  })
+
+  test('アンスズ: roleFiredThisChainがリセットされる', () => {
+    const wave = baseWave({
+      chain: [card(1, '♠', 5)],
+      stock: [card(10, '♥', 1)],
+      roleFiredThisChain: true,
+    })
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'ansuz', createRng(1))
+    expect(next.roleFiredThisChain).toBe(false)
+  })
+
   test('イェラ: 各列がソートされる', () => {
     const wave = baseWave({ tableau: [[card(1, '♠', 9), card(2, '♦', 2), card(3, '♣', 5)]] })
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'jera', createRng(1))
