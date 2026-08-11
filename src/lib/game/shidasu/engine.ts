@@ -217,6 +217,7 @@ export function startWave(
     sowiloBoostedRole: null,
     mannazActiveThisWave: false,
     ehwazActiveThisWave: false,
+    nextPlayScoreMultiplier: 1,
     oracleLevels,
   }
 

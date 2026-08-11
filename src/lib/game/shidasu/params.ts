@@ -172,14 +172,23 @@ export interface ShidasuParams {
     frost: { name: string; x: number; rarity: Rarity; desc: string }
   }
   rites: {
+    raidho: { name: string; desc: string }
     jera: { name: string; desc: string }
+    wunjo: { name: string; desc: string }
+    othala: { name: string; desc: string }
+    perthro: { name: string; desc: string }
     uruz: { name: string; n: number; desc: string }
     ingwaz: { name: string; n: number; desc: string }
     gebo: { name: string; desc: string }
     fehu: { name: string; desc: string }
     dagaz: { name: string; desc: string }
     algiz: { name: string; desc: string }
+    tiwaz: { name: string; desc: string }
+    laguz: { name: string; desc: string }
     eihwaz: { name: string; n: number; desc: string }
+    ansuz: { name: string; desc: string }
+    kenaz: { name: string; desc: string }
+    thurisaz: { name: string; x: number; desc: string }
     hagalaz: { name: string; desc: string }
     nauthiz: { name: string; desc: string }
     isa: { name: string; desc: string }
@@ -418,14 +427,23 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     frost: { name: '星霜', x: 0.01, rarity: 'R', desc: 'x倍算。xは1から開始し、この護符を所持してから天啓・神託・秘儀を使用するたびx+={x}される' },
   },
   rites: {
+    raidho: { name: 'ᚱ', desc: '場札の絵札とワイルドはそのままに、非絵札を山札に戻してシャッフルし、元の位置に配り直す' },
     jera: { name: 'ᛃ', desc: '場札の各列をそれぞれソートする(列ごとに昇順/降順はランダム)' },
+    wunjo: { name: 'ᚹ', desc: '場札の全カードを捨て札に合流させてシャッフルし、各列の枚数を維持したまま配り直す(山札は変更しない)' },
+    othala: { name: 'ᛟ', desc: '山札で一番多く残っているランクのカードをすべて場札に加え、場札全体をシャッフルして配り直す' },
+    perthro: { name: 'ᛈ', desc: '各列を、ウェーブ開始時の枚数になるまで山札から補充する(不足している列が無ければ使用不可)' },
     uruz: { name: 'ᚢ', n: 3, desc: '現在のコンボ数に+{n}する' },
     ingwaz: { name: 'ᛜ', n: 2, desc: '基礎コンボ数に+{n}する' },
     gebo: { name: 'ᚷ', desc: '捨て札からランダムに、場札の各列へ1枚ずつ配置する(捨て札が列数未満なら使用不可)' },
     fehu: { name: 'ᚠ', desc: '山札の上から、場札の各列へ1枚ずつ配置する(山札の残りが列数以下なら使用不可)' },
     dagaz: { name: 'ᛞ', desc: '捨て札を山札に加えてシャッフルする' },
     algiz: { name: 'ᛉ', desc: 'そのウェーブが終わるまで、場札は一番上のカードだけでなく全てのカードがプレイ対象になる(プレイできるかどうかの判定基準は変わらない)' },
+    tiwaz: { name: 'ᛏ', desc: '場札の全列の並び順を上下逆にする' },
+    laguz: { name: 'ᛚ', desc: '0枚になっている列を1つ選び、ウェーブ開始時の枚数になるまで山札から補充する(0枚の列が無ければ使用不可)' },
     eihwaz: { name: 'ᛇ', n: 3, desc: 'コンボリセットを{n}回防ぐ' },
+    ansuz: { name: 'ᚨ', desc: 'チェーンを捨て札に送り、山札から1枚めくって新しいチェーンにする(コンボ数は変わらない)' },
+    kenaz: { name: 'ᚲ', desc: '場札を山札に合流させ、多いスート順にまとめて配り直す(残りは新しい山札になる)' },
+    thurisaz: { name: 'ᚦ', x: 1.5, desc: '次に出すカード1枚の獲得点に×{x}する' },
     hagalaz: { name: 'ᚺ', desc: '場札と山札の残りを全て合流させ、シャッフルして配り直す' },
     nauthiz: { name: 'ᚾ', desc: 'そのウェーブが終わるまで、コンボリセット時の再開値を直前のコンボ数の半分にする' },
     isa: { name: 'ᛁ', desc: 'そのウェーブが終わるまで、コンボ数を今の値のまま増減しなくする' },

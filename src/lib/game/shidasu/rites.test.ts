@@ -4,7 +4,7 @@ import { rollRiteOffer, RITE_POOL, rollRite } from './rites'
 import { createRng } from './deck'
 
 describe('rollRiteOffer', () => {
-  test('デフォルトで3件返す(プールは15種あるため重複なし)', () => {
+  test('デフォルトで3件返す(プールは24種あるため重複なし)', () => {
     const offer = rollRiteOffer(createRng(1))
     expect(offer).toHaveLength(3)
     expect(new Set(offer).size).toBe(3)

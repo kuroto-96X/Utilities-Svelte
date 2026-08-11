@@ -3,13 +3,13 @@ import type { RiteId } from './types'
 import type { ShidasuParams } from './params'
 import { rollOffer } from './deck'
 
-// rollRiteは重み付けなしの完全均等抽選。エルダー・フサルク24種中15種が対象(カード変換系9種は天啓へ転用のうえ削除済み)。
+// rollRiteは重み付けなしの完全均等抽選。エルダー・フサルク全24種が対象。
 export const RITE_POOL: RiteId[] = [
-  'jera',
+  'raidho', 'jera', 'wunjo', 'othala', 'perthro',
   'uruz', 'ingwaz',
   'gebo', 'fehu', 'dagaz',
-  'algiz',
-  'eihwaz',
+  'algiz', 'tiwaz', 'laguz',
+  'eihwaz', 'ansuz', 'kenaz', 'thurisaz',
   'hagalaz', 'nauthiz', 'isa', 'sowilo', 'berkano', 'mannaz', 'ehwaz',
 ]
 

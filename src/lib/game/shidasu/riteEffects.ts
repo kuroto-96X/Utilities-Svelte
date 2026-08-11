@@ -1,9 +1,46 @@
-import type { Card, Rank, WaveState, RiteId } from './types'
+import type { Card, Rank, Suit, WaveState, RiteId } from './types'
 import type { ShidasuParams } from './params'
 import { shuffleInPlace } from './deck'
+import { isFace } from './patterns'
 
 function pickRandom<T>(arr: T[], rand: () => number): T {
   return arr[Math.floor(rand() * arr.length)]
+}
+
+function applyRaidho(wave: WaveState, rand: () => number): WaveState {
+  return wave
+}
+
+function applyWunjo(wave: WaveState, rand: () => number): WaveState {
+  return wave
+}
+
+function applyOthala(wave: WaveState, rand: () => number): WaveState {
+  return wave
+}
+
+function applyPerthro(wave: WaveState): WaveState {
+  return wave
+}
+
+function applyTiwaz(wave: WaveState): WaveState {
+  return wave
+}
+
+function applyLaguz(wave: WaveState, rand: () => number): WaveState {
+  return wave
+}
+
+function applyAnsuz(wave: WaveState): WaveState {
+  return wave
+}
+
+function applyKenaz(wave: WaveState, rand: () => number): WaveState {
+  return wave
+}
+
+function applyThurisaz(wave: WaveState, x: number): WaveState {
+  return wave
 }
 
 function applyJera(wave: WaveState, rand: () => number): WaveState {
@@ -117,8 +154,16 @@ export function canUseRite(_params: ShidasuParams, wave: WaveState, riteId: Rite
 // 指定した秘儀の効果を適用した新しいWaveStateを返す。所持からの削除はengine.tsのuseRite側で行う。
 export function applyRiteEffect(params: ShidasuParams, wave: WaveState, riteId: RiteId, rand: () => number): WaveState {
   switch (riteId) {
+    case 'raidho':
+      return applyRaidho(wave, rand)
     case 'jera':
       return applyJera(wave, rand)
+    case 'wunjo':
+      return applyWunjo(wave, rand)
+    case 'othala':
+      return applyOthala(wave, rand)
+    case 'perthro':
+      return applyPerthro(wave)
     case 'uruz':
       return applyUruz(wave, params.rites.uruz.n)
     case 'ingwaz':
@@ -131,8 +176,18 @@ export function applyRiteEffect(params: ShidasuParams, wave: WaveState, riteId: 
       return applyDagaz(wave, rand)
     case 'algiz':
       return applyAlgiz(wave)
+    case 'tiwaz':
+      return applyTiwaz(wave)
+    case 'laguz':
+      return applyLaguz(wave, rand)
     case 'eihwaz':
       return applyEihwaz(wave, params.rites.eihwaz.n)
+    case 'ansuz':
+      return applyAnsuz(wave)
+    case 'kenaz':
+      return applyKenaz(wave, rand)
+    case 'thurisaz':
+      return applyThurisaz(wave, params.rites.thurisaz.x)
     case 'hagalaz':
       return applyHagalaz(wave, rand)
     case 'nauthiz':

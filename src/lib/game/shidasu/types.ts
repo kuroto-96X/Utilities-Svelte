@@ -68,13 +68,15 @@ export type ItemId =
   | 'discretion' | 'frost'
 
 // 秘儀(Rite): プレイ中に能動的に使用する消費アイテム。エルダー・フサルク(北欧ルーン文字)
-// 全24種中、カード変換系9種は天啓側へ転用のうえ削除し、15種に効果を実装済み(2026-08-11)。
+// 全24種に効果を実装済み。2026-08-11に一度削除した9種(raidho/wunjo/othala/perthro/tiwaz/laguz/
+// ansuz/kenaz/thurisaz)は、docs/shidasu/shidasu-rite-redesign-candidates.mdセクションAの
+// 内容で新しい効果を割り当てて復元した(元の効果とは別物)。
 export type RiteId =
-  | 'jera'
+  | 'raidho' | 'jera' | 'wunjo' | 'othala' | 'perthro'
   | 'uruz' | 'ingwaz'
   | 'gebo' | 'fehu' | 'dagaz'
-  | 'algiz'
-  | 'eihwaz'
+  | 'algiz' | 'tiwaz' | 'laguz'
+  | 'eihwaz' | 'ansuz' | 'kenaz' | 'thurisaz'
   | 'hagalaz'
   | 'nauthiz' | 'isa'
   | 'sowilo'
@@ -245,6 +247,9 @@ export interface WaveState {
   mannazActiveThisWave: boolean
   // エワズ用: そのウェーブが終わるまで、場札の許容ランク差を2まで拡張するか
   ehwazActiveThisWave: boolean
+  // スリサズ用: 直後の1回のカードプレイ(playCardのみ、drawStockの素朴分岐は対象外)の得点計算に
+  // 追加で乗算する倍率。既定1(無効)。そのプレイが完了した時点で無条件に1へリセットされる
+  nextPlayScoreMultiplier: number
   // 神託用: 各役のレベル(ラン全体で持続)。useOracleでプレイ中いつでも加算されうるため、
   // ウェーブ中も変化しうる。得点計算時、各役の基礎点にこのレベルを乗算する(patterns.ts・engine.ts参照)
   oracleLevels: Record<RoleName, number>

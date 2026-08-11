@@ -146,6 +146,7 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     sowiloBoostedRole: null,
     mannazActiveThisWave: false,
     ehwazActiveThisWave: false,
+    nextPlayScoreMultiplier: 1,
     oracleLevels: defaultOracleLevels(),
     ...overrides,
   }
