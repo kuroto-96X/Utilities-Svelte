@@ -91,6 +91,20 @@ describe('riteEffects', () => {
     expect(next).toEqual(wave)
   })
 
+  test('ウンヨー: 場札を捨て札に合流→シャッフル→各列の元の枚数を維持して配り直す(山札は不変)', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♠', 5), card(2, '♦', 9)], [card(3, '♣', 2)]],
+      discardPile: [card(10, '♥', 4), card(11, '♥', 7)],
+      stock: [card(20, '♠', 3)],
+    })
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'wunjo', createRng(1))
+    expect(next.tableau[0]).toHaveLength(2)
+    expect(next.tableau[1]).toHaveLength(1)
+    expect(next.stock).toEqual(wave.stock)
+    const allIds = [...next.tableau.flat(), ...next.discardPile].map(c => c.id).sort((a, b) => a - b)
+    expect(allIds).toEqual([1, 2, 3, 10, 11])
+  })
+
   test('イェラ: 各列がソートされる', () => {
     const wave = baseWave({ tableau: [[card(1, '♠', 9), card(2, '♦', 2), card(3, '♣', 5)]] })
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'jera', createRng(1))

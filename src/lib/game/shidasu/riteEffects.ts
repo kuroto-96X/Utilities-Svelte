@@ -24,7 +24,17 @@ function applyRaidho(wave: WaveState, rand: () => number): WaveState {
 }
 
 function applyWunjo(wave: WaveState, rand: () => number): WaveState {
-  return wave
+  const pool = [...wave.tableau.flat(), ...wave.discardPile]
+  shuffleInPlace(pool, rand)
+  let cursor = 0
+  const tableau = wave.tableau.map(col => {
+    const take = col.length
+    const newCol = pool.slice(cursor, cursor + take)
+    cursor += take
+    return newCol
+  })
+  const discardPile = pool.slice(cursor)
+  return { ...wave, tableau, discardPile }
 }
 
 function applyOthala(wave: WaveState, rand: () => number): WaveState {
