@@ -4,7 +4,7 @@ import { rollRiteOffer, RITE_POOL, rollRite } from './rites'
 import { createRng } from './deck'
 
 describe('rollRiteOffer', () => {
-  test('デフォルトで3件返す(プールは24種あるため重複なし)', () => {
+  test('デフォルトで3件返す(プールは15種あるため重複なし)', () => {
     const offer = rollRiteOffer(createRng(1))
     expect(offer).toHaveLength(3)
     expect(new Set(offer).size).toBe(3)
@@ -27,6 +27,6 @@ describe('rollRite(既存、後方互換確認)', () => {
   })
 
   test('所持数が3以上ならnullを返す', () => {
-    expect(rollRite(['raidho', 'jera', 'wunjo'], createRng(1))).toBeNull()
+    expect(rollRite(['jera', 'uruz', 'ingwaz'], createRng(1))).toBeNull()
   })
 })

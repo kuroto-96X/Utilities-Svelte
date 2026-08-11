@@ -67,20 +67,6 @@ function baseWave(overrides: Partial<WaveState> = {}): WaveState {
 }
 
 describe('riteEffects', () => {
-  test('ライドー: ランダムな1列が最下段起点の階段になる', () => {
-    const wave = baseWave({ tableau: [[card(1, '♠', 5), card(2, '♦', 9), card(3, '♣', 2)]] })
-    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'raidho', createRng(1))
-    const ranks = next.tableau[0].map(c => c.rank)
-    expect(ranks[0]).toBe(5)
-    // 各段の差は循環で+1(昇順)または+12=-1(降順)。列全体で方向が一貫していることを検証する。
-    const step = (a: number, b: number) => ((b - a) % 13 + 13) % 13
-    const dir = step(ranks[0], ranks[1])
-    expect([1, 12]).toContain(dir)
-    for (let i = 1; i < ranks.length; i++) {
-      expect(step(ranks[i - 1], ranks[i])).toBe(dir)
-    }
-  })
-
   test('イェラ: 各列がソートされる', () => {
     const wave = baseWave({ tableau: [[card(1, '♠', 9), card(2, '♦', 2), card(3, '♣', 5)]] })
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'jera', createRng(1))
@@ -88,42 +74,6 @@ describe('riteEffects', () => {
     const isAscending = ranks[0] <= ranks[1] && ranks[1] <= ranks[2]
     const isDescending = ranks[0] >= ranks[1] && ranks[1] >= ranks[2]
     expect(isAscending || isDescending).toBe(true)
-  })
-
-  test('ウンヨー: 場札が一番多い色に統一される(ワイルドは対象外)', () => {
-    const wave = baseWave({
-      tableau: [[card(1, '♥', 3), card(2, '♦', 4), card(3, '♠', 5, true)]],
-    })
-    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'wunjo', createRng(1))
-    expect(next.tableau[0][0].suit === '♥' || next.tableau[0][0].suit === '♦').toBe(true)
-    expect(next.tableau[0][1].suit === '♥' || next.tableau[0][1].suit === '♦').toBe(true)
-    expect(next.tableau[0][2].wild).toBe(true)
-  })
-
-  test('ウンヨー+紅蓮: 黒札のみの場札でも紅蓮所持時はredCountに算入され赤スートへ統一されうる', () => {
-    const wave = baseWave({
-      tableau: [[card(1, '♠', 3), card(2, '♣', 4)]],
-    })
-    // 決定的な乱数(常に0を返す)で、redCount===blackCountなら toRed = rand() < 0.5 = true
-    const withoutCrimson = applyRiteEffect(DEFAULT_PARAMS, wave, 'wunjo', () => 0, [])
-    expect(withoutCrimson.tableau[0].every(c => c.suit === '♠' || c.suit === '♣')).toBe(true)
-    const withCrimson = applyRiteEffect(DEFAULT_PARAMS, wave, 'wunjo', () => 0, ['crimson'])
-    expect(withCrimson.tableau[0].every(c => c.suit === '♥' || c.suit === '♦')).toBe(true)
-  })
-
-  test('オセラ: 場札が一番多いスートに統一される', () => {
-    const wave = baseWave({
-      tableau: [[card(1, '♣', 3), card(2, '♣', 4), card(3, '♦', 5)]],
-    })
-    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'othala', createRng(1))
-    expect(next.tableau[0].every(c => c.suit === '♣')).toBe(true)
-  })
-
-  test('ペルスロ: チェーン先頭(foundation)がワイルドになる', () => {
-    const wave = baseWave({ chain: [card(2, '♥', 6)], foundation: card(2, '♥', 6) })
-    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'perthro', createRng(1))
-    expect(next.foundation.wild).toBe(true)
-    expect(next.chain[next.chain.length - 1].wild).toBe(true)
   })
 
   test('ウルズ: 現在のコンボ数にnが加算される', () => {
@@ -193,54 +143,10 @@ describe('riteEffects', () => {
     expect(next.playFromAnywhereActiveThisWave).toBe(true)
   })
 
-  test('ティワズ: チェーンが2枚未満なら使用不可', () => {
-    const wave = baseWave({ chain: [card(2, '♥', 6)] })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'tiwaz')).toBe(false)
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'laguz')).toBe(false)
-  })
-
-  test('ティワズ: チェーンが一番多いスートに統一される', () => {
-    const wave = baseWave({ chain: [card(1, '♣', 1), card(2, '♣', 2), card(3, '♦', 3)], foundation: card(3, '♦', 3) })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'tiwaz')).toBe(true)
-    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'tiwaz', createRng(1))
-    expect(next.chain.every(c => c.suit === '♣')).toBe(true)
-    expect(next.foundation.suit).toBe('♣')
-  })
-
-  test('ラグズ: チェーンが一番多い色に統一される', () => {
-    const wave = baseWave({ chain: [card(1, '♥', 1), card(2, '♦', 2), card(3, '♠', 3)], foundation: card(3, '♠', 3) })
-    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'laguz', createRng(1))
-    expect(next.chain.every(c => c.suit === '♥' || c.suit === '♦')).toBe(true)
-    expect(next.foundation.suit === '♥' || next.foundation.suit === '♦').toBe(true)
-  })
-
   test('エイワズ: コンボリセット防止残り回数にnが加算される', () => {
     const wave = baseWave({ comboResetShieldRemaining: 1 })
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'eihwaz', createRng(1))
     expect(next.comboResetShieldRemaining).toBe(1 + DEFAULT_PARAMS.rites.eihwaz.n)
-  })
-
-  test('アンスズ: 場札のn枚がランダムにワイルドになる', () => {
-    const wave = baseWave({ tableau: [[card(1, '♠', 5), card(2, '♦', 6), card(3, '♣', 7), card(4, '♥', 8)]] })
-    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'ansuz', createRng(1))
-    const wildCount = next.tableau[0].filter(c => c.wild).length
-    expect(wildCount).toBe(Math.min(DEFAULT_PARAMS.rites.ansuz.n, 4))
-  })
-
-  test('ケナズ: JQK以外のカードがJQKのいずれかに変換される(スート維持)', () => {
-    const wave = baseWave({ tableau: [[card(1, '♠', 5), card(2, '♦', 13)]] })
-    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'kenaz', createRng(1))
-    expect(next.tableau[0][0].rank).toBeGreaterThanOrEqual(11)
-    expect(next.tableau[0][0].suit).toBe('♠')
-    expect(next.tableau[0][1].rank).toBe(13)
-  })
-
-  test('スリサズ: JQKのカードがJQK以外に変換される(スート維持)', () => {
-    const wave = baseWave({ tableau: [[card(1, '♠', 5), card(2, '♦', 13)]] })
-    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'thurisaz', createRng(1))
-    expect(next.tableau[0][1].rank).toBeLessThanOrEqual(10)
-    expect(next.tableau[0][1].suit).toBe('♦')
-    expect(next.tableau[0][0].rank).toBe(5)
   })
 
   test('ハガラズ: 場札と山札が合流・シャッフルされ、各列の枚数を維持したまま配り直される', () => {

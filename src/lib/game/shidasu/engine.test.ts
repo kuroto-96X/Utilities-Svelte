@@ -494,22 +494,22 @@ describe('残響・流星の基盤(startWave/resolveWaveEndでの同期)', () =>
 describe('果断・星霜: 秘儀/天啓/神託使用でdiscretionN・frostXが加算される', () => {
   test('秘儀使用後、discretionNが10から20になる(果断所持時)', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, ['discretion'], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: ['discretion'], rites: ['raidho'] }
-    const next = useRite(DEFAULT_PARAMS, run, 'raidho', createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: ['discretion'], rites: ['jera'] }
+    const next = useRite(DEFAULT_PARAMS, run, 'jera', createRng(1))
     expect(next.wave!.discretionN).toBe(20)
   })
 
   test('果断を所持していなければdiscretionNは変化しない', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: [], rites: ['raidho'] }
-    const next = useRite(DEFAULT_PARAMS, run, 'raidho', createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: [], rites: ['jera'] }
+    const next = useRite(DEFAULT_PARAMS, run, 'jera', createRng(1))
     expect(next.wave!.discretionN).toBe(10)
   })
 
   test('秘儀使用後、frostXが1から1.01になる(星霜所持時)', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, ['frost'], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: ['frost'], rites: ['raidho'] }
-    const next = useRite(DEFAULT_PARAMS, run, 'raidho', createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: ['frost'], rites: ['jera'] }
+    const next = useRite(DEFAULT_PARAMS, run, 'jera', createRng(1))
     expect(next.wave!.frostX).toBeCloseTo(1.01)
   })
 
@@ -3016,18 +3016,18 @@ describe('buyIndividualRite(バラ売り秘儀購入)', () => {
   test('購入すると所持に追加され通貨が減る', () => {
     const run: RunState = {
       ...createInitialRun(), phase: 'shop', currency: 999,
-      shop: { individual: [{ kind: 'rite', id: 'raidho', sold: false }], packs: [] },
+      shop: { individual: [{ kind: 'rite', id: 'jera', sold: false }], packs: [] },
     }
     const result = buyIndividualRite(DEFAULT_PARAMS, run, 0)
-    expect(result.rites).toEqual(['raidho'])
+    expect(result.rites).toEqual(['jera'])
     expect(result.currency).toBe(999 - riteBuyPrice(DEFAULT_PARAMS))
     expect(result.shop!.individual[0].sold).toBe(true)
   })
 
   test('所持上限3到達時は購入できない', () => {
     const run: RunState = {
-      ...createInitialRun(), phase: 'shop', currency: 999, rites: ['raidho', 'jera', 'wunjo'],
-      shop: { individual: [{ kind: 'rite', id: 'othala', sold: false }], packs: [] },
+      ...createInitialRun(), phase: 'shop', currency: 999, rites: ['jera', 'uruz', 'ingwaz'],
+      shop: { individual: [{ kind: 'rite', id: 'gebo', sold: false }], packs: [] },
     }
     expect(buyIndividualRite(DEFAULT_PARAMS, run, 0)).toBe(run)
   })
@@ -3235,16 +3235,16 @@ describe('buyPack / pickPackRite(秘儀の福袋)', () => {
   })
 
   test('所持上限3到達時はpendingNewRiteにセットされスワップ待ちになる', () => {
-    const run = shopRunWithRitePack({ rites: ['raidho', 'jera', 'wunjo'] })
+    const run = shopRunWithRitePack({ rites: ['jera', 'uruz', 'ingwaz'] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const newRiteId = opened.riteOffer[0]
     const picked = pickPackRite(opened, newRiteId)
     expect(picked.pendingNewRite).toBe(newRiteId)
-    expect(picked.rites).toEqual(['raidho', 'jera', 'wunjo'])
+    expect(picked.rites).toEqual(['jera', 'uruz', 'ingwaz'])
   })
 
   test('confirmPackRiteSwapで入れ替えが確定する', () => {
-    const run = shopRunWithRitePack({ rites: ['raidho', 'jera', 'wunjo'] })
+    const run = shopRunWithRitePack({ rites: ['jera', 'uruz', 'ingwaz'] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const newRiteId = opened.riteOffer[0]
     const picked = pickPackRite(opened, newRiteId)
@@ -3256,12 +3256,12 @@ describe('buyPack / pickPackRite(秘儀の福袋)', () => {
   })
 
   test('cancelPackRiteSwapでpendingNewRiteがクリアされる', () => {
-    const run = shopRunWithRitePack({ rites: ['raidho', 'jera', 'wunjo'] })
+    const run = shopRunWithRitePack({ rites: ['jera', 'uruz', 'ingwaz'] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const picked = pickPackRite(opened, opened.riteOffer[0])
     const cancelled = cancelPackRiteSwap(picked)
     expect(cancelled.pendingNewRite).toBeNull()
-    expect(cancelled.rites).toEqual(['raidho', 'jera', 'wunjo'])
+    expect(cancelled.rites).toEqual(['jera', 'uruz', 'ingwaz'])
   })
 
   test('closePackRiteSelectで残り選択を放棄してshopへ戻る', () => {
@@ -3510,11 +3510,11 @@ describe('useRite', () => {
     expect(next).toEqual(run)
   })
 
-  test('使用条件を満たさない秘儀(チェーン2枚未満のティワズ)は使用できない', () => {
-    const wave = makeWave({ chain: [card(1, '♣', 5)], chainOrigin: ['draw'] })
-    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: ['tiwaz'] }
-    const next = useRite(DEFAULT_PARAMS, run, 'tiwaz', createRng(1))
-    expect(next.rites).toEqual(['tiwaz'])
+  test('使用条件を満たさない秘儀(捨て札が列数未満のゲボ)は使用できない', () => {
+    const wave = makeWave({ tableau: [[card(1, '♣', 5)], [card(2, '♦', 6)]], discardPile: [] })
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: ['gebo'] }
+    const next = useRite(DEFAULT_PARAMS, run, 'gebo', createRng(1))
+    expect(next.rites).toEqual(['gebo'])
   })
 
   test('同じ秘儀を複数所持している場合、1個だけ消費される', () => {
@@ -3526,15 +3526,15 @@ describe('useRite', () => {
 
   test('shopフェーズでも使用できる(SHOP_FLOW_PHASESに含まれるため)', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'shop', wave, rites: ['raidho'] }
-    const result = useRite(DEFAULT_PARAMS, run, 'raidho', createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'shop', wave, rites: ['jera'] }
+    const result = useRite(DEFAULT_PARAMS, run, 'jera', createRng(1))
     expect(result.rites).toEqual([])
   })
 
   test('riteSelectフェーズでも使用できる', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'riteSelect', wave, rites: ['raidho'] }
-    const result = useRite(DEFAULT_PARAMS, run, 'raidho', createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'riteSelect', wave, rites: ['jera'] }
+    const result = useRite(DEFAULT_PARAMS, run, 'jera', createRng(1))
     expect(result.rites).toEqual([])
   })
 })
@@ -3687,8 +3687,8 @@ describe('sellItem / sellRite / sellRevelation / sellOracle(所持品売却)', (
   })
 
   test('sellRiteは所持から削除し通貨が増える', () => {
-    const run: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, rites: ['raidho'] }
-    const result = sellRite(DEFAULT_PARAMS, run, 'raidho')
+    const run: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, rites: ['jera'] }
+    const result = sellRite(DEFAULT_PARAMS, run, 'jera')
     expect(result.rites).toEqual([])
     expect(result.currency).toBe(10 + riteSellPrice(DEFAULT_PARAMS))
   })
@@ -4349,9 +4349,9 @@ describe('useRevelation: 参(karasu・秘儀回帰)', () => {
 
   test('秘儀の所持上限(3)を超える分は獲得しない', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['karasu'], rites: ['eihwaz', 'ansuz'], recentUsedRiteIds: ['uruz', 'ingwaz'] }
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['karasu'], rites: ['eihwaz', 'jera'], recentUsedRiteIds: ['uruz', 'ingwaz'] }
     const result = useRevelation(DEFAULT_PARAMS, run, 'karasu', null, createRng(1))
-    expect(result.rites).toEqual(['eihwaz', 'ansuz', 'uruz'])
+    expect(result.rites).toEqual(['eihwaz', 'jera', 'uruz'])
   })
 
   test('使用履歴が無ければ何も獲得しない', () => {

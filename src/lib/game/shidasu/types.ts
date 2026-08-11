@@ -68,13 +68,13 @@ export type ItemId =
   | 'discretion' | 'frost'
 
 // 秘儀(Rite): プレイ中に能動的に使用する消費アイテム。エルダー・フサルク(北欧ルーン文字)
-// 全24種すべてに効果を実装済みで、ここにメンバーとして揃っている。
+// 全24種中、カード変換系9種は天啓側へ転用のうえ削除し、15種に効果を実装済み(2026-08-11)。
 export type RiteId =
-  | 'raidho' | 'jera' | 'wunjo' | 'othala' | 'perthro'
+  | 'jera'
   | 'uruz' | 'ingwaz'
   | 'gebo' | 'fehu' | 'dagaz'
-  | 'algiz' | 'tiwaz' | 'laguz'
-  | 'eihwaz' | 'ansuz' | 'kenaz' | 'thurisaz'
+  | 'algiz'
+  | 'eihwaz'
   | 'hagalaz'
   | 'nauthiz' | 'isa'
   | 'sowilo'

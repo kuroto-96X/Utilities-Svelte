@@ -1086,7 +1086,7 @@ export function useRite(params: ShidasuParams, run: RunState, riteId: RiteId, ra
   if (!canUseRite(params, run.wave, riteId)) return run
   const idx = run.rites.indexOf(riteId)
   if (idx === -1) return run
-  let wave = applyRiteEffect(params, run.wave, riteId, rand, run.items)
+  let wave = applyRiteEffect(params, run.wave, riteId, rand)
   // 果断・星霜: 天啓・神託・秘儀のいずれかを使用するたび永続的に加算する
   if (run.items.includes('discretion')) wave = { ...wave, discretionN: wave.discretionN + params.talismans.discretion.n }
   if (run.items.includes('frost')) wave = { ...wave, frostX: wave.frostX + params.talismans.frost.x }

@@ -170,8 +170,9 @@ function wildifyExtremeRanks(wave: WaveState, deckComposition: DeckCard[], rand:
 }
 
 // 選んだ列を、先頭カードのランクを起点に階段状のランク(A⇔Kループ)へ再配置する。方向(昇順/降順)は使用ごとにランダム。
-// 秘儀「雷光(raidho)」と同じアルゴリズムだが、deckCompositionにも書き込んで効果を永続化する点が異なる。
-// 他の天啓関数と異なり、ワイルドカードもスキップせずランク変換の対象にする(秘儀「雷光」の挙動に合わせるため意図的な仕様。skip忘れではない)。
+// deckCompositionにも書き込んで効果を永続化する(元は秘儀「ライドー」と同じアルゴリズムだったが、
+// 天啓への転用に伴い秘儀側は2026-08-11に削除済み)。
+// 他の天啓関数と異なり、ワイルドカードもスキップせずランク変換の対象にする(意図的な仕様。skip忘れではない)。
 function convertColumnToStair(wave: WaveState, deckComposition: DeckCard[], colIndex: number, rand: () => number): { wave: WaveState; deckComposition: DeckCard[] } {
   const col = wave.tableau[colIndex]
   if (!col || col.length === 0) return { wave, deckComposition }
@@ -188,8 +189,9 @@ function convertColumnToStair(wave: WaveState, deckComposition: DeckCard[], colI
   return { wave: { ...wave, tableau }, deckComposition: newComposition }
 }
 
-// チェーンの末尾1枚をワイルド化する。秘儀「対話(perthro)」と同じ効果だが、deckCompositionにも
-// 書き込んで永続化する点が異なる。チェーンが空の場合は何もしない。
+// チェーンの末尾1枚をワイルド化する。deckCompositionにも書き込んで効果を永続化する
+// (元は秘儀「ペルスロ」と同じ効果だったが、天啓への転用に伴い秘儀側は2026-08-11に削除済み)。
+// チェーンが空の場合は何もしない。
 function wildifyChainTop(wave: WaveState, deckComposition: DeckCard[]): { wave: WaveState; deckComposition: DeckCard[] } {
   if (wave.chain.length === 0) return { wave, deckComposition }
   const chain = [...wave.chain]
@@ -199,8 +201,9 @@ function wildifyChainTop(wave: WaveState, deckComposition: DeckCard[]): { wave: 
   return { wave: { ...wave, chain, foundation: chain[chain.length - 1] }, deckComposition: newComposition }
 }
 
-// 場札の非ワイルド実カードからランダムにn枚選んでワイルド化する。秘儀「賜物(ansuz)」と同じ方式
-// (盤面上の位置(列・行)を2次元でランダム抽選する)だが、deckCompositionにも書き込んで永続化する点が異なる。
+// 場札の非ワイルド実カードからランダムにn枚選んでワイルド化する(盤面上の位置(列・行)を2次元でランダム抽選する)。
+// deckCompositionにも書き込んで効果を永続化する(元は秘儀「アンスズ」と同じ方式だったが、
+// 天啓への転用に伴い秘儀側は2026-08-11に削除済み)。
 function wildifyRandomTableauCards(wave: WaveState, deckComposition: DeckCard[], n: number, rand: () => number): { wave: WaveState; deckComposition: DeckCard[] } {
   const positions: { ci: number; ri: number }[] = []
   wave.tableau.forEach((col, ci) => col.forEach((c, ri) => { if (!c.wild) positions.push({ ci, ri }) }))
