@@ -160,7 +160,7 @@ waveSlot3の星はショップ画面で通貨`flow.rerollCost`(既定**30**)を�
 
 ## 8. 通貨・ショップ
 
-- 通貨「星片」(☆): 初期所持`currency.initialAmount`(既定**5**)。ウェーブクリアごとに`currency.waveClearAmount`(既定**5**) + そのウェーブの星の報酬(3〜5)を獲得。
+- 通貨「星片」(☆): 初期所持`currency.initialAmount`(既定**5**)。ウェーブクリアごとにそのウェーブの星の報酬(3〜5)のみを獲得(2026-08-11、基礎報酬`waveClearAmount`を廃止し星の報酬のみに変更)。
 - ショップ(`rollShop`): バラ売り3枠(護符・秘儀・天啓・神託から均等抽選、護符は所持中・同ショップ内重複を除外)+福袋2枠(`ShidasuParams.shop.packCatalog`から重複無しで2つ抽選)。
 - 価格(既定): 護符 C6/U8/R10(売却半額)、秘儀5(売却2)、天啓5(売却2)、神託3(売却1)。福袋は`packCatalog`の各エントリが個別に価格を持つ。
 - 福袋カタログ(`PackCatalogEntry`、`/admin/shidasu-packs`で編集可能): 名前・種別(護符/秘儀/天啓/神託/トランプセット)・選択肢数・取得数・価格を持つ可変長リスト。既定14件。抽選は均等だが、同じ内容のエントリを名前だけ変えて複数用意すると相対的な出現率を上げられる。選ばれたエントリの名前・価格はショップ枠(`ShopPackSlot`)にスナップショットされ、以後カタログを編集しても提示中のショップには影響しない。
@@ -199,6 +199,5 @@ waveSlot3の星はショップ画面で通貨`flow.rerollCost`(既定**30**)を�
 | flow.clearDelayMs | 450(目標達成時の演出待ち。全消し・手詰まりは即遷移) |
 | shop.rerollCostStep | 5 |
 | currency.initialAmount | 5 |
-| currency.waveClearAmount | 5 |
 
 なお`ui.*`(`comboTierThresholds`・`chainCardOffsetX`等)は表示・演出専用のパラメータで、ゲームルール・スコア計算には一切影響しない。

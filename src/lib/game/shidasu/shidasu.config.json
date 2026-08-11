@@ -120,8 +120,7 @@
   "currency": {
     "name": "星片",
     "symbol": "☆",
-    "initialAmount": 5,
-    "waveClearAmount": 5
+    "initialAmount": 5
   },
   "shop": {
     "itemPrice": {

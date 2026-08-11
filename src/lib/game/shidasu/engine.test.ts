@@ -2694,21 +2694,21 @@ describe('resolveWaveEnd', () => {
     expect(next.currency).toBe(run.currency)
   })
 
-  test('報酬なしの星のWaveクリアでcurrencyがwaveClearAmount分だけ増える', () => {
+  test('報酬なしの星のWaveクリアではcurrencyが増えない', () => {
     const run = endedRun(
       { waveIndex: 0, stageStars: [noRewardStar, noRewardStar, noRewardStar] },
       waveTarget(DEFAULT_PARAMS, 0, 0, [noRewardStar, noRewardStar, noRewardStar]),
     )
     const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
-    expect(next.currency).toBe(run.currency + DEFAULT_PARAMS.currency.waveClearAmount)
+    expect(next.currency).toBe(run.currency)
   })
 
-  test('星にrewardが設定されていればwaveClearAmount+reward分増える', () => {
+  test('星にrewardが設定されていればreward分だけ増える', () => {
     const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: null, descTemplate: '' }
     const stageStars = [noRewardStar, noRewardStar, rewardStar]
     const run = endedRun({ waveIndex: 2, stageStars }, waveTarget(DEFAULT_PARAMS, 0, 2, stageStars))
     const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
-    expect(next.currency).toBe(run.currency + DEFAULT_PARAMS.currency.waveClearAmount + 20)
+    expect(next.currency).toBe(run.currency + 20)
   })
 })
 

@@ -18,7 +18,6 @@
     if (!config.currency.name.trim()) return true
     if (!config.currency.symbol.trim()) return true
     if (!Number.isFinite(config.currency.initialAmount) || config.currency.initialAmount < 0) return true
-    if (!Number.isFinite(config.currency.waveClearAmount) || config.currency.waveClearAmount < 0) return true
     if (!Number.isFinite(config.shop.itemPrice.C.buy) || config.shop.itemPrice.C.buy < 0) return true
     if (!Number.isFinite(config.shop.itemPrice.C.sell) || config.shop.itemPrice.C.sell < 0) return true
     if (!Number.isFinite(config.shop.itemPrice.U.buy) || config.shop.itemPrice.U.buy < 0) return true
@@ -115,11 +114,6 @@
       <label class="block text-xs text-slate-500">
         ラン開始時の初期所持数
         <input type="number" step="1" bind:value={config.currency.initialAmount} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
-      </label>
-
-      <label class="block text-xs text-slate-500">
-        Waveクリア時の獲得数(ボスWaveも含め毎回付与される基礎分)
-        <input type="number" step="1" bind:value={config.currency.waveClearAmount} class="mt-1 w-full border border-slate-200 rounded px-2 py-1 text-sm" />
       </label>
     </section>
 

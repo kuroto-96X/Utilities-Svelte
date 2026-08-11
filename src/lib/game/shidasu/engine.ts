@@ -1061,7 +1061,7 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
   // stageStarsは常にwaveSlot 1/2/3から生成された3要素配列であり、params.flow.wavesPerStage(3)と
   // 対応している前提でwaveIndexをそのままインデックスとして使う。
   const currentStar = run.stageStars[run.waveIndex]
-  const earned = params.currency.waveClearAmount + (currentStar?.reward ?? 0)
+  const earned = currentStar?.reward ?? 0
   const runWithCurrency = {
     ...run,
     currency: run.currency + earned,
