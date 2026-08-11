@@ -8,7 +8,19 @@ function pickRandom<T>(arr: T[], rand: () => number): T {
 }
 
 function applyRaidho(wave: WaveState, rand: () => number): WaveState {
-  return wave
+  const positions: { ci: number; ri: number }[] = []
+  wave.tableau.forEach((col, ci) => col.forEach((c, ri) => {
+    if (!c.wild && !isFace(c)) positions.push({ ci, ri })
+  }))
+  if (positions.length === 0) return wave
+  const picked = positions.map(p => wave.tableau[p.ci][p.ri])
+  const pool = [...wave.stock, ...picked]
+  shuffleInPlace(pool, rand)
+  const refill = pool.slice(0, positions.length)
+  const stock = pool.slice(positions.length)
+  const tableau = wave.tableau.map(col => [...col])
+  positions.forEach((p, i) => { tableau[p.ci][p.ri] = refill[i] })
+  return { ...wave, tableau, stock }
 }
 
 function applyWunjo(wave: WaveState, rand: () => number): WaveState {

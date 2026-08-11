@@ -68,6 +68,29 @@ function baseWave(overrides: Partial<WaveState> = {}): WaveState {
 }
 
 describe('riteEffects', () => {
+  test('ライドー: 絵札とワイルドはそのままに、非絵札だけ山札と入れ替えて配り直す', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♠', 11), card(2, '♦', 5, true), card(3, '♣', 5)]],
+      stock: [card(10, '♥', 7), card(11, '♥', 8)],
+    })
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'raidho', createRng(1))
+    expect(next.tableau[0][0]).toEqual(wave.tableau[0][0])
+    expect(next.tableau[0][1]).toEqual(wave.tableau[0][1])
+    expect(next.tableau[0]).toHaveLength(3)
+    expect(next.stock).toHaveLength(2)
+    const allIds = [...next.tableau.flat(), ...next.stock].map(c => c.id).sort((a, b) => a - b)
+    expect(allIds).toEqual([1, 2, 3, 10, 11])
+  })
+
+  test('ライドー: 非絵札が場に無ければ何もしない', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♠', 11), card(2, '♦', 5, true)]],
+      stock: [card(10, '♥', 7)],
+    })
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'raidho', createRng(1))
+    expect(next).toEqual(wave)
+  })
+
   test('イェラ: 各列がソートされる', () => {
     const wave = baseWave({ tableau: [[card(1, '♠', 9), card(2, '♦', 2), card(3, '♣', 5)]] })
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'jera', createRng(1))
