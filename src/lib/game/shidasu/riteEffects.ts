@@ -241,6 +241,10 @@ export function canUseRite(_params: ShidasuParams, wave: WaveState, riteId: Rite
       return wave.stock.length > 0 && wave.tableau.some(col => col.length === 0)
     case 'ansuz':
       return wave.stock.length > 0
+    case 'othala':
+      return wave.stock.length > 0
+    case 'raidho':
+      return wave.tableau.some(col => col.some(c => !c.wild && !isFace(c)))
     default:
       return true
   }

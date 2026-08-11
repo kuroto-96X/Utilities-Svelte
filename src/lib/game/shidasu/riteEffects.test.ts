@@ -91,6 +91,20 @@ describe('riteEffects', () => {
     expect(next).toEqual(wave)
   })
 
+  test('ライドー: 非絵札が場に無ければ使用不可', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♠', 11), card(2, '♦', 5, true)]],
+    })
+    expect(canUseRite(DEFAULT_PARAMS, wave, 'raidho')).toBe(false)
+  })
+
+  test('ライドー: 非絵札があれば使用可', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♠', 11), card(3, '♣', 5)]],
+    })
+    expect(canUseRite(DEFAULT_PARAMS, wave, 'raidho')).toBe(true)
+  })
+
   test('ウンヨー: 場札を捨て札に合流→シャッフル→各列の元の枚数を維持して配り直す(山札は不変)', () => {
     const wave = baseWave({
       tableau: [[card(1, '♠', 5), card(2, '♦', 9)], [card(3, '♣', 2)]],
@@ -122,6 +136,16 @@ describe('riteEffects', () => {
     const wave = baseWave({ tableau: [[card(1, '♠', 5)]], stock: [] })
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'othala', createRng(1))
     expect(next).toEqual(wave)
+  })
+
+  test('オセラ: 山札が空なら使用不可', () => {
+    const wave = baseWave({ tableau: [[card(1, '♠', 5)]], stock: [] })
+    expect(canUseRite(DEFAULT_PARAMS, wave, 'othala')).toBe(false)
+  })
+
+  test('オセラ: 山札があれば使用可', () => {
+    const wave = baseWave({ tableau: [[card(1, '♠', 5)]], stock: [card(10, '♥', 1)] })
+    expect(canUseRite(DEFAULT_PARAMS, wave, 'othala')).toBe(true)
   })
 
   test('ペルスロ: 各列をdealtRowsまで山札から補充する', () => {
