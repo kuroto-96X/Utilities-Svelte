@@ -250,6 +250,12 @@ describe('riteEffects', () => {
     expect(allIds).toEqual([1, 2, 10, 11, 12])
   })
 
+  test('スリサズ: nextPlayScoreMultiplierがxになる', () => {
+    const wave = baseWave()
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'thurisaz', createRng(1))
+    expect(next.nextPlayScoreMultiplier).toBe(DEFAULT_PARAMS.rites.thurisaz.x)
+  })
+
   test('イェラ: 各列がソートされる', () => {
     const wave = baseWave({ tableau: [[card(1, '♠', 9), card(2, '♦', 2), card(3, '♣', 5)]] })
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'jera', createRng(1))

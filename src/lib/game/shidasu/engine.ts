@@ -581,7 +581,9 @@ export function playCard(
   if (echoFactor !== 1) parts.push(multiplyPart('残響', echoFactor))
   const arroganceFactor = items.includes('arrogance') && wave.stock.length === 0 ? params.talismans.arrogance.x : 1
   if (arroganceFactor !== 1) parts.push(multiplyPart('慢心', arroganceFactor))
-  let gained = Math.floor((itemResult.value + discretionAdd + shootingStarGainedAdd + clearBonusAdd) * multiplier * mannazFactor * dedicationFactor * diligenceFactor * divineProtectionFactor * frostFactor * echoFactor * arroganceFactor)
+  const thurisazFactor = wave.nextPlayScoreMultiplier
+  if (thurisazFactor !== 1) parts.push(multiplyPart('スリサズ', thurisazFactor))
+  let gained = Math.floor((itemResult.value + discretionAdd + shootingStarGainedAdd + clearBonusAdd) * multiplier * mannazFactor * dedicationFactor * diligenceFactor * divineProtectionFactor * frostFactor * echoFactor * arroganceFactor * thurisazFactor)
   if (scoreLock && isBossScoreLocked(scoreLock, effectiveCombo, card)) {
     parts.length = 0
     parts.push(lockPart(bossScoreLockMessage(scoreLock)))
@@ -636,6 +638,7 @@ export function playCard(
     sameRankEchoUsedThisCombo: newSameRankEchoUsedThisCombo,
     sweptColumnsThisCombo: newSweptColumnsThisCombo,
     sowiloBoostedRole: wave.sowiloBoostedRole ?? sowiloCommittedThisPlay,
+    nextPlayScoreMultiplier: 1,
   }
 
   // gained確定時点(全消しボーナス込み)で目標達成なら即座に終了する。

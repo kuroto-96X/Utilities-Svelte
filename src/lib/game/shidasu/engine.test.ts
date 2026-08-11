@@ -1571,6 +1571,24 @@ describe('playCard', () => {
     expect(next.score).toBe(Math.floor(scoring.basePoint * 1.1))
   })
 
+  test('スリサズ: nextPlayScoreMultiplierが1でなければ得点に乗算され、プレイ後は1にリセットされる', () => {
+    const wave = baseWave({
+      tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
+      nextPlayScoreMultiplier: 1.5,
+    })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const comboMultiplier = 1 + 1 * scoring.comboMultiplierStep
+    expect(next.score).toBe(Math.floor(scoring.basePoint * comboMultiplier * 1.5))
+    expect(next.nextPlayScoreMultiplier).toBe(1)
+  })
+
+  test('スリサズ未発動時(nextPlayScoreMultiplierが既定1)は得点に影響しない', () => {
+    const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const comboMultiplier = 1 + 1 * scoring.comboMultiplierStep
+    expect(next.score).toBe(Math.floor(scoring.basePoint * comboMultiplier))
+  })
+
   test('慢心: playCard時、山札が0枚ならgainedがx倍になる', () => {
     const wave = baseWave({
       stock: [],

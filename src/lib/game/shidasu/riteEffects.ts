@@ -129,7 +129,7 @@ function applyKenaz(wave: WaveState, rand: () => number): WaveState {
 }
 
 function applyThurisaz(wave: WaveState, x: number): WaveState {
-  return wave
+  return { ...wave, nextPlayScoreMultiplier: x }
 }
 
 function applyJera(wave: WaveState, rand: () => number): WaveState {
