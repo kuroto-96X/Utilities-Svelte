@@ -145,6 +145,15 @@ describe('riteEffects', () => {
     expect(canUseRite(DEFAULT_PARAMS, wave, 'perthro')).toBe(false)
   })
 
+  test('ペルスロ: 不足している列があっても山札が空なら使用不可', () => {
+    const wave = baseWave({
+      dealtRows: 3,
+      tableau: [[card(1, '♠', 5)], [card(2, '♦', 5)]],
+      stock: [],
+    })
+    expect(canUseRite(DEFAULT_PARAMS, wave, 'perthro')).toBe(false)
+  })
+
   test('イェラ: 各列がソートされる', () => {
     const wave = baseWave({ tableau: [[card(1, '♠', 9), card(2, '♦', 2), card(3, '♣', 5)]] })
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'jera', createRng(1))

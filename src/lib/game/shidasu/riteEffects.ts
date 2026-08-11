@@ -189,7 +189,7 @@ export function canUseRite(_params: ShidasuParams, wave: WaveState, riteId: Rite
     case 'fehu':
       return wave.stock.length > cols
     case 'perthro':
-      return wave.tableau.some(col => col.length < wave.dealtRows)
+      return wave.stock.length > 0 && wave.tableau.some(col => col.length < wave.dealtRows)
     default:
       return true
   }
