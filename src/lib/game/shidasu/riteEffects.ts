@@ -82,7 +82,24 @@ function applyLaguz(wave: WaveState, rand: () => number): WaveState {
 }
 
 function applyAnsuz(wave: WaveState): WaveState {
-  return wave
+  if (wave.stock.length === 0) return wave
+  const stock = [...wave.stock]
+  const drawn = stock.pop() as Card
+  return {
+    ...wave,
+    stock,
+    chain: [drawn],
+    chainOrigin: ['draw'],
+    foundation: drawn,
+    linked: false,
+    discardPile: [...wave.discardPile, ...wave.chain],
+    columnsEmptiedThisCombo: 0,
+    comboStreakColumnLengths: wave.tableau.map(col => col.length),
+    drawContinueCountThisChain: 0,
+    flushActiveThisCombo: false,
+    sameColumnStreak: 0,
+    lastPlayedColumn: null,
+  }
 }
 
 function applyKenaz(wave: WaveState, rand: () => number): WaveState {

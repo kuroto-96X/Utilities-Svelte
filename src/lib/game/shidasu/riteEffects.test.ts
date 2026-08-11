@@ -191,6 +191,33 @@ describe('riteEffects', () => {
     expect(canUseRite(DEFAULT_PARAMS, wave, 'laguz')).toBe(false)
   })
 
+  test('アンスズ: チェーンを捨て札に送り、山札から1枚引いて新チェーンにする(コンボは不変)', () => {
+    const wave = baseWave({
+      chain: [card(1, '♠', 5), card(2, '♦', 9)],
+      foundation: card(2, '♦', 9),
+      stock: [card(10, '♥', 1), card(11, '♥', 2)],
+      combo: 5,
+      maxComboThisWave: 5,
+      baseComboCount: 2,
+    })
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'ansuz', createRng(1))
+    expect(next.chain).toHaveLength(1)
+    expect(next.chain[0].id).toBe(11)
+    expect(next.foundation.id).toBe(11)
+    expect(next.stock).toHaveLength(1)
+    expect(next.stock[0].id).toBe(10)
+    expect(next.discardPile.map(c => c.id).sort((a, b) => a - b)).toEqual([1, 2])
+    expect(next.combo).toBe(5)
+    expect(next.maxComboThisWave).toBe(5)
+    expect(next.baseComboCount).toBe(2)
+  })
+
+  test('アンスズ: 山札が空なら何もしない', () => {
+    const wave = baseWave({ chain: [card(1, '♠', 5)], stock: [] })
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'ansuz', createRng(1))
+    expect(next).toEqual(wave)
+  })
+
   test('イェラ: 各列がソートされる', () => {
     const wave = baseWave({ tableau: [[card(1, '♠', 9), card(2, '♦', 2), card(3, '♣', 5)]] })
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'jera', createRng(1))
