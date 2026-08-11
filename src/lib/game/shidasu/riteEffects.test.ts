@@ -238,6 +238,18 @@ describe('riteEffects', () => {
     expect(next.roleFiredThisChain).toBe(false)
   })
 
+  test('ケナズ: 場札を山札に合流し、多いスート順に並べて元の各列の枚数を維持して配り直す', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♠', 5)], [card(2, '♦', 5)]],
+      stock: [card(10, '♠', 1), card(11, '♠', 2), card(12, '♦', 3)],
+    })
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'kenaz', createRng(1))
+    expect(next.tableau[0]).toHaveLength(1)
+    expect(next.tableau[1]).toHaveLength(1)
+    const allIds = [...next.tableau.flat(), ...next.stock].map(c => c.id).sort((a, b) => a - b)
+    expect(allIds).toEqual([1, 2, 10, 11, 12])
+  })
+
   test('イェラ: 各列がソートされる', () => {
     const wave = baseWave({ tableau: [[card(1, '♠', 9), card(2, '♦', 2), card(3, '♣', 5)]] })
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'jera', createRng(1))

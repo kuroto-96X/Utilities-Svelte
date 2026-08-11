@@ -104,7 +104,28 @@ function applyAnsuz(wave: WaveState): WaveState {
 }
 
 function applyKenaz(wave: WaveState, rand: () => number): WaveState {
-  return wave
+  const pool = [...wave.stock, ...wave.tableau.flat()]
+  const suits: Suit[] = ['♠', '♥', '♦', '♣', '★']
+  const groups = new Map<Suit, Card[]>(suits.map(s => [s, []]))
+  pool.forEach(c => groups.get(c.suit)!.push(c))
+  const ordered = suits
+    .filter(s => groups.get(s)!.length > 0)
+    .sort((a, b) => groups.get(b)!.length - groups.get(a)!.length)
+  const dealSequence: Card[] = []
+  ordered.forEach(s => {
+    const group = [...groups.get(s)!]
+    shuffleInPlace(group, rand)
+    dealSequence.push(...group)
+  })
+  let cursor = 0
+  const tableau = wave.tableau.map(col => {
+    const take = col.length
+    const newCol = dealSequence.slice(cursor, cursor + take)
+    cursor += take
+    return newCol
+  })
+  const stock = dealSequence.slice(cursor)
+  return { ...wave, tableau, stock }
 }
 
 function applyThurisaz(wave: WaveState, x: number): WaveState {
