@@ -124,6 +124,27 @@ describe('riteEffects', () => {
     expect(next).toEqual(wave)
   })
 
+  test('ペルスロ: 各列をdealtRowsまで山札から補充する', () => {
+    const wave = baseWave({
+      dealtRows: 3,
+      tableau: [[card(1, '♠', 5)], [card(2, '♦', 5), card(3, '♣', 5)]],
+      stock: [card(10, '♥', 1), card(11, '♥', 2), card(12, '♥', 3)],
+    })
+    expect(canUseRite(DEFAULT_PARAMS, wave, 'perthro')).toBe(true)
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'perthro', createRng(1))
+    expect(next.tableau[0]).toHaveLength(3)
+    expect(next.tableau[1]).toHaveLength(3)
+    expect(next.stock).toHaveLength(0)
+  })
+
+  test('ペルスロ: 不足している列が無ければ使用不可', () => {
+    const wave = baseWave({
+      dealtRows: 1,
+      tableau: [[card(1, '♠', 5)], [card(2, '♦', 5)]],
+    })
+    expect(canUseRite(DEFAULT_PARAMS, wave, 'perthro')).toBe(false)
+  })
+
   test('イェラ: 各列がソートされる', () => {
     const wave = baseWave({ tableau: [[card(1, '♠', 9), card(2, '♦', 2), card(3, '♣', 5)]] })
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'jera', createRng(1))

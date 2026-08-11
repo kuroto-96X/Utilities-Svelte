@@ -55,7 +55,14 @@ function applyOthala(wave: WaveState, rand: () => number): WaveState {
 }
 
 function applyPerthro(wave: WaveState): WaveState {
-  return wave
+  const stock = [...wave.stock]
+  const tableau = wave.tableau.map(col => {
+    const need = Math.max(0, wave.dealtRows - col.length)
+    const picked: Card[] = []
+    for (let i = 0; i < need && stock.length > 0; i++) picked.push(stock.pop() as Card)
+    return [...col, ...picked]
+  })
+  return { ...wave, tableau, stock }
 }
 
 function applyTiwaz(wave: WaveState): WaveState {
@@ -181,6 +188,8 @@ export function canUseRite(_params: ShidasuParams, wave: WaveState, riteId: Rite
       return wave.discardPile.length >= cols
     case 'fehu':
       return wave.stock.length > cols
+    case 'perthro':
+      return wave.tableau.some(col => col.length < wave.dealtRows)
     default:
       return true
   }
