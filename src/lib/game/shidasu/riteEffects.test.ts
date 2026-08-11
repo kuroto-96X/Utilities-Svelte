@@ -105,6 +105,25 @@ describe('riteEffects', () => {
     expect(allIds).toEqual([1, 2, 3, 10, 11])
   })
 
+  test('オセラ: 山札で最多のランクを場札に合流し、列数を変えずラウンドロビンで配り直す', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♠', 5)], [card(2, '♦', 5)]],
+      stock: [card(10, '♥', 7), card(11, '♣', 7), card(12, '♠', 7), card(13, '♦', 3)],
+    })
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'othala', createRng(1))
+    expect(next.stock).toHaveLength(1)
+    expect(next.stock[0].id).toBe(13)
+    expect(next.tableau).toHaveLength(2)
+    const tableauIds = next.tableau.flat().map(c => c.id).sort((a, b) => a - b)
+    expect(tableauIds).toEqual([1, 2, 10, 11, 12])
+  })
+
+  test('オセラ: 山札が空なら何もしない', () => {
+    const wave = baseWave({ tableau: [[card(1, '♠', 5)]], stock: [] })
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'othala', createRng(1))
+    expect(next).toEqual(wave)
+  })
+
   test('イェラ: 各列がソートされる', () => {
     const wave = baseWave({ tableau: [[card(1, '♠', 9), card(2, '♦', 2), card(3, '♣', 5)]] })
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'jera', createRng(1))

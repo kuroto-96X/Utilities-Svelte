@@ -38,7 +38,20 @@ function applyWunjo(wave: WaveState, rand: () => number): WaveState {
 }
 
 function applyOthala(wave: WaveState, rand: () => number): WaveState {
-  return wave
+  const rankCounts = new Map<Rank, number>()
+  wave.stock.forEach(c => rankCounts.set(c.rank, (rankCounts.get(c.rank) ?? 0) + 1))
+  if (rankCounts.size === 0) return wave
+  const maxCount = Math.max(...rankCounts.values())
+  const candidates = [...rankCounts.entries()].filter(([, count]) => count === maxCount).map(([rank]) => rank)
+  const targetRank = pickRandom(candidates, rand)
+  const drawn = wave.stock.filter(c => c.rank === targetRank)
+  const stock = wave.stock.filter(c => c.rank !== targetRank)
+  const cols = wave.tableau.length
+  const pool = [...wave.tableau.flat(), ...drawn]
+  shuffleInPlace(pool, rand)
+  const tableau: Card[][] = Array.from({ length: cols }, () => [])
+  pool.forEach((c, i) => { tableau[i % cols].push(c) })
+  return { ...wave, tableau, stock }
 }
 
 function applyPerthro(wave: WaveState): WaveState {
