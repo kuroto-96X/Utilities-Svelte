@@ -163,6 +163,34 @@ describe('riteEffects', () => {
     expect(next.tableau[1].map(c => c.id)).toEqual([4])
   })
 
+  test('ラグズ: 0枚の列をランダムに1つ選びdealtRowsまで補充する', () => {
+    const wave = baseWave({
+      dealtRows: 2,
+      tableau: [[], [card(1, '♠', 5)]],
+      stock: [card(10, '♥', 1), card(11, '♥', 2)],
+    })
+    expect(canUseRite(DEFAULT_PARAMS, wave, 'laguz')).toBe(true)
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'laguz', createRng(1))
+    expect(next.tableau[0]).toHaveLength(2)
+    expect(next.tableau[1]).toEqual(wave.tableau[1])
+    expect(next.stock).toHaveLength(0)
+  })
+
+  test('ラグズ: 0枚の列が無ければ使用不可', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♠', 5)], [card(2, '♦', 5)]],
+    })
+    expect(canUseRite(DEFAULT_PARAMS, wave, 'laguz')).toBe(false)
+  })
+
+  test('ラグズ: 0枚の列があっても山札が空なら使用不可', () => {
+    const wave = baseWave({
+      tableau: [[], [card(1, '♠', 5)]],
+      stock: [],
+    })
+    expect(canUseRite(DEFAULT_PARAMS, wave, 'laguz')).toBe(false)
+  })
+
   test('イェラ: 各列がソートされる', () => {
     const wave = baseWave({ tableau: [[card(1, '♠', 9), card(2, '♦', 2), card(3, '♣', 5)]] })
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'jera', createRng(1))

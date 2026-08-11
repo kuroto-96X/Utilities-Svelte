@@ -71,7 +71,14 @@ function applyTiwaz(wave: WaveState): WaveState {
 }
 
 function applyLaguz(wave: WaveState, rand: () => number): WaveState {
-  return wave
+  const emptyCols = wave.tableau.map((_, i) => i).filter(i => wave.tableau[i].length === 0)
+  if (emptyCols.length === 0) return wave
+  const ci = pickRandom(emptyCols, rand)
+  const stock = [...wave.stock]
+  const picked: Card[] = []
+  for (let i = 0; i < wave.dealtRows && stock.length > 0; i++) picked.push(stock.pop() as Card)
+  const tableau = wave.tableau.map((col, i) => (i === ci ? picked : col))
+  return { ...wave, tableau, stock }
 }
 
 function applyAnsuz(wave: WaveState): WaveState {
@@ -191,6 +198,8 @@ export function canUseRite(_params: ShidasuParams, wave: WaveState, riteId: Rite
       return wave.stock.length > cols
     case 'perthro':
       return wave.stock.length > 0 && wave.tableau.some(col => col.length < wave.dealtRows)
+    case 'laguz':
+      return wave.stock.length > 0 && wave.tableau.some(col => col.length === 0)
     default:
       return true
   }
