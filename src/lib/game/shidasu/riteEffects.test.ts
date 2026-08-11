@@ -154,6 +154,15 @@ describe('riteEffects', () => {
     expect(canUseRite(DEFAULT_PARAMS, wave, 'perthro')).toBe(false)
   })
 
+  test('ティワズ: 場札の全列が反転する', () => {
+    const wave = baseWave({
+      tableau: [[card(1, '♠', 5), card(2, '♦', 9), card(3, '♣', 2)], [card(4, '♥', 1)]],
+    })
+    const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'tiwaz', createRng(1))
+    expect(next.tableau[0].map(c => c.id)).toEqual([3, 2, 1])
+    expect(next.tableau[1].map(c => c.id)).toEqual([4])
+  })
+
   test('イェラ: 各列がソートされる', () => {
     const wave = baseWave({ tableau: [[card(1, '♠', 9), card(2, '♦', 2), card(3, '♣', 5)]] })
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'jera', createRng(1))

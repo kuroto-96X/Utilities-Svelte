@@ -66,7 +66,8 @@ function applyPerthro(wave: WaveState): WaveState {
 }
 
 function applyTiwaz(wave: WaveState): WaveState {
-  return wave
+  const tableau = wave.tableau.map(col => [...col].reverse())
+  return { ...wave, tableau }
 }
 
 function applyLaguz(wave: WaveState, rand: () => number): WaveState {
