@@ -100,6 +100,7 @@ export interface ShopState {
 - `src/lib/game/shidasu/shop.ts`: `rollShop`にレリック枠の抽選ロジックを追加、`relicBuyPrice`を追加
 - `src/lib/game/shidasu/engine.ts`: `buyRelic`を追加
 - `src/routes/game/shidasu/+page.svelte`: 所持レリックバッジ表示、ショップ画面のレリック専用枠の表示・購入ボタンを追加
+- `docs/shidasu/shidasu-roadmap.md`: 項目5「レリックの実装」に実装結果(本設計の内容が完了したこと、個別レリックの候補出しが未着手であること)を追記
 
 ## 動作確認用の仮レリック
 
