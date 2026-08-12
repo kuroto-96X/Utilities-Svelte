@@ -3342,7 +3342,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
     const run: RunState = {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['resilience'], offer: [],
       wave, waveGeneration: 1, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
-      revelations: [], revelationOffer: [], extraTableauRows: 0,
+      revelations: [], relics: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
       dedicationX: 1, diligenceX: 1, divineProtectionX: 1, discretionN: 10, frostX: 1,
@@ -3374,7 +3374,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
     const run: RunState = {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['resilience'], offer: [],
       wave, waveGeneration: 1, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
-      revelations: [], revelationOffer: [], extraTableauRows: 0,
+      revelations: [], relics: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
       dedicationX: 1, diligenceX: 1, divineProtectionX: 1, discretionN: 10, frostX: 1,
@@ -3400,7 +3400,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
     const run: RunState = {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: [], offer: [],
       wave, waveGeneration: 1, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
-      revelations: [], revelationOffer: [], extraTableauRows: 0,
+      revelations: [], relics: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
       dedicationX: 1, diligenceX: 1, divineProtectionX: 1, discretionN: 10, frostX: 1,
@@ -3427,7 +3427,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
     const run: RunState = {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['resilience'], offer: [],
       wave, waveGeneration: 1, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
-      revelations: [], revelationOffer: [], extraTableauRows: 0,
+      revelations: [], relics: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
       dedicationX: 1, diligenceX: 1, divineProtectionX: 1, discretionN: 10, frostX: 1,
@@ -3455,7 +3455,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
     const run: RunState = {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['healing', 'resilience'], offer: [],
       wave, waveGeneration: 1, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
-      revelations: [], revelationOffer: [], extraTableauRows: 0,
+      revelations: [], relics: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
       dedicationX: 1, diligenceX: 1, divineProtectionX: 1, discretionN: 10, frostX: 1,
@@ -3482,7 +3482,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
     const run: RunState = {
       phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['healing'], offer: [],
       wave, waveGeneration: 1, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
-      revelations: [], revelationOffer: [], extraTableauRows: 0,
+      revelations: [], relics: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
       currency: DEFAULT_PARAMS.currency.initialAmount,
       dedicationX: 1, diligenceX: 1, divineProtectionX: 1, discretionN: 10, frostX: 1,

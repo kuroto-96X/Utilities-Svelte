@@ -108,6 +108,12 @@ export type RevelationId =
   | 'mitsu'
   | 'karasu'
 
+// レリック(Relic): ショップ販売価格・提示数・リロールコストの減少、秘儀・天啓・神託の所持上限増加など、
+// ラン単位の経済・メタ的な効果を持つ、護符の守備範囲外のアイテム。所持数に上限は無いが重複所持はできない。
+// 個体ごとに「付喪化」(進化)状態を持ち、付喪化すると効果が上方修正される。個別候補は未確定のため、
+// 現状はシステム動作確認用のplaceholderのみを持つ(個別候補確定時にここへ実際の値を追加する)。
+export type RelicId = 'placeholder'
+
 export interface Card {
   id: number
   // 由来のdeckComposition内での永続的な識別子(deckComposition[].deckIdをそのまま引き継ぐ)。
@@ -318,6 +324,12 @@ export interface ShopPackSlot {
 export interface ShopState {
   individual: ShopIndividualSlot[]
   packs: ShopPackSlot[]
+  // レリック専用枠。既存のバラ売り3枠(individual)・福袋2枠(packs)とは別に、ショップ訪問のたびに
+  // 未所持のレリックから1つ抽選する。未所持のレリックが無ければnull(枠自体を非表示にする)。
+  // オプショナルにしているのは、ShopStateをリテラルで直接組み立てている既存テスト(レリックと無関係な
+  // 護符・秘儀・天啓・神託・福袋のテスト)を変更せずに済ませるため。本番コードでShopStateを生成する
+  // 唯一の経路であるrollShopは必ずこのフィールドを設定する
+  relic?: { id: RelicId; sold: boolean } | null
 }
 
 // 福袋の天啓・神託パックで上限到達時にスワップ対象を指定するための判別共用体。
@@ -344,6 +356,10 @@ export interface RunState {
   rites: RiteId[]
   // 所持中の天啓(最大2、同じ種類を複数所持できる)。ウェーブを跨いで持続する(秘儀と同様)
   revelations: RevelationId[]
+  // 所持中のレリック。同じidを複数所持することはできない(重複不可)。所持数に上限は無い。
+  // tsukumokaは個体ごとの付喪化(進化)状態。trueになると効果がtsukumokaDescの内容に上方修正される
+  // (付喪化させる手段=天啓は未実装のため、現状は常にfalseのまま)
+  relics: { id: RelicId; tsukumoka: boolean }[]
   // 天啓選択画面('revelationSelect'フェーズ)で提示中のオファー(3択)。それ以外のフェーズでは空配列
   revelationOffer: RevelationId[]
   // 天啓「虚」由来の、ウェーブ開始時の配布行数への永続的な追加分(暗雲護符のrと合算される)

@@ -1226,6 +1226,14 @@
       "desc": "交互　レベル+1"
     }
   },
+  "relics": {
+    "placeholder": {
+      "name": "仮の置物",
+      "desc": "(動作確認用の仮レリック。効果なし)",
+      "tsukumokaDesc": "(動作確認用の仮レリック・付喪化状態。効果なし)",
+      "price": 10
+    }
+  },
   "flow": {
     "wavesPerStage": 3,
     "clearDelayMs": 450,

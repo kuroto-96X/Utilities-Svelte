@@ -992,7 +992,7 @@ export function markStuck(wave: WaveState): WaveState {
 export function createInitialRun(): RunState {
   return {
     phase: 'title', stageIndex: 0, waveIndex: 0, items: [], offer: [], wave: null, waveGeneration: 0, pendingNewItem: null,
-    deckComposition: standardDeckComposition(), rites: [], revelations: [], revelationOffer: [], extraTableauRows: 0,
+    deckComposition: standardDeckComposition(), rites: [], revelations: [], relics: [], revelationOffer: [], extraTableauRows: 0,
     oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool',
     stageStars: [], currency: 0,
     dedicationX: 1, diligenceX: 1, divineProtectionX: 1,
@@ -1021,6 +1021,7 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
     deckComposition: standardDeckComposition(),
     rites: [],
     revelations: [],
+    relics: [],
     revelationOffer: [],
     extraTableauRows: initialExtraTableauRows,
     oracleLevels: defaultOracleLevels(),

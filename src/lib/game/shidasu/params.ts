@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/params.ts
 import shidasuConfigJson from './shidasu.config.json'
-import type { Rarity, PackCatalogEntry } from './types'
+import type { Rarity, PackCatalogEntry, RelicId } from './types'
 
 export interface ShidasuParams {
   layout: {
@@ -237,6 +237,7 @@ export interface ShidasuParams {
     pair: { name: string; desc: string }
     alternating: { name: string; desc: string }
   }
+  relics: Record<RelicId, { name: string; desc: string; tsukumokaDesc: string; price: number }>
   flow: {
     wavesPerStage: number
     clearDelayMs: number
@@ -490,6 +491,10 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     sameRank: { name: '坤為地', desc: '同ランク　レベル+1' },
     pair: { name: '沢山咸', desc: 'ペア　レベル+1' },
     alternating: { name: '水火既済', desc: '交互　レベル+1' },
+  },
+  relics: {
+    // 動作確認用の仮レリック。ゲームプレイに実効果を持たないダミー。個別候補確定時に実際の内容へ差し替える
+    placeholder: { name: '仮の置物', desc: '(動作確認用の仮レリック。効果なし)', tsukumokaDesc: '(動作確認用の仮レリック・付喪化状態。効果なし)', price: 10 },
   },
   flow: { wavesPerStage: 3, clearDelayMs: 450, stageTargetBase: 2000, stageTargetMultiplier: 1.8, stagesPerRun: 8, rerollCost: 30 },
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },
