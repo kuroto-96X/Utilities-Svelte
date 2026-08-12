@@ -13,6 +13,7 @@ import { applyRevelationEffect, canUseRevelation } from './revelationEffects'
 import { rollOracleOffer, defaultOracleLevels, ORACLE_POOL } from './oracles'
 import { rollCardSetOffer } from './cardSets'
 import { rollShop, itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice, oracleBuyPrice, oracleSellPrice, relicBuyPrice } from './shop'
+import { itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity } from './relics'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
 
@@ -1192,7 +1193,7 @@ export function buyIndividualItem(params: ShidasuParams, run: RunState, slotInde
   const slot = run.shop.individual[slotIndex]
   if (!slot || slot.sold || slot.kind !== 'item') return run
   const itemId = slot.id as ItemId
-  if (run.items.length >= params.items.maxItems) return run
+  if (run.items.length >= itemMaxCapacity(params, run)) return run
   const price = itemBuyPrice(params, run, itemId)
   if (run.currency < price) return run
   const individual = run.shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
@@ -1205,7 +1206,7 @@ export function buyIndividualRite(params: ShidasuParams, run: RunState, slotInde
   const slot = run.shop.individual[slotIndex]
   if (!slot || slot.sold || slot.kind !== 'rite') return run
   const riteId = slot.id as RiteId
-  if (run.rites.length >= 3) return run
+  if (run.rites.length >= riteMaxCapacity(params, run)) return run
   const price = riteBuyPrice(params, run)
   if (run.currency < price) return run
   const individual = run.shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
@@ -1251,7 +1252,7 @@ export function buyIndividualRevelationHold(params: ShidasuParams, run: RunState
   if (run.phase !== 'shop' || !run.shop) return run
   const slot = run.shop.individual[slotIndex]
   if (!slot || slot.sold || slot.kind !== 'revelation') return run
-  if (run.revelations.length + run.oracles.length >= 2) return run
+  if (run.revelations.length + run.oracles.length >= revelationOracleMaxCapacity(params, run)) return run
   const revelationId = slot.id as RevelationId
   const price = revelationBuyPrice(params, run)
   if (run.currency < price) return run
@@ -1278,7 +1279,7 @@ export function buyIndividualOracleHold(params: ShidasuParams, run: RunState, sl
   if (run.phase !== 'shop' || !run.shop) return run
   const slot = run.shop.individual[slotIndex]
   if (!slot || slot.sold || slot.kind !== 'oracle') return run
-  if (run.revelations.length + run.oracles.length >= 2) return run
+  if (run.revelations.length + run.oracles.length >= revelationOracleMaxCapacity(params, run)) return run
   const roleName = slot.id as RoleName
   const price = oracleBuyPrice(params, run)
   if (run.currency < price) return run
@@ -1314,7 +1315,7 @@ function resolvePackItemPick(run: RunState, newItems: ItemId[], pickedId: ItemId
 // 護符の福袋(itemSelect)から1つ選ぶ。所持上限到達時はpendingNewItemにセットしてスワップ待ちにする。
 export function pickPackItem(params: ShidasuParams, run: RunState, itemId: ItemId): RunState {
   if (run.phase !== 'itemSelect' || !run.offer.includes(itemId)) return run
-  if (run.items.length >= params.items.maxItems) {
+  if (run.items.length >= itemMaxCapacity(params, run)) {
     return { ...run, pendingNewItem: itemId }
   }
   return resolvePackItemPick(run, [...run.items, itemId], itemId)
@@ -1351,9 +1352,9 @@ function resolvePackRitePick(run: RunState, newRites: RiteId[], pickedId: RiteId
 }
 
 // 秘儀の福袋(riteSelect)から1つ選ぶ。所持上限3到達時はpendingNewRiteにセットしてスワップ待ちにする。
-export function pickPackRite(run: RunState, riteId: RiteId): RunState {
+export function pickPackRite(params: ShidasuParams, run: RunState, riteId: RiteId): RunState {
   if (run.phase !== 'riteSelect' || !run.riteOffer.includes(riteId)) return run
-  if (run.rites.length >= 3) {
+  if (run.rites.length >= riteMaxCapacity(params, run)) {
     return { ...run, pendingNewRite: riteId }
   }
   return resolvePackRitePick(run, [...run.rites, riteId], riteId)
@@ -1397,9 +1398,9 @@ export function pickPackRevelationUse(params: ShidasuParams, run: RunState, reve
 }
 
 // 天啓の福袋から1つ選び、温存する(所持に加える)。天啓・神託合算上限2到達時はpendingNewRevelationにセットしスワップ待ちにする。
-export function pickPackRevelationHold(run: RunState, revelationId: RevelationId): RunState {
+export function pickPackRevelationHold(params: ShidasuParams, run: RunState, revelationId: RevelationId): RunState {
   if (run.phase !== 'revelationSelect' || !run.revelationOffer.includes(revelationId)) return run
-  if (run.revelations.length + run.oracles.length >= 2) {
+  if (run.revelations.length + run.oracles.length >= revelationOracleMaxCapacity(params, run)) {
     return { ...run, pendingNewRevelation: revelationId }
   }
   return resolvePackRevelationPick({ ...run, revelations: [...run.revelations, revelationId] }, revelationId)
@@ -1447,7 +1448,7 @@ function grantRevelationReward(
 ): Partial<RunState> {
   switch (revelationId) {
     case 'subaru': {
-      if (runAfterRemoval.items.length >= params.items.maxItems) return {}
+      if (runAfterRemoval.items.length >= itemMaxCapacity(params, runAfterRemoval)) return {}
       const available = ITEM_POOL.filter(id => !runAfterRemoval.items.includes(id))
       if (available.length === 0) return {}
       const picked = available[Math.floor(rand() * available.length)]
@@ -1532,9 +1533,9 @@ export function pickPackOracleUse(run: RunState, roleName: RoleName): RunState {
 }
 
 // 神託の福袋から1つ選び、温存する(所持に加える)。天啓・神託合算上限2到達時はpendingNewOracleにセットしスワップ待ちにする。
-export function pickPackOracleHold(run: RunState, roleName: RoleName): RunState {
+export function pickPackOracleHold(params: ShidasuParams, run: RunState, roleName: RoleName): RunState {
   if (run.phase !== 'oracleSelect' || !run.oracleOffer.includes(roleName)) return run
-  if (run.revelations.length + run.oracles.length >= 2) {
+  if (run.revelations.length + run.oracles.length >= revelationOracleMaxCapacity(params, run)) {
     return { ...run, pendingNewOracle: roleName }
   }
   return resolvePackOraclePick({ ...run, oracles: [...run.oracles, roleName] }, roleName)

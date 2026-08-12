@@ -29,3 +29,27 @@ export function relicPriceMultiplier(params: ShidasuParams, run: RunState): numb
   const percent = relic.tsukumoka ? params.relics.manekiNeko.tsukumokaDiscountPercent : params.relics.manekiNeko.discountPercent
   return (100 - percent) / 100
 }
+
+function relicBonus(run: RunState, id: RelicId, n: number, tsukumokaN: number): number {
+  const relic = run.relics.find(r => r.id === id)
+  if (!relic) return 0
+  return relic.tsukumoka ? n + tsukumokaN : n
+}
+
+// 護符の所持上限。招き布袋像所持時はn(付喪化ならさらにtsukumokaN)を加算する。
+export function itemMaxCapacity(params: ShidasuParams, run: RunState): number {
+  const r = params.relics.manekiHoteizo
+  return params.items.maxItems + relicBonus(run, 'manekiHoteizo', r.n, r.tsukumokaN)
+}
+
+// 秘儀の所持上限(基本値3)。破魔矢所持時はn(付喪化ならさらにtsukumokaN)を加算する。
+export function riteMaxCapacity(params: ShidasuParams, run: RunState): number {
+  const r = params.relics.hamaya
+  return 3 + relicBonus(run, 'hamaya', r.n, r.tsukumokaN)
+}
+
+// 天啓・神託合算の所持上限(基本値2)。千羽鶴所持時はn(付喪化ならさらにtsukumokaN)を加算する。
+export function revelationOracleMaxCapacity(params: ShidasuParams, run: RunState): number {
+  const r = params.relics.senbazuru
+  return 2 + relicBonus(run, 'senbazuru', r.n, r.tsukumokaN)
+}

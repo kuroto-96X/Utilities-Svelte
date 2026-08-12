@@ -279,7 +279,7 @@
   }
 
   function handlePickPackRite(riteId: RiteId) {
-    run = pickPackRite(run, riteId)
+    run = pickPackRite(params, run, riteId)
   }
   function handleConfirmPackRiteSwap(oldRiteId: RiteId) {
     run = confirmPackRiteSwap(run, oldRiteId)
@@ -311,7 +311,7 @@
   }
 
   function handlePickPackRevelationHold(revelationId: RevelationId) {
-    run = pickPackRevelationHold(run, revelationId)
+    run = pickPackRevelationHold(params, run, revelationId)
     syncRevelationPreviewWithPhase()
   }
   function handleConfirmPackRevelationSwap(target: HeldRevelationOrOracleRef) {
@@ -330,7 +330,7 @@
     run = pickPackOracleUse(run, roleName)
   }
   function handlePickPackOracleHold(roleName: RoleName) {
-    run = pickPackOracleHold(run, roleName)
+    run = pickPackOracleHold(params, run, roleName)
   }
   function handleConfirmPackOracleSwap(target: HeldRevelationOrOracleRef) {
     run = confirmPackOracleSwap(run, target)

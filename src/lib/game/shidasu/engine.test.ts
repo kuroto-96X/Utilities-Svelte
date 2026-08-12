@@ -3030,6 +3030,18 @@ describe('buyIndividualItem(バラ売り護符購入)', () => {
     const run = { ...shopRun([{ kind: 'item', id: itemId, sold: false }]), phase: 'playing' as const }
     expect(buyIndividualItem(DEFAULT_PARAMS, run, 0)).toBe(run)
   })
+
+  test('招き布袋像所持時は所持上限(maxItems)が拡張され、通常なら上限到達の状態でも購入できる', () => {
+    const fullItems = ITEM_POOL.slice(0, DEFAULT_PARAMS.items.maxItems)
+    const newItemId = ITEM_POOL.find(id => !fullItems.includes(id))!
+    const run = shopRun([{ kind: 'item', id: newItemId, sold: false }], {
+      items: fullItems,
+      relics: [{ id: 'manekiHoteizo', tsukumoka: false }],
+    })
+    const result = buyIndividualItem(DEFAULT_PARAMS, run, 0)
+    expect(result.items).toEqual([...fullItems, newItemId])
+    expect(result.shop!.individual[0].sold).toBe(true)
+  })
 })
 
 describe('buyIndividualRite(バラ売り秘儀購入)', () => {
@@ -3286,7 +3298,7 @@ describe('buyPack / pickPackRite(秘儀の福袋)', () => {
   test('pickPackRiteで選ぶと所持に追加されshopへ戻る', () => {
     const run = shopRunWithRitePack()
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
-    const picked = pickPackRite(opened, opened.riteOffer[0])
+    const picked = pickPackRite(DEFAULT_PARAMS, opened, opened.riteOffer[0])
     expect(picked.rites).toEqual([opened.riteOffer[0]])
     expect(picked.phase).toBe('shop')
   })
@@ -3295,7 +3307,7 @@ describe('buyPack / pickPackRite(秘儀の福袋)', () => {
     const run = shopRunWithRitePack({ rites: ['jera', 'uruz', 'ingwaz'] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const newRiteId = opened.riteOffer[0]
-    const picked = pickPackRite(opened, newRiteId)
+    const picked = pickPackRite(DEFAULT_PARAMS, opened, newRiteId)
     expect(picked.pendingNewRite).toBe(newRiteId)
     expect(picked.rites).toEqual(['jera', 'uruz', 'ingwaz'])
   })
@@ -3304,7 +3316,7 @@ describe('buyPack / pickPackRite(秘儀の福袋)', () => {
     const run = shopRunWithRitePack({ rites: ['jera', 'uruz', 'ingwaz'] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const newRiteId = opened.riteOffer[0]
-    const picked = pickPackRite(opened, newRiteId)
+    const picked = pickPackRite(DEFAULT_PARAMS, opened, newRiteId)
     const confirmed = confirmPackRiteSwap(picked, 'jera')
     expect(confirmed.rites).toContain(newRiteId)
     expect(confirmed.rites).not.toContain('jera')
@@ -3315,7 +3327,7 @@ describe('buyPack / pickPackRite(秘儀の福袋)', () => {
   test('cancelPackRiteSwapでpendingNewRiteがクリアされる', () => {
     const run = shopRunWithRitePack({ rites: ['jera', 'uruz', 'ingwaz'] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
-    const picked = pickPackRite(opened, opened.riteOffer[0])
+    const picked = pickPackRite(DEFAULT_PARAMS, opened, opened.riteOffer[0])
     const cancelled = cancelPackRiteSwap(picked)
     expect(cancelled.pendingNewRite).toBeNull()
     expect(cancelled.rites).toEqual(['jera', 'uruz', 'ingwaz'])
@@ -3332,7 +3344,7 @@ describe('buyPack / pickPackRite(秘儀の福袋)', () => {
   test('秘儀の福袋購入では秘儀の自動抽選(rollRite)が発生しない(福袋外の護符購入等でrollRiteが呼ばれていた旧仕様の撤廃確認)', () => {
     const run = shopRunWithRitePack()
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
-    const picked = pickPackRite(opened, opened.riteOffer[0])
+    const picked = pickPackRite(DEFAULT_PARAMS, opened, opened.riteOffer[0])
     expect(picked.rites).toHaveLength(1)
   })
 })
@@ -4196,7 +4208,7 @@ describe('天啓の福袋(revelationSelect)', () => {
   test('pickPackRevelationHoldで温存すると所持に追加される', () => {
     const run = shopRunWithRevelationPack()
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
-    const result = pickPackRevelationHold(opened, opened.revelationOffer[0])
+    const result = pickPackRevelationHold(DEFAULT_PARAMS, opened, opened.revelationOffer[0])
     expect(result.revelations).toEqual([opened.revelationOffer[0]])
     expect(result.phase).toBe('shop')
   })
@@ -4205,7 +4217,7 @@ describe('天啓の福袋(revelationSelect)', () => {
     const run = shopRunWithRevelationPack({ revelations: ['kaku'], oracles: ['flush'] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const target = opened.revelationOffer[0]
-    const result = pickPackRevelationHold(opened, target)
+    const result = pickPackRevelationHold(DEFAULT_PARAMS, opened, target)
     expect(result.pendingNewRevelation).toBe(target)
     expect(result.revelations).toEqual(['kaku'])
   })
@@ -4214,7 +4226,7 @@ describe('天啓の福袋(revelationSelect)', () => {
     const run = shopRunWithRevelationPack({ revelations: ['kaku'], oracles: ['flush'] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const target = opened.revelationOffer[0]
-    const picked = pickPackRevelationHold(opened, target)
+    const picked = pickPackRevelationHold(DEFAULT_PARAMS, opened, target)
     const confirmed = confirmPackRevelationSwap(picked, { kind: 'revelation', id: 'kaku' })
     expect(confirmed.revelations).toEqual([target])
     expect(confirmed.oracles).toEqual(['flush'])
@@ -4225,7 +4237,7 @@ describe('天啓の福袋(revelationSelect)', () => {
     const run = shopRunWithRevelationPack({ revelations: ['kaku'], oracles: ['flush'] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const target = opened.revelationOffer[0]
-    const picked = pickPackRevelationHold(opened, target)
+    const picked = pickPackRevelationHold(DEFAULT_PARAMS, opened, target)
     const confirmed = confirmPackRevelationSwap(picked, { kind: 'oracle', id: 'flush' })
     expect(confirmed.revelations).toEqual(['kaku', target])
     expect(confirmed.oracles).toEqual([])
@@ -4234,7 +4246,7 @@ describe('天啓の福袋(revelationSelect)', () => {
   test('cancelPackRevelationSwapでpendingNewRevelationがクリアされる', () => {
     const run = shopRunWithRevelationPack({ revelations: ['kaku'], oracles: ['flush'] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
-    const picked = pickPackRevelationHold(opened, opened.revelationOffer[0])
+    const picked = pickPackRevelationHold(DEFAULT_PARAMS, opened, opened.revelationOffer[0])
     const cancelled = cancelPackRevelationSwap(picked)
     expect(cancelled.pendingNewRevelation).toBeNull()
   })
@@ -4455,7 +4467,7 @@ describe('神託の福袋(oracleSelect)', () => {
     const run = shopRunWithOraclePack()
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const role = opened.oracleOffer[0]
-    const result = pickPackOracleHold(opened, role)
+    const result = pickPackOracleHold(DEFAULT_PARAMS, opened, role)
     expect(result.oracles).toEqual([role])
   })
 
@@ -4463,7 +4475,7 @@ describe('神託の福袋(oracleSelect)', () => {
     const run = shopRunWithOraclePack({ revelations: ['kaku'], oracles: ['flush'] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const role = opened.oracleOffer.includes('stair') ? 'stair' : opened.oracleOffer[0]
-    const result = pickPackOracleHold(opened, role)
+    const result = pickPackOracleHold(DEFAULT_PARAMS, opened, role)
     expect(result.pendingNewOracle).toBe(role)
   })
 
@@ -4471,7 +4483,7 @@ describe('神託の福袋(oracleSelect)', () => {
     const run = shopRunWithOraclePack({ revelations: ['kaku'], oracles: ['flush'] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const role = opened.oracleOffer[0]
-    const picked = pickPackOracleHold(opened, role)
+    const picked = pickPackOracleHold(DEFAULT_PARAMS, opened, role)
     const confirmed = confirmPackOracleSwap(picked, { kind: 'revelation', id: 'kaku' })
     expect(confirmed.oracles).toEqual(['flush', role])
     expect(confirmed.revelations).toEqual([])
@@ -4482,7 +4494,7 @@ describe('神託の福袋(oracleSelect)', () => {
     const run = shopRunWithOraclePack({ revelations: ['kaku'], oracles: ['flush'] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const role = opened.oracleOffer[0]
-    const picked = pickPackOracleHold(opened, role)
+    const picked = pickPackOracleHold(DEFAULT_PARAMS, opened, role)
     const confirmed = confirmPackOracleSwap(picked, { kind: 'oracle', id: 'flush' })
     expect(confirmed.oracles).toEqual([role])
     expect(confirmed.revelations).toEqual(['kaku'])
@@ -4492,7 +4504,7 @@ describe('神託の福袋(oracleSelect)', () => {
   test('cancelPackOracleSwapでpendingNewOracleがクリアされる', () => {
     const run = shopRunWithOraclePack({ revelations: ['kaku'], oracles: ['flush'] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
-    const picked = pickPackOracleHold(opened, opened.oracleOffer[0])
+    const picked = pickPackOracleHold(DEFAULT_PARAMS, opened, opened.oracleOffer[0])
     const cancelled = cancelPackOracleSwap(picked)
     expect(cancelled.pendingNewOracle).toBeNull()
   })

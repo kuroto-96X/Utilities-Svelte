@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/relics.test.ts
 import { describe, test, it, expect } from 'vitest'
-import { RELIC_POOL, relicName, relicDesc, relicTsukumokaDesc, relicPriceMultiplier } from './relics'
+import { RELIC_POOL, relicName, relicDesc, relicTsukumokaDesc, relicPriceMultiplier, itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity } from './relics'
 import { DEFAULT_PARAMS } from './params'
 import type { RunState } from './types'
 
@@ -51,5 +51,36 @@ describe('relicPriceMultiplier(招き猫)', () => {
   it('招き猫(付喪化済み)所持時は(100-50)/100=0.5', () => {
     const run = { relics: [{ id: 'manekiNeko' as const, tsukumoka: true }] } as unknown as RunState
     expect(relicPriceMultiplier(DEFAULT_PARAMS, run)).toBeCloseTo(0.5)
+  })
+})
+
+describe('所持上限ヘルパー', () => {
+  it('itemMaxCapacity: 招き布袋像なしならparams.items.maxItemsそのまま', () => {
+    const run = { relics: [] } as unknown as RunState
+    expect(itemMaxCapacity(DEFAULT_PARAMS, run)).toBe(DEFAULT_PARAMS.items.maxItems)
+  })
+  it('itemMaxCapacity: 招き布袋像(未付喪化)で+1', () => {
+    const run = { relics: [{ id: 'manekiHoteizo' as const, tsukumoka: false }] } as unknown as RunState
+    expect(itemMaxCapacity(DEFAULT_PARAMS, run)).toBe(DEFAULT_PARAMS.items.maxItems + 1)
+  })
+  it('itemMaxCapacity: 招き布袋像(付喪化)で+2', () => {
+    const run = { relics: [{ id: 'manekiHoteizo' as const, tsukumoka: true }] } as unknown as RunState
+    expect(itemMaxCapacity(DEFAULT_PARAMS, run)).toBe(DEFAULT_PARAMS.items.maxItems + 2)
+  })
+  it('riteMaxCapacity: 破魔矢なしなら3', () => {
+    const run = { relics: [] } as unknown as RunState
+    expect(riteMaxCapacity(DEFAULT_PARAMS, run)).toBe(3)
+  })
+  it('riteMaxCapacity: 破魔矢(付喪化)で3+2', () => {
+    const run = { relics: [{ id: 'hamaya' as const, tsukumoka: true }] } as unknown as RunState
+    expect(riteMaxCapacity(DEFAULT_PARAMS, run)).toBe(5)
+  })
+  it('revelationOracleMaxCapacity: 千羽鶴なしなら2', () => {
+    const run = { relics: [] } as unknown as RunState
+    expect(revelationOracleMaxCapacity(DEFAULT_PARAMS, run)).toBe(2)
+  })
+  it('revelationOracleMaxCapacity: 千羽鶴(付喪化)で2+2', () => {
+    const run = { relics: [{ id: 'senbazuru' as const, tsukumoka: true }] } as unknown as RunState
+    expect(revelationOracleMaxCapacity(DEFAULT_PARAMS, run)).toBe(4)
   })
 })
