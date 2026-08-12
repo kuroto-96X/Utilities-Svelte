@@ -61,7 +61,7 @@
 
   function resetDeck() {
     deckComposition = standardDeckComposition()
-    // 護符の効果(永劫のワイルド追加・豊穣のランダム変換・暗雲の場札増加など)を
+    // 護符の効果(永劫のワイルド追加・豊穣のランダム変換など)を
     // 発動させずに配り直すため、newWave()を再利用せずitemsに空配列を渡す
     const result = startWave(params, 0, 0, [], deckComposition, undefined, 0, oracleLevels)
     wave = result.wave
