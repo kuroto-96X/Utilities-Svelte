@@ -29,6 +29,7 @@ import {
   useRevelation,
   buyIndividualItem,
   buyIndividualRite,
+  buyRelic,
   buyIndividualRevelationUse,
   buyIndividualRevelationHold,
   buyIndividualOracleUse,
@@ -73,7 +74,7 @@ import { createRng, standardDeckComposition } from './deck'
 import { card } from './testHelpers'
 import { defaultOracleLevels } from './oracles'
 import { ITEM_POOL } from './items'
-import { itemBuyPrice, riteBuyPrice, revelationBuyPrice, itemSellPrice, riteSellPrice, revelationSellPrice, oracleSellPrice, rollShop } from './shop'
+import { itemBuyPrice, riteBuyPrice, revelationBuyPrice, itemSellPrice, riteSellPrice, revelationSellPrice, oracleSellPrice, rollShop, relicBuyPrice } from './shop'
 import { addPart, finalScoreFromScoreParts, runningTotalsFromScoreParts } from './scoreParts'
 
 describe('isFace / rankLabel', () => {
@@ -3049,6 +3050,43 @@ describe('buyIndividualRite(バラ売り秘儀購入)', () => {
       shop: { individual: [{ kind: 'rite', id: 'gebo', sold: false }], packs: [] },
     }
     expect(buyIndividualRite(DEFAULT_PARAMS, run, 0)).toBe(run)
+  })
+})
+
+describe('buyRelic(レリック購入)', () => {
+  test('購入すると所持に追加され通貨が減る', () => {
+    const run: RunState = {
+      ...createInitialRun(), phase: 'shop', currency: 999,
+      shop: { individual: [], packs: [], relic: { id: 'placeholder', sold: false } },
+    }
+    const result = buyRelic(DEFAULT_PARAMS, run)
+    expect(result.relics).toEqual([{ id: 'placeholder', tsukumoka: false }])
+    expect(result.currency).toBe(999 - relicBuyPrice(DEFAULT_PARAMS, 'placeholder'))
+    expect(result.shop!.relic!.sold).toBe(true)
+  })
+
+  test('レリック枠がnullなら購入できない', () => {
+    const run: RunState = {
+      ...createInitialRun(), phase: 'shop', currency: 999,
+      shop: { individual: [], packs: [], relic: null },
+    }
+    expect(buyRelic(DEFAULT_PARAMS, run)).toBe(run)
+  })
+
+  test('売り切れ済みなら購入できない', () => {
+    const run: RunState = {
+      ...createInitialRun(), phase: 'shop', currency: 999,
+      shop: { individual: [], packs: [], relic: { id: 'placeholder', sold: true } },
+    }
+    expect(buyRelic(DEFAULT_PARAMS, run)).toBe(run)
+  })
+
+  test('通貨が足りなければ購入できない', () => {
+    const run: RunState = {
+      ...createInitialRun(), phase: 'shop', currency: 0,
+      shop: { individual: [], packs: [], relic: { id: 'placeholder', sold: false } },
+    }
+    expect(buyRelic(DEFAULT_PARAMS, run)).toBe(run)
   })
 })
 

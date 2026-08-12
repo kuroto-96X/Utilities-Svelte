@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, Star, StarRestriction, CardSetGenreId } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, Star, StarRestriction, CardSetGenreId, RelicId } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition, addCardsToDeckComposition, rollOffer } from './deck'
 import { isFace, chainContinuesPattern, evaluateChainBonus, countSameRankBefore, countSameRankForWildPlay, cardColors } from './patterns'
@@ -12,7 +12,7 @@ import { rollRevelationOffer, REVELATION_POOL } from './revelations'
 import { applyRevelationEffect, canUseRevelation } from './revelationEffects'
 import { rollOracleOffer, defaultOracleLevels, ORACLE_POOL } from './oracles'
 import { rollCardSetOffer } from './cardSets'
-import { rollShop, itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice, oracleBuyPrice, oracleSellPrice } from './shop'
+import { rollShop, itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice, oracleBuyPrice, oracleSellPrice, relicBuyPrice } from './shop'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
 
@@ -1210,6 +1210,21 @@ export function buyIndividualRite(params: ShidasuParams, run: RunState, slotInde
   if (run.currency < price) return run
   const individual = run.shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
   return { ...run, currency: run.currency - price, rites: [...run.rites, riteId], shop: { ...run.shop, individual } }
+}
+
+// レリックを1つ購入する。ショップのレリック専用枠(run.shop.relic)から購入する単品購入のみ。
+// 売り切れ済み・枠が無い(null)・通貨不足のいずれかならno-op
+export function buyRelic(params: ShidasuParams, run: RunState): RunState {
+  if (run.phase !== 'shop' || !run.shop || !run.shop.relic || run.shop.relic.sold) return run
+  const relicId = run.shop.relic.id
+  const price = relicBuyPrice(params, relicId)
+  if (run.currency < price) return run
+  return {
+    ...run,
+    currency: run.currency - price,
+    relics: [...run.relics, { id: relicId, tsukumoka: false }],
+    shop: { ...run.shop, relic: { ...run.shop.relic, sold: true } },
+  }
 }
 
 // バラ売り天啓・即使う。run.waveに即座に効果を適用する(target: colIndexが必要な天啓は
