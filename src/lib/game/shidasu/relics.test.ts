@@ -26,6 +26,20 @@ describe('relics', () => {
       expect(tsukumokaDesc).not.toMatch(/\{\w+\}/)
     }
   })
+
+  // tsukumokaNパラメータを持たないレリック(千社札・算盤・熊手・福笹・福だるま)のうち、
+  // 千社札・算盤は付喪化で計算式の乗数がparams.relics[id].nとは異なる値(2・10)へ
+  // ハードコードで切り替わる(senjafudaBonus/sorobanBonus@relics.ts参照)。
+  // tsukumokaDesc側でも{n}のような基礎値プレースホルダーではなく、実際の強化後の値を
+  // リテラルで書く必要がある。{n}のまま残っていると基礎値(n=1/5)がそのまま展開されてしまい、
+  // 文末の「付喪化によりn=2/10に強化」という説明と矛盾する表示になる(実際に起きた回帰)。
+  test('千社札・算盤のtsukumokaDescは基礎値{n}プレースホルダーを含まない(付喪化で乗数がハードコード値に切り替わるため)', () => {
+    expect(DEFAULT_PARAMS.relics.senjafuda.tsukumokaDesc).not.toMatch(/\{n\}/)
+    expect(DEFAULT_PARAMS.relics.soroban.tsukumokaDesc).not.toMatch(/\{n\}/)
+    // 表示される数値が実装(relics.tsのハードコード値)と一致していることも確認する。
+    expect(relicTsukumokaDesc('senjafuda', DEFAULT_PARAMS)).toContain('×2')
+    expect(relicTsukumokaDesc('soroban', DEFAULT_PARAMS)).toContain('×10')
+  })
 })
 
 describe('RELIC_POOL(第1弾13候補)', () => {
