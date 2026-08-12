@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte'
   import { DEFAULT_PARAMS, type ShidasuParams } from '$lib/game/shidasu/params'
-  import { RELIC_POOL } from '$lib/game/shidasu/relics'
+  import { RELIC_POOL, relicDesc, relicTsukumokaDesc } from '$lib/game/shidasu/relics'
   import type { RelicId } from '$lib/game/shidasu/types'
 
   let config = $state<ShidasuParams | null>(null)
@@ -112,7 +112,9 @@
               <th class="px-2 py-1.5 text-left" style="width:6rem;">価格</th>
               <th class="px-2 py-1.5 text-left" style="width:12rem;">パラメータ</th>
               <th class="px-2 py-1.5 text-left" style="width:18rem;">効果説明文(未付喪化)</th>
+              <th class="px-2 py-1.5 text-left" style="width:16rem;">プレビュー(未付喪化)</th>
               <th class="px-2 py-1.5 text-left" style="width:18rem;">効果説明文(付喪化後)</th>
+              <th class="px-2 py-1.5 text-left" style="width:16rem;">プレビュー(付喪化後)</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -141,9 +143,11 @@
                 <td class="px-2 py-1.5 align-top">
                   <textarea bind:value={entry.desc} rows="3" class="w-full border border-slate-200 rounded px-1.5 py-0.5 font-mono text-[11px] resize-y"></textarea>
                 </td>
+                <td class="px-2 py-1.5 align-top text-slate-500">{relicDesc(id, config)}</td>
                 <td class="px-2 py-1.5 align-top">
                   <textarea bind:value={entry.tsukumokaDesc} rows="3" class="w-full border border-slate-200 rounded px-1.5 py-0.5 font-mono text-[11px] resize-y"></textarea>
                 </td>
+                <td class="px-2 py-1.5 align-top text-slate-500">{relicTsukumokaDesc(id, config)}</td>
               </tr>
             {/each}
           </tbody>
