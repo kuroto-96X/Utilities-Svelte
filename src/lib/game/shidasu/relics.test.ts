@@ -5,10 +5,26 @@ import { DEFAULT_PARAMS } from './params'
 import type { RunState, WaveState } from './types'
 
 describe('relics', () => {
-  test('relicName/relicDesc/relicTsukumokaDescはparams.relicsを参照する', () => {
+  test('relicNameはparams.relicsを参照する', () => {
     expect(relicName('manekiNeko', DEFAULT_PARAMS)).toBe(DEFAULT_PARAMS.relics.manekiNeko.name)
-    expect(relicDesc('manekiNeko', DEFAULT_PARAMS)).toBe(DEFAULT_PARAMS.relics.manekiNeko.desc)
-    expect(relicTsukumokaDesc('manekiNeko', DEFAULT_PARAMS)).toBe(DEFAULT_PARAMS.relics.manekiNeko.tsukumokaDesc)
+  })
+
+  test('relicDesc/relicTsukumokaDescはプレースホルダーを実際の数値に置換して返す', () => {
+    expect(relicDesc('manekiNeko', DEFAULT_PARAMS)).toBe(
+      `ショップの全商品の購入価格を${DEFAULT_PARAMS.relics.manekiNeko.discountPercent}%値引きする`
+    )
+    expect(relicTsukumokaDesc('manekiNeko', DEFAULT_PARAMS)).toBe(
+      `ショップの全商品の購入価格を${DEFAULT_PARAMS.relics.manekiNeko.tsukumokaDiscountPercent}%値引きする`
+    )
+  })
+
+  test('relicDesc/relicTsukumokaDescは13候補すべてで{...}形式の未解決プレースホルダーを残さない', () => {
+    for (const id of RELIC_POOL) {
+      const desc = relicDesc(id, DEFAULT_PARAMS)
+      const tsukumokaDesc = relicTsukumokaDesc(id, DEFAULT_PARAMS)
+      expect(desc).not.toMatch(/\{\w+\}/)
+      expect(tsukumokaDesc).not.toMatch(/\{\w+\}/)
+    }
   })
 })
 

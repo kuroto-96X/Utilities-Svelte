@@ -13,12 +13,25 @@ export function relicName(id: RelicId, params: ShidasuParams): string {
   return params.relics[id].name
 }
 
+function relicPlaceholderContext(id: RelicId, params: ShidasuParams): Record<string, number> {
+  const entry = params.relics[id] as unknown as Record<string, unknown>
+  const context: Record<string, number> = {}
+  for (const [key, value] of Object.entries(entry)) {
+    if (typeof value === 'number') context[key] = value
+  }
+  return context
+}
+
 export function relicDesc(id: RelicId, params: ShidasuParams): string {
-  return params.relics[id].desc
+  const entry = params.relics[id] as unknown as Record<string, unknown> & { desc: string }
+  const context = relicPlaceholderContext(id, params)
+  return entry.desc.replace(/\{(\w+)\}/g, (match, key) => (key in context ? String(context[key]) : match))
 }
 
 export function relicTsukumokaDesc(id: RelicId, params: ShidasuParams): string {
-  return params.relics[id].tsukumokaDesc
+  const entry = params.relics[id] as unknown as Record<string, unknown> & { tsukumokaDesc: string }
+  const context = relicPlaceholderContext(id, params)
+  return entry.tsukumokaDesc.replace(/\{(\w+)\}/g, (match, key) => (key in context ? String(context[key]) : match))
 }
 
 // 招き猫所持時のショップ購入価格倍率。所持していなければ1(無変化)。
