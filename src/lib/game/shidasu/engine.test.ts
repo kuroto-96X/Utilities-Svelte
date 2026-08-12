@@ -2713,6 +2713,33 @@ describe('resolveWaveEnd', () => {
   })
 })
 
+describe('resolveWaveEnd: レリックによる追加報酬', () => {
+  const noRewardStar: Star = { id: 'no-reward-star', name: '無報酬の星', waveSlot: 1, targetMultiplier: 1, reward: 0, restriction: null, sabotage: null, descTemplate: '' }
+
+  function endedRun(overrides: Partial<RunState>, waveScore: number): RunState {
+    const base = beginRun(DEFAULT_PARAMS, 1)
+    const run = { ...base, ...overrides }
+    const { wave } = startWave(DEFAULT_PARAMS, run.stageIndex, run.waveIndex, run.items, run.deckComposition, 1, run.extraTableauRows, run.oracleLevels)
+    return {
+      ...run,
+      wave: { ...wave, score: waveScore, status: 'ended', endReason: 'target' },
+    }
+  }
+
+  test('数珠所持時、星のrewardに追加報酬が加算される', () => {
+    const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: null, descTemplate: '' }
+    const stageStars = [noRewardStar, noRewardStar, rewardStar]
+    const run = endedRun(
+      { waveIndex: 2, stageStars, relics: [{ id: 'juzu', tsukumoka: false }] },
+      waveTarget(DEFAULT_PARAMS, 0, 2, stageStars),
+    )
+    const runWithCombo = { ...run, wave: { ...run.wave!, maxComboThisWave: 10 } }
+    const next = resolveWaveEnd(DEFAULT_PARAMS, runWithCombo, createRng(5))
+    // 星のreward(20) + floor(10/5)*juzu.n(1) = 20 + 2 = 22
+    expect(next.currency).toBe(run.currency + 20 + Math.floor(10 / 5) * DEFAULT_PARAMS.relics.juzu.n)
+  })
+})
+
 describe('stageModifierFor / bossScoreLockFor', () => {
   function runWith(overrides: Partial<RunState>): RunState {
     return { ...beginRun(DEFAULT_PARAMS, 1), waveIndex: 2, ...overrides }

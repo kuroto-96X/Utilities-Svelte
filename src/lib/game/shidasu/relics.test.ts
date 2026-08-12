@@ -1,8 +1,8 @@
 // src/lib/game/shidasu/relics.test.ts
 import { describe, test, it, expect } from 'vitest'
-import { RELIC_POOL, relicName, relicDesc, relicTsukumokaDesc, relicPriceMultiplier, itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity, relicSellBonusMultiplier } from './relics'
+import { RELIC_POOL, relicName, relicDesc, relicTsukumokaDesc, relicPriceMultiplier, itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity, relicSellBonusMultiplier, relicWaveEndBonus } from './relics'
 import { DEFAULT_PARAMS } from './params'
-import type { RunState } from './types'
+import type { RunState, WaveState } from './types'
 
 describe('relics', () => {
   test('relicName/relicDesc/relicTsukumokaDescはparams.relicsを参照する', () => {
@@ -97,5 +97,49 @@ describe('所持上限ヘルパー', () => {
   it('revelationOracleMaxCapacity: 千羽鶴(付喪化)で2+2', () => {
     const run = { relics: [{ id: 'senbazuru' as const, tsukumoka: true }] } as unknown as RunState
     expect(revelationOracleMaxCapacity(DEFAULT_PARAMS, run)).toBe(4)
+  })
+})
+
+describe('relicWaveEndBonus', () => {
+  const baseWave = { maxComboThisWave: 0, roleOccurrenceCountThisWave: {}, stock: [], dealtRows: 5 } as unknown as WaveState
+
+  it('レリック無しなら0', () => {
+    const run = { relics: [] } as unknown as RunState
+    expect(relicWaveEndBonus(DEFAULT_PARAMS, run, baseWave, 40)).toBe(0)
+  })
+
+  it('数珠(未付喪化): floor(maxComboThisWave/5)*1', () => {
+    const run = { relics: [{ id: 'juzu' as const, tsukumoka: false }] } as unknown as RunState
+    const wave = { ...baseWave, maxComboThisWave: 12 } as WaveState
+    expect(relicWaveEndBonus(DEFAULT_PARAMS, run, wave, 40)).toBe(2) // floor(12/5)=2, *1
+  })
+
+  it('数珠(付喪化): floor(maxComboThisWave/5)*2', () => {
+    const run = { relics: [{ id: 'juzu' as const, tsukumoka: true }] } as unknown as RunState
+    const wave = { ...baseWave, maxComboThisWave: 12 } as WaveState
+    expect(relicWaveEndBonus(DEFAULT_PARAMS, run, wave, 40)).toBe(4) // floor(12/5)=2, *2
+  })
+
+  it('千社札(未付喪化): floor(成立役の種類数/2)*1', () => {
+    const run = { relics: [{ id: 'senjafuda' as const, tsukumoka: false }] } as unknown as RunState
+    const wave = { ...baseWave, roleOccurrenceCountThisWave: { flush: 3, pair: 1, stair: 2 } } as unknown as WaveState
+    expect(relicWaveEndBonus(DEFAULT_PARAMS, run, wave, 40)).toBe(1) // 3種類, floor(3/2)=1, *1
+  })
+
+  it('千社札(付喪化): n=2に強化', () => {
+    const run = { relics: [{ id: 'senjafuda' as const, tsukumoka: true }] } as unknown as RunState
+    const wave = { ...baseWave, roleOccurrenceCountThisWave: { flush: 3, pair: 1, stair: 2 } } as unknown as WaveState
+    expect(relicWaveEndBonus(DEFAULT_PARAMS, run, wave, 40)).toBe(2) // floor(3/2)=1, *2
+  })
+
+  it('算盤(未付喪化): floor(((c-b-a)/(c-b))*5)', () => {
+    const run = {
+      relics: [{ id: 'soroban' as const, tsukumoka: false }],
+      deckComposition: new Array(52).fill(0).map((_, i) => ({ deckId: i, suit: '♠', rank: 1, wild: false, removed: false })),
+    } as unknown as RunState
+    // b = dealtRows(5) * layout.cols(7) = 35, c = 52, a(stock残り) = 5
+    const wave = { ...baseWave, dealtRows: 5, stock: new Array(5).fill(0) } as unknown as WaveState
+    // ((52-35-5)/(52-35)) * 5 = (12/17)*5 = 3.529... -> floor = 3
+    expect(relicWaveEndBonus(DEFAULT_PARAMS, run, wave, 40)).toBe(3)
   })
 })

@@ -13,7 +13,7 @@ import { applyRevelationEffect, canUseRevelation } from './revelationEffects'
 import { rollOracleOffer, defaultOracleLevels, ORACLE_POOL } from './oracles'
 import { rollCardSetOffer } from './cardSets'
 import { rollShop, itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice, oracleBuyPrice, oracleSellPrice, relicBuyPrice } from './shop'
-import { itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity } from './relics'
+import { itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity, relicWaveEndBonus } from './relics'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
 
@@ -1063,7 +1063,8 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
   // stageStarsは常にwaveSlot 1/2/3から生成された3要素配列であり、params.flow.wavesPerStage(3)と
   // 対応している前提でwaveIndexをそのままインデックスとして使う。
   const currentStar = run.stageStars[run.waveIndex]
-  const earned = currentStar?.reward ?? 0
+  const baseEarned = currentStar?.reward ?? 0
+  const earned = baseEarned + relicWaveEndBonus(params, run, wave, baseEarned)
   const runWithCurrency = {
     ...run,
     currency: run.currency + earned,
