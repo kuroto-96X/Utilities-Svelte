@@ -78,6 +78,30 @@ describe('rollShop', () => {
     expect(cardSetEntries.some(e => e.offerCount === 5 && e.pickCount === 1)).toBe(true)
     expect(cardSetEntries.some(e => e.offerCount === 7 && e.pickCount === 2)).toBe(true)
   })
+
+  test('熊手所持時、バラ売り枠が4枠になる', () => {
+    const params = DEFAULT_PARAMS
+    const run = { ...createInitialRun(), relics: [{ id: 'kumade' as const, tsukumoka: false }] }
+    const shop = rollShop(params, run, () => 0.5)
+    expect(shop.individual).toHaveLength(4)
+  })
+
+  test('福笹所持時、福袋枠が3枠になる', () => {
+    const params = DEFAULT_PARAMS
+    const run = { ...createInitialRun(), relics: [{ id: 'fukuzasa' as const, tsukumoka: false }] }
+    const shop = rollShop(params, run, () => 0.5)
+    expect(shop.packs).toHaveLength(3)
+  })
+
+  test('縁起小槌所持時、福袋のofferCountが+1される', () => {
+    const params = DEFAULT_PARAMS
+    const run = { ...createInitialRun(), relics: [{ id: 'engiKozuchi' as const, tsukumoka: false }] }
+    const shop = rollShop(params, run, () => 0.5)
+    for (const pack of shop.packs) {
+      const catalogEntry = params.shop.packCatalog.find(e => e.name === pack.name)!
+      expect(pack.offerCount).toBe(catalogEntry.offerCount + 1)
+    }
+  })
 })
 
 describe('価格関数', () => {

@@ -5,7 +5,7 @@ import { ITEM_POOL } from './items'
 import { RITE_POOL } from './rites'
 import { REVELATION_POOL } from './revelations'
 import { ORACLE_POOL } from './oracles'
-import { RELIC_POOL, relicPriceMultiplier, relicSellBonusMultiplier } from './relics'
+import { RELIC_POOL, relicPriceMultiplier, relicSellBonusMultiplier, individualSlotCount, packSlotCount, packOfferCountBonus } from './relics'
 import { shuffleInPlace } from './deck'
 
 const SHOP_SLOT_KINDS: ShopSlotKind[] = ['item', 'rite', 'revelation', 'oracle']
@@ -34,13 +34,15 @@ function rollIndividualSlot(run: RunState, usedItemIds: Set<ItemId>, rand: () =>
   return { kind, id, sold: false }
 }
 
-// params.shop.packCatalogをシャッフルし、先頭2件を選ぶ(均等抽選)。選ばれたエントリの
+// params.shop.packCatalogをシャッフルし、先頭packSlotCount(params, run)件を選ぶ(均等抽選)。選ばれたエントリの
 // name・priceはこの時点でShopPackSlotにスナップショットとしてコピーする(招き猫所持時は割引後の価格をスナップショットする)。
+// offerCountは縁起小槌所持時のボーナス分を加算してスナップショットする。
 function rollPackSlots(params: ShidasuParams, run: RunState, rand: () => number): ShopPackSlot[] {
   const entries = [...params.shop.packCatalog]
   shuffleInPlace(entries, rand)
   const multiplier = relicPriceMultiplier(params, run)
-  return entries.slice(0, 2).map(e => ({ packKind: e.packKind, offerCount: e.offerCount, pickCount: e.pickCount, name: e.name, price: Math.round(e.price * multiplier), sold: false }))
+  const offerBonus = packOfferCountBonus(params, run)
+  return entries.slice(0, packSlotCount(params, run)).map(e => ({ packKind: e.packKind, offerCount: e.offerCount + offerBonus, pickCount: e.pickCount, name: e.name, price: Math.round(e.price * multiplier), sold: false }))
 }
 
 // 未所持のレリックからランダムに1つ選ぶ。未所持のレリックが無ければnull(ショップ画面で枠自体を非表示にする)
@@ -54,11 +56,8 @@ function rollRelicSlot(run: RunState, rand: () => number): { id: RelicId; sold: 
 
 export function rollShop(params: ShidasuParams, run: RunState, rand: () => number = Math.random): ShopState {
   const usedItemIds = new Set<ItemId>()
-  const individual: ShopIndividualSlot[] = [
-    rollIndividualSlot(run, usedItemIds, rand),
-    rollIndividualSlot(run, usedItemIds, rand),
-    rollIndividualSlot(run, usedItemIds, rand),
-  ]
+  const individualCount = individualSlotCount(params, run)
+  const individual: ShopIndividualSlot[] = Array.from({ length: individualCount }, () => rollIndividualSlot(run, usedItemIds, rand))
   return { individual, packs: rollPackSlots(params, run, rand), relic: rollRelicSlot(run, rand) }
 }
 

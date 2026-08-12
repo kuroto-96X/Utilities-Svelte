@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/relics.test.ts
 import { describe, test, it, expect } from 'vitest'
-import { RELIC_POOL, relicName, relicDesc, relicTsukumokaDesc, relicPriceMultiplier, itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity, relicSellBonusMultiplier, relicWaveEndBonus } from './relics'
+import { RELIC_POOL, relicName, relicDesc, relicTsukumokaDesc, relicPriceMultiplier, itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity, relicSellBonusMultiplier, relicWaveEndBonus, individualSlotCount, packSlotCount, packOfferCountBonus } from './relics'
 import { DEFAULT_PARAMS } from './params'
 import type { RunState, WaveState } from './types'
 
@@ -141,5 +141,44 @@ describe('relicWaveEndBonus', () => {
     const wave = { ...baseWave, dealtRows: 5, stock: new Array(5).fill(0) } as unknown as WaveState
     // ((52-35-5)/(52-35)) * 5 = (12/17)*5 = 3.529... -> floor = 3
     expect(relicWaveEndBonus(DEFAULT_PARAMS, run, wave, 40)).toBe(3)
+  })
+})
+
+describe('ショップ枠数ヘルパー', () => {
+  it('individualSlotCount: レリック無しなら3', () => {
+    const run = { relics: [] } as unknown as RunState
+    expect(individualSlotCount(DEFAULT_PARAMS, run)).toBe(3)
+  })
+  it('individualSlotCount: 熊手(未付喪化)で3+1', () => {
+    const run = { relics: [{ id: 'kumade' as const, tsukumoka: false }] } as unknown as RunState
+    expect(individualSlotCount(DEFAULT_PARAMS, run)).toBe(4)
+  })
+  it('individualSlotCount: 福笹(付喪化)で3+1', () => {
+    const run = { relics: [{ id: 'fukuzasa' as const, tsukumoka: true }] } as unknown as RunState
+    expect(individualSlotCount(DEFAULT_PARAMS, run)).toBe(4)
+  })
+  it('individualSlotCount: 熊手+福笹(付喪化)両方で3+1+1', () => {
+    const run = { relics: [{ id: 'kumade' as const, tsukumoka: false }, { id: 'fukuzasa' as const, tsukumoka: true }] } as unknown as RunState
+    expect(individualSlotCount(DEFAULT_PARAMS, run)).toBe(5)
+  })
+  it('packSlotCount: レリック無しなら2', () => {
+    const run = { relics: [] } as unknown as RunState
+    expect(packSlotCount(DEFAULT_PARAMS, run)).toBe(2)
+  })
+  it('packSlotCount: 福笹(未付喪化)で2+1', () => {
+    const run = { relics: [{ id: 'fukuzasa' as const, tsukumoka: false }] } as unknown as RunState
+    expect(packSlotCount(DEFAULT_PARAMS, run)).toBe(3)
+  })
+  it('packSlotCount: 熊手(付喪化)で2+1', () => {
+    const run = { relics: [{ id: 'kumade' as const, tsukumoka: true }] } as unknown as RunState
+    expect(packSlotCount(DEFAULT_PARAMS, run)).toBe(3)
+  })
+  it('packOfferCountBonus: 縁起小槌(未付喪化)で+1', () => {
+    const run = { relics: [{ id: 'engiKozuchi' as const, tsukumoka: false }] } as unknown as RunState
+    expect(packOfferCountBonus(DEFAULT_PARAMS, run)).toBe(1)
+  })
+  it('packOfferCountBonus: 縁起小槌(付喪化)で+2', () => {
+    const run = { relics: [{ id: 'engiKozuchi' as const, tsukumoka: true }] } as unknown as RunState
+    expect(packOfferCountBonus(DEFAULT_PARAMS, run)).toBe(2)
   })
 })

@@ -98,3 +98,30 @@ function sorobanBonus(params: ShidasuParams, run: RunState, wave: WaveState): nu
 export function relicWaveEndBonus(params: ShidasuParams, run: RunState, wave: WaveState, _baseReward: number): number {
   return juzuBonus(params, run, wave) + senjafudaBonus(params, run, wave) + sorobanBonus(params, run, wave)
 }
+
+// バラ売り枠の総数(基本値3)。熊手所持でn、福笹(付喪化)所持でさらにn。
+// 熊手・福笹は同時所持もありうるため両方の加算を合算する。
+export function individualSlotCount(params: ShidasuParams, run: RunState): number {
+  let count = 3
+  const kumadeRelic = run.relics.find(r => r.id === 'kumade')
+  if (kumadeRelic) count += params.relics.kumade.n
+  const fukuzasaRelic = run.relics.find(r => r.id === 'fukuzasa')
+  if (fukuzasaRelic?.tsukumoka) count += params.relics.fukuzasa.n
+  return count
+}
+
+// 福袋枠の総数(基本値2)。福笹所持でn、熊手(付喪化)所持でさらにn。
+export function packSlotCount(params: ShidasuParams, run: RunState): number {
+  let count = 2
+  const fukuzasaRelic = run.relics.find(r => r.id === 'fukuzasa')
+  if (fukuzasaRelic) count += params.relics.fukuzasa.n
+  const kumadeRelic = run.relics.find(r => r.id === 'kumade')
+  if (kumadeRelic?.tsukumoka) count += params.relics.kumade.n
+  return count
+}
+
+// 福袋の選択肢数(offerCount)への加算値。縁起小槌所持時n(付喪化ならさらにtsukumokaN)。
+export function packOfferCountBonus(params: ShidasuParams, run: RunState): number {
+  const r = params.relics.engiKozuchi
+  return relicBonus(run, 'engiKozuchi', r.n, r.tsukumokaN)
+}
