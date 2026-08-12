@@ -93,6 +93,20 @@ describe('rollShop', () => {
     expect(shop.packs).toHaveLength(3)
   })
 
+  test('熊手(付喪化)所持時、福袋枠が3枠になる(クロスボーナス)', () => {
+    const params = DEFAULT_PARAMS
+    const run = { ...createInitialRun(), relics: [{ id: 'kumade' as const, tsukumoka: true }] }
+    const shop = rollShop(params, run, () => 0.5)
+    expect(shop.packs).toHaveLength(3)
+  })
+
+  test('福笹(付喪化)所持時、バラ売り枠が4枠になる(クロスボーナス)', () => {
+    const params = DEFAULT_PARAMS
+    const run = { ...createInitialRun(), relics: [{ id: 'fukuzasa' as const, tsukumoka: true }] }
+    const shop = rollShop(params, run, () => 0.5)
+    expect(shop.individual).toHaveLength(4)
+  })
+
   test('縁起小槌所持時、福袋のofferCountが+1される', () => {
     const params = DEFAULT_PARAMS
     const run = { ...createInitialRun(), relics: [{ id: 'engiKozuchi' as const, tsukumoka: false }] }
