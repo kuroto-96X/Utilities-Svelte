@@ -110,9 +110,11 @@ export type RevelationId =
 
 // レリック(Relic): ショップ販売価格・提示数・リロールコストの減少、秘儀・天啓・神託の所持上限増加など、
 // ラン単位の経済・メタ的な効果を持つ、護符の守備範囲外のアイテム。所持数に上限は無いが重複所持はできない。
-// 個体ごとに「付喪化」(進化)状態を持ち、付喪化すると効果が上方修正される。個別候補は未確定のため、
-// 現状はシステム動作確認用のplaceholderのみを持つ(個別候補確定時にここへ実際の値を追加する)。
-export type RelicId = 'placeholder'
+// 個体ごとに「付喪化」(進化)状態を持ち、付喪化すると効果が上方修正される。第1弾13候補(仮称)。
+export type RelicId =
+  | 'maneki-neko' | 'fuku-daruma' | 'kumade' | 'juzu'
+  | 'maneki-hoteizo' | 'hamaya' | 'senbazuru' | 'fukuzasa'
+  | 'kaiun-kokeshi' | 'engi-kozuchi' | 'engi-suzu' | 'senjafuda' | 'soroban'
 
 export interface Card {
   id: number

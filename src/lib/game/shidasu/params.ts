@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/params.ts
 import shidasuConfigJson from './shidasu.config.json'
-import type { Rarity, PackCatalogEntry, RelicId } from './types'
+import type { Rarity, PackCatalogEntry } from './types'
 
 export interface ShidasuParams {
   layout: {
@@ -237,7 +237,21 @@ export interface ShidasuParams {
     pair: { name: string; desc: string }
     alternating: { name: string; desc: string }
   }
-  relics: Record<RelicId, { name: string; desc: string; tsukumokaDesc: string; price: number }>
+  relics: {
+    'maneki-neko': { name: string; desc: string; tsukumokaDesc: string; price: number; discountPercent: number; tsukumokaDiscountPercent: number }
+    'fuku-daruma': { name: string; desc: string; tsukumokaDesc: string; price: number; n: number }
+    kumade: { name: string; desc: string; tsukumokaDesc: string; price: number; n: number }
+    juzu: { name: string; desc: string; tsukumokaDesc: string; price: number; n: number; tsukumokaN: number }
+    'maneki-hoteizo': { name: string; desc: string; tsukumokaDesc: string; price: number; n: number; tsukumokaN: number }
+    hamaya: { name: string; desc: string; tsukumokaDesc: string; price: number; n: number; tsukumokaN: number }
+    senbazuru: { name: string; desc: string; tsukumokaDesc: string; price: number; n: number; tsukumokaN: number }
+    fukuzasa: { name: string; desc: string; tsukumokaDesc: string; price: number; n: number }
+    'kaiun-kokeshi': { name: string; desc: string; tsukumokaDesc: string; price: number; sellBonusPercent: number; tsukumokaSellBonusPercent: number }
+    'engi-kozuchi': { name: string; desc: string; tsukumokaDesc: string; price: number; n: number; tsukumokaN: number }
+    'engi-suzu': { name: string; desc: string; tsukumokaDesc: string; price: number; n: number; tsukumokaN: number }
+    senjafuda: { name: string; desc: string; tsukumokaDesc: string; price: number; n: number }
+    soroban: { name: string; desc: string; tsukumokaDesc: string; price: number; n: number }
+  }
   flow: {
     wavesPerStage: number
     clearDelayMs: number
@@ -493,8 +507,19 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     alternating: { name: '水火既済', desc: '交互　レベル+1' },
   },
   relics: {
-    // 動作確認用の仮レリック。ゲームプレイに実効果を持たないダミー。個別候補確定時に実際の内容へ差し替える
-    placeholder: { name: '仮の置物', desc: '(動作確認用の仮レリック。効果なし)', tsukumokaDesc: '(動作確認用の仮レリック・付喪化状態。効果なし)', price: 10 },
+    'maneki-neko': { name: '招き猫', desc: 'ショップの全商品の購入価格を{discountPercent}%値引きする', tsukumokaDesc: 'ショップの全商品の購入価格を{tsukumokaDiscountPercent}%値引きする', price: 25, discountPercent: 25, tsukumokaDiscountPercent: 50 },
+    'fuku-daruma': { name: '福だるま', desc: 'ショップのリロールコストの刻み幅を{n}減らす', tsukumokaDesc: 'ショップのリロールコストの刻み幅を{n}減らし、同一ショップ訪問中の最初の1回のリロールを無料にする', price: 20, n: 2 },
+    kumade: { name: '熊手', desc: 'ショップのバラ売り枠を{n}枠増やす', tsukumokaDesc: 'ショップのバラ売り枠を{n}枠、福袋枠も{n}枠増やす', price: 25, n: 1 },
+    juzu: { name: '数珠', desc: 'Waveクリア時、そのWaveでの最大コンボ数に応じて追加報酬(floor(最大コンボ数/5)×{n})を得る', tsukumokaDesc: 'Waveクリア時、そのWaveでの最大コンボ数に応じて追加報酬(floor(最大コンボ数/5)×{tsukumokaN})を得る', price: 20, n: 1, tsukumokaN: 2 },
+    'maneki-hoteizo': { name: '招き布袋像', desc: '護符の所持上限を{n}増やす', tsukumokaDesc: '護符の所持上限を{n}増やし、さらに{tsukumokaN}増やす', price: 30, n: 1, tsukumokaN: 1 },
+    hamaya: { name: '破魔矢', desc: '秘儀の所持上限を{n}増やす', tsukumokaDesc: '秘儀の所持上限を{n}増やし、さらに{tsukumokaN}増やす', price: 30, n: 1, tsukumokaN: 1 },
+    senbazuru: { name: '千羽鶴', desc: '天啓・神託(合算)の所持上限を{n}増やす', tsukumokaDesc: '天啓・神託(合算)の所持上限を{n}増やし、さらに{tsukumokaN}増やす', price: 30, n: 1, tsukumokaN: 1 },
+    fukuzasa: { name: '福笹', desc: '福袋の枠を{n}枠増やす', tsukumokaDesc: '福袋の枠を{n}枠、バラ売り枠も{n}枚増やす', price: 25, n: 1 },
+    'kaiun-kokeshi': { name: '開運こけし', desc: '護符・秘儀・天啓・神託の売却価格を{sellBonusPercent}%上乗せする', tsukumokaDesc: '護符・秘儀・天啓・神託の売却価格を{tsukumokaSellBonusPercent}%上乗せする', price: 20, sellBonusPercent: 25, tsukumokaSellBonusPercent: 50 },
+    'engi-kozuchi': { name: '縁起小槌', desc: '福袋の選択肢数を全ジャンル{n}増やす', tsukumokaDesc: '福袋の選択肢数を全ジャンル{n}増やし、さらに{tsukumokaN}増やす', price: 25, n: 1, tsukumokaN: 1 },
+    'engi-suzu': { name: '縁起鈴', desc: 'レリック専用枠の提示数を{n}増やす', tsukumokaDesc: 'レリック専用枠の提示数を{n}増やし、さらに{tsukumokaN}増やす', price: 35, n: 1, tsukumokaN: 1 },
+    senjafuda: { name: '千社札', desc: 'Waveクリア時、そのWaveで成立した役の種類数に応じて追加報酬(floor(役の種類数/2)×{n})を得る', tsukumokaDesc: 'Waveクリア時、そのWaveで成立した役の種類数に応じて追加報酬(floor(役の種類数/2)×{n})を得る(付喪化によりn=2に強化)', price: 20, n: 1 },
+    soroban: { name: '算盤', desc: 'Waveクリア時、山札の消費割合に応じて追加報酬(floor(((c-b-a)/(c-b))×{n})、a=残り山札枚数,b=初期配布枚数,c=デッキ総枚数)を得る', tsukumokaDesc: 'Waveクリア時、山札の消費割合に応じて追加報酬(floor(((c-b-a)/(c-b))×{n})、a=残り山札枚数,b=初期配布枚数,c=デッキ総枚数)を得る(付喪化によりn=10に強化)', price: 20, n: 5 },
   },
   flow: { wavesPerStage: 3, clearDelayMs: 450, stageTargetBase: 2000, stageTargetMultiplier: 1.8, stagesPerRun: 8, rerollCost: 30 },
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },

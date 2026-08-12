@@ -99,6 +99,6 @@ describe('価格関数', () => {
   })
 
   test('レリックの価格', () => {
-    expect(relicBuyPrice(DEFAULT_PARAMS, 'placeholder')).toBe(10)
+    expect(relicBuyPrice(DEFAULT_PARAMS, 'maneki-neko')).toBe(25)
   })
 })
