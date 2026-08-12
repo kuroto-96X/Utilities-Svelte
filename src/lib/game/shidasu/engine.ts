@@ -1190,7 +1190,7 @@ export function rerollShop(params: ShidasuParams, run: RunState, rand: () => num
   return { ...run, currency: run.currency - cost, shop: rollShop(params, run, rand), shopRerollCount: run.shopRerollCount + 1 }
 }
 
-// バラ売り護符購入。所持上限(maxItems)到達時・通貨不足時・売り切れ時は何もしない(スワップは発生しない)。
+// バラ売り護符購入。所持上限(maxItems、招き布袋像所持時は拡張)到達時・通貨不足時・売り切れ時は何もしない(スワップは発生しない)。
 export function buyIndividualItem(params: ShidasuParams, run: RunState, slotIndex: number): RunState {
   if (run.phase !== 'shop' || !run.shop) return run
   const slot = run.shop.individual[slotIndex]
@@ -1203,7 +1203,7 @@ export function buyIndividualItem(params: ShidasuParams, run: RunState, slotInde
   return { ...run, currency: run.currency - price, items: [...run.items, itemId], shop: { ...run.shop, individual } }
 }
 
-// バラ売り秘儀購入。所持上限3到達時・通貨不足時・売り切れ時は何もしない。
+// バラ売り秘儀購入。所持上限(基本3、破魔矢所持時は拡張)到達時・通貨不足時・売り切れ時は何もしない。
 export function buyIndividualRite(params: ShidasuParams, run: RunState, slotIndex: number): RunState {
   if (run.phase !== 'shop' || !run.shop) return run
   const slot = run.shop.individual[slotIndex]
@@ -1252,7 +1252,7 @@ export function buyIndividualRevelationUse(params: ShidasuParams, run: RunState,
   return { ...run, currency: run.currency - price, wave, deckComposition, extraTableauRows, shop: { ...run.shop, individual } }
 }
 
-// バラ売り天啓・温存。天啓・神託合算上限2到達時はブロックする(スワップは発生しない)。
+// バラ売り天啓・温存。天啓・神託合算上限(基本2、千羽鶴所持時は拡張)到達時はブロックする(スワップは発生しない)。
 export function buyIndividualRevelationHold(params: ShidasuParams, run: RunState, slotIndex: number): RunState {
   if (run.phase !== 'shop' || !run.shop) return run
   const slot = run.shop.individual[slotIndex]
@@ -1279,7 +1279,7 @@ export function buyIndividualOracleUse(params: ShidasuParams, run: RunState, slo
   return { ...run, currency: run.currency - price, oracleLevels, wave, shop: { ...run.shop, individual } }
 }
 
-// バラ売り神託・温存。天啓・神託合算上限2到達時はブロックする。
+// バラ売り神託・温存。天啓・神託合算上限(基本2、千羽鶴所持時は拡張)到達時はブロックする。
 export function buyIndividualOracleHold(params: ShidasuParams, run: RunState, slotIndex: number): RunState {
   if (run.phase !== 'shop' || !run.shop) return run
   const slot = run.shop.individual[slotIndex]
@@ -1356,7 +1356,7 @@ function resolvePackRitePick(run: RunState, newRites: RiteId[], pickedId: RiteId
   return { ...run, rites: newRites, riteOffer, pendingNewRite: null, offerPickRemaining }
 }
 
-// 秘儀の福袋(riteSelect)から1つ選ぶ。所持上限3到達時はpendingNewRiteにセットしてスワップ待ちにする。
+// 秘儀の福袋(riteSelect)から1つ選ぶ。所持上限(基本3、破魔矢所持時は拡張)到達時はpendingNewRiteにセットしてスワップ待ちにする。
 export function pickPackRite(params: ShidasuParams, run: RunState, riteId: RiteId): RunState {
   if (run.phase !== 'riteSelect' || !run.riteOffer.includes(riteId)) return run
   if (run.rites.length >= riteMaxCapacity(params, run)) {
@@ -1402,7 +1402,7 @@ export function pickPackRevelationUse(params: ShidasuParams, run: RunState, reve
   return resolvePackRevelationPick({ ...run, wave, deckComposition, extraTableauRows }, revelationId)
 }
 
-// 天啓の福袋から1つ選び、温存する(所持に加える)。天啓・神託合算上限2到達時はpendingNewRevelationにセットしスワップ待ちにする。
+// 天啓の福袋から1つ選び、温存する(所持に加える)。天啓・神託合算上限(基本2、千羽鶴所持時は拡張)到達時はpendingNewRevelationにセットしスワップ待ちにする。
 export function pickPackRevelationHold(params: ShidasuParams, run: RunState, revelationId: RevelationId): RunState {
   if (run.phase !== 'revelationSelect' || !run.revelationOffer.includes(revelationId)) return run
   if (run.revelations.length + run.oracles.length >= revelationOracleMaxCapacity(params, run)) {
@@ -1537,7 +1537,7 @@ export function pickPackOracleUse(run: RunState, roleName: RoleName): RunState {
   return resolvePackOraclePick({ ...run, oracleLevels, wave }, roleName)
 }
 
-// 神託の福袋から1つ選び、温存する(所持に加える)。天啓・神託合算上限2到達時はpendingNewOracleにセットしスワップ待ちにする。
+// 神託の福袋から1つ選び、温存する(所持に加える)。天啓・神託合算上限(基本2、千羽鶴所持時は拡張)到達時はpendingNewOracleにセットしスワップ待ちにする。
 export function pickPackOracleHold(params: ShidasuParams, run: RunState, roleName: RoleName): RunState {
   if (run.phase !== 'oracleSelect' || !run.oracleOffer.includes(roleName)) return run
   if (run.revelations.length + run.oracles.length >= revelationOracleMaxCapacity(params, run)) {
