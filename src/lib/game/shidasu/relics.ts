@@ -125,3 +125,9 @@ export function packOfferCountBonus(params: ShidasuParams, run: RunState): numbe
   const r = params.relics.engiKozuchi
   return relicBonus(run, 'engiKozuchi', r.n, r.tsukumokaN)
 }
+
+// レリック専用枠の提示数(基本1枠)。縁起鈴所持時n(付喪化ならさらにtsukumokaN)を加算する。
+export function relicSlotCount(params: ShidasuParams, run: RunState): number {
+  const r = params.relics.engiSuzu
+  return 1 + relicBonus(run, 'engiSuzu', r.n, r.tsukumokaN)
+}

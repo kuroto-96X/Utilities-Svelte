@@ -1216,16 +1216,20 @@ export function buyIndividualRite(params: ShidasuParams, run: RunState, slotInde
 
 // レリックを1つ購入する。ショップのレリック専用枠(run.shop.relic)から購入する単品購入のみ。
 // 売り切れ済み・枠が無い(null)・通貨不足のいずれかならno-op
-export function buyRelic(params: ShidasuParams, run: RunState): RunState {
-  if (run.phase !== 'shop' || !run.shop || !run.shop.relic || run.shop.relic.sold) return run
-  const relicId = run.shop.relic.id
-  const price = relicBuyPrice(params, run, relicId)
+// レリックを1つ購入する。ショップのレリック専用枠(run.shop.relic配列)からslotIndex番目を購入する。
+// 売り切れ済み・枠が無い・通貨不足のいずれかならno-op
+export function buyRelic(params: ShidasuParams, run: RunState, slotIndex: number): RunState {
+  if (run.phase !== 'shop' || !run.shop || !run.shop.relic) return run
+  const slot = run.shop.relic[slotIndex]
+  if (!slot || slot.sold) return run
+  const price = relicBuyPrice(params, run, slot.id)
   if (run.currency < price) return run
+  const relic = run.shop.relic.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
   return {
     ...run,
     currency: run.currency - price,
-    relics: [...run.relics, { id: relicId, tsukumoka: false }],
-    shop: { ...run.shop, relic: { ...run.shop.relic, sold: true } },
+    relics: [...run.relics, { id: slot.id, tsukumoka: false }],
+    shop: { ...run.shop, relic },
   }
 }
 

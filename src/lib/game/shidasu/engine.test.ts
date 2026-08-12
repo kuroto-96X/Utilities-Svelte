@@ -3112,36 +3112,47 @@ describe('buyRelic(レリック購入)', () => {
   test('購入すると所持に追加され通貨が減る', () => {
     const run: RunState = {
       ...createInitialRun(), phase: 'shop', currency: 999,
-      shop: { individual: [], packs: [], relic: { id: 'manekiNeko', sold: false } },
+      shop: { individual: [], packs: [], relic: [{ id: 'manekiNeko', sold: false }] },
     }
-    const result = buyRelic(DEFAULT_PARAMS, run)
+    const result = buyRelic(DEFAULT_PARAMS, run, 0)
     expect(result.relics).toEqual([{ id: 'manekiNeko', tsukumoka: false }])
     expect(result.currency).toBe(999 - relicBuyPrice(DEFAULT_PARAMS, run, 'manekiNeko'))
-    expect(result.shop!.relic!.sold).toBe(true)
+    expect(result.shop!.relic![0].sold).toBe(true)
   })
 
-  test('レリック枠がnullなら購入できない', () => {
+  test('レリック枠が空配列なら購入できない', () => {
     const run: RunState = {
       ...createInitialRun(), phase: 'shop', currency: 999,
-      shop: { individual: [], packs: [], relic: null },
+      shop: { individual: [], packs: [], relic: [] },
     }
-    expect(buyRelic(DEFAULT_PARAMS, run)).toBe(run)
+    expect(buyRelic(DEFAULT_PARAMS, run, 0)).toBe(run)
   })
 
   test('売り切れ済みなら購入できない', () => {
     const run: RunState = {
       ...createInitialRun(), phase: 'shop', currency: 999,
-      shop: { individual: [], packs: [], relic: { id: 'manekiNeko', sold: true } },
+      shop: { individual: [], packs: [], relic: [{ id: 'manekiNeko', sold: true }] },
     }
-    expect(buyRelic(DEFAULT_PARAMS, run)).toBe(run)
+    expect(buyRelic(DEFAULT_PARAMS, run, 0)).toBe(run)
   })
 
   test('通貨が足りなければ購入できない', () => {
     const run: RunState = {
       ...createInitialRun(), phase: 'shop', currency: 0,
-      shop: { individual: [], packs: [], relic: { id: 'manekiNeko', sold: false } },
+      shop: { individual: [], packs: [], relic: [{ id: 'manekiNeko', sold: false }] },
     }
-    expect(buyRelic(DEFAULT_PARAMS, run)).toBe(run)
+    expect(buyRelic(DEFAULT_PARAMS, run, 0)).toBe(run)
+  })
+
+  test('slotIndexで指定した枠のレリックを購入できる', () => {
+    const run: RunState = {
+      ...createInitialRun(), phase: 'shop', currency: 9999,
+      shop: { individual: [], packs: [], relic: [{ id: 'manekiNeko', sold: false }, { id: 'kumade', sold: false }] },
+    }
+    const result = buyRelic(DEFAULT_PARAMS, run, 1)
+    expect(result.relics).toEqual([{ id: 'kumade', tsukumoka: false }])
+    expect(result.shop!.relic![1].sold).toBe(true)
+    expect(result.shop!.relic![0].sold).toBe(false)
   })
 })
 

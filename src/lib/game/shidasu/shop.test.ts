@@ -60,15 +60,38 @@ describe('rollShop', () => {
 
   test('レリック枠は未所持のレリックから1つ選ばれる', () => {
     const shop = rollShop(DEFAULT_PARAMS, createInitialRun(), createRng(1))
-    expect(shop.relic).not.toBeNull()
-    expect(RELIC_POOL).toContain(shop.relic!.id)
-    expect(shop.relic!.sold).toBe(false)
+    expect(shop.relic).toHaveLength(1)
+    expect(RELIC_POOL).toContain(shop.relic![0].id)
+    expect(shop.relic![0].sold).toBe(false)
   })
 
-  test('全レリックを所持していればレリック枠はnull', () => {
+  test('全レリックを所持していればレリック枠は空配列', () => {
     const run = { ...createInitialRun(), relics: RELIC_POOL.map(id => ({ id, tsukumoka: false })) }
     const shop = rollShop(DEFAULT_PARAMS, run, createRng(1))
-    expect(shop.relic).toBeNull()
+    expect(shop.relic).toEqual([])
+  })
+
+  test('縁起鈴所持時、レリック専用枠が2枠になる', () => {
+    const params = DEFAULT_PARAMS
+    const run = { ...createInitialRun(), relics: [{ id: 'engiSuzu' as const, tsukumoka: false }] }
+    const shop = rollShop(params, run, createRng(1))
+    expect(shop.relic).toHaveLength(2)
+  })
+
+  test('縁起鈴(付喪化)所持時、レリック専用枠が3枠になる', () => {
+    const params = DEFAULT_PARAMS
+    const run = { ...createInitialRun(), relics: [{ id: 'engiSuzu' as const, tsukumoka: true }] }
+    const shop = rollShop(params, run, createRng(1))
+    expect(shop.relic).toHaveLength(3)
+  })
+
+  test('レリック専用枠は所持レリックと重複しない', () => {
+    const params = DEFAULT_PARAMS
+    const run = { ...createInitialRun(), relics: [{ id: 'manekiNeko' as const, tsukumoka: false }, { id: 'kumade' as const, tsukumoka: false }] }
+    const shop = rollShop(params, run, createRng(1))
+    const relicIds = (shop.relic ?? []).map(s => s.id)
+    expect(relicIds).not.toContain('manekiNeko')
+    expect(relicIds).not.toContain('kumade')
   })
 
   test('packCatalogにcardSetの3-1・5-1・7-2パターンが含まれる', () => {

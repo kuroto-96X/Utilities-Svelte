@@ -327,11 +327,11 @@ export interface ShopState {
   individual: ShopIndividualSlot[]
   packs: ShopPackSlot[]
   // レリック専用枠。既存のバラ売り3枠(individual)・福袋2枠(packs)とは別に、ショップ訪問のたびに
-  // 未所持のレリックから1つ抽選する。未所持のレリックが無ければnull(枠自体を非表示にする)。
+  // 未所持のレリックから抽選する(基本1枠、縁起鈴所持時は複数枠)。配列が空なら枠自体を非表示にする。
   // オプショナルにしているのは、ShopStateをリテラルで直接組み立てている既存テスト(レリックと無関係な
   // 護符・秘儀・天啓・神託・福袋のテスト)を変更せずに済ませるため。本番コードでShopStateを生成する
   // 唯一の経路であるrollShopは必ずこのフィールドを設定する
-  relic?: { id: RelicId; sold: boolean } | null
+  relic?: { id: RelicId; sold: boolean }[]
 }
 
 // 福袋の天啓・神託パックで上限到達時にスワップ対象を指定するための判別共用体。
