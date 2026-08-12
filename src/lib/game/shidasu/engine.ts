@@ -1430,10 +1430,10 @@ export function closePackRevelationSelect(run: RunState): RunState {
   return { ...run, phase: 'shop', revelationOffer: [], pendingNewRevelation: null, offerPickRemaining: 0 }
 }
 
-// 天啓・神託の合算所持枠(上限2)のうち、残り何枠使えるかを返す。使用中の天啓自身が
-// runAfterRemoval.revelationsから既に取り除かれている前提(呼び出し側で保証する)。
-function sharedRevelationSlotsRemaining(runAfterRemoval: RunState): number {
-  return Math.max(0, 2 - (runAfterRemoval.revelations.length + runAfterRemoval.oracles.length))
+// 天啓・神託の合算所持枠(基本上限2、千羽鶴所持時は拡張)のうち、残り何枠使えるかを返す。
+// 使用中の天啓自身がrunAfterRemoval.revelationsから既に取り除かれている前提(呼び出し側で保証する)。
+function sharedRevelationSlotsRemaining(params: ShidasuParams, runAfterRemoval: RunState): number {
+  return Math.max(0, revelationOracleMaxCapacity(params, runAfterRemoval) - (runAfterRemoval.revelations.length + runAfterRemoval.oracles.length))
 }
 
 // Phase B(即時報酬獲得系)天啓の付与ロジック。使用した天啓自身をrevelationsから取り除いた後の
@@ -1459,16 +1459,16 @@ function grantRevelationReward(
     case 'hotori': {
       const target = runAfterRemoval.lastUsedRevelationId
       if (target === null) return {}
-      if (sharedRevelationSlotsRemaining(runAfterRemoval) <= 0) return {}
+      if (sharedRevelationSlotsRemaining(params, runAfterRemoval) <= 0) return {}
       return { revelations: [...runAfterRemoval.revelations, target] }
     }
     case 'chou': {
-      const slotsLeft = sharedRevelationSlotsRemaining(runAfterRemoval)
+      const slotsLeft = sharedRevelationSlotsRemaining(params, runAfterRemoval)
       if (slotsLeft === 0) return {}
       return { oracles: [...runAfterRemoval.oracles, ...rollOffer(ORACLE_POOL, slotsLeft, rand)] }
     }
     case 'yoku': {
-      const slotsLeft = sharedRevelationSlotsRemaining(runAfterRemoval)
+      const slotsLeft = sharedRevelationSlotsRemaining(params, runAfterRemoval)
       if (slotsLeft === 0) return {}
       return { revelations: [...runAfterRemoval.revelations, ...rollOffer(REVELATION_POOL, slotsLeft, rand)] }
     }
@@ -1477,8 +1477,8 @@ function grantRevelationReward(
       return { currency: runAfterRemoval.currency + total }
     }
     case 'karasu': {
-      // 秘儀の所持枠は上限3で、天啓・神託の合算枠(上限2、sharedRevelationSlotsRemaining)とは独立している。
-      const slotsLeft = Math.max(0, 3 - runAfterRemoval.rites.length)
+      // 秘儀の所持枠は基本上限3(破魔矢所持時は拡張)で、天啓・神託の合算枠(sharedRevelationSlotsRemaining)とは独立している。
+      const slotsLeft = Math.max(0, riteMaxCapacity(params, runAfterRemoval) - runAfterRemoval.rites.length)
       if (slotsLeft === 0) return {}
       return { rites: [...runAfterRemoval.rites, ...runAfterRemoval.recentUsedRiteIds.slice(0, slotsLeft)] }
     }

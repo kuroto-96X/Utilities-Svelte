@@ -4353,6 +4353,17 @@ describe('useRevelation: 星(hotori・天啓回帰)', () => {
     const second = useRevelation(DEFAULT_PARAMS, first, 'hotori', null, createRng(1))
     expect(second.revelations).toEqual(['kaku', 'kaku'])
   })
+
+  test('合算上限2到達時は通常なら獲得できないが、千羽鶴所持時は枠が拡張され獲得できる', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const baseRun: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['hotori'], oracles: ['flush', 'stair'], lastUsedRevelationId: 'kaku' }
+    const blocked = useRevelation(DEFAULT_PARAMS, baseRun, 'hotori', null, createRng(1))
+    expect(blocked.revelations).toEqual([])
+
+    const runWithRelic: RunState = { ...baseRun, relics: [{ id: 'senbazuru', tsukumoka: false }] }
+    const extended = useRevelation(DEFAULT_PARAMS, runWithRelic, 'hotori', null, createRng(1))
+    expect(extended.revelations).toEqual(['kaku'])
+  })
 })
 
 describe('useRevelation: 張(chou・神託獲得)', () => {
@@ -4371,6 +4382,21 @@ describe('useRevelation: 張(chou・神託獲得)', () => {
     expect(result.oracles).toHaveLength(2)
     expect(result.oracles[0]).toBe('flush')
   })
+
+  test('千羽鶴所持時は合算上限が拡張され、通常なら1つしか獲得できない状況でも2つ獲得できる', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = {
+      ...createInitialRun(),
+      phase: 'playing',
+      wave,
+      revelations: ['chou'],
+      oracles: ['flush'],
+      relics: [{ id: 'senbazuru', tsukumoka: false }],
+    }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'chou', null, createRng(1))
+    expect(result.oracles).toHaveLength(3)
+    expect(result.oracles[0]).toBe('flush')
+  })
 })
 
 describe('useRevelation: 翼(yoku・天啓連続獲得)', () => {
@@ -4386,6 +4412,21 @@ describe('useRevelation: 翼(yoku・天啓連続獲得)', () => {
     const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['yoku'], oracles: ['flush'] }
     const result = useRevelation(DEFAULT_PARAMS, run, 'yoku', null, createRng(1))
     expect(result.revelations).toHaveLength(1)
+    expect(result.oracles).toEqual(['flush'])
+  })
+
+  test('千羽鶴所持時は合算上限が拡張され、通常なら1つしか獲得できない状況でも2つ獲得できる', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = {
+      ...createInitialRun(),
+      phase: 'playing',
+      wave,
+      revelations: ['yoku'],
+      oracles: ['flush'],
+      relics: [{ id: 'senbazuru', tsukumoka: false }],
+    }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'yoku', null, createRng(1))
+    expect(result.revelations).toHaveLength(2)
     expect(result.oracles).toEqual(['flush'])
   })
 })
@@ -4428,6 +4469,21 @@ describe('useRevelation: 参(karasu・秘儀回帰)', () => {
     const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['karasu'], recentUsedRiteIds: [] }
     const result = useRevelation(DEFAULT_PARAMS, run, 'karasu', null, createRng(1))
     expect(result.rites).toEqual([])
+  })
+
+  test('破魔矢所持時は秘儀の所持上限が拡張され、通常なら上限超過で切り捨てられる分も獲得できる', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = {
+      ...createInitialRun(),
+      phase: 'playing',
+      wave,
+      revelations: ['karasu'],
+      rites: ['eihwaz', 'jera'],
+      recentUsedRiteIds: ['uruz', 'ingwaz'],
+      relics: [{ id: 'hamaya', tsukumoka: false }],
+    }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'karasu', null, createRng(1))
+    expect(result.rites).toEqual(['eihwaz', 'jera', 'uruz', 'ingwaz'])
   })
 })
 
