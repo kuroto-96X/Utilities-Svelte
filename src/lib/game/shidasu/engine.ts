@@ -1214,8 +1214,6 @@ export function buyIndividualRite(params: ShidasuParams, run: RunState, slotInde
   return { ...run, currency: run.currency - price, rites: [...run.rites, riteId], shop: { ...run.shop, individual } }
 }
 
-// レリックを1つ購入する。ショップのレリック専用枠(run.shop.relic)から購入する単品購入のみ。
-// 売り切れ済み・枠が無い(null)・通貨不足のいずれかならno-op
 // レリックを1つ購入する。ショップのレリック専用枠(run.shop.relic配列)からslotIndex番目を購入する。
 // 売り切れ済み・枠が無い・通貨不足のいずれかならno-op
 export function buyRelic(params: ShidasuParams, run: RunState, slotIndex: number): RunState {
