@@ -1,10 +1,11 @@
 // src/lib/game/shidasu/shop.ts
-import type { RunState, ItemId, ShopState, ShopIndividualSlot, ShopPackSlot, ShopSlotKind } from './types'
+import type { RunState, ItemId, RelicId, ShopState, ShopIndividualSlot, ShopPackSlot, ShopSlotKind } from './types'
 import type { ShidasuParams } from './params'
 import { ITEM_POOL } from './items'
 import { RITE_POOL } from './rites'
 import { REVELATION_POOL } from './revelations'
 import { ORACLE_POOL } from './oracles'
+import { RELIC_POOL } from './relics'
 import { shuffleInPlace } from './deck'
 
 const SHOP_SLOT_KINDS: ShopSlotKind[] = ['item', 'rite', 'revelation', 'oracle']
@@ -41,6 +42,15 @@ function rollPackSlots(params: ShidasuParams, rand: () => number): ShopPackSlot[
   return entries.slice(0, 2).map(e => ({ packKind: e.packKind, offerCount: e.offerCount, pickCount: e.pickCount, name: e.name, price: e.price, sold: false }))
 }
 
+// 未所持のレリックからランダムに1つ選ぶ。未所持のレリックが無ければnull(ショップ画面で枠自体を非表示にする)
+function rollRelicSlot(run: RunState, rand: () => number): { id: RelicId; sold: boolean } | null {
+  const ownedIds = new Set(run.relics.map(r => r.id))
+  const available = RELIC_POOL.filter(id => !ownedIds.has(id))
+  if (available.length === 0) return null
+  const id = available[Math.floor(rand() * available.length)]
+  return { id, sold: false }
+}
+
 export function rollShop(params: ShidasuParams, run: RunState, rand: () => number = Math.random): ShopState {
   const usedItemIds = new Set<ItemId>()
   const individual: ShopIndividualSlot[] = [
@@ -48,7 +58,7 @@ export function rollShop(params: ShidasuParams, run: RunState, rand: () => numbe
     rollIndividualSlot(run, usedItemIds, rand),
     rollIndividualSlot(run, usedItemIds, rand),
   ]
-  return { individual, packs: rollPackSlots(params, rand) }
+  return { individual, packs: rollPackSlots(params, rand), relic: rollRelicSlot(run, rand) }
 }
 
 export function itemBuyPrice(params: ShidasuParams, id: ItemId): number {
@@ -81,4 +91,8 @@ export function oracleBuyPrice(params: ShidasuParams): number {
 
 export function oracleSellPrice(params: ShidasuParams): number {
   return params.shop.oraclePrice.sell
+}
+
+export function relicBuyPrice(params: ShidasuParams, id: RelicId): number {
+  return params.relics[id].price
 }

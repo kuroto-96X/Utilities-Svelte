@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/shop.test.ts
 import { describe, test, expect } from 'vitest'
-import { rollShop, itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice, oracleBuyPrice, oracleSellPrice } from './shop'
+import { rollShop, itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice, oracleBuyPrice, oracleSellPrice, relicBuyPrice } from './shop'
 import { DEFAULT_PARAMS } from './params'
 import { createInitialRun } from './engine'
 import { createRng } from './deck'
@@ -8,6 +8,7 @@ import { ITEM_POOL } from './items'
 import { RITE_POOL } from './rites'
 import { REVELATION_POOL } from './revelations'
 import { ORACLE_POOL } from './oracles'
+import { RELIC_POOL } from './relics'
 
 describe('rollShop', () => {
   test('バラ売り3枠・福袋2枠を返す', () => {
@@ -56,6 +57,19 @@ describe('rollShop', () => {
     })
   })
 
+  test('レリック枠は未所持のレリックから1つ選ばれる', () => {
+    const shop = rollShop(DEFAULT_PARAMS, createInitialRun(), createRng(1))
+    expect(shop.relic).not.toBeNull()
+    expect(RELIC_POOL).toContain(shop.relic!.id)
+    expect(shop.relic!.sold).toBe(false)
+  })
+
+  test('全レリックを所持していればレリック枠はnull', () => {
+    const run = { ...createInitialRun(), relics: RELIC_POOL.map(id => ({ id, tsukumoka: false })) }
+    const shop = rollShop(DEFAULT_PARAMS, run, createRng(1))
+    expect(shop.relic).toBeNull()
+  })
+
   test('packCatalogにcardSetの3-1・5-1・7-2パターンが含まれる', () => {
     const cardSetEntries = DEFAULT_PARAMS.shop.packCatalog.filter(e => e.packKind === 'cardSet')
     expect(cardSetEntries).toHaveLength(3)
@@ -82,5 +96,9 @@ describe('価格関数', () => {
     expect(revelationSellPrice(DEFAULT_PARAMS)).toBe(9)
     expect(oracleBuyPrice(DEFAULT_PARAMS)).toBe(15)
     expect(oracleSellPrice(DEFAULT_PARAMS)).toBe(7)
+  })
+
+  test('レリックの価格', () => {
+    expect(relicBuyPrice(DEFAULT_PARAMS, 'placeholder')).toBe(10)
   })
 })
