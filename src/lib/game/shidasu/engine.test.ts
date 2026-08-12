@@ -2996,7 +2996,7 @@ describe('buyIndividualItem(バラ売り護符購入)', () => {
   test('購入すると所持に追加され通貨が減り、該当枠がsold済みになる', () => {
     const itemId = ITEM_POOL.find(id => DEFAULT_PARAMS.talismans[id].rarity === 'C')!
     const run = shopRun([{ kind: 'item', id: itemId, sold: false }])
-    const price = itemBuyPrice(DEFAULT_PARAMS, itemId)
+    const price = itemBuyPrice(DEFAULT_PARAMS, run, itemId)
     const result = buyIndividualItem(DEFAULT_PARAMS, run, 0)
     expect(result.items).toEqual([itemId])
     expect(result.currency).toBe(999 - price)
@@ -3040,7 +3040,7 @@ describe('buyIndividualRite(バラ売り秘儀購入)', () => {
     }
     const result = buyIndividualRite(DEFAULT_PARAMS, run, 0)
     expect(result.rites).toEqual(['jera'])
-    expect(result.currency).toBe(999 - riteBuyPrice(DEFAULT_PARAMS))
+    expect(result.currency).toBe(999 - riteBuyPrice(DEFAULT_PARAMS, run))
     expect(result.shop!.individual[0].sold).toBe(true)
   })
 
@@ -3061,7 +3061,7 @@ describe('buyRelic(レリック購入)', () => {
     }
     const result = buyRelic(DEFAULT_PARAMS, run)
     expect(result.relics).toEqual([{ id: 'manekiNeko', tsukumoka: false }])
-    expect(result.currency).toBe(999 - relicBuyPrice(DEFAULT_PARAMS, 'manekiNeko'))
+    expect(result.currency).toBe(999 - relicBuyPrice(DEFAULT_PARAMS, run, 'manekiNeko'))
     expect(result.shop!.relic!.sold).toBe(true)
   })
 
@@ -3099,7 +3099,7 @@ describe('buyIndividualRevelationUse(バラ売り天啓・即使う)', () => {
     }
     const result = buyIndividualRevelationUse(DEFAULT_PARAMS, run, 0, null)
     expect(result.revelations).toEqual([])
-    expect(result.currency).toBe(999 - revelationBuyPrice(DEFAULT_PARAMS))
+    expect(result.currency).toBe(999 - revelationBuyPrice(DEFAULT_PARAMS, run))
     expect(result.shop!.individual[0].sold).toBe(true)
   })
 
@@ -3122,7 +3122,7 @@ describe('buyIndividualRevelationHold(バラ売り天啓・温存)', () => {
     }
     const result = buyIndividualRevelationHold(DEFAULT_PARAMS, run, 0)
     expect(result.revelations).toEqual(['kaku'])
-    expect(result.currency).toBe(999 - revelationBuyPrice(DEFAULT_PARAMS))
+    expect(result.currency).toBe(999 - revelationBuyPrice(DEFAULT_PARAMS, run))
   })
 
   test('天啓・神託合算上限2到達時は購入できない(片方1個ずつで合計2でもブロック)', () => {

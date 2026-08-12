@@ -1,7 +1,8 @@
 // src/lib/game/shidasu/relics.test.ts
 import { describe, test, it, expect } from 'vitest'
-import { RELIC_POOL, relicName, relicDesc, relicTsukumokaDesc } from './relics'
+import { RELIC_POOL, relicName, relicDesc, relicTsukumokaDesc, relicPriceMultiplier } from './relics'
 import { DEFAULT_PARAMS } from './params'
+import type { RunState } from './types'
 
 describe('relics', () => {
   test('relicName/relicDesc/relicTsukumokaDescはparams.relicsを参照する', () => {
@@ -32,5 +33,23 @@ describe('RELIC_POOL(第1弾13候補)', () => {
       expect(DEFAULT_PARAMS.relics[id].name.length).toBeGreaterThan(0)
       expect(DEFAULT_PARAMS.relics[id].price).toBeGreaterThan(0)
     }
+  })
+})
+
+describe('relicPriceMultiplier(招き猫)', () => {
+  const baseRun = { relics: [] } as unknown as RunState
+
+  it('招き猫を所持していなければ倍率1', () => {
+    expect(relicPriceMultiplier(DEFAULT_PARAMS, baseRun)).toBe(1)
+  })
+
+  it('招き猫(未付喪化)所持時は(100-25)/100=0.75', () => {
+    const run = { relics: [{ id: 'manekiNeko' as const, tsukumoka: false }] } as unknown as RunState
+    expect(relicPriceMultiplier(DEFAULT_PARAMS, run)).toBeCloseTo(0.75)
+  })
+
+  it('招き猫(付喪化済み)所持時は(100-50)/100=0.5', () => {
+    const run = { relics: [{ id: 'manekiNeko' as const, tsukumoka: true }] } as unknown as RunState
+    expect(relicPriceMultiplier(DEFAULT_PARAMS, run)).toBeCloseTo(0.5)
   })
 })

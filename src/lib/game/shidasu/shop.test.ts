@@ -81,24 +81,38 @@ describe('rollShop', () => {
 
 describe('価格関数', () => {
   test('itemBuyPrice/itemSellPriceはレアリティ別価格表を参照する', () => {
+    const run = createInitialRun()
     const rarityC = ITEM_POOL.find(id => DEFAULT_PARAMS.talismans[id].rarity === 'C')!
     const rarityR = ITEM_POOL.find(id => DEFAULT_PARAMS.talismans[id].rarity === 'R')!
-    expect(itemBuyPrice(DEFAULT_PARAMS, rarityC)).toBe(8)
+    expect(itemBuyPrice(DEFAULT_PARAMS, run, rarityC)).toBe(8)
     expect(itemSellPrice(DEFAULT_PARAMS, rarityC)).toBe(4)
-    expect(itemBuyPrice(DEFAULT_PARAMS, rarityR)).toBe(30)
+    expect(itemBuyPrice(DEFAULT_PARAMS, run, rarityR)).toBe(30)
     expect(itemSellPrice(DEFAULT_PARAMS, rarityR)).toBe(15)
   })
 
   test('rite/revelation/oracleの価格', () => {
-    expect(riteBuyPrice(DEFAULT_PARAMS)).toBe(12)
+    const run = createInitialRun()
+    expect(riteBuyPrice(DEFAULT_PARAMS, run)).toBe(12)
     expect(riteSellPrice(DEFAULT_PARAMS)).toBe(6)
-    expect(revelationBuyPrice(DEFAULT_PARAMS)).toBe(18)
+    expect(revelationBuyPrice(DEFAULT_PARAMS, run)).toBe(18)
     expect(revelationSellPrice(DEFAULT_PARAMS)).toBe(9)
-    expect(oracleBuyPrice(DEFAULT_PARAMS)).toBe(15)
+    expect(oracleBuyPrice(DEFAULT_PARAMS, run)).toBe(15)
     expect(oracleSellPrice(DEFAULT_PARAMS)).toBe(7)
   })
 
   test('レリックの価格', () => {
-    expect(relicBuyPrice(DEFAULT_PARAMS, 'manekiNeko')).toBe(25)
+    const run = createInitialRun()
+    expect(relicBuyPrice(DEFAULT_PARAMS, run, 'manekiNeko')).toBe(25)
+  })
+
+  test('招き猫所持時、福袋のスナップショット価格が割引される', () => {
+    const params = DEFAULT_PARAMS
+    const run = { ...createInitialRun(), relics: [{ id: 'manekiNeko' as const, tsukumoka: false }] }
+    const shop = rollShop(params, run, () => 0)
+    const expectedMultiplier = 0.75
+    for (const pack of shop.packs) {
+      const catalogEntry = params.shop.packCatalog.find(e => e.name === pack.name && e.offerCount === pack.offerCount)!
+      expect(pack.price).toBe(Math.round(catalogEntry.price * expectedMultiplier))
+    }
   })
 })

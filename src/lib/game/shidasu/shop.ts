@@ -5,7 +5,7 @@ import { ITEM_POOL } from './items'
 import { RITE_POOL } from './rites'
 import { REVELATION_POOL } from './revelations'
 import { ORACLE_POOL } from './oracles'
-import { RELIC_POOL } from './relics'
+import { RELIC_POOL, relicPriceMultiplier } from './relics'
 import { shuffleInPlace } from './deck'
 
 const SHOP_SLOT_KINDS: ShopSlotKind[] = ['item', 'rite', 'revelation', 'oracle']
@@ -35,11 +35,12 @@ function rollIndividualSlot(run: RunState, usedItemIds: Set<ItemId>, rand: () =>
 }
 
 // params.shop.packCatalogをシャッフルし、先頭2件を選ぶ(均等抽選)。選ばれたエントリの
-// name・priceはこの時点でShopPackSlotにスナップショットとしてコピーする。
-function rollPackSlots(params: ShidasuParams, rand: () => number): ShopPackSlot[] {
+// name・priceはこの時点でShopPackSlotにスナップショットとしてコピーする(招き猫所持時は割引後の価格をスナップショットする)。
+function rollPackSlots(params: ShidasuParams, run: RunState, rand: () => number): ShopPackSlot[] {
   const entries = [...params.shop.packCatalog]
   shuffleInPlace(entries, rand)
-  return entries.slice(0, 2).map(e => ({ packKind: e.packKind, offerCount: e.offerCount, pickCount: e.pickCount, name: e.name, price: e.price, sold: false }))
+  const multiplier = relicPriceMultiplier(params, run)
+  return entries.slice(0, 2).map(e => ({ packKind: e.packKind, offerCount: e.offerCount, pickCount: e.pickCount, name: e.name, price: Math.round(e.price * multiplier), sold: false }))
 }
 
 // 未所持のレリックからランダムに1つ選ぶ。未所持のレリックが無ければnull(ショップ画面で枠自体を非表示にする)
@@ -58,41 +59,41 @@ export function rollShop(params: ShidasuParams, run: RunState, rand: () => numbe
     rollIndividualSlot(run, usedItemIds, rand),
     rollIndividualSlot(run, usedItemIds, rand),
   ]
-  return { individual, packs: rollPackSlots(params, rand), relic: rollRelicSlot(run, rand) }
+  return { individual, packs: rollPackSlots(params, run, rand), relic: rollRelicSlot(run, rand) }
 }
 
-export function itemBuyPrice(params: ShidasuParams, id: ItemId): number {
-  return params.shop.itemPrice[params.talismans[id].rarity].buy
+export function itemBuyPrice(params: ShidasuParams, run: RunState, id: ItemId): number {
+  return Math.round(params.shop.itemPrice[params.talismans[id].rarity].buy * relicPriceMultiplier(params, run))
 }
 
 export function itemSellPrice(params: ShidasuParams, id: ItemId): number {
   return params.shop.itemPrice[params.talismans[id].rarity].sell
 }
 
-export function riteBuyPrice(params: ShidasuParams): number {
-  return params.shop.ritePrice.buy
+export function riteBuyPrice(params: ShidasuParams, run: RunState): number {
+  return Math.round(params.shop.ritePrice.buy * relicPriceMultiplier(params, run))
 }
 
 export function riteSellPrice(params: ShidasuParams): number {
   return params.shop.ritePrice.sell
 }
 
-export function revelationBuyPrice(params: ShidasuParams): number {
-  return params.shop.revelationPrice.buy
+export function revelationBuyPrice(params: ShidasuParams, run: RunState): number {
+  return Math.round(params.shop.revelationPrice.buy * relicPriceMultiplier(params, run))
 }
 
 export function revelationSellPrice(params: ShidasuParams): number {
   return params.shop.revelationPrice.sell
 }
 
-export function oracleBuyPrice(params: ShidasuParams): number {
-  return params.shop.oraclePrice.buy
+export function oracleBuyPrice(params: ShidasuParams, run: RunState): number {
+  return Math.round(params.shop.oraclePrice.buy * relicPriceMultiplier(params, run))
 }
 
 export function oracleSellPrice(params: ShidasuParams): number {
   return params.shop.oraclePrice.sell
 }
 
-export function relicBuyPrice(params: ShidasuParams, id: RelicId): number {
-  return params.relics[id].price
+export function relicBuyPrice(params: ShidasuParams, run: RunState, id: RelicId): number {
+  return Math.round(params.relics[id].price * relicPriceMultiplier(params, run))
 }

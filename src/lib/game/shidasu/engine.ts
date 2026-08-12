@@ -1193,7 +1193,7 @@ export function buyIndividualItem(params: ShidasuParams, run: RunState, slotInde
   if (!slot || slot.sold || slot.kind !== 'item') return run
   const itemId = slot.id as ItemId
   if (run.items.length >= params.items.maxItems) return run
-  const price = itemBuyPrice(params, itemId)
+  const price = itemBuyPrice(params, run, itemId)
   if (run.currency < price) return run
   const individual = run.shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
   return { ...run, currency: run.currency - price, items: [...run.items, itemId], shop: { ...run.shop, individual } }
@@ -1206,7 +1206,7 @@ export function buyIndividualRite(params: ShidasuParams, run: RunState, slotInde
   if (!slot || slot.sold || slot.kind !== 'rite') return run
   const riteId = slot.id as RiteId
   if (run.rites.length >= 3) return run
-  const price = riteBuyPrice(params)
+  const price = riteBuyPrice(params, run)
   if (run.currency < price) return run
   const individual = run.shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
   return { ...run, currency: run.currency - price, rites: [...run.rites, riteId], shop: { ...run.shop, individual } }
@@ -1217,7 +1217,7 @@ export function buyIndividualRite(params: ShidasuParams, run: RunState, slotInde
 export function buyRelic(params: ShidasuParams, run: RunState): RunState {
   if (run.phase !== 'shop' || !run.shop || !run.shop.relic || run.shop.relic.sold) return run
   const relicId = run.shop.relic.id
-  const price = relicBuyPrice(params, relicId)
+  const price = relicBuyPrice(params, run, relicId)
   if (run.currency < price) return run
   return {
     ...run,
@@ -1238,7 +1238,7 @@ export function buyIndividualRevelationUse(params: ShidasuParams, run: RunState,
   if (!slot || slot.sold || slot.kind !== 'revelation') return run
   const revelationId = slot.id as RevelationId
   if (!canUseRevelation(params, run.wave, revelationId)) return run
-  const price = revelationBuyPrice(params)
+  const price = revelationBuyPrice(params, run)
   if (run.currency < price) return run
   const { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
   const extraTableauRows = revelationId === 'kyo' ? run.extraTableauRows + params.revelations.kyo.n : run.extraTableauRows
@@ -1253,7 +1253,7 @@ export function buyIndividualRevelationHold(params: ShidasuParams, run: RunState
   if (!slot || slot.sold || slot.kind !== 'revelation') return run
   if (run.revelations.length + run.oracles.length >= 2) return run
   const revelationId = slot.id as RevelationId
-  const price = revelationBuyPrice(params)
+  const price = revelationBuyPrice(params, run)
   if (run.currency < price) return run
   const individual = run.shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
   return { ...run, currency: run.currency - price, revelations: [...run.revelations, revelationId], shop: { ...run.shop, individual } }
@@ -1265,7 +1265,7 @@ export function buyIndividualOracleUse(params: ShidasuParams, run: RunState, slo
   const slot = run.shop.individual[slotIndex]
   if (!slot || slot.sold || slot.kind !== 'oracle') return run
   const roleName = slot.id as RoleName
-  const price = oracleBuyPrice(params)
+  const price = oracleBuyPrice(params, run)
   if (run.currency < price) return run
   const oracleLevels = { ...run.oracleLevels, [roleName]: run.oracleLevels[roleName] + 1 }
   const wave = run.wave ? { ...run.wave, oracleLevels } : run.wave
@@ -1280,7 +1280,7 @@ export function buyIndividualOracleHold(params: ShidasuParams, run: RunState, sl
   if (!slot || slot.sold || slot.kind !== 'oracle') return run
   if (run.revelations.length + run.oracles.length >= 2) return run
   const roleName = slot.id as RoleName
-  const price = oracleBuyPrice(params)
+  const price = oracleBuyPrice(params, run)
   if (run.currency < price) return run
   const individual = run.shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
   return { ...run, currency: run.currency - price, oracles: [...run.oracles, roleName], shop: { ...run.shop, individual } }

@@ -777,23 +777,23 @@
               {#if slot.sold}
                 <p class="text-slate-400">売り切れ</p>
               {:else if slot.kind === 'item'}
-                <button onclick={() => handleBuyIndividualItem(i)} disabled={run.items.length >= params.items.maxItems || run.currency < itemBuyPrice(params, slot.id as ItemId)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
-                  購入({itemBuyPrice(params, slot.id as ItemId)})
+                <button onclick={() => handleBuyIndividualItem(i)} disabled={run.items.length >= params.items.maxItems || run.currency < itemBuyPrice(params, run, slot.id as ItemId)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                  購入({itemBuyPrice(params, run, slot.id as ItemId)})
                 </button>
               {:else if slot.kind === 'rite'}
-                <button onclick={() => handleBuyIndividualRite(i)} disabled={run.rites.length >= 3 || run.currency < riteBuyPrice(params)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
-                  購入({riteBuyPrice(params)})
+                <button onclick={() => handleBuyIndividualRite(i)} disabled={run.rites.length >= 3 || run.currency < riteBuyPrice(params, run)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                  購入({riteBuyPrice(params, run)})
                 </button>
               {:else if slot.kind === 'revelation'}
-                <button onclick={() => handleBuyIndividualRevelationHold(i)} disabled={run.revelations.length + run.oracles.length >= 2 || run.currency < revelationBuyPrice(params)} class="w-full px-2 py-1 rounded bg-slate-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">
-                  購入({revelationBuyPrice(params)})
+                <button onclick={() => handleBuyIndividualRevelationHold(i)} disabled={run.revelations.length + run.oracles.length >= 2 || run.currency < revelationBuyPrice(params, run)} class="w-full px-2 py-1 rounded bg-slate-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                  購入({revelationBuyPrice(params, run)})
                 </button>
               {:else if slot.kind === 'oracle'}
-                <button onclick={() => handleBuyIndividualOracleUse(i)} disabled={run.currency < oracleBuyPrice(params)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
-                  購入&使用({oracleBuyPrice(params)})
+                <button onclick={() => handleBuyIndividualOracleUse(i)} disabled={run.currency < oracleBuyPrice(params, run)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                  購入&使用({oracleBuyPrice(params, run)})
                 </button>
-                <button onclick={() => handleBuyIndividualOracleHold(i)} disabled={run.revelations.length + run.oracles.length >= 2 || run.currency < oracleBuyPrice(params)} class="w-full px-2 py-1 rounded bg-slate-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">
-                  購入({oracleBuyPrice(params)})
+                <button onclick={() => handleBuyIndividualOracleHold(i)} disabled={run.revelations.length + run.oracles.length >= 2 || run.currency < oracleBuyPrice(params, run)} class="w-full px-2 py-1 rounded bg-slate-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                  購入({oracleBuyPrice(params, run)})
                 </button>
               {/if}
             </div>
@@ -828,8 +828,8 @@
             {#if run.shop.relic.sold}
               <p class="text-slate-400">売り切れ</p>
             {:else}
-              <button onclick={handleBuyRelic} disabled={run.currency < relicBuyPrice(params, run.shop.relic.id)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
-                購入({relicBuyPrice(params, run.shop.relic.id)})
+              <button onclick={handleBuyRelic} disabled={run.currency < relicBuyPrice(params, run, run.shop.relic.id)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                購入({relicBuyPrice(params, run, run.shop.relic.id)})
               </button>
             {/if}
           </div>
