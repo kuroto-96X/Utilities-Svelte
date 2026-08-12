@@ -62,35 +62,39 @@ export function revelationOracleMaxCapacity(params: ShidasuParams, run: RunState
   return 2 + relicBonus(run, 'senbazuru', r.n, r.tsukumokaN)
 }
 
+// 数珠所持時のWaveクリア追加報酬。floor(そのWaveでの最大コンボ数/5)×n(付喪化ならtsukumokaN)。
+function juzuBonus(params: ShidasuParams, run: RunState, wave: WaveState): number {
+  const relic = run.relics.find(r => r.id === 'juzu')
+  if (!relic) return 0
+  const n = relic.tsukumoka ? params.relics.juzu.tsukumokaN : params.relics.juzu.n
+  return Math.floor(wave.maxComboThisWave / 5) * n
+}
+
+// 千社札所持時のWaveクリア追加報酬。floor(そのWaveで成立した役の種類数/2)×n(付喪化でn=2に強化)。
+function senjafudaBonus(params: ShidasuParams, run: RunState, wave: WaveState): number {
+  const relic = run.relics.find(r => r.id === 'senjafuda')
+  if (!relic) return 0
+  const roleTypeCount = Object.values(wave.roleOccurrenceCountThisWave).filter(count => (count ?? 0) > 0).length
+  const n = relic.tsukumoka ? 2 : params.relics.senjafuda.n
+  return Math.floor(roleTypeCount / 2) * n
+}
+
+// 算盤所持時のWaveクリア追加報酬。floor(((c-b-a)/(c-b))×n)(付喪化でn=10に強化)。
+// a=クリア時点の山札残り枚数, b=場札の初期配布枚数, c=デッキ総枚数(除外カードを除く)。
+function sorobanBonus(params: ShidasuParams, run: RunState, wave: WaveState): number {
+  const relic = run.relics.find(r => r.id === 'soroban')
+  if (!relic) return 0
+  const a = wave.stock.length
+  const b = wave.dealtRows * params.layout.cols
+  const c = run.deckComposition.filter(card => !card.removed).length
+  const denominator = c - b
+  if (denominator <= 0) return 0
+  const n = relic.tsukumoka ? 10 : params.relics.soroban.n
+  return Math.floor(((c - b - a) / denominator) * n)
+}
+
 // Waveクリア時の追加報酬(数珠・千社札・算盤)。所持していないレリックの項は0として扱う。
 // baseReward(星のreward)自体はこの関数の戻り値に含まない(呼び出し元resolveWaveEndで別途加算する)。
 export function relicWaveEndBonus(params: ShidasuParams, run: RunState, wave: WaveState, _baseReward: number): number {
-  let bonus = 0
-
-  const juzuRelic = run.relics.find(r => r.id === 'juzu')
-  if (juzuRelic) {
-    const n = juzuRelic.tsukumoka ? params.relics.juzu.tsukumokaN : params.relics.juzu.n
-    bonus += Math.floor(wave.maxComboThisWave / 5) * n
-  }
-
-  const senjafudaRelic = run.relics.find(r => r.id === 'senjafuda')
-  if (senjafudaRelic) {
-    const roleTypeCount = Object.values(wave.roleOccurrenceCountThisWave).filter(count => (count ?? 0) > 0).length
-    const n = senjafudaRelic.tsukumoka ? 2 : params.relics.senjafuda.n
-    bonus += Math.floor(roleTypeCount / 2) * n
-  }
-
-  const sorobanRelic = run.relics.find(r => r.id === 'soroban')
-  if (sorobanRelic) {
-    const a = wave.stock.length
-    const b = wave.dealtRows * params.layout.cols
-    const c = run.deckComposition.filter(card => !card.removed).length
-    const denominator = c - b
-    if (denominator > 0) {
-      const n = sorobanRelic.tsukumoka ? 10 : params.relics.soroban.n
-      bonus += Math.floor(((c - b - a) / denominator) * n)
-    }
-  }
-
-  return bonus
+  return juzuBonus(params, run, wave) + senjafudaBonus(params, run, wave) + sorobanBonus(params, run, wave)
 }
