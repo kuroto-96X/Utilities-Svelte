@@ -67,9 +67,9 @@ import { DEFAULT_PARAMS } from './params'
 
 describe('RELIC_POOL(第1弾13候補)', () => {
   const expectedIds = [
-    'maneki-neko', 'fuku-daruma', 'kumade', 'juzu',
-    'maneki-hoteizo', 'hamaya', 'senbazuru', 'fukuzasa',
-    'kaiun-kokeshi', 'engi-kozuchi', 'engi-suzu', 'senjafuda', 'soroban',
+    manekiNeko, fukuDaruma, 'kumade', 'juzu',
+    manekiHoteizo, 'hamaya', 'senbazuru', 'fukuzasa',
+    kaiunKokeshi, engiKozuchi, engiSuzu, 'senjafuda', 'soroban',
   ] as const
 
   it('13候補すべてがRELIC_POOLに含まれる(placeholderは除去済み)', () => {
@@ -93,7 +93,7 @@ describe('RELIC_POOL(第1弾13候補)', () => {
 - [ ] **Step 2: テストを実行して失敗を確認**
 
 Run: `npm run test -- relics.test.ts`
-Expected: FAIL(`RelicId`にまだ`maneki-neko`等が存在せず型エラー、または`RELIC_POOL`に含まれず失敗)
+Expected: FAIL(`RelicId`にまだ`manekiNeko`等が存在せず型エラー、または`RELIC_POOL`に含まれず失敗)
 
 - [ ] **Step 3: `types.ts`の`RelicId`を更新**
 
@@ -104,9 +104,9 @@ Expected: FAIL(`RelicId`にまだ`maneki-neko`等が存在せず型エラー、�
 // ラン単位の経済・メタ的な効果を持つ、護符の守備範囲外のアイテム。所持数に上限は無いが重複所持はできない。
 // 個体ごとに「付喪化」(進化)状態を持ち、付喪化すると効果が上方修正される。第1弾13候補(仮称)。
 export type RelicId =
-  | 'maneki-neko' | 'fuku-daruma' | 'kumade' | 'juzu'
-  | 'maneki-hoteizo' | 'hamaya' | 'senbazuru' | 'fukuzasa'
-  | 'kaiun-kokeshi' | 'engi-kozuchi' | 'engi-suzu' | 'senjafuda' | 'soroban'
+  | manekiNeko | fukuDaruma | 'kumade' | 'juzu'
+  | manekiHoteizo | 'hamaya' | 'senbazuru' | 'fukuzasa'
+  | kaiunKokeshi | engiKozuchi | engiSuzu | 'senjafuda' | 'soroban'
 ```
 
 - [ ] **Step 4: `params.ts`の`relics`型と`DEFAULT_PARAMS.relics`を更新**
@@ -115,17 +115,17 @@ export type RelicId =
 
 ```ts
   relics: {
-    'maneki-neko': { name: string; desc: string; tsukumokaDesc: string; price: number; discountPercent: number; tsukumokaDiscountPercent: number }
-    'fuku-daruma': { name: string; desc: string; tsukumokaDesc: string; price: number; n: number }
+    manekiNeko: { name: string; desc: string; tsukumokaDesc: string; price: number; discountPercent: number; tsukumokaDiscountPercent: number }
+    fukuDaruma: { name: string; desc: string; tsukumokaDesc: string; price: number; n: number }
     kumade: { name: string; desc: string; tsukumokaDesc: string; price: number; n: number }
     juzu: { name: string; desc: string; tsukumokaDesc: string; price: number; n: number; tsukumokaN: number }
-    'maneki-hoteizo': { name: string; desc: string; tsukumokaDesc: string; price: number; n: number; tsukumokaN: number }
+    manekiHoteizo: { name: string; desc: string; tsukumokaDesc: string; price: number; n: number; tsukumokaN: number }
     hamaya: { name: string; desc: string; tsukumokaDesc: string; price: number; n: number; tsukumokaN: number }
     senbazuru: { name: string; desc: string; tsukumokaDesc: string; price: number; n: number; tsukumokaN: number }
     fukuzasa: { name: string; desc: string; tsukumokaDesc: string; price: number; n: number }
-    'kaiun-kokeshi': { name: string; desc: string; tsukumokaDesc: string; price: number; sellBonusPercent: number; tsukumokaSellBonusPercent: number }
-    'engi-kozuchi': { name: string; desc: string; tsukumokaDesc: string; price: number; n: number; tsukumokaN: number }
-    'engi-suzu': { name: string; desc: string; tsukumokaDesc: string; price: number; n: number; tsukumokaN: number }
+    kaiunKokeshi: { name: string; desc: string; tsukumokaDesc: string; price: number; sellBonusPercent: number; tsukumokaSellBonusPercent: number }
+    engiKozuchi: { name: string; desc: string; tsukumokaDesc: string; price: number; n: number; tsukumokaN: number }
+    engiSuzu: { name: string; desc: string; tsukumokaDesc: string; price: number; n: number; tsukumokaN: number }
     senjafuda: { name: string; desc: string; tsukumokaDesc: string; price: number; n: number; tsukumokaN: number }
     soroban: { name: string; desc: string; tsukumokaDesc: string; price: number; n: number; tsukumokaN: number }
   }
@@ -135,17 +135,17 @@ export type RelicId =
 
 ```ts
   relics: {
-    'maneki-neko': { name: '招き猫', desc: 'ショップの全商品の購入価格を{discountPercent}%値引きする', tsukumokaDesc: 'ショップの全商品の購入価格を{tsukumokaDiscountPercent}%値引きする', price: 25, discountPercent: 25, tsukumokaDiscountPercent: 50 },
-    'fuku-daruma': { name: '福だるま', desc: 'ショップのリロールコストの刻み幅を{n}減らす', tsukumokaDesc: 'ショップのリロールコストの刻み幅を{n}減らし、同一ショップ訪問中の最初の1回のリロールを無料にする', price: 20, n: 2 },
+    manekiNeko: { name: '招き猫', desc: 'ショップの全商品の購入価格を{discountPercent}%値引きする', tsukumokaDesc: 'ショップの全商品の購入価格を{tsukumokaDiscountPercent}%値引きする', price: 25, discountPercent: 25, tsukumokaDiscountPercent: 50 },
+    fukuDaruma: { name: '福だるま', desc: 'ショップのリロールコストの刻み幅を{n}減らす', tsukumokaDesc: 'ショップのリロールコストの刻み幅を{n}減らし、同一ショップ訪問中の最初の1回のリロールを無料にする', price: 20, n: 2 },
     kumade: { name: '熊手', desc: 'ショップのバラ売り枠を{n}枠増やす', tsukumokaDesc: 'ショップのバラ売り枠を{n}枠、福袋枠も{n}枠増やす', price: 25, n: 1 },
     juzu: { name: '数珠', desc: 'Waveクリア時、そのWaveでの最大コンボ数に応じて追加報酬(floor(最大コンボ数/5)×{n})を得る', tsukumokaDesc: 'Waveクリア時、そのWaveでの最大コンボ数に応じて追加報酬(floor(最大コンボ数/5)×{tsukumokaN})を得る', price: 20, n: 1, tsukumokaN: 2 },
-    'maneki-hoteizo': { name: '招き布袋像', desc: '護符の所持上限を{n}増やす', tsukumokaDesc: '護符の所持上限を{n}増やし、さらに{tsukumokaN}増やす', price: 30, n: 1, tsukumokaN: 1 },
+    manekiHoteizo: { name: '招き布袋像', desc: '護符の所持上限を{n}増やす', tsukumokaDesc: '護符の所持上限を{n}増やし、さらに{tsukumokaN}増やす', price: 30, n: 1, tsukumokaN: 1 },
     hamaya: { name: '破魔矢', desc: '秘儀の所持上限を{n}増やす', tsukumokaDesc: '秘儀の所持上限を{n}増やし、さらに{tsukumokaN}増やす', price: 30, n: 1, tsukumokaN: 1 },
     senbazuru: { name: '千羽鶴', desc: '天啓・神託(合算)の所持上限を{n}増やす', tsukumokaDesc: '天啓・神託(合算)の所持上限を{n}増やし、さらに{tsukumokaN}増やす', price: 30, n: 1, tsukumokaN: 1 },
     fukuzasa: { name: '福笹', desc: '福袋の枠を{n}枠増やす', tsukumokaDesc: '福袋の枠を{n}枠、バラ売り枠も{n}枚増やす', price: 25, n: 1 },
-    'kaiun-kokeshi': { name: '開運こけし', desc: '護符・秘儀・天啓・神託の売却価格を{sellBonusPercent}%上乗せする', tsukumokaDesc: '護符・秘儀・天啓・神託の売却価格を{tsukumokaSellBonusPercent}%上乗せする', price: 20, sellBonusPercent: 25, tsukumokaSellBonusPercent: 50 },
-    'engi-kozuchi': { name: '縁起小槌', desc: '福袋の選択肢数を全ジャンル{n}増やす', tsukumokaDesc: '福袋の選択肢数を全ジャンル{n}増やし、さらに{tsukumokaN}増やす', price: 25, n: 1, tsukumokaN: 1 },
-    'engi-suzu': { name: '縁起鈴', desc: 'レリック専用枠の提示数を{n}増やす', tsukumokaDesc: 'レリック専用枠の提示数を{n}増やし、さらに{tsukumokaN}増やす', price: 35, n: 1, tsukumokaN: 1 },
+    kaiunKokeshi: { name: '開運こけし', desc: '護符・秘儀・天啓・神託の売却価格を{sellBonusPercent}%上乗せする', tsukumokaDesc: '護符・秘儀・天啓・神託の売却価格を{tsukumokaSellBonusPercent}%上乗せする', price: 20, sellBonusPercent: 25, tsukumokaSellBonusPercent: 50 },
+    engiKozuchi: { name: '縁起小槌', desc: '福袋の選択肢数を全ジャンル{n}増やす', tsukumokaDesc: '福袋の選択肢数を全ジャンル{n}増やし、さらに{tsukumokaN}増やす', price: 25, n: 1, tsukumokaN: 1 },
+    engiSuzu: { name: '縁起鈴', desc: 'レリック専用枠の提示数を{n}増やす', tsukumokaDesc: 'レリック専用枠の提示数を{n}増やし、さらに{tsukumokaN}増やす', price: 35, n: 1, tsukumokaN: 1 },
     senjafuda: { name: '千社札', desc: 'Waveクリア時、そのWaveで成立した役の種類数に応じて追加報酬(floor(役の種類数/2)×{n})を得る', tsukumokaDesc: 'Waveクリア時、そのWaveで成立した役の種類数に応じて追加報酬(floor(役の種類数/2)×{n})を得る(付喪化によりn=2に強化)', price: 20, n: 1 },
     soroban: { name: '算盤', desc: 'Waveクリア時、山札の消費割合に応じて追加報酬(floor(((c-b-a)/(c-b))×{n})、a=残り山札枚数,b=初期配布枚数,c=デッキ総枚数)を得る', tsukumokaDesc: 'Waveクリア時、山札の消費割合に応じて追加報酬(floor(((c-b-a)/(c-b))×{n})、a=残り山札枚数,b=初期配布枚数,c=デッキ総枚数)を得る(付喪化によりn=10に強化)', price: 20, n: 5 },
   },
@@ -163,9 +163,9 @@ export type RelicId =
 
 ```ts
 export const RELIC_POOL: RelicId[] = [
-  'maneki-neko', 'fuku-daruma', 'kumade', 'juzu',
-  'maneki-hoteizo', 'hamaya', 'senbazuru', 'fukuzasa',
-  'kaiun-kokeshi', 'engi-kozuchi', 'engi-suzu', 'senjafuda', 'soroban',
+  manekiNeko, fukuDaruma, 'kumade', 'juzu',
+  manekiHoteizo, 'hamaya', 'senbazuru', 'fukuzasa',
+  kaiunKokeshi, engiKozuchi, engiSuzu, 'senjafuda', 'soroban',
 ]
 ```
 
@@ -177,7 +177,7 @@ Expected: PASS
 - [ ] **Step 8: 型チェックとビルド**
 
 Run: `npm run check`
-Expected: `placeholder`を参照していた既存コード(shop.test.ts・engine.test.ts等)で型エラーが出る可能性がある。出た場合は該当箇所を`'maneki-neko'`など実在のIDに置き換える(このタスクの範囲内で修正してよい、機械的な置換)。
+Expected: `placeholder`を参照していた既存コード(shop.test.ts・engine.test.ts等)で型エラーが出る可能性がある。出た場合は該当箇所を`manekiNeko`など実在のIDに置き換える(このタスクの範囲内で修正してよい、機械的な置換)。
 
 - [ ] **Step 9: コミット**
 
@@ -213,12 +213,12 @@ describe('relicPriceMultiplier(招き猫)', () => {
   })
 
   it('招き猫(未付喪化)所持時は(100-25)/100=0.75', () => {
-    const run = { relics: [{ id: 'maneki-neko' as const, tsukumoka: false }] } as unknown as RunState
+    const run = { relics: [{ id: manekiNeko as const, tsukumoka: false }] } as unknown as RunState
     expect(relicPriceMultiplier(DEFAULT_PARAMS, run)).toBeCloseTo(0.75)
   })
 
   it('招き猫(付喪化済み)所持時は(100-50)/100=0.5', () => {
-    const run = { relics: [{ id: 'maneki-neko' as const, tsukumoka: true }] } as unknown as RunState
+    const run = { relics: [{ id: manekiNeko as const, tsukumoka: true }] } as unknown as RunState
     expect(relicPriceMultiplier(DEFAULT_PARAMS, run)).toBeCloseTo(0.5)
   })
 })
@@ -239,9 +239,9 @@ import type { RunState } from './types'
 // 招き猫所持時のショップ購入価格倍率。所持していなければ1(無変化)。
 // 端数はMath.roundで各価格関数側が丸める(このヘルパー自体は丸めない)。
 export function relicPriceMultiplier(params: ShidasuParams, run: RunState): number {
-  const relic = run.relics.find(r => r.id === 'maneki-neko')
+  const relic = run.relics.find(r => r.id === manekiNeko)
   if (!relic) return 1
-  const percent = relic.tsukumoka ? params.relics['maneki-neko'].tsukumokaDiscountPercent : params.relics['maneki-neko'].discountPercent
+  const percent = relic.tsukumoka ? params.relics[manekiNeko].tsukumokaDiscountPercent : params.relics[manekiNeko].discountPercent
   return (100 - percent) / 100
 }
 ```
@@ -336,7 +336,7 @@ Expected: 呼び出し元の引数不足エラーが全て解消しているこ�
 ```ts
 it('招き猫所持時、福袋のスナップショット価格が割引される', () => {
   const params = DEFAULT_PARAMS
-  const run = { ...someBaseRunState, relics: [{ id: 'maneki-neko' as const, tsukumoka: false }] }
+  const run = { ...someBaseRunState, relics: [{ id: manekiNeko as const, tsukumoka: false }] }
   const shop = rollShop(params, run, () => 0)
   const expectedMultiplier = 0.75
   for (const pack of shop.packs) {
@@ -383,11 +383,11 @@ describe('所持上限ヘルパー', () => {
     expect(itemMaxCapacity(DEFAULT_PARAMS, run)).toBe(DEFAULT_PARAMS.items.maxItems)
   })
   it('itemMaxCapacity: 招き布袋像(未付喪化)で+1', () => {
-    const run = { relics: [{ id: 'maneki-hoteizo' as const, tsukumoka: false }] } as unknown as RunState
+    const run = { relics: [{ id: manekiHoteizo as const, tsukumoka: false }] } as unknown as RunState
     expect(itemMaxCapacity(DEFAULT_PARAMS, run)).toBe(DEFAULT_PARAMS.items.maxItems + 1)
   })
   it('itemMaxCapacity: 招き布袋像(付喪化)で+2', () => {
-    const run = { relics: [{ id: 'maneki-hoteizo' as const, tsukumoka: true }] } as unknown as RunState
+    const run = { relics: [{ id: manekiHoteizo as const, tsukumoka: true }] } as unknown as RunState
     expect(itemMaxCapacity(DEFAULT_PARAMS, run)).toBe(DEFAULT_PARAMS.items.maxItems + 2)
   })
   it('riteMaxCapacity: 破魔矢なしなら3', () => {
@@ -427,8 +427,8 @@ function relicBonus(run: RunState, id: RelicId, n: number, tsukumokaN: number): 
 
 // 護符の所持上限。招き布袋像所持時はn(付喪化ならさらにtsukumokaN)を加算する。
 export function itemMaxCapacity(params: ShidasuParams, run: RunState): number {
-  const r = params.relics['maneki-hoteizo']
-  return params.items.maxItems + relicBonus(run, 'maneki-hoteizo', r.n, r.tsukumokaN)
+  const r = params.relics[manekiHoteizo]
+  return params.items.maxItems + relicBonus(run, manekiHoteizo, r.n, r.tsukumokaN)
 }
 
 // 秘儀の所持上限(基本値3)。破魔矢所持時はn(付喪化ならさらにtsukumokaN)を加算する。
@@ -489,7 +489,7 @@ describe('招き布袋像による護符所持上限の拡張', () => {
   it('招き布袋像所持時、maxItems+1まで購入できる', () => {
     const params = DEFAULT_PARAMS
     let run = createInitialRun(params)
-    run = { ...run, relics: [{ id: 'maneki-hoteizo', tsukumoka: false }], items: new Array(params.items.maxItems).fill('bridge') as ItemId[], currency: 9999, phase: 'shop', shop: { individual: [{ kind: 'item', id: 'grace', sold: false }], packs: [], relic: [] } }
+    run = { ...run, relics: [{ id: manekiHoteizo, tsukumoka: false }], items: new Array(params.items.maxItems).fill('bridge') as ItemId[], currency: 9999, phase: 'shop', shop: { individual: [{ kind: 'item', id: 'grace', sold: false }], packs: [], relic: [] } }
     run = buyIndividualItem(params, run, 0)
     expect(run.items).toHaveLength(params.items.maxItems + 1)
   })
@@ -531,11 +531,11 @@ describe('relicSellBonusMultiplier(開運こけし)', () => {
     expect(relicSellBonusMultiplier(DEFAULT_PARAMS, run)).toBe(1)
   })
   it('未付喪化なら1.25', () => {
-    const run = { relics: [{ id: 'kaiun-kokeshi' as const, tsukumoka: false }] } as unknown as RunState
+    const run = { relics: [{ id: kaiunKokeshi as const, tsukumoka: false }] } as unknown as RunState
     expect(relicSellBonusMultiplier(DEFAULT_PARAMS, run)).toBeCloseTo(1.25)
   })
   it('付喪化済みなら1.5', () => {
-    const run = { relics: [{ id: 'kaiun-kokeshi' as const, tsukumoka: true }] } as unknown as RunState
+    const run = { relics: [{ id: kaiunKokeshi as const, tsukumoka: true }] } as unknown as RunState
     expect(relicSellBonusMultiplier(DEFAULT_PARAMS, run)).toBeCloseTo(1.5)
   })
 })
@@ -551,9 +551,9 @@ Expected: FAIL
 ```ts
 // 開運こけし所持時の売却価格倍率。所持していなければ1(無変化)。
 export function relicSellBonusMultiplier(params: ShidasuParams, run: RunState): number {
-  const relic = run.relics.find(r => r.id === 'kaiun-kokeshi')
+  const relic = run.relics.find(r => r.id === kaiunKokeshi)
   if (!relic) return 1
-  const percent = relic.tsukumoka ? params.relics['kaiun-kokeshi'].tsukumokaSellBonusPercent : params.relics['kaiun-kokeshi'].sellBonusPercent
+  const percent = relic.tsukumoka ? params.relics[kaiunKokeshi].tsukumokaSellBonusPercent : params.relics[kaiunKokeshi].sellBonusPercent
   return (100 + percent) / 100
 }
 ```
@@ -607,7 +607,7 @@ Expected: PASS
 ```ts
 it('開運こけし所持時、護符の売却価格が上乗せされる', () => {
   const params = DEFAULT_PARAMS
-  const run = { relics: [{ id: 'kaiun-kokeshi' as const, tsukumoka: false }] } as unknown as RunState
+  const run = { relics: [{ id: kaiunKokeshi as const, tsukumoka: false }] } as unknown as RunState
   const base = itemSellPrice(params, { relics: [] } as unknown as RunState, 'bridge')
   expect(itemSellPrice(params, run, 'bridge')).toBe(Math.round(base * 1.25))
 })
@@ -835,11 +835,11 @@ describe('ショップ枠数ヘルパー', () => {
     expect(packSlotCount(DEFAULT_PARAMS, run)).toBe(3)
   })
   it('packOfferCountBonus: 縁起小槌(未付喪化)で+1', () => {
-    const run = { relics: [{ id: 'engi-kozuchi' as const, tsukumoka: false }] } as unknown as RunState
+    const run = { relics: [{ id: engiKozuchi as const, tsukumoka: false }] } as unknown as RunState
     expect(packOfferCountBonus(DEFAULT_PARAMS, run)).toBe(1)
   })
   it('packOfferCountBonus: 縁起小槌(付喪化)で+2', () => {
-    const run = { relics: [{ id: 'engi-kozuchi' as const, tsukumoka: true }] } as unknown as RunState
+    const run = { relics: [{ id: engiKozuchi as const, tsukumoka: true }] } as unknown as RunState
     expect(packOfferCountBonus(DEFAULT_PARAMS, run)).toBe(2)
   })
 })
@@ -876,8 +876,8 @@ export function packSlotCount(params: ShidasuParams, run: RunState): number {
 
 // 福袋の選択肢数(offerCount)への加算値。縁起小槌所持時n(付喪化ならさらにtsukumokaN)。
 export function packOfferCountBonus(params: ShidasuParams, run: RunState): number {
-  const r = params.relics['engi-kozuchi']
-  return relicBonus(run, 'engi-kozuchi', r.n, r.tsukumokaN)
+  const r = params.relics[engiKozuchi]
+  return relicBonus(run, engiKozuchi, r.n, r.tsukumokaN)
 }
 ```
 
@@ -941,7 +941,7 @@ it('福笹所持時、福袋枠が3枠になる', () => {
 
 it('縁起小槌所持時、福袋のofferCountが+1される', () => {
   const params = DEFAULT_PARAMS
-  const run = { ...someBaseRunState, relics: [{ id: 'engi-kozuchi' as const, tsukumoka: false }] }
+  const run = { ...someBaseRunState, relics: [{ id: engiKozuchi as const, tsukumoka: false }] }
   const shop = rollShop(params, run, () => 0.5)
   for (const pack of shop.packs) {
     const catalogEntry = params.shop.packCatalog.find(e => e.name === pack.name)!
@@ -999,8 +999,8 @@ export interface ShopState {
 ```ts
 // レリック専用枠の提示数(基本1枠)。縁起鈴所持時n(付喪化ならさらにtsukumokaN)を加算する。
 export function relicSlotCount(params: ShidasuParams, run: RunState): number {
-  const r = params.relics['engi-suzu']
-  return 1 + relicBonus(run, 'engi-suzu', r.n, r.tsukumokaN)
+  const r = params.relics[engiSuzu]
+  return 1 + relicBonus(run, engiSuzu, r.n, r.tsukumokaN)
 }
 ```
 
@@ -1083,24 +1083,24 @@ Expected: PASS(既存の`run.shop.relic.id`のような単数アクセスが残�
 ```ts
 it('縁起鈴所持時、レリック専用枠が2枠になる', () => {
   const params = DEFAULT_PARAMS
-  const run = { ...someBaseRunState, relics: [{ id: 'engi-suzu' as const, tsukumoka: false }] }
+  const run = { ...someBaseRunState, relics: [{ id: engiSuzu as const, tsukumoka: false }] }
   const shop = rollShop(params, run, () => 0.1)
   expect(shop.relic).toHaveLength(2)
 })
 
 it('縁起鈴(付喪化)所持時、レリック専用枠が3枠になる', () => {
   const params = DEFAULT_PARAMS
-  const run = { ...someBaseRunState, relics: [{ id: 'engi-suzu' as const, tsukumoka: true }] }
+  const run = { ...someBaseRunState, relics: [{ id: engiSuzu as const, tsukumoka: true }] }
   const shop = rollShop(params, run, () => 0.1)
   expect(shop.relic).toHaveLength(3)
 })
 
 it('レリック専用枠は所持レリックと重複しない', () => {
   const params = DEFAULT_PARAMS
-  const run = { ...someBaseRunState, relics: [{ id: 'maneki-neko' as const, tsukumoka: false }, { id: 'kumade' as const, tsukumoka: false }] }
+  const run = { ...someBaseRunState, relics: [{ id: manekiNeko as const, tsukumoka: false }, { id: 'kumade' as const, tsukumoka: false }] }
   const shop = rollShop(params, run, () => 0.1)
   const relicIds = (shop.relic ?? []).map(s => s.id)
-  expect(relicIds).not.toContain('maneki-neko')
+  expect(relicIds).not.toContain(manekiNeko)
   expect(relicIds).not.toContain('kumade')
 })
 ```
@@ -1112,7 +1112,7 @@ describe('buyRelic(配列スロット対応)', () => {
   it('slotIndexで指定した枠のレリックを購入できる', () => {
     const params = DEFAULT_PARAMS
     let run = createInitialRun(params)
-    run = { ...run, phase: 'shop', currency: 9999, shop: { individual: [], packs: [], relic: [{ id: 'maneki-neko', sold: false }, { id: 'kumade', sold: false }] } }
+    run = { ...run, phase: 'shop', currency: 9999, shop: { individual: [], packs: [], relic: [{ id: manekiNeko, sold: false }, { id: 'kumade', sold: false }] } }
     run = buyRelic(params, run, 1)
     expect(run.relics).toEqual([{ id: 'kumade', tsukumoka: false }])
     expect(run.shop!.relic![1].sold).toBe(true)
@@ -1160,18 +1160,18 @@ describe('relicRerollCostStep(福だるま)', () => {
     expect(relicRerollCostStep(DEFAULT_PARAMS, run)).toBe(DEFAULT_PARAMS.shop.rerollCostStep)
   })
   it('福だるま所持時はn減る(0未満にはならない)', () => {
-    const run = { relics: [{ id: 'fuku-daruma' as const, tsukumoka: false }] } as unknown as RunState
-    expect(relicRerollCostStep(DEFAULT_PARAMS, run)).toBe(Math.max(0, DEFAULT_PARAMS.shop.rerollCostStep - DEFAULT_PARAMS.relics['fuku-daruma'].n))
+    const run = { relics: [{ id: fukuDaruma as const, tsukumoka: false }] } as unknown as RunState
+    expect(relicRerollCostStep(DEFAULT_PARAMS, run)).toBe(Math.max(0, DEFAULT_PARAMS.shop.rerollCostStep - DEFAULT_PARAMS.relics[fukuDaruma].n))
   })
 })
 
 describe('relicFirstRerollFree(福だるま付喪化)', () => {
   it('未付喪化なら常にfalse', () => {
-    const run = { relics: [{ id: 'fuku-daruma' as const, tsukumoka: false }] } as unknown as RunState
+    const run = { relics: [{ id: fukuDaruma as const, tsukumoka: false }] } as unknown as RunState
     expect(relicFirstRerollFree(run)).toBe(false)
   })
   it('付喪化済みならtrue', () => {
-    const run = { relics: [{ id: 'fuku-daruma' as const, tsukumoka: true }] } as unknown as RunState
+    const run = { relics: [{ id: fukuDaruma as const, tsukumoka: true }] } as unknown as RunState
     expect(relicFirstRerollFree(run)).toBe(true)
   })
 })
@@ -1187,14 +1187,14 @@ Expected: FAIL
 ```ts
 // ショップリロールコストの刻み幅。福だるま所持時、params.shop.rerollCostStepからnを減らす(0未満にはしない)。
 export function relicRerollCostStep(params: ShidasuParams, run: RunState): number {
-  const relic = run.relics.find(r => r.id === 'fuku-daruma')
+  const relic = run.relics.find(r => r.id === fukuDaruma)
   if (!relic) return params.shop.rerollCostStep
-  return Math.max(0, params.shop.rerollCostStep - params.relics['fuku-daruma'].n)
+  return Math.max(0, params.shop.rerollCostStep - params.relics[fukuDaruma].n)
 }
 
 // 福だるま(付喪化)所持時、同一ショップ訪問中の最初の1回のリロールが無料になるか。
 export function relicFirstRerollFree(run: RunState): boolean {
-  const relic = run.relics.find(r => r.id === 'fuku-daruma')
+  const relic = run.relics.find(r => r.id === fukuDaruma)
   return relic?.tsukumoka ?? false
 }
 ```
@@ -1236,23 +1236,23 @@ describe('shopRerollCost: 福だるま', () => {
   it('福だるま所持時、コストがn減る', () => {
     const params = DEFAULT_PARAMS
     let run = createInitialRun(params)
-    run = { ...run, relics: [{ id: 'fuku-daruma', tsukumoka: false }], shopRerollCount: 0 }
-    const expectedStep = params.shop.rerollCostStep - params.relics['fuku-daruma'].n
+    run = { ...run, relics: [{ id: fukuDaruma, tsukumoka: false }], shopRerollCount: 0 }
+    const expectedStep = params.shop.rerollCostStep - params.relics[fukuDaruma].n
     expect(shopRerollCost(params, run)).toBe(expectedStep)
   })
 
   it('福だるま(付喪化)所持時、最初の1回は無料', () => {
     const params = DEFAULT_PARAMS
     let run = createInitialRun(params)
-    run = { ...run, relics: [{ id: 'fuku-daruma', tsukumoka: true }], shopRerollCount: 0 }
+    run = { ...run, relics: [{ id: fukuDaruma, tsukumoka: true }], shopRerollCount: 0 }
     expect(shopRerollCost(params, run)).toBe(0)
   })
 
   it('福だるま(付喪化)所持時、2回目以降は通常通り課金される', () => {
     const params = DEFAULT_PARAMS
     let run = createInitialRun(params)
-    run = { ...run, relics: [{ id: 'fuku-daruma', tsukumoka: true }], shopRerollCount: 1 }
-    const expectedStep = params.shop.rerollCostStep - params.relics['fuku-daruma'].n
+    run = { ...run, relics: [{ id: fukuDaruma, tsukumoka: true }], shopRerollCount: 1 }
+    const expectedStep = params.shop.rerollCostStep - params.relics[fukuDaruma].n
     expect(shopRerollCost(params, run)).toBe(2 * expectedStep)
   })
 })
