@@ -18,7 +18,7 @@
   } from '$lib/game/shidasu/engine'
   import { itemDesc, itemName } from '$lib/game/shidasu/items'
   import { riteName, riteDesc } from '$lib/game/shidasu/rites'
-  import { relicName, relicDesc, relicTsukumokaDesc } from '$lib/game/shidasu/relics'
+  import { relicName, relicDesc, relicTsukumokaDesc, itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity } from '$lib/game/shidasu/relics'
   import { revelationDesc, revelationName } from '$lib/game/shidasu/revelations'
   import { revelationNeedsTarget, canUseRevelation } from '$lib/game/shidasu/revelationEffects'
   import { oracleName, oracleDesc } from '$lib/game/shidasu/oracles'
@@ -629,7 +629,7 @@
               >使用</button>
               <button
                 onclick={() => handlePickPackRevelationHold(id)}
-                disabled={run.revelations.length + run.oracles.length >= 2}
+                disabled={run.revelations.length + run.oracles.length >= revelationOracleMaxCapacity(params, run)}
                 class="flex-1 bg-slate-700 text-white rounded px-2 py-1 active:scale-95 transition-transform disabled:opacity-30 disabled:cursor-not-allowed"
               >温存</button>
             </div>
@@ -777,22 +777,22 @@
               {#if slot.sold}
                 <p class="text-slate-400">売り切れ</p>
               {:else if slot.kind === 'item'}
-                <button onclick={() => handleBuyIndividualItem(i)} disabled={run.items.length >= params.items.maxItems || run.currency < itemBuyPrice(params, run, slot.id as ItemId)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                <button onclick={() => handleBuyIndividualItem(i)} disabled={run.items.length >= itemMaxCapacity(params, run) || run.currency < itemBuyPrice(params, run, slot.id as ItemId)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
                   購入({itemBuyPrice(params, run, slot.id as ItemId)})
                 </button>
               {:else if slot.kind === 'rite'}
-                <button onclick={() => handleBuyIndividualRite(i)} disabled={run.rites.length >= 3 || run.currency < riteBuyPrice(params, run)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                <button onclick={() => handleBuyIndividualRite(i)} disabled={run.rites.length >= riteMaxCapacity(params, run) || run.currency < riteBuyPrice(params, run)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
                   購入({riteBuyPrice(params, run)})
                 </button>
               {:else if slot.kind === 'revelation'}
-                <button onclick={() => handleBuyIndividualRevelationHold(i)} disabled={run.revelations.length + run.oracles.length >= 2 || run.currency < revelationBuyPrice(params, run)} class="w-full px-2 py-1 rounded bg-slate-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                <button onclick={() => handleBuyIndividualRevelationHold(i)} disabled={run.revelations.length + run.oracles.length >= revelationOracleMaxCapacity(params, run) || run.currency < revelationBuyPrice(params, run)} class="w-full px-2 py-1 rounded bg-slate-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">
                   購入({revelationBuyPrice(params, run)})
                 </button>
               {:else if slot.kind === 'oracle'}
                 <button onclick={() => handleBuyIndividualOracleUse(i)} disabled={run.currency < oracleBuyPrice(params, run)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
                   購入&使用({oracleBuyPrice(params, run)})
                 </button>
-                <button onclick={() => handleBuyIndividualOracleHold(i)} disabled={run.revelations.length + run.oracles.length >= 2 || run.currency < oracleBuyPrice(params, run)} class="w-full px-2 py-1 rounded bg-slate-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                <button onclick={() => handleBuyIndividualOracleHold(i)} disabled={run.revelations.length + run.oracles.length >= revelationOracleMaxCapacity(params, run) || run.currency < oracleBuyPrice(params, run)} class="w-full px-2 py-1 rounded bg-slate-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">
                   購入({oracleBuyPrice(params, run)})
                 </button>
               {/if}
@@ -822,9 +822,9 @@
       {#if run.shop.relic && run.shop.relic.length > 0}
         <div class="space-y-2">
           <p class="text-xs text-slate-500">レリック</p>
-          <div class="flex flex-wrap gap-2">
+          <div class="grid grid-cols-3 gap-2">
             {#each run.shop.relic as slot, i (i)}
-              <div class="border border-slate-200 rounded-lg p-2 text-xs space-y-1 w-1/3">
+              <div class="border border-slate-200 rounded-lg p-2 text-xs space-y-1">
                 <p class="font-semibold text-slate-800">{relicName(slot.id, params)}</p>
                 <p class="text-[11px] text-slate-500">{relicDesc(slot.id, params)}</p>
                 {#if slot.sold}
@@ -962,7 +962,7 @@
           </button>
         </div>
       {:else}
-        <div class="text-emerald-100/70 text-sm mb-4">護符は最大{params.items.maxItems}個まで。入れ替える護符を選ぶ</div>
+        <div class="text-emerald-100/70 text-sm mb-4">護符は最大{itemMaxCapacity(params, run)}個まで。入れ替える護符を選ぶ</div>
         <div class="flex flex-col gap-3 w-full">
           {#each run.items as id, i (i)}
             <button
@@ -1018,7 +1018,7 @@
               <div class="text-xs text-emerald-100/80 mt-0.5">{oracleDesc(roleName, params)}</div>
               <div class="flex gap-2 mt-2">
                 <button onclick={() => handlePickPackOracleUse(roleName)} class="flex-1 bg-indigo-700 text-white rounded px-2 py-1 active:scale-95 transition-transform">即使う</button>
-                <button onclick={() => handlePickPackOracleHold(roleName)} disabled={run.revelations.length + run.oracles.length >= 2} class="flex-1 bg-slate-700 text-white rounded px-2 py-1 active:scale-95 transition-transform disabled:opacity-30 disabled:cursor-not-allowed">温存</button>
+                <button onclick={() => handlePickPackOracleHold(roleName)} disabled={run.revelations.length + run.oracles.length >= revelationOracleMaxCapacity(params, run)} class="flex-1 bg-slate-700 text-white rounded px-2 py-1 active:scale-95 transition-transform disabled:opacity-30 disabled:cursor-not-allowed">温存</button>
               </div>
             </div>
           {/each}
