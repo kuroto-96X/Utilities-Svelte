@@ -13,7 +13,7 @@ import { applyRevelationEffect, canUseRevelation } from './revelationEffects'
 import { rollOracleOffer, defaultOracleLevels, ORACLE_POOL } from './oracles'
 import { rollCardSetOffer } from './cardSets'
 import { rollShop, itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice, oracleBuyPrice, oracleSellPrice, relicBuyPrice } from './shop'
-import { itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity, relicWaveEndBonus } from './relics'
+import { itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity, relicWaveEndBonus, relicRerollCostStep, relicFirstRerollFree } from './relics'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
 
@@ -1172,9 +1172,11 @@ export function rerollStageStars(params: ShidasuParams, run: RunState, rand: () 
 
 // ショップの品ぞろえ(バラ売り3枠+福袋2枠)全体を再抽選するリロールのコスト。同一ショップ訪問中の
 // リロール回数(shopRerollCount)に応じて回数ごとにrerollCostStep分ずつ増額する
-// (1回目はrerollCostStep、2回目は2倍、3回目は3倍…)。
+// (1回目はrerollCostStep、2回目は2倍、3回目は3倍…)。福だるま所持時はrerollCostStep自体が減少し、
+// 付喪化済みなら同一ショップ訪問中の最初の1回(shopRerollCount===0)は無料になる。
 export function shopRerollCost(params: ShidasuParams, run: RunState): number {
-  return (run.shopRerollCount + 1) * params.shop.rerollCostStep
+  if (run.shopRerollCount === 0 && relicFirstRerollFree(run)) return 0
+  return (run.shopRerollCount + 1) * relicRerollCostStep(params, run)
 }
 
 // ショップ画面のリロールボタンから呼ぶ。バラ売り3枠+福袋2枠を丸ごと再抽選する(売り切れ済みの

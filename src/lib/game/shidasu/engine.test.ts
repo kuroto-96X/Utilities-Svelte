@@ -2899,6 +2899,27 @@ describe('shopRerollCost', () => {
   })
 })
 
+describe('shopRerollCost: 福だるま', () => {
+  const params = DEFAULT_PARAMS
+
+  test('福だるま所持時、コストがn減る', () => {
+    const run = { ...beginRun(params, 1), relics: [{ id: 'fukuDaruma' as const, tsukumoka: false }], shopRerollCount: 0 }
+    const expectedStep = params.shop.rerollCostStep - params.relics.fukuDaruma.n
+    expect(shopRerollCost(params, run)).toBe(expectedStep)
+  })
+
+  test('福だるま(付喪化)所持時、最初の1回は無料', () => {
+    const run = { ...beginRun(params, 1), relics: [{ id: 'fukuDaruma' as const, tsukumoka: true }], shopRerollCount: 0 }
+    expect(shopRerollCost(params, run)).toBe(0)
+  })
+
+  test('福だるま(付喪化)所持時、2回目以降は通常通り課金される', () => {
+    const run = { ...beginRun(params, 1), relics: [{ id: 'fukuDaruma' as const, tsukumoka: true }], shopRerollCount: 1 }
+    const expectedStep = params.shop.rerollCostStep - params.relics.fukuDaruma.n
+    expect(shopRerollCost(params, run)).toBe(2 * expectedStep)
+  })
+})
+
 describe('rerollShop', () => {
   function shopRun(currency: number, shopRerollCount = 0): RunState {
     const base = shopStateAfterWaveClear()

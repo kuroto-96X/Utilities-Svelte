@@ -131,3 +131,16 @@ export function relicSlotCount(params: ShidasuParams, run: RunState): number {
   const r = params.relics.engiSuzu
   return 1 + relicBonus(run, 'engiSuzu', r.n, r.tsukumokaN)
 }
+
+// ショップリロールコストの刻み幅。福だるま所持時、params.shop.rerollCostStepからnを減らす(0未満にはしない)。
+export function relicRerollCostStep(params: ShidasuParams, run: RunState): number {
+  const relic = run.relics.find(r => r.id === 'fukuDaruma')
+  if (!relic) return params.shop.rerollCostStep
+  return Math.max(0, params.shop.rerollCostStep - params.relics.fukuDaruma.n)
+}
+
+// 福だるま(付喪化)所持時、同一ショップ訪問中の最初の1回のリロールが無料になるか。
+export function relicFirstRerollFree(run: RunState): boolean {
+  const relic = run.relics.find(r => r.id === 'fukuDaruma')
+  return relic?.tsukumoka ?? false
+}

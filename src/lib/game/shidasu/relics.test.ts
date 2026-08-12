@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/relics.test.ts
 import { describe, test, it, expect } from 'vitest'
-import { RELIC_POOL, relicName, relicDesc, relicTsukumokaDesc, relicPriceMultiplier, itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity, relicSellBonusMultiplier, relicWaveEndBonus, individualSlotCount, packSlotCount, packOfferCountBonus } from './relics'
+import { RELIC_POOL, relicName, relicDesc, relicTsukumokaDesc, relicPriceMultiplier, itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity, relicSellBonusMultiplier, relicWaveEndBonus, individualSlotCount, packSlotCount, packOfferCountBonus, relicRerollCostStep, relicFirstRerollFree } from './relics'
 import { DEFAULT_PARAMS } from './params'
 import type { RunState, WaveState } from './types'
 
@@ -180,5 +180,27 @@ describe('ショップ枠数ヘルパー', () => {
   it('packOfferCountBonus: 縁起小槌(付喪化)で+2', () => {
     const run = { relics: [{ id: 'engiKozuchi' as const, tsukumoka: true }] } as unknown as RunState
     expect(packOfferCountBonus(DEFAULT_PARAMS, run)).toBe(2)
+  })
+})
+
+describe('relicRerollCostStep(福だるま)', () => {
+  it('所持していなければparams.shop.rerollCostStepそのまま', () => {
+    const run = { relics: [] } as unknown as RunState
+    expect(relicRerollCostStep(DEFAULT_PARAMS, run)).toBe(DEFAULT_PARAMS.shop.rerollCostStep)
+  })
+  it('福だるま所持時はn減る(0未満にはならない)', () => {
+    const run = { relics: [{ id: 'fukuDaruma' as const, tsukumoka: false }] } as unknown as RunState
+    expect(relicRerollCostStep(DEFAULT_PARAMS, run)).toBe(Math.max(0, DEFAULT_PARAMS.shop.rerollCostStep - DEFAULT_PARAMS.relics.fukuDaruma.n))
+  })
+})
+
+describe('relicFirstRerollFree(福だるま付喪化)', () => {
+  it('未付喪化なら常にfalse', () => {
+    const run = { relics: [{ id: 'fukuDaruma' as const, tsukumoka: false }] } as unknown as RunState
+    expect(relicFirstRerollFree(run)).toBe(false)
+  })
+  it('付喪化済みならtrue', () => {
+    const run = { relics: [{ id: 'fukuDaruma' as const, tsukumoka: true }] } as unknown as RunState
+    expect(relicFirstRerollFree(run)).toBe(true)
   })
 })
