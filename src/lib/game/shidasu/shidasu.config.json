@@ -108,7 +108,7 @@
     },
     "moon": {
       "name": "月",
-      "desc": "場札は常に1行少ない状態で始まる(護符・天啓による行数変動は通常通り発生する)",
+      "desc": "場札は常に1行少ない状態で始まる",
       "initialExtraTableauRows": -1,
       "waveTargetBase": 2000,
       "waveTargetMultiplier": 1.5

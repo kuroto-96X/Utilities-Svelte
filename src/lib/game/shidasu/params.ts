@@ -302,7 +302,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
   ],
   spreads: {
     fool: { name: '愚者', desc: '特殊ルールなし', initialExtraTableauRows: 0, waveTargetBase: 2000, waveTargetMultiplier: 1.5 },
-    moon: { name: '月', desc: '場札は常に1行少ない状態で始まる(護符・天啓による行数変動は通常通り発生する)', initialExtraTableauRows: -1, waveTargetBase: 2000, waveTargetMultiplier: 1.5 },
+    moon: { name: '月', desc: '場札は常に1行少ない状態で始まる', initialExtraTableauRows: -1, waveTargetBase: 2000, waveTargetMultiplier: 1.5 },
   },
   items: {
     maxItems: 5,
