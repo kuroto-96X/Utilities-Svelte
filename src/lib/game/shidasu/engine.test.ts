@@ -3744,7 +3744,7 @@ describe('sellItem / sellRite / sellRevelation / sellOracle(所持品売却)', (
     const playingRun: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, items: [itemId] }
     const result = sellItem(DEFAULT_PARAMS, playingRun, itemId)
     expect(result.items).toEqual([])
-    expect(result.currency).toBe(10 + itemSellPrice(DEFAULT_PARAMS, itemId))
+    expect(result.currency).toBe(10 + itemSellPrice(DEFAULT_PARAMS, playingRun, itemId))
 
     const shopRun: RunState = { ...createInitialRun(), phase: 'shop', currency: 10, items: [itemId] }
     expect(sellItem(DEFAULT_PARAMS, shopRun, itemId).items).toEqual([])
@@ -3759,21 +3759,21 @@ describe('sellItem / sellRite / sellRevelation / sellOracle(所持品売却)', (
     const run: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, rites: ['jera'] }
     const result = sellRite(DEFAULT_PARAMS, run, 'jera')
     expect(result.rites).toEqual([])
-    expect(result.currency).toBe(10 + riteSellPrice(DEFAULT_PARAMS))
+    expect(result.currency).toBe(10 + riteSellPrice(DEFAULT_PARAMS, run))
   })
 
   test('sellRevelationは所持から削除し通貨が増える', () => {
     const run: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, revelations: ['kaku'] }
     const result = sellRevelation(DEFAULT_PARAMS, run, 'kaku')
     expect(result.revelations).toEqual([])
-    expect(result.currency).toBe(10 + revelationSellPrice(DEFAULT_PARAMS))
+    expect(result.currency).toBe(10 + revelationSellPrice(DEFAULT_PARAMS, run))
   })
 
   test('sellOracleは所持から削除し通貨が増える', () => {
     const run: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, oracles: ['flush'] }
     const result = sellOracle(DEFAULT_PARAMS, run, 'flush')
     expect(result.oracles).toEqual([])
-    expect(result.currency).toBe(10 + oracleSellPrice(DEFAULT_PARAMS))
+    expect(result.currency).toBe(10 + oracleSellPrice(DEFAULT_PARAMS, run))
   })
 
   test('playing/shop以外のフェーズでは売却できない', () => {
@@ -4435,7 +4435,7 @@ describe('useRevelation: 軫(mitsu・護符換金)', () => {
   test('所持護符の売値合計が星片に加算される', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
     const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['mitsu'], items: ['discretion', 'frost'], currency: 10 }
-    const expectedTotal = itemSellPrice(DEFAULT_PARAMS, 'discretion') + itemSellPrice(DEFAULT_PARAMS, 'frost')
+    const expectedTotal = itemSellPrice(DEFAULT_PARAMS, run, 'discretion') + itemSellPrice(DEFAULT_PARAMS, run, 'frost')
     const result = useRevelation(DEFAULT_PARAMS, run, 'mitsu', null, createRng(1))
     expect(result.currency).toBe(10 + expectedTotal)
     expect(result.items).toEqual(['discretion', 'frost']) // 護符は消費されない(換金であり売却ではない)

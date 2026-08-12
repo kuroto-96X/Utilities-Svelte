@@ -852,7 +852,7 @@
               class="flex items-center gap-1 text-xs text-slate-800 px-2 py-1 rounded border touch-none select-none {draggingItemIndex === i ? 'border-teal-500 bg-teal-50 shadow-md' : 'border-slate-200 bg-white cursor-grab'}"
             >
               <span>{itemName(itemId, params)}</span>
-              <button onpointerdown={(e) => e.stopPropagation()} onclick={() => handleSellItem(itemId)} class="text-slate-400 hover:text-slate-700">売({itemSellPrice(params, itemId)})</button>
+              <button onpointerdown={(e) => e.stopPropagation()} onclick={() => handleSellItem(itemId)} class="text-slate-400 hover:text-slate-700">売({itemSellPrice(params, run, itemId)})</button>
             </div>
           {/each}
         </div>
@@ -863,14 +863,14 @@
         <div class="flex flex-wrap gap-1">
           {#each run.rites as riteId}
             <button title={riteDesc(riteId, params)} onclick={() => handleUseRite(riteId)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{riteName(riteId, params)} 使用</button>
-            <button title={riteDesc(riteId, params)} onclick={() => handleSellRite(riteId)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{riteName(riteId, params)} 売({riteSellPrice(params)})</button>
+            <button title={riteDesc(riteId, params)} onclick={() => handleSellRite(riteId)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{riteName(riteId, params)} 売({riteSellPrice(params, run)})</button>
           {/each}
           {#each run.revelations as revelationId}
             <button title={revelationDesc(revelationId, params)} onclick={() => handleUseRevelationClick(revelationId)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{revelationName(revelationId, params)} 使用</button>
-            <button title={revelationDesc(revelationId, params)} onclick={() => handleSellRevelation(revelationId)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{revelationName(revelationId, params)} 売({revelationSellPrice(params)})</button>
+            <button title={revelationDesc(revelationId, params)} onclick={() => handleSellRevelation(revelationId)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{revelationName(revelationId, params)} 売({revelationSellPrice(params, run)})</button>
           {/each}
           {#each run.oracles as roleName}
-            <button title={oracleDesc(roleName, params)} onclick={() => handleSellOracle(roleName)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{oracleName(roleName, params)} 売({oracleSellPrice(params)})</button>
+            <button title={oracleDesc(roleName, params)} onclick={() => handleSellOracle(roleName)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{oracleName(roleName, params)} 売({oracleSellPrice(params, run)})</button>
           {/each}
         </div>
       </div>

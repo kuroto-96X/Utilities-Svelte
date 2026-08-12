@@ -5,7 +5,7 @@ import { ITEM_POOL } from './items'
 import { RITE_POOL } from './rites'
 import { REVELATION_POOL } from './revelations'
 import { ORACLE_POOL } from './oracles'
-import { RELIC_POOL, relicPriceMultiplier } from './relics'
+import { RELIC_POOL, relicPriceMultiplier, relicSellBonusMultiplier } from './relics'
 import { shuffleInPlace } from './deck'
 
 const SHOP_SLOT_KINDS: ShopSlotKind[] = ['item', 'rite', 'revelation', 'oracle']
@@ -66,32 +66,32 @@ export function itemBuyPrice(params: ShidasuParams, run: RunState, id: ItemId): 
   return Math.round(params.shop.itemPrice[params.talismans[id].rarity].buy * relicPriceMultiplier(params, run))
 }
 
-export function itemSellPrice(params: ShidasuParams, id: ItemId): number {
-  return params.shop.itemPrice[params.talismans[id].rarity].sell
+export function itemSellPrice(params: ShidasuParams, run: RunState, id: ItemId): number {
+  return Math.round(params.shop.itemPrice[params.talismans[id].rarity].sell * relicSellBonusMultiplier(params, run))
 }
 
 export function riteBuyPrice(params: ShidasuParams, run: RunState): number {
   return Math.round(params.shop.ritePrice.buy * relicPriceMultiplier(params, run))
 }
 
-export function riteSellPrice(params: ShidasuParams): number {
-  return params.shop.ritePrice.sell
+export function riteSellPrice(params: ShidasuParams, run: RunState): number {
+  return Math.round(params.shop.ritePrice.sell * relicSellBonusMultiplier(params, run))
 }
 
 export function revelationBuyPrice(params: ShidasuParams, run: RunState): number {
   return Math.round(params.shop.revelationPrice.buy * relicPriceMultiplier(params, run))
 }
 
-export function revelationSellPrice(params: ShidasuParams): number {
-  return params.shop.revelationPrice.sell
+export function revelationSellPrice(params: ShidasuParams, run: RunState): number {
+  return Math.round(params.shop.revelationPrice.sell * relicSellBonusMultiplier(params, run))
 }
 
 export function oracleBuyPrice(params: ShidasuParams, run: RunState): number {
   return Math.round(params.shop.oraclePrice.buy * relicPriceMultiplier(params, run))
 }
 
-export function oracleSellPrice(params: ShidasuParams): number {
-  return params.shop.oraclePrice.sell
+export function oracleSellPrice(params: ShidasuParams, run: RunState): number {
+  return Math.round(params.shop.oraclePrice.sell * relicSellBonusMultiplier(params, run))
 }
 
 export function relicBuyPrice(params: ShidasuParams, run: RunState, id: RelicId): number {

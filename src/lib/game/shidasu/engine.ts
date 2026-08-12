@@ -1473,7 +1473,7 @@ function grantRevelationReward(
       return { revelations: [...runAfterRemoval.revelations, ...rollOffer(REVELATION_POOL, slotsLeft, rand)] }
     }
     case 'mitsu': {
-      const total = runAfterRemoval.items.reduce((sum, id) => sum + itemSellPrice(params, id), 0)
+      const total = runAfterRemoval.items.reduce((sum, id) => sum + itemSellPrice(params, runAfterRemoval, id), 0)
       return { currency: runAfterRemoval.currency + total }
     }
     case 'karasu': {
@@ -1625,7 +1625,7 @@ export function sellItem(params: ShidasuParams, run: RunState, itemId: ItemId): 
   const idx = run.items.indexOf(itemId)
   if (idx === -1) return run
   const items = [...run.items.slice(0, idx), ...run.items.slice(idx + 1)]
-  return { ...run, items, currency: run.currency + itemSellPrice(params, itemId) }
+  return { ...run, items, currency: run.currency + itemSellPrice(params, run, itemId) }
 }
 
 // 所持中の秘儀を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
@@ -1634,7 +1634,7 @@ export function sellRite(params: ShidasuParams, run: RunState, riteId: RiteId): 
   const idx = run.rites.indexOf(riteId)
   if (idx === -1) return run
   const rites = [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)]
-  return { ...run, rites, currency: run.currency + riteSellPrice(params) }
+  return { ...run, rites, currency: run.currency + riteSellPrice(params, run) }
 }
 
 // 所持中の天啓を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
@@ -1643,7 +1643,7 @@ export function sellRevelation(params: ShidasuParams, run: RunState, revelationI
   const idx = run.revelations.indexOf(revelationId)
   if (idx === -1) return run
   const revelations = [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
-  return { ...run, revelations, currency: run.currency + revelationSellPrice(params) }
+  return { ...run, revelations, currency: run.currency + revelationSellPrice(params, run) }
 }
 
 // 所持中の神託を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
@@ -1652,7 +1652,7 @@ export function sellOracle(params: ShidasuParams, run: RunState, roleName: RoleN
   const idx = run.oracles.indexOf(roleName)
   if (idx === -1) return run
   const oracles = [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)]
-  return { ...run, oracles, currency: run.currency + oracleSellPrice(params) }
+  return { ...run, oracles, currency: run.currency + oracleSellPrice(params, run) }
 }
 
 // 大凶クリア後の続行確認画面('continueChoice'フェーズ)で「続ける」を選んだ場合。

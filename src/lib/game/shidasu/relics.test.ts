@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/relics.test.ts
 import { describe, test, it, expect } from 'vitest'
-import { RELIC_POOL, relicName, relicDesc, relicTsukumokaDesc, relicPriceMultiplier, itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity } from './relics'
+import { RELIC_POOL, relicName, relicDesc, relicTsukumokaDesc, relicPriceMultiplier, itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity, relicSellBonusMultiplier } from './relics'
 import { DEFAULT_PARAMS } from './params'
 import type { RunState } from './types'
 
@@ -51,6 +51,21 @@ describe('relicPriceMultiplier(招き猫)', () => {
   it('招き猫(付喪化済み)所持時は(100-50)/100=0.5', () => {
     const run = { relics: [{ id: 'manekiNeko' as const, tsukumoka: true }] } as unknown as RunState
     expect(relicPriceMultiplier(DEFAULT_PARAMS, run)).toBeCloseTo(0.5)
+  })
+})
+
+describe('relicSellBonusMultiplier(開運こけし)', () => {
+  it('所持していなければ倍率1', () => {
+    const run = { relics: [] } as unknown as RunState
+    expect(relicSellBonusMultiplier(DEFAULT_PARAMS, run)).toBe(1)
+  })
+  it('未付喪化なら1.25', () => {
+    const run = { relics: [{ id: 'kaiunKokeshi' as const, tsukumoka: false }] } as unknown as RunState
+    expect(relicSellBonusMultiplier(DEFAULT_PARAMS, run)).toBeCloseTo(1.25)
+  })
+  it('付喪化済みなら1.5', () => {
+    const run = { relics: [{ id: 'kaiunKokeshi' as const, tsukumoka: true }] } as unknown as RunState
+    expect(relicSellBonusMultiplier(DEFAULT_PARAMS, run)).toBeCloseTo(1.5)
   })
 })
 

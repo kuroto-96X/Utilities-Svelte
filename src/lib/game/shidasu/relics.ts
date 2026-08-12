@@ -30,6 +30,14 @@ export function relicPriceMultiplier(params: ShidasuParams, run: RunState): numb
   return (100 - percent) / 100
 }
 
+// 開運こけし所持時の売却価格倍率。所持していなければ1(無変化)。
+export function relicSellBonusMultiplier(params: ShidasuParams, run: RunState): number {
+  const relic = run.relics.find(r => r.id === 'kaiunKokeshi')
+  if (!relic) return 1
+  const percent = relic.tsukumoka ? params.relics.kaiunKokeshi.tsukumokaSellBonusPercent : params.relics.kaiunKokeshi.sellBonusPercent
+  return (100 + percent) / 100
+}
+
 function relicBonus(run: RunState, id: RelicId, n: number, tsukumokaN: number): number {
   const relic = run.relics.find(r => r.id === id)
   if (!relic) return 0
