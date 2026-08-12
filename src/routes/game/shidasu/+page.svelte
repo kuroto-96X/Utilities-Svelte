@@ -8,7 +8,7 @@
     SHOP_FLOW_PHASES, startRevelationPreview,
     waveTarget, stageModifierFor, isBossWave, skipWave, rerollStageStars, rerollShop, shopRerollCost,
     finishShop, buyIndividualItem, buyIndividualRite, buyIndividualRevelationUse, buyIndividualRevelationHold,
-    buyIndividualOracleUse, buyIndividualOracleHold, buyPack,
+    buyIndividualOracleUse, buyIndividualOracleHold, buyPack, buyRelic,
     pickPackItem, confirmPackItemSwap, cancelPackItemSwap, closePackItemSelect,
     pickPackRite, confirmPackRiteSwap, cancelPackRiteSwap, closePackRiteSelect,
     pickPackCardSet, closePackCardSetSelect,
@@ -18,15 +18,16 @@
   } from '$lib/game/shidasu/engine'
   import { itemDesc, itemName } from '$lib/game/shidasu/items'
   import { riteName, riteDesc } from '$lib/game/shidasu/rites'
+  import { relicName, relicDesc, relicTsukumokaDesc } from '$lib/game/shidasu/relics'
   import { revelationDesc, revelationName } from '$lib/game/shidasu/revelations'
   import { revelationNeedsTarget, canUseRevelation } from '$lib/game/shidasu/revelationEffects'
   import { oracleName, oracleDesc } from '$lib/game/shidasu/oracles'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
   import {
     itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice,
-    oracleBuyPrice, oracleSellPrice,
+    oracleBuyPrice, oracleSellPrice, relicBuyPrice,
   } from '$lib/game/shidasu/shop'
-  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, PlayCardResult, Star, WaveState, CardSetGenreId, ShopSlotKind } from '$lib/game/shidasu/types'
+  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, PlayCardResult, Star, WaveState, CardSetGenreId, ShopSlotKind, RelicId } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
   import RoleStatusPanel from './RoleStatusPanel.svelte'
@@ -236,6 +237,10 @@
 
   function handleBuyIndividualRite(slotIndex: number) {
     run = buyIndividualRite(params, run, slotIndex)
+  }
+
+  function handleBuyRelic() {
+    run = buyRelic(params, run)
   }
 
   function handleBuyIndividualRevelationHold(slotIndex: number) {
@@ -574,6 +579,15 @@
         {/each}
       </div>
     {/if}
+    {#if run.relics.length > 0}
+      <div class="flex flex-wrap gap-1 justify-end">
+        {#each run.relics as relic, i (i)}
+          <span class="text-xs bg-amber-900 text-amber-200/90 border border-amber-600/40 rounded px-1.5 py-0.5" title={relic.tsukumoka ? relicTsukumokaDesc(relic.id, params) : relicDesc(relic.id, params)}>
+            {relicName(relic.id, params)}{relic.tsukumoka ? ' ★' : ''}
+          </span>
+        {/each}
+      </div>
+    {/if}
   </div>
 {/snippet}
 
@@ -805,6 +819,23 @@
         </div>
       </div>
 
+      {#if run.shop.relic}
+        <div class="space-y-2">
+          <p class="text-xs text-slate-500">レリック</p>
+          <div class="border border-slate-200 rounded-lg p-2 text-xs space-y-1 w-1/3">
+            <p class="font-semibold text-slate-800">{relicName(run.shop.relic.id, params)}</p>
+            <p class="text-[11px] text-slate-500">{relicDesc(run.shop.relic.id, params)}</p>
+            {#if run.shop.relic.sold}
+              <p class="text-slate-400">売り切れ</p>
+            {:else}
+              <button onclick={handleBuyRelic} disabled={run.currency < relicBuyPrice(params, run.shop.relic.id)} class="w-full px-2 py-1 rounded bg-teal-600 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                購入({relicBuyPrice(params, run.shop.relic.id)})
+              </button>
+            {/if}
+          </div>
+        </div>
+      {/if}
+
       <div class="space-y-2">
         <p class="text-xs text-slate-500">所持護符(ドラッグで並べ替え・売却可)</p>
         <div class="flex flex-wrap gap-1">
@@ -843,6 +874,19 @@
           {/each}
         </div>
       </div>
+
+      {#if run.relics.length > 0}
+        <div class="space-y-2">
+          <p class="text-xs text-slate-500">所持レリック(売却不可)</p>
+          <div class="flex flex-wrap gap-1">
+            {#each run.relics as relic, i (i)}
+              <span class="text-xs bg-amber-900 text-amber-200/90 border border-amber-600/40 rounded px-1.5 py-0.5" title={relic.tsukumoka ? relicTsukumokaDesc(relic.id, params) : relicDesc(relic.id, params)}>
+                {relicName(relic.id, params)}{relic.tsukumoka ? ' ★' : ''}
+              </span>
+            {/each}
+          </div>
+        </div>
+      {/if}
 
       <button onclick={() => { showStageScreen = true }} class="w-full px-4 py-2 rounded-lg bg-teal-700 text-white font-semibold">次のWaveへ</button>
     </div>
