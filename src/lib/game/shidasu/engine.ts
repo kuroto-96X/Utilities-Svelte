@@ -1247,7 +1247,7 @@ export function buyIndividualRevelationUse(params: ShidasuParams, run: RunState,
   const price = revelationBuyPrice(params, run)
   if (run.currency < price) return run
   const { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
-  const extraTableauRows = revelationId === 'kyo' ? run.extraTableauRows + params.revelations.kyo.n : run.extraTableauRows
+  const extraTableauRows = run.extraTableauRows
   const individual = run.shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
   return { ...run, currency: run.currency - price, wave, deckComposition, extraTableauRows, shop: { ...run.shop, individual } }
 }
@@ -1398,7 +1398,7 @@ export function pickPackRevelationUse(params: ShidasuParams, run: RunState, reve
   if (run.phase !== 'revelationSelect' || !run.wave || !run.revelationOffer.includes(revelationId)) return run
   if (!canUseRevelation(params, run.wave, revelationId)) return run
   const { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
-  const extraTableauRows = revelationId === 'kyo' ? run.extraTableauRows + params.revelations.kyo.n : run.extraTableauRows
+  const extraTableauRows = run.extraTableauRows
   return resolvePackRevelationPick({ ...run, wave, deckComposition, extraTableauRows }, revelationId)
 }
 
@@ -1509,7 +1509,7 @@ export function useRevelation(
   // 果断・星霜: 天啓・神託・秘儀のいずれかを使用するたび永続的に加算する
   if (run.items.includes('discretion')) wave = { ...wave, discretionN: wave.discretionN + params.talismans.discretion.n }
   if (run.items.includes('frost')) wave = { ...wave, frostX: wave.frostX + params.talismans.frost.x }
-  const extraTableauRows = revelationId === 'kyo' ? run.extraTableauRows + params.revelations.kyo.n : run.extraTableauRows
+  const extraTableauRows = run.extraTableauRows
   const revelations = [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
   const reward = grantRevelationReward(params, { ...run, revelations }, revelationId, rand)
   // 星(hotori)自身の使用は履歴に残さない(自己参照ループを防ぐ。詳細はtypes.tsのlastUsedRevelationIdコメント参照)

@@ -85,12 +85,11 @@ export type RiteId =
   | 'ehwaz'
 
 // 天啓(Revelation): いつでも使用可能で、場札・デッキ構成の両方に永続的な効果を発揮する消費アイテム。
-// 二十八宿のうち今回効果を実装した27種のみをメンバーとする(残り1種はmansions.tsの見た目候補にのみ存在)。
+// 二十八宿のうち今回効果を実装した26種のみをメンバーとする(残り2種はmansions.tsの見た目候補にのみ存在)。
 export type RevelationId =
   | 'kaku' | 'kou' | 'tei' | 'bou'
   | 'shin' | 'bi' | 'ki' | 'to'
   | 'gyu' | 'jo'
-  | 'kyo'
   | 'aya'
   | 'shitsu'
   | 'heki'
@@ -170,10 +169,10 @@ export interface WaveState {
   // 各列について、現在の連続コンボが始まった時点(直近でcomboが0にリセットされた瞬間)での残り枚数のスナップショット。
   // コンボが継続している間は更新されず、drawStockでコンボがリセットされる時とstartWaveでのみ再設定される。
   comboStreakColumnLengths: number[]
-  // startWaveで実際に配られた1列あたりの行数(暗雲護符・虚(天啓)によるextraTableauRowsを含んだ値)。
+  // startWaveで実際に配られた1列あたりの行数(extraTableauRowsを含んだ値)。
   // 列一掃ボーナスの「列を1コンボで全て空にしたか」判定(playCardのsweepQualifies)は、
-  // params.layout.rowsそのものではなくこの値と比較する(暗雲・虚を考慮せず判定すると、
-  // それらを持つ間ずっと列一掃ボーナスが成立しなくなるバグがあったため)。
+  // params.layout.rowsそのものではなくこの値と比較する(extraTableauRowsを考慮せず判定すると、
+  // それを持つ間ずっと列一掃ボーナスが成立しなくなるバグがあったため)。
   dealtRows: number
   lastDrawEffect: DrawEffect
   status: WaveStatus
@@ -364,7 +363,7 @@ export interface RunState {
   relics: { id: RelicId; tsukumoka: boolean }[]
   // 天啓選択画面('revelationSelect'フェーズ)で提示中のオファー(3択)。それ以外のフェーズでは空配列
   revelationOffer: RevelationId[]
-  // 天啓「虚」由来の、ウェーブ開始時の配布行数への永続的な追加分(暗雲護符のrと合算される)
+  // ウェーブ開始時の配布行数への永続的な追加分。ラン開始時にスプレッドのinitialExtraTableauRowsで初期化される
   extraTableauRows: number
   // 各役の現在レベル(初期値1、上限なし)。ラン全体で持続する(神託選択画面で+1される)
   oracleLevels: Record<RoleName, number>

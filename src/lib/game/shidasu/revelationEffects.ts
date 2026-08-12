@@ -40,22 +40,6 @@ function convertColumnToRandomRank(wave: WaveState, deckComposition: DeckCard[],
   return { wave: { ...wave, tableau }, deckComposition: newComposition }
 }
 
-// 山札の上からn行(列数×n枚)を各列の末尾に1枚ずつ配る(フェフ秘儀のn行版)。deckCompositionは変更しない
-// (山札の中身を並べ替えるだけのため)。
-function expandTableauRows(wave: WaveState, n: number): WaveState {
-  const cols = wave.tableau.length
-  const stock = [...wave.stock]
-  const tableau = wave.tableau.map(col => [...col])
-  for (let r = 0; r < n; r++) {
-    for (let i = 0; i < cols; i++) {
-      const drawn = stock.pop()
-      if (!drawn) break
-      tableau[i].push(drawn)
-    }
-  }
-  return { ...wave, tableau, stock }
-}
-
 // 場に存在する全カードのidの最大値+1を返す(新規カード生成時の一時id採番用)。
 function nextWaveCardId(wave: WaveState): number {
   const allIds = [
@@ -216,14 +200,9 @@ function wildifyRandomTableauCards(wave: WaveState, deckComposition: DeckCard[],
   return { wave: { ...wave, tableau }, deckComposition: newComposition }
 }
 
-// 天啓が現在の盤面状態で使用可能か判定する(場札拡張の山札枚数不足のみ判定対象)。
-export function canUseRevelation(params: ShidasuParams, wave: WaveState, revelationId: RevelationId): boolean {
-  switch (revelationId) {
-    case 'kyo':
-      return wave.stock.length >= wave.tableau.length * params.revelations.kyo.n
-    default:
-      return true
-  }
+// 天啓が現在の盤面状態で使用可能か判定する(現状、常に使用可能)。
+export function canUseRevelation(_params: ShidasuParams, _wave: WaveState, _revelationId: RevelationId): boolean {
+  return true
 }
 
 // 列選択(targetCol)が必要な天啓かどうかを返す。
@@ -244,8 +223,8 @@ export function revelationNeedsTarget(revelationId: RevelationId): boolean {
   }
 }
 
-// 指定した天啓の効果を適用した新しいwave・deckCompositionを返す。所持からの削除・extraTableauRowsの
-// 加算はengine.ts側で行う。targetColは列選択が不要な天啓では無視される。
+// 指定した天啓の効果を適用した新しいwave・deckCompositionを返す。所持からの削除はengine.ts側で行う。
+// targetColは列選択が不要な天啓では無視される。
 export function applyRevelationEffect(
   params: ShidasuParams,
   wave: WaveState,
@@ -275,8 +254,6 @@ export function applyRevelationEffect(
       return targetCol === null ? { wave, deckComposition } : convertColumnToRandomRank(wave, deckComposition, targetCol, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rand)
     case 'jo':
       return targetCol === null ? { wave, deckComposition } : convertColumnToRandomRank(wave, deckComposition, targetCol, [11, 12, 13], rand)
-    case 'kyo':
-      return { wave: expandTableauRows(wave, params.revelations.kyo.n), deckComposition }
     case 'aya':
       return targetCol === null ? { wave, deckComposition } : addWildToColumnTop(wave, deckComposition, targetCol)
     case 'shitsu':

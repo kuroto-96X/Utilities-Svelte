@@ -45,7 +45,6 @@ export interface ShidasuParams {
   // スプレッド(ラン開始時に選ぶ固有ルールセット)ごとの設定。目標スコア算出式
   // target(n) = waveTargetBase × waveTargetMultiplier^(n-1) の基礎値・倍率(nは通しウェーブ番号、1始まり)と、
   // ウェーブ開始時の配布行数への初期オフセット(initialExtraTableauRows)をスプレッドごとに持つ。
-  // 暗雲護符・虚の天啓によるextraTableauRowsの加算は、この初期値を起点に通常通り行われる。
   spreads: {
     fool: { name: string; desc: string; initialExtraTableauRows: number; waveTargetBase: number; waveTargetMultiplier: number }
     moon: { name: string; desc: string; initialExtraTableauRows: number; waveTargetBase: number; waveTargetMultiplier: number }
@@ -206,7 +205,6 @@ export interface ShidasuParams {
     to: { name: string; desc: string }
     gyu: { name: string; desc: string }
     jo: { name: string; desc: string }
-    kyo: { name: string; n: number; desc: string }
     aya: { name: string; desc: string }
     shitsu: { name: string; desc: string }
     heki: { name: string; desc: string }
@@ -474,7 +472,6 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     to: { name: '斗', desc: '場札の♦を全て♠に変換する(ワイルドは対象外)' },
     gyu: { name: '牛', desc: '場札から選んだ1列を、ランクA〜10のいずれかへランダムに変換する(1枚ごとに個別抽選。ワイルドは対象外)' },
     jo: { name: '女', desc: '場札から選んだ1列を、ランクJ・Q・Kのいずれかへランダムに変換する(1枚ごとに個別抽選。ワイルドは対象外)' },
-    kyo: { name: '虚', n: 1, desc: '場札に{n}行追加する(山札の上から配る)。以後のウェーブ開始時の配布行数も恒久的に{n}増える' },
     aya: { name: '危', desc: '場札から選んだ1列の一番上に、ワイルドを1枚追加する' },
     shitsu: { name: '室', desc: '場札から選んだ1列の各カードを、1つ左の列の同じ位置のカードのランク+1に変換する(左列がワイルドの位置・左列の枚数が足りない位置は対象外)。左端の列を選んだ場合は右端の列を参照する' },
     heki: { name: '壁', desc: '場札全体で♠→♥→♣→♦→♠の順にスートを循環変換する(ワイルドは対象外)' },

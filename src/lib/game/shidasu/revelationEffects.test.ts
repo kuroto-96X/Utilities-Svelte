@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { applyRevelationEffect, canUseRevelation, revelationNeedsTarget } from './revelationEffects'
+import { applyRevelationEffect, revelationNeedsTarget } from './revelationEffects'
 import { DEFAULT_PARAMS } from './params'
 import { createRng } from './deck'
 import type { Card, DeckCard, WaveState } from './types'
@@ -122,35 +122,6 @@ describe('revelationEffects', () => {
     const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'jo', 0, createRng(1))
     expect(result.wave.tableau[0][0].rank).toBeGreaterThanOrEqual(11)
     expect(result.wave.tableau[0][1].rank).toBeGreaterThanOrEqual(11)
-  })
-
-  test('虚: 山札の上からn行(列数×n枚)を各列の末尾に配る', () => {
-    const wave = baseWave({
-      tableau: [[card(1, '♠', 1)], [card(2, '♠', 2)]],
-      stock: [card(10, '♦', 9), card(11, '♦', 8), card(12, '♦', 7), card(13, '♦', 6)],
-    })
-    const deckComposition: DeckCard[] = []
-    const result = applyRevelationEffect(DEFAULT_PARAMS, wave, deckComposition, 'kyo', null, createRng(1))
-    // n=1(既定)、列数2なので2枚配られ、山札は2枚残る
-    expect(result.wave.tableau[0]).toHaveLength(2)
-    expect(result.wave.tableau[1]).toHaveLength(2)
-    expect(result.wave.stock).toHaveLength(2)
-    // 山札の一番上(末尾)から順に配られる
-    expect(result.wave.tableau[0][1]).toEqual(card(13, '♦', 6))
-    expect(result.wave.tableau[1][1]).toEqual(card(12, '♦', 7))
-  })
-
-  test('虚: 使用条件は山札が(列数×n)枚以上であること', () => {
-    const wave = baseWave({
-      tableau: [[card(1, '♠', 1)], [card(2, '♠', 2)]],
-      stock: [card(10, '♦', 9)],
-    })
-    expect(canUseRevelation(DEFAULT_PARAMS, wave, 'kyo')).toBe(false)
-    const wave2 = baseWave({
-      tableau: [[card(1, '♠', 1)], [card(2, '♠', 2)]],
-      stock: [card(10, '♦', 9), card(11, '♦', 8)],
-    })
-    expect(canUseRevelation(DEFAULT_PARAMS, wave2, 'kyo')).toBe(true)
   })
 
   test('危: 選んだ列の一番上にワイルドが追加され、deckCompositionにも新規ワイルドエントリが1件追加される', () => {
@@ -427,6 +398,5 @@ describe('revelationEffects', () => {
     expect(revelationNeedsTarget('shitsu')).toBe(true)
     expect(revelationNeedsTarget('hitsu')).toBe(true)
     expect(revelationNeedsTarget('shin')).toBe(false)
-    expect(revelationNeedsTarget('kyo')).toBe(false)
   })
 })
