@@ -5,17 +5,17 @@ import { DEFAULT_PARAMS } from './params'
 
 describe('relics', () => {
   test('relicName/relicDesc/relicTsukumokaDescはparams.relicsを参照する', () => {
-    expect(relicName('maneki-neko', DEFAULT_PARAMS)).toBe(DEFAULT_PARAMS.relics['maneki-neko'].name)
-    expect(relicDesc('maneki-neko', DEFAULT_PARAMS)).toBe(DEFAULT_PARAMS.relics['maneki-neko'].desc)
-    expect(relicTsukumokaDesc('maneki-neko', DEFAULT_PARAMS)).toBe(DEFAULT_PARAMS.relics['maneki-neko'].tsukumokaDesc)
+    expect(relicName('manekiNeko', DEFAULT_PARAMS)).toBe(DEFAULT_PARAMS.relics.manekiNeko.name)
+    expect(relicDesc('manekiNeko', DEFAULT_PARAMS)).toBe(DEFAULT_PARAMS.relics.manekiNeko.desc)
+    expect(relicTsukumokaDesc('manekiNeko', DEFAULT_PARAMS)).toBe(DEFAULT_PARAMS.relics.manekiNeko.tsukumokaDesc)
   })
 })
 
 describe('RELIC_POOL(第1弾13候補)', () => {
   const expectedIds = [
-    'maneki-neko', 'fuku-daruma', 'kumade', 'juzu',
-    'maneki-hoteizo', 'hamaya', 'senbazuru', 'fukuzasa',
-    'kaiun-kokeshi', 'engi-kozuchi', 'engi-suzu', 'senjafuda', 'soroban',
+    'manekiNeko', 'fukuDaruma', 'kumade', 'juzu',
+    'manekiHoteizo', 'hamaya', 'senbazuru', 'fukuzasa',
+    'kaiunKokeshi', 'engiKozuchi', 'engiSuzu', 'senjafuda', 'soroban',
   ] as const
 
   it('13候補すべてがRELIC_POOLに含まれる(placeholderは除去済み)', () => {

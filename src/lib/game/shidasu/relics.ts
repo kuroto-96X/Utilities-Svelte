@@ -4,9 +4,9 @@ import type { ShidasuParams } from './params'
 
 // レリックの抽選プール。第1弾13候補。
 export const RELIC_POOL: RelicId[] = [
-  'maneki-neko', 'fuku-daruma', 'kumade', 'juzu',
-  'maneki-hoteizo', 'hamaya', 'senbazuru', 'fukuzasa',
-  'kaiun-kokeshi', 'engi-kozuchi', 'engi-suzu', 'senjafuda', 'soroban',
+  'manekiNeko', 'fukuDaruma', 'kumade', 'juzu',
+  'manekiHoteizo', 'hamaya', 'senbazuru', 'fukuzasa',
+  'kaiunKokeshi', 'engiKozuchi', 'engiSuzu', 'senjafuda', 'soroban',
 ]
 
 export function relicName(id: RelicId, params: ShidasuParams): string {
