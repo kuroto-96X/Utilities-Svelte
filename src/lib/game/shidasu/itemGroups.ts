@@ -20,7 +20,7 @@ export const ITEM_GROUPS: ItemGroup[] = [
   { label: 'グループ10: ウェーブ内累積state', ids: ['azureSky', 'amber'] },
   { label: 'グループ11: イベント発生時のbaseComboCount/echoX/shootingStarN強化', ids: ['composure', 'clarity', 'arrogance', 'echo', 'shootingStar'] },
   { label: 'グループ12: 山札めくり関連', ids: ['naive', 'intuition', 'sincerity'] },
-  { label: 'グループ13: 資源操作(残り)', ids: ['promise', 'darkClouds', 'regeneration'] },
+  { label: 'グループ13: 資源操作(残り)', ids: ['promise', 'regeneration'] },
   { label: 'グループ14: 保護・救済', ids: ['benevolence', 'healing'] },
   { label: 'グループ15: 情報表示', ids: ['guidance'] },
   { label: 'グループ16: 持続効果', ids: ['passion', 'fightingSpirit'] },

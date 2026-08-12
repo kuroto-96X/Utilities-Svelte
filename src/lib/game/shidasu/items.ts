@@ -24,7 +24,7 @@ export const ITEM_POOL: ItemId[] = [
   'azureSky', 'amber',
   'composure', 'clarity', 'arrogance', 'echo', 'shootingStar',
   'naive', 'intuition', 'sincerity',
-  'promise', 'darkClouds', 'regeneration',
+  'promise', 'regeneration',
   'benevolence', 'healing',
   'guidance',
   'passion', 'fightingSpirit',

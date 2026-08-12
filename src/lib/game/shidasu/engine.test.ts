@@ -731,19 +731,6 @@ describe('playCard', () => {
     expect(next.lastGain?.parts.some(p => p.text.startsWith('列一掃'))).toBe(true)
   })
 
-  test('暗雲の護符所持時: 配布行数が増えていても、その行数分を1コンボで空にすれば列一掃ボーナスが成立する(バグ回帰テスト)', () => {
-    const items: ItemId[] = ['darkClouds']
-    const dealtRows = DEFAULT_PARAMS.layout.rows + DEFAULT_PARAMS.talismans.darkClouds.r
-    const wave = baseWave({
-      tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
-      comboStreakColumnLengths: [dealtRows, 1],
-      dealtRows,
-    })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
-    expect(next.columnsEmptiedThisCombo).toBe(1)
-    expect(next.lastGain?.parts.map(p => p.text)).toContain(`列一掃+${scoring.columnSweepBonus}`)
-  })
-
   test('同じコンボ内で2列目を空にすると列一掃ボーナスが列数倍になる', () => {
     const wave = baseWave({
       foundation: card(0, '♠', 6), // 列1(rank7)との差を1にして取れるようにする
@@ -2445,7 +2432,6 @@ describe('DEFAULT_PARAMS.talismans (グループ9〜16)', () => {
     expect(DEFAULT_PARAMS.talismans.shootingStar.n).toBe(50)
     expect(DEFAULT_PARAMS.talismans.intuition.x).toBe(0.3)
     expect(DEFAULT_PARAMS.talismans.sincerity.n).toBe(1)
-    expect(DEFAULT_PARAMS.talismans.darkClouds.r).toBe(1)
     expect(DEFAULT_PARAMS.talismans.regeneration.p).toBe(50)
     expect(DEFAULT_PARAMS.talismans.passion.x).toBe(1.5)
     expect(DEFAULT_PARAMS.talismans.fightingSpirit.x).toBe(1.3)
@@ -4239,16 +4225,6 @@ describe('約束・暗雲', () => {
     expect(next.stock).toEqual([card(2, '♠', 6), card(1, '♦', 1)])
   })
 
-  test('暗雲: ウェーブ開始時、場札がrows+r枚配られる', () => {
-    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, ['darkClouds'], standardDeckComposition(), 1)
-    const expectedRows = DEFAULT_PARAMS.layout.rows + DEFAULT_PARAMS.talismans.darkClouds.r
-    wave.tableau.forEach(col => expect(col).toHaveLength(expectedRows))
-  })
-
-  test('暗雲を持たなければ通常通りrows枚', () => {
-    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1)
-    wave.tableau.forEach(col => expect(col).toHaveLength(DEFAULT_PARAMS.layout.rows))
-  })
 })
 
 describe('天啓の福袋(revelationSelect)', () => {

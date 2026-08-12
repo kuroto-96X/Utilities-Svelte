@@ -142,7 +142,6 @@ export interface ShidasuParams {
     intuition: { name: string; x: number; rarity: Rarity; desc: string }
     sincerity: { name: string; n: number; rarity: Rarity; desc: string }
     promise: { name: string; rarity: Rarity; desc: string }
-    darkClouds: { name: string; r: number; rarity: Rarity; desc: string }
     regeneration: { name: string; p: number; rarity: Rarity; desc: string }
     benevolence: { name: string; rarity: Rarity; desc: string }
     healing: { name: string; rarity: Rarity; desc: string }
@@ -411,7 +410,6 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     intuition: { name: '直感', x: 0.3, rarity: 'U', desc: '(素朴と組み合わせて機能)現在のチェーン中に山札めくりでコンボ継続した回数×{x}分、獲得点を倍加' },
     sincerity: { name: '誠実', n: 1, rarity: 'C', desc: 'パターン継続(同スート・同色・階段いずれか)でコンボ継続時、コンボ数+{n}' },
     promise: { name: '約束', rarity: 'R', desc: '山札の次のカードが、今のコンボが継続できるカードになる' },
-    darkClouds: { name: '暗雲', r: 1, rarity: 'U', desc: 'ウェーブ開始時、場札が{r}行多く配られる' },
     regeneration: { name: '再生', p: 50, rarity: 'R', desc: '全消し時、スコアの{p}%を消費して捨て札から場札を復活させる(復活すればウェーブ継続)' },
     benevolence: { name: '博愛', rarity: 'R', desc: 'コンボごとに1回、コンボリセットを無効化する' },
     healing: { name: '治癒', rarity: 'U', desc: '列一掃時、捨て札から最大{rows}枚を空いた列へ戻す' },

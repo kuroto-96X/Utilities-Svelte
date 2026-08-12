@@ -812,12 +812,6 @@
       "rarity": "R",
       "desc": "山札の次のカードが、今のコンボを継続できるカードになる"
     },
-    "darkClouds": {
-      "name": "暗雲",
-      "r": 1,
-      "rarity": "U",
-      "desc": "ウェーブ開始時\n場札+{r}行"
-    },
     "regeneration": {
       "name": "再生",
       "p": 50,

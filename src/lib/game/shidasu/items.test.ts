@@ -38,24 +38,24 @@ describe('rollItemOffer', () => {
 })
 
 describe('ITEM_POOL / itemName / itemDesc', () => {
-  test('99種類のアイテムが定義されている', () => {
-    expect(ITEM_POOL).toHaveLength(99)
-    expect(new Set(ITEM_POOL).size).toBe(99) // 重複なし
+  test('98種類のアイテムが定義されている', () => {
+    expect(ITEM_POOL).toHaveLength(98)
+    expect(new Set(ITEM_POOL).size).toBe(98) // 重複なし
     ITEM_POOL.forEach(id => expect(itemName(id, DEFAULT_PARAMS)).toBeTruthy())
   })
 
-  test('グループ9〜16の残り20個も名前と説明文を持つ', () => {
+  test('グループ9〜16の残り19個も名前と説明文を持つ', () => {
     const newIds: ItemId[] = [
       'gentleBreeze', 'resonance',
       'azureSky', 'amber',
       'composure', 'clarity', 'arrogance', 'echo', 'shootingStar',
       'naive', 'intuition', 'sincerity',
-      'promise', 'darkClouds', 'regeneration',
+      'promise', 'regeneration',
       'benevolence', 'healing',
       'guidance',
       'passion', 'fightingSpirit',
     ]
-    expect(newIds).toHaveLength(20)
+    expect(newIds).toHaveLength(19)
     newIds.forEach(id => {
       expect(itemName(id, DEFAULT_PARAMS)).toBeTruthy()
       expect(itemDesc(id, DEFAULT_PARAMS)).toBeTruthy()

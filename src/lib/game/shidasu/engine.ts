@@ -149,7 +149,7 @@ export function startWave(
 
   const deck = shuffle(composition.filter(c => !c.removed).map(c => ({ id: nextId(), ...c })), rand)
   const { cols } = params.layout
-  const rows = params.layout.rows + (items.includes('darkClouds') ? params.talismans.darkClouds.r : 0) + extraTableauRows
+  const rows = params.layout.rows + extraTableauRows
   const tableau: Card[][] = []
   for (let c = 0; c < cols; c++) {
     tableau.push(deck.splice(0, rows))
