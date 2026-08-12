@@ -60,11 +60,13 @@ relics: Record<RelicId, { name: string; desc: string; tsukumokaDesc: string; pri
 export interface ShopState {
   individual: ShopIndividualSlot[]
   packs: ShopPackSlot[]
-  relic: { id: RelicId; sold: boolean } | null
+  relic?: { id: RelicId; sold: boolean } | null
 }
 ```
 
 既存のバラ売り3枠(護符・秘儀・天啓・神託から均等抽選)・福袋2枠とは別の、専用の4枠目として扱う。
+
+`relic`はオプショナルにする(`individual`・`packs`と違い必須にしない)。理由: `engine.test.ts`には`ShopState`をリテラルで直接組み立てているテストが15箇所以上あり(レリックと無関係な護符・秘儀・天啓・神託・福袋のテスト)、`relic`を必須にすると無関係なテスト全てに`relic: null`を追記して回る必要が生じる。オプショナルにすれば、それらの既存テストは無修正のまま(`undefined`として扱われる)コンパイルが通り、UI側は`run.shop.relic`を`null`同様に偽値として扱えばよい。実際に`ShopState`を生成する唯一の本番コード経路(`rollShop`)は必ず`relic`を設定する。
 
 ### 抽選ロジック(`src/lib/game/shidasu/shop.ts`)
 
