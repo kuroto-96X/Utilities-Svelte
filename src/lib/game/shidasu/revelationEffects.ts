@@ -297,5 +297,7 @@ export function applyRevelationEffect(
       return { wave, deckComposition }
     case 'karasu':
       return { wave, deckComposition }
+    case 'oni':
+      return { wave, deckComposition }
   }
 }
