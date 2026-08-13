@@ -4771,3 +4771,17 @@ describe('星のsabotage割り当て', () => {
     }
   })
 })
+
+describe('startWaveの妨害初期抽選', () => {
+  test('sabotage: {kind: "all"}を渡すとpendingSabotageIdが設定される', () => {
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels(), 1, 1, 1, 10, 1, 1, 50, { kind: 'all' })
+    expect(wave.pendingSabotageId).not.toBeNull()
+    expect(wave.sabotageTurnsRemaining).toBeGreaterThan(0)
+  })
+  test('sabotage省略時(デフォルト)はpendingSabotageIdがnull', () => {
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels())
+    expect(wave.pendingSabotageId).toBeNull()
+    expect(wave.sabotageTurnsRemaining).toBe(0)
+    expect(wave.activeSeal).toBeNull()
+  })
+})

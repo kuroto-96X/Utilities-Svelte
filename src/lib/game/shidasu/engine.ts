@@ -1,7 +1,8 @@
 // src/lib/game/shidasu/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, Star, StarRestriction, CardSetGenreId, RelicId } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, Star, StarRestriction, CardSetGenreId, RelicId, StarSabotage } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition, addCardsToDeckComposition, rollOffer } from './deck'
+import { rollSabotage } from './sabotage'
 import { isFace, chainContinuesPattern, evaluateChainBonus, countSameRankBefore, countSameRankForWildPlay, cardColors } from './patterns'
 import { addPart, multiplyPart, lockPart, type ScorePart } from './scoreParts'
 import { rollItemOffer, ITEM_POOL } from './items'
@@ -131,7 +132,8 @@ export function startWave(
   discretionN: number = 10,
   frostX: number = 1,
   echoX: number = 1,
-  shootingStarN: number = 50
+  shootingStarN: number = 50,
+  sabotage: StarSabotage = { kind: 'none' }
 ): { wave: WaveState; deckComposition: DeckCard[] } {
   const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
   let idSeq = 0
@@ -220,8 +222,7 @@ export function startWave(
     ehwazActiveThisWave: false,
     nextPlayScoreMultiplier: 1,
     oracleLevels,
-    pendingSabotageId: null,
-    sabotageTurnsRemaining: 0,
+    ...rollSabotage(sabotage, rand),
     activeSeal: null,
   }
 
@@ -1142,7 +1143,8 @@ export function startRevelationPreview(params: ShidasuParams, run: RunState, see
 // 更新されている可能性がある)から実際のウェーブを配り直してプレイ画面へ進む。「次のWaveへ」ボタンから呼ぶ。
 export function finishShop(params: ShidasuParams, run: RunState, seed?: number): RunState {
   if (run.phase !== 'shop') return run
-  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX, run.echoX, run.shootingStarN)
+  const star = run.stageStars[run.waveIndex]
+  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX, run.echoX, run.shootingStarN, star?.sabotage ?? { kind: 'none' })
   return { ...run, phase: 'playing', wave, waveGeneration: run.waveGeneration + 1, deckComposition, shop: null }
 }
 
