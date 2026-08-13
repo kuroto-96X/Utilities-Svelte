@@ -1,4 +1,4 @@
-import { describe, test, it, expect } from 'vitest'
+import { describe, test, expect } from 'vitest'
 import { applyRevelationEffect, revelationNeedsTarget, canUseRevelation } from './revelationEffects'
 import { DEFAULT_PARAMS } from './params'
 import { createRng } from './deck'
@@ -404,16 +404,16 @@ describe('revelationEffects', () => {
 describe('canUseRevelation: 虚(レリック付喪化)', () => {
   const wave = baseWave({ tableau: [[card(1, '♠', 1)]] })
 
-  it('所持レリックが0件なら使用不可', () => {
+  test('所持レリックが0件なら使用不可', () => {
     expect(canUseRevelation(DEFAULT_PARAMS, wave, 'kyo', [])).toBe(false)
   })
 
-  it('所持レリックが全て付喪化済みなら使用不可', () => {
+  test('所持レリックが全て付喪化済みなら使用不可', () => {
     const relics = [{ id: 'manekiNeko' as const, tsukumoka: true }]
     expect(canUseRevelation(DEFAULT_PARAMS, wave, 'kyo', relics)).toBe(false)
   })
 
-  it('未付喪化の所持レリックが1件以上あれば使用可', () => {
+  test('未付喪化の所持レリックが1件以上あれば使用可', () => {
     const relics = [
       { id: 'manekiNeko' as const, tsukumoka: true },
       { id: 'kumade' as const, tsukumoka: false },
@@ -421,7 +421,7 @@ describe('canUseRevelation: 虚(レリック付喪化)', () => {
     expect(canUseRevelation(DEFAULT_PARAMS, wave, 'kyo', relics)).toBe(true)
   })
 
-  it('虚以外の天啓は、レリックの所持状況に関わらず使用可', () => {
+  test('虚以外の天啓は、レリックの所持状況に関わらず使用可', () => {
     expect(canUseRevelation(DEFAULT_PARAMS, wave, 'kaku', [])).toBe(true)
   })
 })
