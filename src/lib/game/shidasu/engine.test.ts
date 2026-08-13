@@ -4785,3 +4785,48 @@ describe('startWaveの妨害初期抽選', () => {
     expect(wave.activeSeal).toBeNull()
   })
 })
+
+describe('妨害のターンカウントダウン', () => {
+  function waveWithPendingSabotage(overrides: Partial<WaveState> = {}): WaveState {
+    return makeWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(1, '♣', 6)], []],
+      pendingSabotageId: 'stockPurge',
+      sabotageTurnsRemaining: 3,
+      ...overrides,
+    })
+  }
+
+  test('playCardで有効なプレイをするとsabotageTurnsRemainingが1減る', () => {
+    const wave = waveWithPendingSabotage()
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    expect(next.sabotageTurnsRemaining).toBe(2)
+  })
+
+  test('playCardが不正なプレイ(空列)で早期returnした場合はカウントダウンしない', () => {
+    const wave = waveWithPendingSabotage()
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 1, standardDeckComposition())
+    expect(next.sabotageTurnsRemaining).toBe(3)
+  })
+
+  test('pendingSabotageIdがnullならカウントダウンしない(sabotageTurnsRemainingは0のまま)', () => {
+    const wave = waveWithPendingSabotage({ pendingSabotageId: null, sabotageTurnsRemaining: 0 })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    expect(next.sabotageTurnsRemaining).toBe(0)
+  })
+})
+
+describe('役封印のoracleLevelへの反映(playCard)', () => {
+  test('sealedRoleEffect.zeroRolesに含まれる役はボーナスが0になる', () => {
+    // ロイヤルセット(J,Q,K)を成立させる構成: chainにJ・Qを積み、tableauからKを取る。
+    // (加護のテストと同じ組み立て方を流用)
+    const wave = makeWave({
+      foundation: card(0, '♠', 1),
+      chain: [card(20, '♥', 11), card(21, '♦', 12)],
+      tableau: [[card(1, '♣', 13)], [card(2, '♦', 2)]],
+    })
+    const withoutSeal = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), () => 0.5)
+    const withSeal = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), () => 0.5, null, undefined, { zeroRoles: ['royalSet'], oracleBaselineRole: null })
+    expect(withoutSeal.wave.score).toBeGreaterThan(withSeal.wave.score)
+  })
+})

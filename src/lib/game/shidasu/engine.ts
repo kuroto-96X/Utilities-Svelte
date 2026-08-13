@@ -371,7 +371,8 @@ export function playCard(
   deckComposition: DeckCard[],
   rand: () => number = Math.random,
   scoreLock: BossScoreLock = null,
-  rowIndex?: number
+  rowIndex?: number,
+  sealedRoleEffect: { zeroRoles: RoleName[]; oracleBaselineRole: RoleName | null } = { zeroRoles: [], oracleBaselineRole: null }
 ): { wave: WaveState; deckComposition: DeckCard[] } {
   if (wave.status !== 'playing') return { wave, deckComposition }
   const col = wave.tableau[colIndex]
@@ -417,8 +418,14 @@ export function playCard(
     }
     return factor
   }
-  // 神託: 役ごとの現在レベルをそのまま基礎点の乗数として渡す(ウェーブ開始時点で固定済み)
-  const oracleLevel = (name: RoleName): number => wave.oracleLevels[name] ?? 1
+  // 神託: 役ごとの現在レベルをそのまま基礎点の乗数として渡す(ウェーブ開始時点で固定済み)。
+  // 役封印中はzeroRolesに含まれる役を0倍、天啓・神託封印でオラクルが選ばれた場合は
+  // oracleBaselineRoleに一致する役だけレベル1相当(封印前の水準)に戻す。
+  const oracleLevel = (name: RoleName): number => {
+    if (sealedRoleEffect.zeroRoles.includes(name)) return 0
+    if (sealedRoleEffect.oracleBaselineRole === name) return 1
+    return wave.oracleLevels[name] ?? 1
+  }
   const chainResult = evaluateChainBonus(params.scoring, wave.chain, card, effectiveStairMinLen, roleBonusMultiplier, effectiveSuitColorMinLen, oracleLevel, items)
   base += chainResult.bonus
   parts.push(...chainResult.parts)
@@ -643,6 +650,7 @@ export function playCard(
     sameRankEchoUsedThisCombo: newSameRankEchoUsedThisCombo,
     sweptColumnsThisCombo: newSweptColumnsThisCombo,
     sowiloBoostedRole: wave.sowiloBoostedRole ?? sowiloCommittedThisPlay,
+    sabotageTurnsRemaining: wave.pendingSabotageId ? Math.max(0, wave.sabotageTurnsRemaining - 1) : wave.sabotageTurnsRemaining,
     nextPlayScoreMultiplier: 1,
   }
 
@@ -710,7 +718,8 @@ export function drawStock(
   deckComposition: DeckCard[],
   modifier: StageModifier = 'none',
   rand: () => number = Math.random,
-  scoreLock: BossScoreLock = null
+  scoreLock: BossScoreLock = null,
+  sealedRoleEffect: { zeroRoles: RoleName[]; oracleBaselineRole: RoleName | null } = { zeroRoles: [], oracleBaselineRole: null }
 ): { wave: WaveState; deckComposition: DeckCard[] } {
   if (wave.status !== 'playing') return { wave, deckComposition }
   if (wave.stock.length === 0) return { wave, deckComposition }
@@ -745,7 +754,11 @@ export function drawStock(
       const parts: ScorePart[] = [addPart('基礎点', base)]
       // 神託: このパスは明星・ソウィロによる役倍率(roleBonusMultiplier)を通さない既存方針を維持しつつ、
       // 神託レベルは永続的な基礎点の一部として引き続き適用する
-      const oracleLevel = (name: RoleName): number => wave.oracleLevels[name] ?? 1
+      const oracleLevel = (name: RoleName): number => {
+        if (sealedRoleEffect.zeroRoles.includes(name)) return 0
+        if (sealedRoleEffect.oracleBaselineRole === name) return 1
+        return wave.oracleLevels[name] ?? 1
+      }
       const chainResult = evaluateChainBonus(params.scoring, wave.chain, drawnCard, effectiveStairMinLen, undefined, effectiveSuitColorMinLen, oracleLevel, items)
       base += chainResult.bonus
       parts.push(...chainResult.parts)
@@ -817,6 +830,7 @@ export function drawStock(
       maxComboThisWave: Math.max(wave.maxComboThisWave, naiveCombo),
       roleFiredThisChain: naiveRoleFiredThisChain,
       flushActiveThisCombo: naiveFlushActiveThisCombo,
+      sabotageTurnsRemaining: wave.pendingSabotageId ? Math.max(0, wave.sabotageTurnsRemaining - 1) : wave.sabotageTurnsRemaining,
     }
 
     // パターン継続分のスコア確定後、目標に達していれば即座に終了する。
