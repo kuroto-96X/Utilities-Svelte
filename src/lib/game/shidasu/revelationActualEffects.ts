@@ -31,5 +31,5 @@ export const REVELATION_ACTUAL_EFFECTS: Record<RevelationId, string> = {
   yoku: 'REVELATION_POOLからrollOfferで2つ抽選し、revelations+oraclesの合算枚数(使用中の天啓自身を取り除いた後)の残り枠数(基本2、千羽鶴所持時は拡張)までrevelationsに追加する',
   mitsu: '所持する各護符のitemSellPrice(params, run, id)を合計し、currencyに加算する',
   karasu: 'recentUsedRiteIds(最大2件、新しい順)を先頭からrites.lengthの残り枠数(基本上限3、破魔矢所持時は拡張)まで所持に追加する',
-  oni: '(未実装。未所持のレリックをランダムに1つ獲得する予定)',
+  oni: 'RELIC_POOLから所持済み(run.relics)のidを除いたものをフィルタし、候補が無ければ何もしない。候補があればランダムに1つ選び、tsukumoka: falseの状態でrelicsに追加する(useRevelation内のgrantRevelationRewardで実施、wave/deckCompositionは変更しない)',
 }
