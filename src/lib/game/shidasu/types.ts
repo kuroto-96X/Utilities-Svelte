@@ -3,6 +3,20 @@ import type { ScorePart } from './scoreParts'
 export type Suit = '♠' | '♥' | '♦' | '♣' | '★'
 export type Rank = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13
 export type StageModifier = 'none' | 'noLoop' | 'faceLock'
+// 妨害行動の識別子。11個実装済み(各操作対象1個ずつ)。
+// 詳細はdocs/shidasu/shidasu-star-sabotage-candidates.mdを参照。
+export type SabotageActionId =
+  | 'stockPurge' | 'columnReturn' | 'chainSettle' | 'comboBreather'
+  | 'talismanSeal' | 'riteSeal' | 'revelationOracleSeal' | 'relicConfiscate'
+  | 'tableauCardToDiscard' | 'currencyConfiscate' | 'roleSeal'
+
+// Star.sabotageの型。noneが既存デフォルト、allはSABOTAGE_POOL全件が対象
+// (将来候補が増えても自動的に対象へ加わる)、someは個別指定(将来の拡張用、現状未使用)。
+export type StarSabotage =
+  | { kind: 'none' }
+  | { kind: 'all' }
+  | { kind: 'some'; ids: SabotageActionId[] }
+
 // スプレッド: ラン開始時にプレイヤーが選ぶ固有ルールセット。大アルカナから命名する。
 // fool(愚者)=特殊ルールなしの基本スプレッド、moon(月)=場札が常に1行少ない状態で始まる
 export type SpreadId = 'fool' | 'moon'
@@ -27,7 +41,7 @@ export interface Star {
   targetMultiplier: number
   reward: number
   restriction: StarRestriction
-  sabotage: null
+  sabotage: StarSabotage
   // 制限ルールのプレイヤー向け説明文テンプレート。{maxCombo}等のプレースホルダーを
   // 含む場合があり、starRestrictionDetail(+page.svelte)で展開して表示する。
   // restrictionがnullの星ではdescTemplateも空文字になる。
@@ -262,6 +276,19 @@ export interface WaveState {
   // 神託用: 各役のレベル(ラン全体で持続)。useOracleでプレイ中いつでも加算されうるため、
   // ウェーブ中も変化しうる。得点計算時、各役の基礎点にこのレベルを乗算する(patterns.ts・engine.ts参照)
   oracleLevels: Record<RoleName, number>
+  // 妨害行動用: 次に発動する妨害の種別(星がsabotage: {kind:'none'}、または候補0件ならnull)
+  pendingSabotageId: SabotageActionId | null
+  // 妨害行動用: 発動までの残りターン数(pendingSabotageIdがnullの間は0のまま)
+  sabotageTurnsRemaining: number
+  // 妨害行動「封印系」用: 現在封印中の対象(無ければnull)。triggerSabotageが新しい妨害を
+  // 発動させる直前に必ずnullへリセットしてから、今回の効果がseal系ならここに設定し直す。
+  // 妨害の発動サイクルは常に1つしか同時に走らないため、封印状態も常に最大1件しか存在しない。
+  activeSeal:
+    | { kind: 'talisman'; id: ItemId }
+    | { kind: 'rite'; id: RiteId }
+    | { kind: 'revelationOrOracle'; ref: HeldRevelationOrOracleRef }
+    | { kind: 'role'; names: RoleName[] }
+    | null
 }
 
 export type RunPhase = 'title' | 'playing' | 'shop' | 'itemSelect' | 'riteSelect' | 'revelationSelect' | 'oracleSelect' | 'cardSetSelect' | 'continueChoice' | 'allClear' | 'gameOver'

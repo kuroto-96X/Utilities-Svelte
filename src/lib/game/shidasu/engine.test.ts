@@ -150,6 +150,9 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     ehwazActiveThisWave: false,
     nextPlayScoreMultiplier: 1,
     oracleLevels: defaultOracleLevels(),
+    pendingSabotageId: null,
+    sabotageTurnsRemaining: 0,
+    activeSeal: null,
     ...overrides,
   }
 }
@@ -2495,9 +2498,9 @@ describe('createInitialRun / beginRun', () => {
       flow: { ...DEFAULT_PARAMS.flow, stageTargetBase: 1000, stageTargetMultiplier: 2 },
     }
     const stars: Star[] = [
-      { id: 's1', name: 'star1', waveSlot: 1, targetMultiplier: 1, reward: 0, restriction: null, sabotage: null, descTemplate: '' },
-      { id: 's2', name: 'star2', waveSlot: 2, targetMultiplier: 1.5, reward: 0, restriction: null, sabotage: null, descTemplate: '' },
-      { id: 's3', name: 'star3', waveSlot: 3, targetMultiplier: 2, reward: 0, restriction: null, sabotage: null, descTemplate: '' },
+      { id: 's1', name: 'star1', waveSlot: 1, targetMultiplier: 1, reward: 0, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' },
+      { id: 's2', name: 'star2', waveSlot: 2, targetMultiplier: 1.5, reward: 0, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' },
+      { id: 's3', name: 'star3', waveSlot: 3, targetMultiplier: 2, reward: 0, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' },
     ]
     expect(waveTarget(custom, 0, 0, stars)).toBe(1000) // 1000 × 2^0 × 1
     expect(waveTarget(custom, 0, 1, stars)).toBe(1500) // 1000 × 2^0 × 1.5
@@ -2615,7 +2618,7 @@ describe('トランプセット福袋の購入・選択フロー', () => {
 })
 
 describe('resolveWaveEnd', () => {
-  const noRewardStar: Star = { id: 'no-reward-star', name: '無報酬の星', waveSlot: 1, targetMultiplier: 1, reward: 0, restriction: null, sabotage: null, descTemplate: '' }
+  const noRewardStar: Star = { id: 'no-reward-star', name: '無報酬の星', waveSlot: 1, targetMultiplier: 1, reward: 0, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' }
 
   function endedRun(overrides: Partial<RunState>, waveScore: number): RunState {
     const base = beginRun(DEFAULT_PARAMS, 1)
@@ -2692,7 +2695,7 @@ describe('resolveWaveEnd', () => {
   })
 
   test('星にrewardが設定されていればreward分だけ増える', () => {
-    const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: null, descTemplate: '' }
+    const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' }
     const stageStars = [noRewardStar, noRewardStar, rewardStar]
     const run = endedRun({ waveIndex: 2, stageStars }, waveTarget(DEFAULT_PARAMS, 0, 2, stageStars))
     const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
@@ -2700,7 +2703,7 @@ describe('resolveWaveEnd', () => {
   })
 
   test('数珠所持時、星のrewardに追加報酬が加算される', () => {
-    const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: null, descTemplate: '' }
+    const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' }
     const stageStars = [noRewardStar, noRewardStar, rewardStar]
     const run = endedRun(
       { waveIndex: 2, stageStars, relics: [{ id: 'juzu', tsukumoka: false }] },
@@ -2713,7 +2716,7 @@ describe('resolveWaveEnd', () => {
   })
 
   test('千社札所持時、星のrewardに成立役種類数に応じた追加報酬が加算される', () => {
-    const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: null, descTemplate: '' }
+    const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' }
     const stageStars = [noRewardStar, noRewardStar, rewardStar]
     const run = endedRun(
       { waveIndex: 2, stageStars, relics: [{ id: 'senjafuda', tsukumoka: false }] },
@@ -2726,7 +2729,7 @@ describe('resolveWaveEnd', () => {
   })
 
   test('算盤所持時、星のrewardに山札消費割合に応じた追加報酬が加算される', () => {
-    const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: null, descTemplate: '' }
+    const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' }
     const stageStars = [noRewardStar, noRewardStar, rewardStar]
     const run = endedRun(
       { waveIndex: 2, stageStars, relics: [{ id: 'soroban', tsukumoka: false }] },
@@ -2749,7 +2752,7 @@ describe('stageModifierFor / bossScoreLockFor', () => {
   }
 
   function starWith(restriction: StarRestriction): Star {
-    return { id: 'test-star', name: 'テスト星', waveSlot: 3, targetMultiplier: 1, reward: 0, restriction, sabotage: null, descTemplate: '' }
+    return { id: 'test-star', name: 'テスト星', waveSlot: 3, targetMultiplier: 1, reward: 0, restriction, sabotage: { kind: 'none' }, descTemplate: '' }
   }
 
   test('制限ルールがnoLoopならnoLoopが返る', () => {

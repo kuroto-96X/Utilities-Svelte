@@ -63,6 +63,9 @@ function baseWave(overrides: Partial<WaveState> = {}): WaveState {
     ehwazActiveThisWave: false,
     nextPlayScoreMultiplier: 1,
     oracleLevels: defaultOracleLevels(),
+    pendingSabotageId: null,
+    sabotageTurnsRemaining: 0,
+    activeSeal: null,
     ...overrides,
   }
 }
