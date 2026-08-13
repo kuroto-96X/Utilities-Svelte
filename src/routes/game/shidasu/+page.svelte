@@ -690,6 +690,7 @@
     headerExtra={stageRow} extraFooter={itemBadges}
     rites={run.rites} onUseRite={handleUseRite}
     revelations={run.revelations} onUseRevelationClick={handleUseRevelationClick}
+    relics={run.relics}
     columnTargetMode={pendingRevelationTarget !== null}
     canTargetColumn={canTargetRevelationColumn}
     onTargetColumn={handleTargetColumn}
@@ -721,6 +722,7 @@
         headerExtra={stageRow}
         rites={run.rites} onUseRite={handleUseRiteInPreview}
         revelations={run.revelations} onUseRevelationClick={handleUseRevelationClick}
+        relics={run.relics}
         columnTargetMode={true}
         canTargetColumn={canTargetRevelationColumn}
         onTargetColumn={handleTargetColumn}

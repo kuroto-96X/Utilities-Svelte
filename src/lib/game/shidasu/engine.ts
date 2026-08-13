@@ -1243,7 +1243,7 @@ export function buyIndividualRevelationUse(params: ShidasuParams, run: RunState,
   const slot = run.shop.individual[slotIndex]
   if (!slot || slot.sold || slot.kind !== 'revelation') return run
   const revelationId = slot.id as RevelationId
-  if (!canUseRevelation(params, run.wave, revelationId)) return run
+  if (!canUseRevelation(params, run.wave, revelationId, run.relics)) return run
   const price = revelationBuyPrice(params, run)
   if (run.currency < price) return run
   const { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
@@ -1396,7 +1396,7 @@ function resolvePackRevelationPick(run: RunState, pickedId: RevelationId): RunSt
 // 天啓の福袋(revelationSelect)から1つ選び、その場で使用する(所持には加わらない、上限とは無関係)。
 export function pickPackRevelationUse(params: ShidasuParams, run: RunState, revelationId: RevelationId, targetCol: number | null, rand: () => number = Math.random): RunState {
   if (run.phase !== 'revelationSelect' || !run.wave || !run.revelationOffer.includes(revelationId)) return run
-  if (!canUseRevelation(params, run.wave, revelationId)) return run
+  if (!canUseRevelation(params, run.wave, revelationId, run.relics)) return run
   const { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
   const extraTableauRows = run.extraTableauRows
   return resolvePackRevelationPick({ ...run, wave, deckComposition, extraTableauRows }, revelationId)
@@ -1504,7 +1504,7 @@ export function useRevelation(
   if ((run.phase !== 'playing' && !SHOP_FLOW_PHASES.includes(run.phase)) || !run.wave || run.wave.status !== 'playing') return run
   const idx = run.revelations.indexOf(revelationId)
   if (idx === -1) return run
-  if (!canUseRevelation(params, run.wave, revelationId)) return run
+  if (!canUseRevelation(params, run.wave, revelationId, run.relics)) return run
   let { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
   // 果断・星霜: 天啓・神託・秘儀のいずれかを使用するたび永続的に加算する
   if (run.items.includes('discretion')) wave = { ...wave, discretionN: wave.discretionN + params.talismans.discretion.n }

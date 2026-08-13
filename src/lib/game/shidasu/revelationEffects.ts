@@ -1,4 +1,4 @@
-import type { Card, DeckCard, Rank, Suit, WaveState, RevelationId } from './types'
+import type { Card, DeckCard, Rank, Suit, WaveState, RevelationId, RelicId } from './types'
 import type { ShidasuParams } from './params'
 import { shuffleInPlace } from './deck'
 
@@ -200,8 +200,17 @@ function wildifyRandomTableauCards(wave: WaveState, deckComposition: DeckCard[],
   return { wave: { ...wave, tableau }, deckComposition: newComposition }
 }
 
-// 天啓が現在の盤面状態で使用可能か判定する(現状、常に使用可能)。
-export function canUseRevelation(_params: ShidasuParams, _wave: WaveState, _revelationId: RevelationId): boolean {
+// 天啓が現在の盤面状態で使用可能か判定する。虚(レリック付喪化)のみ、未付喪化の所持レリックが
+// 1つ以上あるかを判定する(それ以外は常に使用可)。
+export function canUseRevelation(
+  _params: ShidasuParams,
+  _wave: WaveState,
+  revelationId: RevelationId,
+  relics: { id: RelicId; tsukumoka: boolean }[] = []
+): boolean {
+  if (revelationId === 'kyo') {
+    return relics.some(r => !r.tsukumoka)
+  }
   return true
 }
 

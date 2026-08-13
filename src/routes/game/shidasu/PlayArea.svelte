@@ -2,7 +2,7 @@
   import type { Snippet } from 'svelte'
   import { onDestroy, tick } from 'svelte'
   import { getPlayableColumns, isPlayable, remainingCount } from '$lib/game/shidasu/engine'
-  import type { WaveState, StageModifier, ItemId, RiteId, RevelationId, Card, PlayCardResult, ScoreGain } from '$lib/game/shidasu/types'
+  import type { WaveState, StageModifier, ItemId, RiteId, RevelationId, RelicId, Card, PlayCardResult, ScoreGain } from '$lib/game/shidasu/types'
   import type { ShidasuParams } from '$lib/game/shidasu/params'
   import { canUseRite } from '$lib/game/shidasu/riteEffects'
   import { riteDesc } from '$lib/game/shidasu/rites'
@@ -17,6 +17,7 @@
     wave, params, modifier, target, items, onPlayCard, onDraw, dropTarget = null, headerExtra, extraFooter,
     rites = [], onUseRite,
     revelations = [], onUseRevelationClick,
+    relics = [],
     showScoreAndCombo = true,
     allowDraw = true,
     columnTargetMode = false,
@@ -40,6 +41,7 @@
     onUseRite?: (riteId: RiteId) => void
     revelations?: RevelationId[]
     onUseRevelationClick?: (revelationId: RevelationId) => void
+    relics?: { id: RelicId; tsukumoka: boolean }[]
     showScoreAndCombo?: boolean
     allowDraw?: boolean
     columnTargetMode?: boolean
@@ -1012,7 +1014,7 @@
 {#if revelations.length > 0}
   <div class="px-4 pb-4 flex items-center gap-2">
     {#each revelations as revelationId, i (i)}
-      {@const usable = canUseRevelation(params, wave, revelationId) && playingAnimation === null && scoreReveal === null && cleanupAnimation === null && chainResetAnimation === null && !dealAnimationActive}
+      {@const usable = canUseRevelation(params, wave, revelationId, relics) && playingAnimation === null && scoreReveal === null && cleanupAnimation === null && chainResetAnimation === null && !dealAnimationActive}
       <button
         type="button"
         onclick={() => onUseRevelationClick?.(revelationId)}

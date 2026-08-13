@@ -1,8 +1,8 @@
-import { describe, test, expect } from 'vitest'
-import { applyRevelationEffect, revelationNeedsTarget } from './revelationEffects'
+import { describe, test, it, expect } from 'vitest'
+import { applyRevelationEffect, revelationNeedsTarget, canUseRevelation } from './revelationEffects'
 import { DEFAULT_PARAMS } from './params'
 import { createRng } from './deck'
-import type { Card, DeckCard, WaveState } from './types'
+import type { Card, DeckCard, WaveState, RelicId } from './types'
 import { defaultOracleLevels } from './oracles'
 
 function card(id: number, suit: Card['suit'], rank: Card['rank'], wild = false, deckId = id): Card {
@@ -398,5 +398,30 @@ describe('revelationEffects', () => {
     expect(revelationNeedsTarget('shitsu')).toBe(true)
     expect(revelationNeedsTarget('hitsu')).toBe(true)
     expect(revelationNeedsTarget('shin')).toBe(false)
+  })
+})
+
+describe('canUseRevelation: 虚(レリック付喪化)', () => {
+  const wave = baseWave({ tableau: [[card(1, '♠', 1)]] })
+
+  it('所持レリックが0件なら使用不可', () => {
+    expect(canUseRevelation(DEFAULT_PARAMS, wave, 'kyo', [])).toBe(false)
+  })
+
+  it('所持レリックが全て付喪化済みなら使用不可', () => {
+    const relics = [{ id: 'manekiNeko' as const, tsukumoka: true }]
+    expect(canUseRevelation(DEFAULT_PARAMS, wave, 'kyo', relics)).toBe(false)
+  })
+
+  it('未付喪化の所持レリックが1件以上あれば使用可', () => {
+    const relics = [
+      { id: 'manekiNeko' as const, tsukumoka: true },
+      { id: 'kumade' as const, tsukumoka: false },
+    ]
+    expect(canUseRevelation(DEFAULT_PARAMS, wave, 'kyo', relics)).toBe(true)
+  })
+
+  it('虚以外の天啓は、レリックの所持状況に関わらず使用可', () => {
+    expect(canUseRevelation(DEFAULT_PARAMS, wave, 'kaku', [])).toBe(true)
   })
 })
