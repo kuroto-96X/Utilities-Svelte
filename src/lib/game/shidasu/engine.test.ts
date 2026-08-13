@@ -4538,6 +4538,75 @@ describe('useRevelation: 参(karasu・秘儀回帰)', () => {
   })
 })
 
+describe('useRevelation: 虚(レリック付喪化)', () => {
+  test('targetRelicIdで指定した未付喪化レリックが付喪化される', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = {
+      ...createInitialRun(),
+      phase: 'playing',
+      wave,
+      revelations: ['kyo'],
+      relics: [
+        { id: 'manekiNeko', tsukumoka: false },
+        { id: 'kumade', tsukumoka: false },
+      ],
+    }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'kyo', null, createRng(1), 'kumade')
+    expect(result.relics).toEqual([
+      { id: 'manekiNeko', tsukumoka: false },
+      { id: 'kumade', tsukumoka: true },
+    ])
+    expect(result.revelations).toEqual([])
+  })
+
+  test('targetRelicIdが未指定(null)なら何も変化しない', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = {
+      ...createInitialRun(),
+      phase: 'playing',
+      wave,
+      revelations: ['kyo'],
+      relics: [{ id: 'manekiNeko', tsukumoka: false }],
+    }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'kyo', null, createRng(1), null)
+    expect(result.relics).toEqual([{ id: 'manekiNeko', tsukumoka: false }])
+    // 虚自体は消費される(使用は成立している。対象選択が空振りしただけ)
+    expect(result.revelations).toEqual([])
+  })
+
+  test('既に付喪化済みのレリックを指定しても何も変化しない', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = {
+      ...createInitialRun(),
+      phase: 'playing',
+      wave,
+      revelations: ['kyo'],
+      relics: [
+        { id: 'manekiNeko', tsukumoka: true },
+        { id: 'kumade', tsukumoka: false },
+      ],
+    }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'kyo', null, createRng(1), 'manekiNeko')
+    expect(result.relics).toEqual([
+      { id: 'manekiNeko', tsukumoka: true },
+      { id: 'kumade', tsukumoka: false },
+    ])
+  })
+
+  test('所持していないレリックIDを指定しても何も変化しない', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = {
+      ...createInitialRun(),
+      phase: 'playing',
+      wave,
+      revelations: ['kyo'],
+      relics: [{ id: 'manekiNeko', tsukumoka: false }],
+    }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'kyo', null, createRng(1), 'kumade')
+    expect(result.relics).toEqual([{ id: 'manekiNeko', tsukumoka: false }])
+  })
+})
+
 describe('神託の福袋(oracleSelect)', () => {
   function shopRunWithOraclePack(overrides: Partial<RunState> = {}): RunState {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave

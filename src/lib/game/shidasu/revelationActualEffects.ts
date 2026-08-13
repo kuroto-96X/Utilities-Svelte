@@ -14,7 +14,7 @@ export const REVELATION_ACTUAL_EFFECTS: Record<RevelationId, string> = {
   to: '場札全体の非ワイルド♦を全て♠に変換し、deckCompositionの対応する枠も書き換える(♦以外・ワイルドは対象外)',
   gyu: '選んだ列の非ワイルドカードを、1枚ごとに個別抽選でA〜10のいずれかのランクへ変換し、deckCompositionの対応する枠も同じランクに書き換える(ワイルドは対象外)',
   jo: '選んだ列の非ワイルドカードを、1枚ごとに個別抽選でJ・Q・Kのいずれかのランクへ変換し、deckCompositionの対応する枠も同じランクに書き換える(ワイルドは対象外)',
-  kyo: '(未実装。所持レリックから選んだ1つを付喪化させる予定)',
+  kyo: 'useRevelation内のgrantRevelationRewardで実施、wave/deckCompositionは変更しない。targetRelicIdで指定されたレリックがrun.relicsに存在し、かつ未付喪化(tsukumoka: false)であれば、そのエントリのtsukumokaをtrueに更新する。targetRelicIdがnull、対象が存在しない、または既に付喪化済みの場合は何もしない',
   aya: '選んだ列の一番上にワイルドを1枚追加し、deckCompositionにも新規ワイルドエントリを1件追加する(deckIdは配列長を採番して衝突を回避)',
   shitsu: '選んだ列の各カード(位置iごと)を、1つ左の列の同じ位置iのカードのランク+1(A⇔Kループ)に変換し、deckCompositionの対応する枠も同じランクに書き換える。左列がワイルドの位置・左列の方が短く対応する位置が無い場合はスキップ。選択列自身がワイルドの位置もスキップ。列0(左端)を選んだ場合の参照列は最終列',
   heki: '場札全体の非ワイルドカードを、変換前のスート基準の対応表(♠→♥、♥→♣、♣→♦、♦→♠)で1回だけ変換し、deckCompositionの対応する枠も書き換える(ワイルドは対象外、逐次適用ではないためカスケードしない)',

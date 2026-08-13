@@ -1449,9 +1449,16 @@ function grantRevelationReward(
   params: ShidasuParams,
   runAfterRemoval: RunState,
   revelationId: RevelationId,
+  targetRelicId: RelicId | null,
   rand: () => number
 ): Partial<RunState> {
   switch (revelationId) {
+    case 'kyo': {
+      if (targetRelicId === null) return {}
+      const relic = runAfterRemoval.relics.find(r => r.id === targetRelicId)
+      if (!relic || relic.tsukumoka) return {}
+      return { relics: runAfterRemoval.relics.map(r => (r.id === targetRelicId ? { ...r, tsukumoka: true } : r)) }
+    }
     case 'subaru': {
       if (runAfterRemoval.items.length >= itemMaxCapacity(params, runAfterRemoval)) return {}
       const available = ITEM_POOL.filter(id => !runAfterRemoval.items.includes(id))
@@ -1499,7 +1506,8 @@ export function useRevelation(
   run: RunState,
   revelationId: RevelationId,
   targetCol: number | null,
-  rand: () => number = Math.random
+  rand: () => number = Math.random,
+  targetRelicId: RelicId | null = null
 ): RunState {
   if ((run.phase !== 'playing' && !SHOP_FLOW_PHASES.includes(run.phase)) || !run.wave || run.wave.status !== 'playing') return run
   const idx = run.revelations.indexOf(revelationId)
@@ -1511,7 +1519,7 @@ export function useRevelation(
   if (run.items.includes('frost')) wave = { ...wave, frostX: wave.frostX + params.talismans.frost.x }
   const extraTableauRows = run.extraTableauRows
   const revelations = [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
-  const reward = grantRevelationReward(params, { ...run, revelations }, revelationId, rand)
+  const reward = grantRevelationReward(params, { ...run, revelations }, revelationId, targetRelicId, rand)
   // 星(hotori)自身の使用は履歴に残さない(自己参照ループを防ぐ。詳細はtypes.tsのlastUsedRevelationIdコメント参照)
   const lastUsedRevelationId = revelationId === 'hotori' ? run.lastUsedRevelationId : revelationId
   return { ...run, wave, deckComposition, revelations, extraTableauRows, lastUsedRevelationId, ...reward }
