@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/engine.test.ts
-import { describe, test, expect } from 'vitest'
+import { describe, test, it, expect } from 'vitest'
 import {
   rankLabel,
   isPlayable,
@@ -66,9 +66,10 @@ import {
   rerollShop,
   shopRerollCost,
   startRevelationPreview,
+  triggerSabotage,
 } from './engine'
 import { isFace, chainContinuesPattern } from './patterns'
-import type { Card, WaveState, RunState, ItemId, ShopIndividualSlot, Star, StarRestriction } from './types'
+import type { Card, WaveState, RunState, ItemId, ShopIndividualSlot, Star, StarRestriction, RoleName } from './types'
 import { DEFAULT_PARAMS, type ShidasuParams } from './params'
 import { createRng, standardDeckComposition } from './deck'
 import { card } from './testHelpers'
@@ -4828,5 +4829,111 @@ describe('役封印のoracleLevelへの反映(playCard)', () => {
     const withoutSeal = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), () => 0.5)
     const withSeal = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), () => 0.5, null, undefined, { zeroRoles: ['royalSet'], oracleBaselineRole: null })
     expect(withoutSeal.wave.score).toBeGreaterThan(withSeal.wave.score)
+  })
+})
+
+describe('triggerSabotage', () => {
+  function runWithWave(overrides: Partial<RunState> = {}, waveOverrides: Partial<WaveState> = {}): RunState {
+    const run = createInitialRun()
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, run.items, run.deckComposition, 1, 0, defaultOracleLevels())
+    return { ...run, phase: 'playing', wave: { ...wave, ...waveOverrides }, ...overrides }
+  }
+
+  it('stockPurge: 山札の上から5枚を捨て札に置く', () => {
+    const run = runWithWave()
+    const stockBefore = run.wave!.stock.length
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'stockPurge', () => 0)
+    expect(next.wave!.stock.length).toBe(stockBefore - 5)
+    expect(next.wave!.discardPile.length).toBe(5)
+  })
+
+  it('columnReturn: 選んだ列が山札に戻りシャッフルされ、同じ枚数で再配布される', () => {
+    const run = runWithWave()
+    const colIndex = 0
+    const colLenBefore = run.wave!.tableau[colIndex].length
+    const stockBefore = run.wave!.stock.length
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'columnReturn', () => 0)
+    expect(next.wave!.tableau[colIndex].length).toBe(colLenBefore)
+    expect(next.wave!.stock.length).toBe(stockBefore)
+  })
+
+  it('chainSettle: チェーンが捨て札に送られ、コンボが0になる', () => {
+    const run = runWithWave({}, { combo: 3, chain: [card(1, '♠', 1), card(2, '♠', 2)] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'chainSettle', () => 0)
+    expect(next.wave!.combo).toBe(0)
+    expect(next.wave!.chain.length).toBe(1)
+  })
+
+  it('comboBreather: チェーンはそのまま、コンボだけ0になる', () => {
+    const run = runWithWave({}, { combo: 5, chain: [card(1, '♠', 1), card(2, '♠', 2)] })
+    const chainBefore = run.wave!.chain
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'comboBreather', () => 0)
+    expect(next.wave!.combo).toBe(0)
+    expect(next.wave!.chain).toBe(chainBefore)
+  })
+
+  it('talismanSeal: 所持護符からランダムに1つ選びactiveSealに設定する', () => {
+    const run = runWithWave({ items: ['bridge', 'grace'] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'talismanSeal', () => 0)
+    expect(next.wave!.activeSeal).toEqual({ kind: 'talisman', id: 'bridge' })
+  })
+
+  it('talismanSeal: 護符を所持していなければactiveSealはnullのまま', () => {
+    const run = runWithWave({ items: [] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'talismanSeal', () => 0)
+    expect(next.wave!.activeSeal).toBeNull()
+  })
+
+  it('riteSeal: 所持秘儀からランダムに1つ選びactiveSealに設定する', () => {
+    const run = runWithWave({ rites: ['gebo', 'fehu'] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteSeal', () => 0)
+    expect(next.wave!.activeSeal).toEqual({ kind: 'rite', id: 'gebo' })
+  })
+
+  it('revelationOracleSeal: 天啓・神託の合算プールからランダムに1つ選ぶ', () => {
+    const run = runWithWave({ revelations: ['kaku'], oracles: [] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleSeal', () => 0)
+    expect(next.wave!.activeSeal).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'revelation', id: 'kaku' } })
+  })
+
+  it('relicConfiscate: 所持レリックからランダムに1つ選び完全に失う', () => {
+    const run = runWithWave({ relics: [{ id: 'manekiNeko', tsukumoka: false }, { id: 'juzu', tsukumoka: false }] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'relicConfiscate', () => 0)
+    expect(next.relics).toEqual([{ id: 'juzu', tsukumoka: false }])
+  })
+
+  it('tableauCardToDiscard: 場札から1枚選び捨て札に送る', () => {
+    const run = runWithWave()
+    const remainingBefore = run.wave!.tableau.flat().length
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'tableauCardToDiscard', () => 0)
+    expect(next.wave!.tableau.flat().length).toBe(remainingBefore - 1)
+    expect(next.wave!.discardPile.length).toBe(1)
+  })
+
+  it('currencyConfiscate: 所持通貨を5減らす(0未満にはしない)', () => {
+    const run = runWithWave({ currency: 3 })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'currencyConfiscate', () => 0)
+    expect(next.currency).toBe(0)
+  })
+
+  it('roleSeal: ランダムな2役をactiveSealに設定する', () => {
+    const run = runWithWave()
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'roleSeal', () => 0)
+    expect(next.wave!.activeSeal?.kind).toBe('role')
+    expect((next.wave!.activeSeal as { kind: 'role'; names: RoleName[] }).names).toHaveLength(2)
+  })
+
+  it('効果適用後、次の妨害が再抽選される(星がsabotage: allの場合)', () => {
+    const star: Star = { id: 'test-star', name: 'テスト星', waveSlot: 3, targetMultiplier: 1, reward: 0, restriction: null, sabotage: { kind: 'all' }, descTemplate: '' }
+    const run = runWithWave({ stageStars: [star, star, star] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'comboBreather', () => 0)
+    expect(next.wave!.pendingSabotageId).not.toBeNull()
+    expect(next.wave!.sabotageTurnsRemaining).toBeGreaterThan(0)
+  })
+
+  it('効果適用後、activeSealは一旦nullにリセットされてから今回の効果が反映される', () => {
+    const run = runWithWave({ items: ['bridge'] }, { activeSeal: { kind: 'rite', id: 'gebo' } })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'talismanSeal', () => 0)
+    expect(next.wave!.activeSeal).toEqual({ kind: 'talisman', id: 'bridge' })
   })
 })

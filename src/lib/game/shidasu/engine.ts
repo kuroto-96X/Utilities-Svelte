@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, Star, StarRestriction, CardSetGenreId, RelicId, StarSabotage } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, ChainCardOrigin, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, Star, StarRestriction, CardSetGenreId, RelicId, StarSabotage, SabotageActionId } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition, addCardsToDeckComposition, rollOffer } from './deck'
 import { rollSabotage } from './sabotage'
@@ -1160,6 +1160,105 @@ export function finishShop(params: ShidasuParams, run: RunState, seed?: number):
   const star = run.stageStars[run.waveIndex]
   const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX, run.echoX, run.shootingStarN, star?.sabotage ?? { kind: 'none' })
   return { ...run, phase: 'playing', wave, waveGeneration: run.waveGeneration + 1, deckComposition, shop: null }
+}
+
+// 妨害行動を1つ発動させ、効果を適用した上で次の妨害を再抽選する。
+// applyPlayCard/applyDrawStock(RunState層)から、wave.sabotageTurnsRemainingが0になった時点で呼ばれる。
+export function triggerSabotage(params: ShidasuParams, run: RunState, id: SabotageActionId, rand: () => number = Math.random): RunState {
+  if (!run.wave) return run
+  const wave = run.wave
+  let nextWave: WaveState = { ...wave, activeSeal: null }
+  let nextRun: RunState = run
+
+  switch (id) {
+    case 'stockPurge': {
+      const n = Math.min(5, wave.stock.length)
+      const purged = wave.stock.slice(wave.stock.length - n)
+      nextWave = { ...nextWave, stock: wave.stock.slice(0, wave.stock.length - n), discardPile: [...wave.discardPile, ...purged] }
+      break
+    }
+    case 'columnReturn': {
+      const colIndex = Math.floor(rand() * wave.tableau.length)
+      const col = wave.tableau[colIndex]
+      const pool = [...wave.stock, ...col]
+      shuffleInPlace(pool, rand)
+      const newCol = pool.slice(0, col.length)
+      const newStock = pool.slice(col.length)
+      const tableau = wave.tableau.map((c, i) => (i === colIndex ? newCol : c))
+      nextWave = { ...nextWave, tableau, stock: newStock }
+      break
+    }
+    case 'chainSettle': {
+      if (wave.stock.length === 0) {
+        nextWave = resetComboFields(nextWave, params)
+      } else {
+        const stock = [...wave.stock]
+        const drawn = stock.pop() as Card
+        nextWave = { ...resetComboFields(nextWave, params, drawn, 'draw'), stock }
+      }
+      break
+    }
+    case 'comboBreather': {
+      nextWave = { ...nextWave, combo: 0 }
+      break
+    }
+    case 'talismanSeal': {
+      if (run.items.length > 0) {
+        const target = run.items[Math.floor(rand() * run.items.length)]
+        nextWave = { ...nextWave, activeSeal: { kind: 'talisman', id: target } }
+      }
+      break
+    }
+    case 'riteSeal': {
+      if (run.rites.length > 0) {
+        const target = run.rites[Math.floor(rand() * run.rites.length)]
+        nextWave = { ...nextWave, activeSeal: { kind: 'rite', id: target } }
+      }
+      break
+    }
+    case 'revelationOracleSeal': {
+      const pool: HeldRevelationOrOracleRef[] = [
+        ...run.revelations.map(refId => ({ kind: 'revelation' as const, id: refId })),
+        ...run.oracles.map(refId => ({ kind: 'oracle' as const, id: refId })),
+      ]
+      if (pool.length > 0) {
+        const ref = pool[Math.floor(rand() * pool.length)]
+        nextWave = { ...nextWave, activeSeal: { kind: 'revelationOrOracle', ref } }
+      }
+      break
+    }
+    case 'relicConfiscate': {
+      if (run.relics.length > 0) {
+        const idx = Math.floor(rand() * run.relics.length)
+        nextRun = { ...nextRun, relics: [...run.relics.slice(0, idx), ...run.relics.slice(idx + 1)] }
+      }
+      break
+    }
+    case 'tableauCardToDiscard': {
+      const positions: { ci: number; ri: number }[] = []
+      wave.tableau.forEach((col, ci) => col.forEach((_c, ri) => positions.push({ ci, ri })))
+      if (positions.length > 0) {
+        const pick = positions[Math.floor(rand() * positions.length)]
+        const card = wave.tableau[pick.ci][pick.ri]
+        const tableau = wave.tableau.map((col, ci) => (ci === pick.ci ? [...col.slice(0, pick.ri), ...col.slice(pick.ri + 1)] : col))
+        nextWave = { ...nextWave, tableau, discardPile: [...wave.discardPile, card] }
+      }
+      break
+    }
+    case 'currencyConfiscate': {
+      nextRun = { ...nextRun, currency: Math.max(0, run.currency - 5) }
+      break
+    }
+    case 'roleSeal': {
+      const names = rollOffer(ORACLE_POOL, 2, rand)
+      nextWave = { ...nextWave, activeSeal: { kind: 'role', names } }
+      break
+    }
+  }
+
+  const star = nextRun.stageStars[nextRun.waveIndex]
+  const rolled = rollSabotage(star?.sabotage ?? { kind: 'none' }, rand)
+  return { ...nextRun, wave: { ...nextWave, pendingSabotageId: rolled.pendingSabotageId, sabotageTurnsRemaining: rolled.sabotageTurnsRemaining } }
 }
 
 // ステージ画面のスキップボタンから呼ぶ。ボスWave(isBossWaveがtrueを返すwaveIndex、通常は
