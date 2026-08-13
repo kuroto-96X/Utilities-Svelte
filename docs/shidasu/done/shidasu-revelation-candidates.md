@@ -8,7 +8,7 @@ Shidasuロードマップ項目3「天啓の追加の検討」のための、新
 
 ## 実装完了(2026-08-09〜2026-08-10)
 
-採用15個は実装しやすさでPhase A(カード変換・場札操作系8個)とPhase B(即時報酬獲得系7個)に分割し、いずれも実装完了した。天啓は二十八宿28宿中27宿まで埋まり、残り1宿(鬼)のみ未定のまま`mansions.ts`に温存している。
+採用15個は実装しやすさでPhase A(カード変換・場札操作系8個)とPhase B(即時報酬獲得系7個)に分割し、いずれも実装完了した。天啓は二十八宿28宿中27宿まで埋まり、残り1宿(鬼)のみ未定のまま`mansions.ts`に温存していたが、2026-08-13に「未所持のレリックをランダムに1つ獲得する」効果として実装し、二十八宿28宿全ての実装が完了した(詳細は`docs/superpowers/specs/2026-08-13-shidasu-relic-random-acquire-revelation-design.md`を参照)。
 
 - **Phase A**: `docs/superpowers/specs/2026-08-09-shidasu-revelation-phase-a-design.md`
 - **Phase B**: `docs/superpowers/specs/2026-08-09-shidasu-revelation-phase-b-design.md`
