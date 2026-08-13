@@ -74,6 +74,7 @@ import { createRng, standardDeckComposition } from './deck'
 import { card } from './testHelpers'
 import { defaultOracleLevels } from './oracles'
 import { ITEM_POOL } from './items'
+import { RELIC_POOL } from './relics'
 import { itemBuyPrice, riteBuyPrice, revelationBuyPrice, itemSellPrice, riteSellPrice, revelationSellPrice, oracleSellPrice, rollShop, relicBuyPrice } from './shop'
 import { addPart, finalScoreFromScoreParts, runningTotalsFromScoreParts } from './scoreParts'
 
@@ -4604,6 +4605,39 @@ describe('useRevelation: 虚(レリック付喪化)', () => {
     }
     const result = useRevelation(DEFAULT_PARAMS, run, 'kyo', null, createRng(1), 'kumade')
     expect(result.relics).toEqual([{ id: 'manekiNeko', tsukumoka: false }])
+  })
+})
+
+describe('useRevelation: 鬼(レリックランダム獲得)', () => {
+  test('未所持レリックが複数ある状態で使用すると1つ獲得する(tsukumoka: falseで追加)', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = {
+      ...createInitialRun(),
+      phase: 'playing',
+      wave,
+      revelations: ['oni'],
+      relics: [],
+    }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'oni', null, createRng(1))
+    expect(result.relics).toHaveLength(1)
+    expect(result.relics[0].tsukumoka).toBe(false)
+    expect(RELIC_POOL).toContain(result.relics[0].id)
+    expect(result.revelations).toEqual([])
+  })
+
+  test('全レリックを所持済みの状態では使用しても何も変化しない', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = {
+      ...createInitialRun(),
+      phase: 'playing',
+      wave,
+      revelations: ['oni'],
+      relics: RELIC_POOL.map(id => ({ id, tsukumoka: false })),
+    }
+    const result = useRevelation(DEFAULT_PARAMS, run, 'oni', null, createRng(1))
+    expect(result.relics).toEqual(run.relics)
+    // canUseRevelationが使用不可を返すため、天啓自体も消費されない
+    expect(result.revelations).toEqual(['oni'])
   })
 })
 

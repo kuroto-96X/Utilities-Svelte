@@ -13,7 +13,7 @@ import { applyRevelationEffect, canUseRevelation } from './revelationEffects'
 import { rollOracleOffer, defaultOracleLevels, ORACLE_POOL } from './oracles'
 import { rollCardSetOffer } from './cardSets'
 import { rollShop, itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice, oracleBuyPrice, oracleSellPrice, relicBuyPrice } from './shop'
-import { itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity, relicWaveEndBonus, relicRerollCostStep, relicFirstRerollFree } from './relics'
+import { itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity, relicWaveEndBonus, relicRerollCostStep, relicFirstRerollFree, RELIC_POOL } from './relics'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
 
@@ -1465,6 +1465,13 @@ function grantRevelationReward(
       if (available.length === 0) return {}
       const picked = available[Math.floor(rand() * available.length)]
       return { items: [...runAfterRemoval.items, picked] }
+    }
+    case 'oni': {
+      const ownedIds = new Set(runAfterRemoval.relics.map(r => r.id))
+      const available = RELIC_POOL.filter(id => !ownedIds.has(id))
+      if (available.length === 0) return {}
+      const picked = available[Math.floor(rand() * available.length)]
+      return { relics: [...runAfterRemoval.relics, { id: picked, tsukumoka: false }] }
     }
     case 'ryuu':
       return { currency: runAfterRemoval.currency * 2 }
