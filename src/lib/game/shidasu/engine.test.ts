@@ -4958,6 +4958,7 @@ describe('妨害の発動トリガー統合(applyPlayCard)', () => {
     expect(playableCol).toBeGreaterThanOrEqual(0)
     const next = applyPlayCard(DEFAULT_PARAMS, run, playableCol, () => 0.5)
     // comboBreatherが発動していればcomboは0になっているはず(このプレイ自体のコンボ加算より後に発動)
+    expect(next.wave!.combo).toBe(0)
     expect(next.wave!.pendingSabotageId).not.toBeNull()
   })
 
@@ -4970,5 +4971,45 @@ describe('妨害の発動トリガー統合(applyPlayCard)', () => {
     const next = applyPlayCard(DEFAULT_PARAMS, run, playableCol, () => 0.5)
     // golden(黄金)は通常コンボ+2のところ、封印中は+1のまま(通常の護符無し挙動と同じ)になるはず
     expect(next.wave!.combo).toBe(1)
+  })
+})
+
+describe('妨害の発動トリガー統合(applyDrawStock)', () => {
+  it('sabotageTurnsRemainingが0の状態でapplyDrawStockすると効果が発動する(通貨が減り、次の妨害が再抽選される)', () => {
+    const star: Star = { id: 'test-star', name: 'テスト星', waveSlot: 3, targetMultiplier: 1, reward: 0, restriction: null, sabotage: { kind: 'all' }, descTemplate: '' }
+    let run = createInitialRun()
+    // combo/chainのリセットはdrawStock自体の通常挙動でも起きうるため、発動の証拠としては使えない。
+    // currencyConfiscate(通貨-5)はdrawStock自体には一切関係しない副作用のため、これが起きていれば
+    // triggerSabotageが実際に呼ばれた証拠になる。
+    const wave = makeWave({
+      stock: [card(1, '♠', 9)],
+      foundation: card(0, '♠', 5),
+      chain: [card(0, '♠', 5)],
+      pendingSabotageId: 'currencyConfiscate',
+      sabotageTurnsRemaining: 0,
+    })
+    run = { ...run, phase: 'playing', stageStars: [star, star, star], currency: 10, wave }
+    const next = applyDrawStock(DEFAULT_PARAMS, run, () => 0.5)
+    expect(next.currency).toBe(5)
+    expect(next.wave!.pendingSabotageId).not.toBeNull()
+  })
+})
+
+describe('妨害の発動トリガー統合(applyStuckCheck)', () => {
+  it('不屈(resilience)で山札が復活し手詰まり回避のdrawStockが走った際、sabotageTurnsRemainingが0なら効果が発動する', () => {
+    const star: Star = { id: 'test-star', name: 'テスト星', waveSlot: 3, targetMultiplier: 1, reward: 0, restriction: null, sabotage: { kind: 'all' }, descTemplate: '' }
+    let run = createInitialRun()
+    const wave = makeWave({
+      tableau: [[card(1, '♣', 1)]], // foundation(rank8)との差が7でisPlayableにならず手詰まりになる
+      foundation: card(0, '♠', 8),
+      stock: [],
+      discardPile: [card(2, '♥', 3)],
+      pendingSabotageId: 'currencyConfiscate',
+      sabotageTurnsRemaining: 0,
+    })
+    run = { ...run, phase: 'playing', items: ['resilience'], stageStars: [star, star, star], currency: 10, wave }
+    const next = applyStuckCheck(DEFAULT_PARAMS, run, () => 0.5)
+    expect(next.currency).toBe(5)
+    expect(next.wave!.pendingSabotageId).not.toBeNull()
   })
 })
