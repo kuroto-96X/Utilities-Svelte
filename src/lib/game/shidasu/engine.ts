@@ -1178,7 +1178,8 @@ function resolveEffectiveItems(items: ItemId[], activeSeal: WaveState['activeSea
 // wave.activeSealから、playCard/drawStockに渡すsealedRoleEffectを導出する。
 // role封印は該当役のボーナスを0倍に、revelationOrOracle封印でoracleが選ばれていれば
 // 該当役のレベル効果だけを1倍(封印前の基準値)に戻す。
-function resolveSealedRoleEffect(activeSeal: WaveState['activeSeal']): SealedRoleEffect {
+// RoleStatusPanel.svelte(UI表示側)からも、封印中の実効レベル・得点を表示するために利用する。
+export function resolveSealedRoleEffect(activeSeal: WaveState['activeSeal']): SealedRoleEffect {
   if (activeSeal?.kind === 'role') return { zeroRoles: activeSeal.names, oracleBaselineRole: null }
   if (activeSeal?.kind === 'revelationOrOracle' && activeSeal.ref.kind === 'oracle') return { zeroRoles: [], oracleBaselineRole: activeSeal.ref.id }
   return { zeroRoles: [], oracleBaselineRole: null }

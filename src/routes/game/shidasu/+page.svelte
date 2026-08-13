@@ -15,6 +15,7 @@
     pickPackRevelationUse, pickPackRevelationHold, confirmPackRevelationSwap, cancelPackRevelationSwap, closePackRevelationSelect,
     pickPackOracleUse, pickPackOracleHold, confirmPackOracleSwap, cancelPackOracleSwap, closePackOracleSelect,
     useOracle, sellItem, sellRite, sellRevelation, sellOracle, reorderItems,
+    resolveSealedRoleEffect,
   } from '$lib/game/shidasu/engine'
   import { itemDesc, itemName } from '$lib/game/shidasu/items'
   import { riteName, riteDesc } from '$lib/game/shidasu/rites'
@@ -100,6 +101,9 @@
 
   let target = $derived(waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars))
   let wave = $derived(run.wave)
+  // RoleStatusPanel表示用: 現在の封印状態(役封印/天啓封印)から、役の実効レベルへの
+  // 補正情報を導出する。triggerSabotage内部の同名処理と同じロジックをengine.tsから再利用。
+  let sealedRoleEffect = $derived(resolveSealedRoleEffect(wave?.activeSeal ?? null))
   let currentModifier = $derived(stageModifierFor(params, run))
 
   // 現在Waveの星(制限ルール)の情報を返す。stageStarsが未確定(title等)の場合は空表示。
@@ -730,7 +734,7 @@
     chainAreaExtra={pendingRevelationTarget ? revelationTargetPrompt : undefined}
     onScorePartHighlight={id => (highlightedItemId = id)}
   />
-  <RoleStatusPanel {params} oracleLevels={run.oracleLevels} />
+  <RoleStatusPanel {params} oracleLevels={run.oracleLevels} {sealedRoleEffect} />
 {/if}
 
 {#if revelationPreviewWave}
