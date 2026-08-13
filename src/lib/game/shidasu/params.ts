@@ -205,6 +205,7 @@ export interface ShidasuParams {
     to: { name: string; desc: string }
     gyu: { name: string; desc: string }
     jo: { name: string; desc: string }
+    kyo: { name: string; desc: string }
     aya: { name: string; desc: string }
     shitsu: { name: string; desc: string }
     heki: { name: string; desc: string }
@@ -472,6 +473,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     to: { name: '斗', desc: '場札の♦を全て♠に変換する(ワイルドは対象外)' },
     gyu: { name: '牛', desc: '場札から選んだ1列を、ランクA〜10のいずれかへランダムに変換する(1枚ごとに個別抽選。ワイルドは対象外)' },
     jo: { name: '女', desc: '場札から選んだ1列を、ランクJ・Q・Kのいずれかへランダムに変換する(1枚ごとに個別抽選。ワイルドは対象外)' },
+    kyo: { name: '虚', desc: '所持レリックの中から選んだ1つを付喪化させる(既に付喪化済みのレリックは選べない)' },
     aya: { name: '危', desc: '場札から選んだ1列の一番上に、ワイルドを1枚追加する' },
     shitsu: { name: '室', desc: '場札から選んだ1列の各カードを、1つ左の列の同じ位置のカードのランク+1に変換する(左列がワイルドの位置・左列の枚数が足りない位置は対象外)。左端の列を選んだ場合は右端の列を参照する' },
     heki: { name: '壁', desc: '場札全体で♠→♥→♣→♦→♠の順にスートを循環変換する(ワイルドは対象外)' },

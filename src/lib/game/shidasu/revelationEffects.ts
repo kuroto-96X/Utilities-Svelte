@@ -254,6 +254,8 @@ export function applyRevelationEffect(
       return targetCol === null ? { wave, deckComposition } : convertColumnToRandomRank(wave, deckComposition, targetCol, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rand)
     case 'jo':
       return targetCol === null ? { wave, deckComposition } : convertColumnToRandomRank(wave, deckComposition, targetCol, [11, 12, 13], rand)
+    case 'kyo':
+      return { wave, deckComposition }
     case 'aya':
       return targetCol === null ? { wave, deckComposition } : addWildToColumnTop(wave, deckComposition, targetCol)
     case 'shitsu':
