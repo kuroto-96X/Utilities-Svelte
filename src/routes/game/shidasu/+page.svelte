@@ -569,7 +569,12 @@
       <span class="text-yellow-300 font-bold">{params.currency.symbol}{run.currency}</span>
     </span>
     {#if isBossWave(params, run.waveIndex)}
-      <span class="font-black text-rose-400">{upcomingBossInfo.label}({upcomingBossInfo.detail})</span>
+      <span class="flex flex-col items-end">
+        <span class="font-black text-rose-400">{upcomingBossInfo.label}({upcomingBossInfo.detail})</span>
+        {#if sabotageDetail(wave)}
+          <span class="text-rose-300/80 text-[10px]">{sabotageDetail(wave)}</span>
+        {/if}
+      </span>
     {:else}
       <span class="text-emerald-300/80">次: {upcomingBossInfo.label}({upcomingBossInfo.detail})</span>
     {/if}
@@ -1158,9 +1163,6 @@
                 </div>
                 <div class="font-bold text-slate-800">{star.name}</div>
                 <div class="text-[11px] text-slate-500 mt-0.5">{starRestrictionDetail(star) || '制限なし'}</div>
-                {#if isNext && sabotageDetail(run.wave)}
-                  <div class="text-[11px] text-slate-500 mt-0.5">{sabotageDetail(run.wave)}</div>
-                {/if}
               </div>
               <div class="text-right text-[11px] text-slate-600">
                 目標 {waveTargetValue}<br />報酬 +{star.reward}
