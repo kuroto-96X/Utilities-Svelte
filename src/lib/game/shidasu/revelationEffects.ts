@@ -201,15 +201,17 @@ function wildifyRandomTableauCards(wave: WaveState, deckComposition: DeckCard[],
   return { wave: { ...wave, tableau }, deckComposition: newComposition }
 }
 
-// 天啓が現在の盤面状態で使用可能か判定する。虚(レリック付喪化)は未付喪化の所持レリックが
-// 1つ以上あるか、鬼(レリックランダム獲得)は未所持のレリックが1つ以上あるかを判定する
-// (それ以外は常に使用可)。
+// 天啓が現在の盤面状態で使用可能か判定する。wave.activeSealが自分自身(revelationOrOracle・
+// revelation・id一致)を封印中なら他の条件に関わらず常に使用不可。それ以外では、虚(レリック付喪化)は
+// 未付喪化の所持レリックが1つ以上あるか、鬼(レリックランダム獲得)は未所持のレリックが1つ以上あるかを
+// 判定する(さらにそれ以外は常に使用可)。
 export function canUseRevelation(
   _params: ShidasuParams,
   wave: WaveState,
   revelationId: RevelationId,
   relics: { id: RelicId; tsukumoka: boolean }[] = []
 ): boolean {
+  // 妨害「封印系」により対象天啓が封印中の場合は、他の条件を満たしていても使用不可にする
   if (wave.activeSeal?.kind === 'revelationOrOracle' && wave.activeSeal.ref.kind === 'revelation' && wave.activeSeal.ref.id === revelationId) return false
   if (revelationId === 'kyo') {
     return relics.some(r => !r.tsukumoka)
