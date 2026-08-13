@@ -4,6 +4,7 @@ import { DEFAULT_PARAMS } from './params'
 import { createRng } from './deck'
 import type { Card, DeckCard, WaveState, RelicId } from './types'
 import { defaultOracleLevels } from './oracles'
+import { RELIC_POOL } from './relics'
 
 function card(id: number, suit: Card['suit'], rank: Card['rank'], wild = false, deckId = id): Card {
   return { id, deckId, suit, rank, wild }
@@ -423,5 +424,23 @@ describe('canUseRevelation: 虚(レリック付喪化)', () => {
 
   test('虚以外の天啓は、レリックの所持状況に関わらず使用可', () => {
     expect(canUseRevelation(DEFAULT_PARAMS, wave, 'kaku', [])).toBe(true)
+  })
+})
+
+describe('canUseRevelation: 鬼(レリックランダム獲得)', () => {
+  const wave = baseWave({ tableau: [[card(1, '♠', 1)]] })
+
+  test('全レリックを所持済みなら使用不可', () => {
+    const relics = RELIC_POOL.map(id => ({ id, tsukumoka: false }))
+    expect(canUseRevelation(DEFAULT_PARAMS, wave, 'oni', relics)).toBe(false)
+  })
+
+  test('未所持のレリックが1つ以上あれば使用可', () => {
+    const relics = [{ id: 'manekiNeko' as const, tsukumoka: false }]
+    expect(canUseRevelation(DEFAULT_PARAMS, wave, 'oni', relics)).toBe(true)
+  })
+
+  test('レリックを1つも所持していなければ使用可', () => {
+    expect(canUseRevelation(DEFAULT_PARAMS, wave, 'oni', [])).toBe(true)
   })
 })
