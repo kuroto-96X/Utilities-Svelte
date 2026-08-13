@@ -33,6 +33,7 @@
   import RoleStatusPanel from './RoleStatusPanel.svelte'
   import CardFace from './CardFace.svelte'
   import { CARD_SET_GENRE_NAMES } from '$lib/game/shidasu/cardSets'
+  import { SABOTAGE_POOL } from '$lib/game/shidasu/sabotage'
 
   const params = loadParams()
 
@@ -47,6 +48,14 @@
       if (typeof value === 'number' || typeof value === 'string') context[key] = String(value)
     }
     return star.descTemplate.replace(/\{(\w+)\}/g, (match, key) => (key in context ? context[key] : match))
+  }
+
+  // 次に発動する妨害の名前+残りターン数を1行で返す。妨害が無い(pendingSabotageIdがnull)場合は空文字。
+  function sabotageDetail(wave: WaveState | null): string {
+    if (!wave || !wave.pendingSabotageId) return ''
+    const action = SABOTAGE_POOL.find(a => a.id === wave.pendingSabotageId)
+    if (!action) return ''
+    return `次の妨害: ${action.name}(あと${wave.sabotageTurnsRemaining}ターン)`
   }
 
   // バラ売り枠の種類表示用ラベル(カードセットは福袋限定のためバラ売りには出現しない)
@@ -1149,6 +1158,9 @@
                 </div>
                 <div class="font-bold text-slate-800">{star.name}</div>
                 <div class="text-[11px] text-slate-500 mt-0.5">{starRestrictionDetail(star) || '制限なし'}</div>
+                {#if isNext && sabotageDetail(run.wave)}
+                  <div class="text-[11px] text-slate-500 mt-0.5">{sabotageDetail(run.wave)}</div>
+                {/if}
               </div>
               <div class="text-right text-[11px] text-slate-600">
                 目標 {waveTargetValue}<br />報酬 +{star.reward}
