@@ -91,6 +91,7 @@
       reward: 5,
       restrictionKind: 'none',
       descTemplate: '',
+      sabotageKind: 'all',
     })
   }
 

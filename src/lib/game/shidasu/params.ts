@@ -41,6 +41,9 @@ export interface ShidasuParams {
     // プレースホルダーを含められる({(\w+)}パターンで展開、revelationDescと同じ方式)。
     // restrictionKind==='none'のときは空文字にする。
     descTemplate: string
+    // 妨害行動の割り当て種別。noneは妨害無し、allはSABOTAGE_POOL全件が対象になる。
+    // 現状'some'相当の個別指定はサポートしない(将来拡張用にengine.ts側の型は対応済み)。
+    sabotageKind: 'none' | 'all'
   }[]
   // スプレッド(ラン開始時に選ぶ固有ルールセット)ごとの設定。目標スコア算出式
   // target(n) = waveTargetBase × waveTargetMultiplier^(n-1) の基礎値・倍率(nは通しウェーブ番号、1始まり)と、
@@ -293,14 +296,14 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     alternatingMinLen: 4,
   },
   stars: [
-    { id: 'ordinary-moon', name: '普通の衛星', waveSlot: 1, targetMultiplier: 1, reward: 3, restrictionKind: 'none', descTemplate: '' },
-    { id: 'slightly-bigger-moon', name: '少し大きな衛星', waveSlot: 2, targetMultiplier: 1.5, reward: 4, restrictionKind: 'none', descTemplate: '' },
-    { id: 'closed-loop-planet', name: '循環の閉じた荒廃惑星', waveSlot: 3, targetMultiplier: 2, reward: 5, restrictionKind: 'noLoop', descTemplate: 'A⇔Kループ禁止' },
-    { id: 'sealed-noble-planet', name: '高貴なる封印の惑星', waveSlot: 3, targetMultiplier: 2, reward: 5, restrictionKind: 'faceLock', descTemplate: '絵札はコンボ2以上でのみ取得可' },
-    { id: 'harsh-planet', name: '弱き者を拒む峻厳な惑星', waveSlot: 3, targetMultiplier: 2, reward: 5, restrictionKind: 'lowCombo', maxCombo: 2, descTemplate: '{maxCombo}コンボ以下で無得点' },
-    { id: 'twisted-odd-planet', name: '奇数を忌む歪んだ惑星', waveSlot: 3, targetMultiplier: 2, reward: 5, restrictionKind: 'oddCombo', descTemplate: 'コンボが奇数のとき無得点' },
-    { id: 'exiling-color-planet', name: '排斥の色殺す惑星', waveSlot: 3, targetMultiplier: 2, reward: 5, restrictionKind: 'suit', descTemplate: '{suit}で無得点' },
-    { id: 'regicide-planet', name: '王侯を打ち滅ぼす惑星', waveSlot: 3, targetMultiplier: 2, reward: 5, restrictionKind: 'face', descTemplate: '絵札(J・Q・K)で無得点' },
+    { id: 'ordinary-moon', name: '普通の衛星', waveSlot: 1, targetMultiplier: 1, reward: 3, restrictionKind: 'none', descTemplate: '', sabotageKind: 'none' },
+    { id: 'slightly-bigger-moon', name: '少し大きな衛星', waveSlot: 2, targetMultiplier: 1.5, reward: 4, restrictionKind: 'none', descTemplate: '', sabotageKind: 'none' },
+    { id: 'closed-loop-planet', name: '循環の閉じた荒廃惑星', waveSlot: 3, targetMultiplier: 2, reward: 5, restrictionKind: 'noLoop', descTemplate: 'A⇔Kループ禁止', sabotageKind: 'all' },
+    { id: 'sealed-noble-planet', name: '高貴なる封印の惑星', waveSlot: 3, targetMultiplier: 2, reward: 5, restrictionKind: 'faceLock', descTemplate: '絵札はコンボ2以上でのみ取得可', sabotageKind: 'all' },
+    { id: 'harsh-planet', name: '弱き者を拒む峻厳な惑星', waveSlot: 3, targetMultiplier: 2, reward: 5, restrictionKind: 'lowCombo', maxCombo: 2, descTemplate: '{maxCombo}コンボ以下で無得点', sabotageKind: 'all' },
+    { id: 'twisted-odd-planet', name: '奇数を忌む歪んだ惑星', waveSlot: 3, targetMultiplier: 2, reward: 5, restrictionKind: 'oddCombo', descTemplate: 'コンボが奇数のとき無得点', sabotageKind: 'all' },
+    { id: 'exiling-color-planet', name: '排斥の色殺す惑星', waveSlot: 3, targetMultiplier: 2, reward: 5, restrictionKind: 'suit', descTemplate: '{suit}で無得点', sabotageKind: 'all' },
+    { id: 'regicide-planet', name: '王侯を打ち滅ぼす惑星', waveSlot: 3, targetMultiplier: 2, reward: 5, restrictionKind: 'face', descTemplate: '絵札(J・Q・K)で無得点', sabotageKind: 'all' },
   ],
   spreads: {
     fool: { name: '愚者', desc: '特殊ルールなし', initialExtraTableauRows: 0, waveTargetBase: 2000, waveTargetMultiplier: 1.5 },

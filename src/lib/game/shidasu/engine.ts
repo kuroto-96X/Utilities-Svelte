@@ -941,7 +941,7 @@ function rollStarForSlot(params: ShidasuParams, waveSlot: 1 | 2 | 3, rand: () =>
     targetMultiplier: entry.targetMultiplier,
     reward: entry.reward,
     restriction: toStarRestriction(entry, rand),
-    sabotage: { kind: 'none' },
+    sabotage: entry.sabotageKind === 'all' ? { kind: 'all' } : { kind: 'none' },
     descTemplate: entry.descTemplate,
   }
 }

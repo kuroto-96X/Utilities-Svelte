@@ -4754,3 +4754,20 @@ describe('useOracle(所持神託の消費、playingフェーズ限定)', () => {
     expect(useOracle(DEFAULT_PARAMS, run, 'flush')).toBe(run)
   })
 })
+
+describe('星のsabotage割り当て', () => {
+  test('waveSlot3の星は全てsabotage: {kind: "all"}を持つ', () => {
+    const stars = DEFAULT_PARAMS.stars.filter(s => s.waveSlot === 3)
+    expect(stars.length).toBeGreaterThan(0)
+    for (const entry of stars) {
+      expect(entry.sabotageKind).toBe('all')
+    }
+  })
+  test('waveSlot1・2の星はsabotage: {kind: "none"}を持つ', () => {
+    const stars = DEFAULT_PARAMS.stars.filter(s => s.waveSlot !== 3)
+    expect(stars.length).toBeGreaterThan(0)
+    for (const entry of stars) {
+      expect(entry.sabotageKind).toBe('none')
+    }
+  })
+})
