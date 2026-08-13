@@ -337,6 +337,11 @@ export type BossScoreLock =
   | { kind: 'face'; tierLabel: string }
   | null
 
+// role封印・revelationOrOracle封印(オラクル選択時)によって、playCard/drawStockが役ボーナス・
+// 神託レベルの計算をどう扱うかを表す。zeroRolesに含まれる役はレベル0(=無効)扱い、
+// oracleBaselineRoleに一致する役はレベル1(封印前の基準値)扱いになる。
+export type SealedRoleEffect = { zeroRoles: RoleName[]; oracleBaselineRole: RoleName | null }
+
 // scoreLockの種別ごとの無得点化条件を判定する共通ヘルパー。playCard/drawStockの両方から使う。
 function isBossScoreLocked(scoreLock: NonNullable<BossScoreLock>, effectiveCombo: number, card: Card): boolean {
   switch (scoreLock.kind) {
@@ -372,7 +377,7 @@ export function playCard(
   rand: () => number = Math.random,
   scoreLock: BossScoreLock = null,
   rowIndex?: number,
-  sealedRoleEffect: { zeroRoles: RoleName[]; oracleBaselineRole: RoleName | null } = { zeroRoles: [], oracleBaselineRole: null }
+  sealedRoleEffect: SealedRoleEffect = { zeroRoles: [], oracleBaselineRole: null }
 ): { wave: WaveState; deckComposition: DeckCard[] } {
   if (wave.status !== 'playing') return { wave, deckComposition }
   const col = wave.tableau[colIndex]
@@ -719,7 +724,7 @@ export function drawStock(
   modifier: StageModifier = 'none',
   rand: () => number = Math.random,
   scoreLock: BossScoreLock = null,
-  sealedRoleEffect: { zeroRoles: RoleName[]; oracleBaselineRole: RoleName | null } = { zeroRoles: [], oracleBaselineRole: null }
+  sealedRoleEffect: SealedRoleEffect = { zeroRoles: [], oracleBaselineRole: null }
 ): { wave: WaveState; deckComposition: DeckCard[] } {
   if (wave.status !== 'playing') return { wave, deckComposition }
   if (wave.stock.length === 0) return { wave, deckComposition }
@@ -1160,6 +1165,23 @@ export function finishShop(params: ShidasuParams, run: RunState, seed?: number):
   const star = run.stageStars[run.waveIndex]
   const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX, run.echoX, run.shootingStarN, star?.sabotage ?? { kind: 'none' })
   return { ...run, phase: 'playing', wave, waveGeneration: run.waveGeneration + 1, deckComposition, shop: null }
+}
+
+// wave.activeSealがtalisman封印の場合、そのIDをitemsから除外した実効リストを返す。
+// playCard/drawStockへ渡すitemsをこれに差し替えることで、所持表示(run.items)自体は
+// 変更せずに効果だけを無視させる。
+function resolveEffectiveItems(items: ItemId[], activeSeal: WaveState['activeSeal']): ItemId[] {
+  if (activeSeal?.kind === 'talisman') return items.filter(id => id !== activeSeal.id)
+  return items
+}
+
+// wave.activeSealから、playCard/drawStockに渡すsealedRoleEffectを導出する。
+// role封印は該当役のボーナスを0倍に、revelationOrOracle封印でoracleが選ばれていれば
+// 該当役のレベル効果だけを1倍(封印前の基準値)に戻す。
+function resolveSealedRoleEffect(activeSeal: WaveState['activeSeal']): SealedRoleEffect {
+  if (activeSeal?.kind === 'role') return { zeroRoles: activeSeal.names, oracleBaselineRole: null }
+  if (activeSeal?.kind === 'revelationOrOracle' && activeSeal.ref.kind === 'oracle') return { zeroRoles: [], oracleBaselineRole: activeSeal.ref.id }
+  return { zeroRoles: [], oracleBaselineRole: null }
 }
 
 // 妨害行動を1つ発動させ、効果を適用した上で次の妨害を再抽選する。
@@ -1816,8 +1838,14 @@ export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: nu
   const target = waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars)
   const modifier = stageModifierFor(params, run)
   const scoreLock = bossScoreLockFor(params, run)
-  const { wave, deckComposition } = playCard(params, run.wave, modifier, run.items, target, colIndex, run.deckComposition, rand, scoreLock, rowIndex)
-  return { ...run, wave, deckComposition }
+  const effectiveItems = resolveEffectiveItems(run.items, run.wave.activeSeal)
+  const sealedRoleEffect = resolveSealedRoleEffect(run.wave.activeSeal)
+  const { wave, deckComposition } = playCard(params, run.wave, modifier, effectiveItems, target, colIndex, run.deckComposition, rand, scoreLock, rowIndex, sealedRoleEffect)
+  let next: RunState = { ...run, wave, deckComposition }
+  if (wave.pendingSabotageId && wave.sabotageTurnsRemaining <= 0) {
+    next = triggerSabotage(params, next, wave.pendingSabotageId, rand)
+  }
+  return next
 }
 
 export function applyDrawStock(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
@@ -1825,8 +1853,14 @@ export function applyDrawStock(params: ShidasuParams, run: RunState, rand: () =>
   const target = waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars)
   const modifier = stageModifierFor(params, run)
   const scoreLock = bossScoreLockFor(params, run)
-  const { wave, deckComposition } = drawStock(params, run.wave, run.items, target, run.deckComposition, modifier, rand, scoreLock)
-  return { ...run, wave, deckComposition }
+  const effectiveItems = resolveEffectiveItems(run.items, run.wave.activeSeal)
+  const sealedRoleEffect = resolveSealedRoleEffect(run.wave.activeSeal)
+  const { wave, deckComposition } = drawStock(params, run.wave, effectiveItems, target, run.deckComposition, modifier, rand, scoreLock, sealedRoleEffect)
+  let next: RunState = { ...run, wave, deckComposition }
+  if (wave.pendingSabotageId && wave.sabotageTurnsRemaining <= 0) {
+    next = triggerSabotage(params, next, wave.pendingSabotageId, rand)
+  }
+  return next
 }
 
 // 手詰まり判定と、手詰まり時の護符(治癒・不屈)による救済処理を行う。
@@ -1863,8 +1897,14 @@ export function applyStuckCheck(params: ShidasuParams, run: RunState, rand: () =
   if (resetWave.stock.length > 0) {
     const stageTarget = waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars)
     const scoreLock = bossScoreLockFor(params, run)
-    const drawResult = drawStock(params, resetWave, run.items, stageTarget, run.deckComposition, modifier, rand, scoreLock)
-    return { ...run, wave: drawResult.wave, deckComposition: drawResult.deckComposition }
+    const effectiveItems = resolveEffectiveItems(run.items, resetWave.activeSeal)
+    const sealedRoleEffect = resolveSealedRoleEffect(resetWave.activeSeal)
+    const drawResult = drawStock(params, resetWave, effectiveItems, stageTarget, run.deckComposition, modifier, rand, scoreLock, sealedRoleEffect)
+    let next: RunState = { ...run, wave: drawResult.wave, deckComposition: drawResult.deckComposition }
+    if (drawResult.wave.pendingSabotageId && drawResult.wave.sabotageTurnsRemaining <= 0) {
+      next = triggerSabotage(params, next, drawResult.wave.pendingSabotageId, rand)
+    }
+    return next
   }
 
   return { ...run, wave: markStuck(resetWave) }

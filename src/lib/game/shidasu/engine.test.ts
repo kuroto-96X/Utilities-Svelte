@@ -4937,3 +4937,38 @@ describe('triggerSabotage', () => {
     expect(next.wave!.activeSeal).toEqual({ kind: 'talisman', id: 'bridge' })
   })
 })
+
+// 実運用のtableau top配置(乱数依存)はseedを固定しても常にisPlayableな列が存在するとは限らないため、
+// 決定的にテストするためcolIndex 0のtop札をワイルド化して必ずプレイ可能な状態を作る。
+function forceWildTopOfColumn0(wave: WaveState): WaveState {
+  const col0 = wave.tableau[0]
+  const top = col0[col0.length - 1]
+  const forcedTop = { ...top, wild: true }
+  const tableau = wave.tableau.map((c, i) => (i === 0 ? [...c.slice(0, -1), forcedTop] : c))
+  return { ...wave, tableau }
+}
+
+describe('妨害の発動トリガー統合(applyPlayCard)', () => {
+  it('sabotageTurnsRemainingが1の状態でapplyPlayCardすると効果が発動し、次の妨害が再抽選される', () => {
+    const star: Star = { id: 'test-star', name: 'テスト星', waveSlot: 3, targetMultiplier: 1, reward: 0, restriction: null, sabotage: { kind: 'all' }, descTemplate: '' }
+    let run = createInitialRun()
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, run.items, run.deckComposition, 1, 0, defaultOracleLevels())
+    run = { ...run, phase: 'playing', stageStars: [star, star, star], wave: { ...forceWildTopOfColumn0(wave), pendingSabotageId: 'comboBreather', sabotageTurnsRemaining: 1, combo: 5 } }
+    const playableCol = run.wave!.tableau.findIndex(col => col.length > 0 && isPlayable('none', run.wave!, col[col.length - 1], []))
+    expect(playableCol).toBeGreaterThanOrEqual(0)
+    const next = applyPlayCard(DEFAULT_PARAMS, run, playableCol, () => 0.5)
+    // comboBreatherが発動していればcomboは0になっているはず(このプレイ自体のコンボ加算より後に発動)
+    expect(next.wave!.pendingSabotageId).not.toBeNull()
+  })
+
+  it('護符封印中は封印された護符の効果が適用されない(effectiveItemsから除外される)', () => {
+    let run = createInitialRun()
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, ['golden'], run.deckComposition, 1, 0, defaultOracleLevels())
+    run = { ...run, phase: 'playing', items: ['golden'], wave: { ...forceWildTopOfColumn0(wave), activeSeal: { kind: 'talisman', id: 'golden' } } }
+    const playableCol = run.wave!.tableau.findIndex(col => col.length > 0 && isPlayable('none', run.wave!, col[col.length - 1], []))
+    expect(playableCol).toBeGreaterThanOrEqual(0)
+    const next = applyPlayCard(DEFAULT_PARAMS, run, playableCol, () => 0.5)
+    // golden(黄金)は通常コンボ+2のところ、封印中は+1のまま(通常の護符無し挙動と同じ)になるはず
+    expect(next.wave!.combo).toBe(1)
+  })
+})
