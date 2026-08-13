@@ -229,6 +229,7 @@ function applyEhwaz(wave: WaveState): WaveState {
 // 秘儀が現在の盤面状態で使用可能か判定する(捨て札・山札の枚数不足、チェーン長不足などの条件)。
 // UIのボタンdisabled判定に使う。
 export function canUseRite(_params: ShidasuParams, wave: WaveState, riteId: RiteId): boolean {
+  if (wave.activeSeal?.kind === 'rite' && wave.activeSeal.id === riteId) return false
   const cols = wave.tableau.length
   switch (riteId) {
     case 'gebo':

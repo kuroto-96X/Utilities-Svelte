@@ -424,3 +424,21 @@ describe('riteEffects', () => {
     expect(next.ehwazActiveThisWave).toBe(true)
   })
 })
+
+describe('canUseRite: 封印中の秘儀は使用不可', () => {
+  test('activeSealがriteでidが一致する場合、他の条件を満たしていてもfalse', () => {
+    const wave = baseWave({
+      stock: [card(10, '♥', 1)],
+      activeSeal: { kind: 'rite', id: 'ansuz' },
+    })
+    expect(canUseRite(DEFAULT_PARAMS, wave, 'ansuz')).toBe(false)
+  })
+
+  test('activeSealが異なる秘儀(id不一致)なら通常通り判定する', () => {
+    const wave = baseWave({
+      stock: [card(10, '♥', 1)],
+      activeSeal: { kind: 'rite', id: 'othala' },
+    })
+    expect(canUseRite(DEFAULT_PARAMS, wave, 'ansuz')).toBe(true)
+  })
+})

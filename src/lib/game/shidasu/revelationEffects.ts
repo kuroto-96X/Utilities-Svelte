@@ -206,10 +206,11 @@ function wildifyRandomTableauCards(wave: WaveState, deckComposition: DeckCard[],
 // (それ以外は常に使用可)。
 export function canUseRevelation(
   _params: ShidasuParams,
-  _wave: WaveState,
+  wave: WaveState,
   revelationId: RevelationId,
   relics: { id: RelicId; tsukumoka: boolean }[] = []
 ): boolean {
+  if (wave.activeSeal?.kind === 'revelationOrOracle' && wave.activeSeal.ref.kind === 'revelation' && wave.activeSeal.ref.id === revelationId) return false
   if (revelationId === 'kyo') {
     return relics.some(r => !r.tsukumoka)
   }

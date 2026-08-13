@@ -447,3 +447,29 @@ describe('canUseRevelation: 鬼(レリックランダム獲得)', () => {
     expect(canUseRevelation(DEFAULT_PARAMS, wave, 'oni', [])).toBe(true)
   })
 })
+
+describe('canUseRevelation: 封印中の天啓・神託は使用不可', () => {
+  test('activeSealがrevelationOrOracleでrevelationのidが一致する場合、false', () => {
+    const sealedWave = baseWave({
+      tableau: [[card(1, '♠', 1)]],
+      activeSeal: { kind: 'revelationOrOracle', ref: { kind: 'revelation', id: 'kaku' } },
+    })
+    expect(canUseRevelation(DEFAULT_PARAMS, sealedWave, 'kaku', [])).toBe(false)
+  })
+
+  test('封印対象と異なるidなら通常通り判定する', () => {
+    const sealedWave = baseWave({
+      tableau: [[card(1, '♠', 1)]],
+      activeSeal: { kind: 'revelationOrOracle', ref: { kind: 'revelation', id: 'kaku' } },
+    })
+    expect(canUseRevelation(DEFAULT_PARAMS, sealedWave, 'kou', [])).toBe(true)
+  })
+
+  test('activeSealがoracle向けの封印なら、同idのrevelationには影響しない', () => {
+    const sealedWave = baseWave({
+      tableau: [[card(1, '♠', 1)]],
+      activeSeal: { kind: 'revelationOrOracle', ref: { kind: 'oracle', id: 'flush' } },
+    })
+    expect(canUseRevelation(DEFAULT_PARAMS, sealedWave, 'kaku', [])).toBe(true)
+  })
+})
