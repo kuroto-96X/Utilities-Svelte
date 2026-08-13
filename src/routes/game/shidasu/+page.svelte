@@ -397,6 +397,9 @@
     | null
   >(null)
 
+  // 天啓「虚」使用時、付喪化させるレリックを選ぶオーバーレイの表示状態
+  let pendingRelicTargetRevelationId = $state<RevelationId | null>(null)
+
   // ショップ系フェーズでの天啓ターゲット選択用の使い捨てプレビュー盤面。非nullの間、
   // pendingRevelationTargetのコラム選択はrun.waveではなくこちらを対象に行う。
   // playingフェーズ中の保有天啓使用(source: 'held')ではセットされない。
@@ -439,6 +442,10 @@
   }
 
   function handleUseRevelationClick(revelationId: RevelationId) {
+    if (revelationId === 'kyo') {
+      pendingRelicTargetRevelationId = 'kyo'
+      return
+    }
     if (revelationNeedsTarget(revelationId)) {
       pendingRevelationTarget = { revelationId, source: 'held' }
       // 既にプレビュー表示中(天啓福袋選択中)なら再生成しない。再生成すると場札が
@@ -463,6 +470,18 @@
     }
     run = useRevelation(params, run, revelationId, null)
     if (run.phase === 'playing') afterAction()
+  }
+
+  function handleConfirmRelicTarget(relicId: RelicId) {
+    if (!pendingRelicTargetRevelationId) return
+    const revelationId = pendingRelicTargetRevelationId
+    pendingRelicTargetRevelationId = null
+    run = useRevelation(params, run, revelationId, null, Math.random, relicId)
+    if (run.phase === 'playing') afterAction()
+  }
+
+  function handleCancelRelicTarget() {
+    pendingRelicTargetRevelationId = null
   }
 
   function handleCancelRevelationTarget() {
@@ -728,6 +747,37 @@
         onTargetColumn={handleTargetColumn}
         chainAreaExtra={revelationSelectExtra}
       />
+    </div>
+  </div>
+{/if}
+
+{#if pendingRelicTargetRevelationId}
+  <div class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-lg p-4 max-w-md w-full space-y-3">
+      <p class="text-sm font-bold text-slate-200">付喪化させるレリックを選んでください</p>
+      {#if run.relics.filter(r => !r.tsukumoka).length === 0}
+        <p class="text-xs text-slate-400">付喪化できるレリックがありません。</p>
+      {:else}
+        <div class="flex flex-wrap gap-2">
+          {#each run.relics.filter(r => !r.tsukumoka) as relic (relic.id)}
+            <button
+              type="button"
+              onclick={() => handleConfirmRelicTarget(relic.id)}
+              class="text-xs bg-amber-900 text-amber-200/90 border border-amber-600/40 rounded px-2 py-1 hover:bg-amber-800"
+              title={relicDesc(relic.id, params)}
+            >
+              {relicName(relic.id, params)}
+            </button>
+          {/each}
+        </div>
+      {/if}
+      <button
+        type="button"
+        onclick={handleCancelRelicTarget}
+        class="text-xs px-3 py-1.5 rounded border border-slate-600 text-slate-300 hover:bg-slate-800"
+      >
+        キャンセル
+      </button>
     </div>
   </div>
 {/if}
