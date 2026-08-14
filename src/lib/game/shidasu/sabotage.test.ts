@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest'
 import { SABOTAGE_POOL, eligibleSabotageIds, rollSabotage } from './sabotage'
 
 describe('SABOTAGE_POOL', () => {
-  it('25件・ID重複無し・intervalTurnsが全て正の整数', () => {
-    expect(SABOTAGE_POOL).toHaveLength(25)
+  it('26件・ID重複無し・intervalTurnsが全て正の整数', () => {
+    expect(SABOTAGE_POOL).toHaveLength(26)
     const ids = SABOTAGE_POOL.map(a => a.id)
-    expect(new Set(ids).size).toBe(25)
+    expect(new Set(ids).size).toBe(26)
     for (const action of SABOTAGE_POOL) {
       expect(Number.isInteger(action.intervalTurns)).toBe(true)
       expect(action.intervalTurns).toBeGreaterThan(0)

@@ -249,6 +249,14 @@ function applyRevelationOracleForceActivate({ params, run, wave, rand, useRevela
   return { wave: { ...used.wave!, activeSeal: null }, run: used }
 }
 
+function applyTsukumokaRelease({ run, rand }: SabotageContext): SabotageResult {
+  const tsukumokaRelics = run.relics.filter(r => r.tsukumoka)
+  if (tsukumokaRelics.length === 0) return {}
+  const target = tsukumokaRelics[Math.floor(rand() * tsukumokaRelics.length)]
+  const relics = run.relics.map(r => (r.id === target.id ? { ...r, tsukumoka: false } : r))
+  return { run: { relics } }
+}
+
 const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => SabotageResult> = {
   stockPurge: applyStockPurge,
   columnReturn: applyColumnReturn,
@@ -275,6 +283,7 @@ const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => Sabo
   talismanShuffle: applyTalismanShuffle,
   revelationOracleConfiscate: applyRevelationOracleConfiscate,
   revelationOracleForceActivate: applyRevelationOracleForceActivate,
+  tsukumokaRelease: applyTsukumokaRelease,
 }
 
 export function applySabotageEffect(id: SabotageActionId, ctx: SabotageContext): SabotageResult {

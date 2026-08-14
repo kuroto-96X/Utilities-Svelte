@@ -5190,6 +5190,18 @@ describe('triggerSabotage', () => {
     expect(next.oracles).toEqual(['pair'])
     expect(next.oracleLevels.pair).toBe(run.oracleLevels.pair)
   })
+
+  it('tsukumokaRelease: 付喪化済みレリックがあればランダムに1つ選び未付喪化に戻す', () => {
+    const run = runWithWave({ relics: [{ id: 'kumade', tsukumoka: true }, { id: 'fukuzasa', tsukumoka: false }] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'tsukumokaRelease', () => 0)
+    expect(next.relics).toEqual([{ id: 'kumade', tsukumoka: false }, { id: 'fukuzasa', tsukumoka: false }])
+  })
+
+  it('tsukumokaRelease: 付喪化済みレリックが無ければ何も起きない', () => {
+    const run = runWithWave({ relics: [{ id: 'fukuzasa', tsukumoka: false }] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'tsukumokaRelease', () => 0)
+    expect(next.relics).toEqual([{ id: 'fukuzasa', tsukumoka: false }])
+  })
 })
 
 // 実運用のtableau top配置(乱数依存)はseedを固定しても常にisPlayableな列が存在するとは限らないため、
