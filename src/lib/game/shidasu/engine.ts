@@ -1277,6 +1277,73 @@ export function triggerSabotage(params: ShidasuParams, run: RunState, id: Sabota
       nextWave = { ...nextWave, activeSeal: { kind: 'role', names } }
       break
     }
+    case 'stockPurgeSmall': {
+      const n = Math.min(2, wave.stock.length)
+      const purged = wave.stock.slice(wave.stock.length - n)
+      nextWave = { ...nextWave, stock: wave.stock.slice(0, wave.stock.length - n), discardPile: [...wave.discardPile, ...purged] }
+      break
+    }
+    case 'stockShuffle': {
+      const stock = [...wave.stock]
+      shuffleInPlace(stock, rand)
+      nextWave = { ...nextWave, stock }
+      break
+    }
+    case 'tableauFullReturn': {
+      const counts = wave.tableau.map(col => col.length)
+      const pool = [...wave.stock, ...wave.tableau.flat()]
+      shuffleInPlace(pool, rand)
+      let cursor = 0
+      const tableau = counts.map(n => {
+        const slice = pool.slice(cursor, cursor + n)
+        cursor += n
+        return slice
+      })
+      nextWave = { ...nextWave, tableau, stock: pool.slice(cursor) }
+      break
+    }
+    case 'tableauShuffle': {
+      const counts = wave.tableau.map(col => col.length)
+      const pool = wave.tableau.flat()
+      shuffleInPlace(pool, rand)
+      let cursor = 0
+      const tableau = counts.map(n => {
+        const slice = pool.slice(cursor, cursor + n)
+        cursor += n
+        return slice
+      })
+      nextWave = { ...nextWave, tableau }
+      break
+    }
+    case 'chainPartialDiscard': {
+      const removeCount = Math.min(2, Math.max(0, wave.chain.length - 1))
+      const removed = wave.chain.slice(0, removeCount)
+      nextWave = {
+        ...nextWave,
+        chain: wave.chain.slice(removeCount),
+        chainOrigin: wave.chainOrigin.slice(removeCount),
+        discardPile: [...wave.discardPile, ...removed],
+      }
+      break
+    }
+    case 'comboReduce': {
+      nextWave = { ...nextWave, combo: Math.max(0, wave.combo - 3) }
+      break
+    }
+    case 'talismanConfiscate': {
+      if (run.items.length > 0) {
+        const idx = Math.floor(rand() * run.items.length)
+        nextRun = { ...nextRun, items: [...run.items.slice(0, idx), ...run.items.slice(idx + 1)] }
+      }
+      break
+    }
+    case 'riteConfiscate': {
+      if (run.rites.length > 0) {
+        const idx = Math.floor(rand() * run.rites.length)
+        nextRun = { ...nextRun, rites: [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)] }
+      }
+      break
+    }
   }
 
   const star = nextRun.stageStars[nextRun.waveIndex]

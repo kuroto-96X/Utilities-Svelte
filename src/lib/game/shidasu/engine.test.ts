@@ -4923,6 +4923,84 @@ describe('triggerSabotage', () => {
     expect((next.wave!.activeSeal as { kind: 'role'; names: RoleName[] }).names).toHaveLength(2)
   })
 
+  it('stockPurgeSmall: 山札の上から2枚を捨て札に置く', () => {
+    const run = runWithWave()
+    const stockBefore = run.wave!.stock.length
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'stockPurgeSmall', () => 0)
+    expect(next.wave!.stock.length).toBe(stockBefore - 2)
+    expect(next.wave!.discardPile.length).toBe(2)
+  })
+
+  it('stockShuffle: 山札の枚数は変わらない', () => {
+    const run = runWithWave()
+    const stockBefore = run.wave!.stock.length
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'stockShuffle', () => 0)
+    expect(next.wave!.stock.length).toBe(stockBefore)
+  })
+
+  it('tableauFullReturn: 場札の各列の枚数は変わらず、山札の総数(山札+場札)も変わらない', () => {
+    const run = runWithWave()
+    const colLengthsBefore = run.wave!.tableau.map(c => c.length)
+    const totalBefore = run.wave!.stock.length + run.wave!.tableau.flat().length
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'tableauFullReturn', () => 0)
+    expect(next.wave!.tableau.map(c => c.length)).toEqual(colLengthsBefore)
+    expect(next.wave!.stock.length + next.wave!.tableau.flat().length).toBe(totalBefore)
+  })
+
+  it('tableauShuffle: 場札の各列の枚数は変わらず、山札の枚数も変わらない', () => {
+    const run = runWithWave()
+    const colLengthsBefore = run.wave!.tableau.map(c => c.length)
+    const stockBefore = run.wave!.stock.length
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'tableauShuffle', () => 0)
+    expect(next.wave!.tableau.map(c => c.length)).toEqual(colLengthsBefore)
+    expect(next.wave!.stock.length).toBe(stockBefore)
+  })
+
+  it('chainPartialDiscard: チェーン先頭から2枚が捨て札に送られ、コンボは維持される', () => {
+    const run = runWithWave({}, {
+      combo: 3,
+      chain: [
+        { id: 1, deckId: 1, suit: '♠', rank: 1, wild: false },
+        { id: 2, deckId: 2, suit: '♠', rank: 2, wild: false },
+        { id: 3, deckId: 3, suit: '♠', rank: 3, wild: false },
+      ],
+      chainOrigin: ['draw', 'play', 'play'],
+    })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'chainPartialDiscard', () => 0)
+    expect(next.wave!.chain).toHaveLength(1)
+    expect(next.wave!.chain[0].id).toBe(3)
+    expect(next.wave!.discardPile).toHaveLength(2)
+    expect(next.wave!.combo).toBe(3)
+  })
+
+  it('chainPartialDiscard: チェーンが1枚以下なら基準カードは残す(何も削れない)', () => {
+    const run = runWithWave({}, { chain: [{ id: 1, deckId: 1, suit: '♠', rank: 1, wild: false }], chainOrigin: ['draw'] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'chainPartialDiscard', () => 0)
+    expect(next.wave!.chain).toHaveLength(1)
+    expect(next.wave!.discardPile).toHaveLength(0)
+  })
+
+  it('comboReduce: コンボ数を3減らす(0未満にしない)', () => {
+    const run = runWithWave({}, { combo: 5 })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'comboReduce', () => 0)
+    expect(next.wave!.combo).toBe(2)
+    const runLow = runWithWave({}, { combo: 1 })
+    const nextLow = triggerSabotage(DEFAULT_PARAMS, runLow, 'comboReduce', () => 0)
+    expect(nextLow.wave!.combo).toBe(0)
+  })
+
+  it('talismanConfiscate: 所持護符からランダムに1つ選び完全に失う', () => {
+    const run = runWithWave({ items: ['bridge', 'grace'] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'talismanConfiscate', () => 0)
+    expect(next.items).toEqual(['grace'])
+  })
+
+  it('riteConfiscate: 所持秘儀からランダムに1つ選び効果無しで消費する', () => {
+    const run = runWithWave({ rites: ['gebo', 'fehu'] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteConfiscate', () => 0)
+    expect(next.rites).toEqual(['fehu'])
+  })
+
   it('効果適用後、次の妨害が再抽選される(星がsabotage: allの場合)', () => {
     const star: Star = { id: 'test-star', name: 'テスト星', waveSlot: 3, targetMultiplier: 1, reward: 0, restriction: null, sabotage: { kind: 'all' }, descTemplate: '' }
     const run = runWithWave({ stageStars: [star, star, star] })
