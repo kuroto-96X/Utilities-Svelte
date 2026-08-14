@@ -5018,6 +5018,8 @@ describe('triggerSabotage', () => {
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'chainShuffle', rand)
     expect(next.wave!.chain).toHaveLength(3)
     expect(next.wave!.chainOrigin).toHaveLength(3)
+    // 実際に並びが入れ替わっていること(no-op実装を弾くための検証)
+    expect(next.wave!.chain.map(c => c.id)).not.toEqual([1, 2, 3])
     // シャッフル後の末尾が新しい基準カードになっていること
     const newLast = next.wave!.chain[next.wave!.chain.length - 1]
     expect(next.wave!.foundation.id).toBe(newLast.id)
