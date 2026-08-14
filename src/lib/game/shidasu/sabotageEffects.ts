@@ -3,7 +3,7 @@ import type { SabotageActionId, WaveState, RunState, Card, HeldRevelationOrOracl
 import type { ShidasuParams } from './params'
 import { shuffleInPlace, rollOffer } from './deck'
 import { ORACLE_POOL } from './oracles'
-import { applyRiteEffect, canUseRite } from './riteEffects'
+import { canUseRite } from './riteEffects'
 import { resetComboFields } from './waveReset'
 
 export interface SabotageContext {
@@ -188,18 +188,18 @@ function applyComboCap({ wave }: SabotageContext): SabotageResult {
   return { wave: { activeSeal: { kind: 'comboCap', max: wave.combo } } }
 }
 
-// 既存のtriggerSabotage実装と同じ理由で、applyRiteEffectが返すactivatedWaveは元のwave.activeSeal
-// を引き継ぐため、明示的に`activeSeal: null`で上書きする(riteForceActivateは常に封印を残さない)。
-function applyRiteForceActivate({ params, run, wave, rand }: SabotageContext): SabotageResult {
+// useRiteが返す完全なRunStateには変更後のwaveも含まれる(果断・星霜の加算・recentUsedRiteIds
+// の更新も含めて、通常の秘儀使用と全く同じ処理をそのまま適用する)。useRiteはwave.activeSealを
+// 引き継いだままの`wave`をベースに効果を適用するため、返ってきたwaveのactiveSealを明示的に
+// nullで上書きする(riteForceActivateは常に封印を残さない、既存のtriggerSabotage全体の設計と同じ理由)。
+// runにはused(useRiteが返す完全なRunState)をそのまま渡す。used.waveはtriggerSabotage側の
+// 合成処理で最終的にnextWaveに上書きされるため無害。
+function applyRiteForceActivate({ params, run, wave, rand, useRite }: SabotageContext): SabotageResult {
   const usable = run.rites.filter(riteId => canUseRite(params, wave, riteId))
   if (usable.length === 0) return {}
   const target = usable[Math.floor(rand() * usable.length)]
-  const activatedWave = applyRiteEffect(params, wave, target, rand)
-  const idx = run.rites.indexOf(target)
-  return {
-    wave: { ...activatedWave, activeSeal: null },
-    run: { rites: [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)] },
-  }
+  const used = useRite(params, run, target, rand)
+  return { wave: { ...used.wave!, activeSeal: null }, run: used }
 }
 
 const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => SabotageResult> = {

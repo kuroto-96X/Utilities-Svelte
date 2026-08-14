@@ -5063,10 +5063,11 @@ describe('triggerSabotage', () => {
     expect(next.wave!.combo).toBe(4)
   })
 
-  it('riteForceActivate: 使用可能な秘儀からランダムに1つ選び即座に発動して消費する', () => {
-    const run = runWithWave({ rites: ['raidho'] })
+  it('riteForceActivate: 使用可能な秘儀からランダムに1つ選び即座に発動して消費する(useRiteと同じ結果になる)', () => {
+    const run = runWithWave({ items: ['discretion'], rites: ['raidho'] })
     // raidhoは場札に非絵札・非ワイルドがあれば常にcanUseRiteを満たす(dealされた標準デッキなら通常存在する)
     const beforeStockIds = run.wave!.stock.map(c => c.id).sort((a, b) => a - b)
+    const beforeDiscretionN = run.wave!.discretionN
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteForceActivate', () => 0)
     expect(next.rites).toEqual([])
     // 秘儀の消費だけでなく、raidhoの効果(場札の非絵札・非ワイルドを山札と入れ替える)が
@@ -5074,6 +5075,10 @@ describe('triggerSabotage', () => {
     // 適用されないまま、という不具合を検出するため)
     const afterStockIds = next.wave!.stock.map(c => c.id).sort((a, b) => a - b)
     expect(afterStockIds).not.toEqual(beforeStockIds)
+    // useRite経由になったため、果断(discretion)所持時は星霜Nが加算される
+    expect(next.wave!.discretionN).toBeGreaterThan(beforeDiscretionN)
+    // 秘儀回帰の履歴にも残る
+    expect(next.recentUsedRiteIds).toEqual(['raidho'])
   })
 
   it('riteForceActivate: 使用可能な秘儀が無ければ何も起きない', () => {
