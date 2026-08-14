@@ -2716,6 +2716,22 @@ describe('resolveWaveEnd', () => {
     expect(next.currency).toBe(run.currency + 20 + Math.floor(10 / 5) * DEFAULT_PARAMS.relics.juzu.n)
   })
 
+  test('rewardPenaltyが設定されていれば、星のrewardから減算される(レリックボーナスは減算後の額を基準にしても変わらない)', () => {
+    const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' }
+    const stageStars = [noRewardStar, noRewardStar, rewardStar]
+    const run = endedRun({ waveIndex: 2, stageStars, rewardPenalty: 6 }, waveTarget(DEFAULT_PARAMS, 0, 2, stageStars))
+    const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
+    expect(next.currency).toBe(run.currency + (20 - 6))
+  })
+
+  test('rewardPenaltyが星のreward以上でも、通貨が減ることは無い(下限0)', () => {
+    const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 5, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' }
+    const stageStars = [noRewardStar, noRewardStar, rewardStar]
+    const run = endedRun({ waveIndex: 2, stageStars, rewardPenalty: 999 }, waveTarget(DEFAULT_PARAMS, 0, 2, stageStars))
+    const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
+    expect(next.currency).toBe(run.currency)
+  })
+
   test('千社札所持時、星のrewardに成立役種類数に応じた追加報酬が加算される', () => {
     const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' }
     const stageStars = [noRewardStar, noRewardStar, rewardStar]
@@ -3466,7 +3482,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
       cardSetOffer: [], shopRerollCount: 0,
-      lastUsedRevelationId: null, recentUsedRiteIds: [],
+      lastUsedRevelationId: null, recentUsedRiteIds: [], rewardPenalty: 0,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
     expect(next.wave!.status).toBe('playing') // 手詰まりが解消されている
@@ -3498,7 +3514,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
       cardSetOffer: [], shopRerollCount: 0,
-      lastUsedRevelationId: null, recentUsedRiteIds: [],
+      lastUsedRevelationId: null, recentUsedRiteIds: [], rewardPenalty: 0,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run)
     expect(next.wave!.status).toBe('ended')
@@ -3524,7 +3540,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
       cardSetOffer: [], shopRerollCount: 0,
-      lastUsedRevelationId: null, recentUsedRiteIds: [],
+      lastUsedRevelationId: null, recentUsedRiteIds: [], rewardPenalty: 0,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run)
     expect(next.wave!.status).toBe('ended')
@@ -3551,7 +3567,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
       cardSetOffer: [], shopRerollCount: 0,
-      lastUsedRevelationId: null, recentUsedRiteIds: [],
+      lastUsedRevelationId: null, recentUsedRiteIds: [], rewardPenalty: 0,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run)
     expect(next.wave!.status).toBe('ended')
@@ -3579,7 +3595,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
       cardSetOffer: [], shopRerollCount: 0,
-      lastUsedRevelationId: null, recentUsedRiteIds: [],
+      lastUsedRevelationId: null, recentUsedRiteIds: [], rewardPenalty: 0,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
     expect(next.wave!.tableau[1].length).toBeGreaterThan(0) // 治癒によって列1が復活している
@@ -3606,7 +3622,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
       pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
       cardSetOffer: [], shopRerollCount: 0,
-      lastUsedRevelationId: null, recentUsedRiteIds: [],
+      lastUsedRevelationId: null, recentUsedRiteIds: [], rewardPenalty: 0,
     }
     const next = applyStuckCheck(DEFAULT_PARAMS, run, createRng(1))
     expect(next.wave!.tableau[1].length).toBeGreaterThan(0) // 治癒によって列1は復活している
@@ -5243,6 +5259,12 @@ describe('triggerSabotage', () => {
     expect(allIds).toEqual([1, 2, 3, 4])
     expect(next.wave!.tableau).toBe(beforeTableau)
     expect(next.wave!.chain).toBe(beforeChain)
+  })
+
+  it('rewardReduce: rewardPenaltyを2加算する(累積)', () => {
+    const run = runWithWave({ rewardPenalty: 3 })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'rewardReduce', () => 0)
+    expect(next.rewardPenalty).toBe(5)
   })
 })
 

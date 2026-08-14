@@ -12,7 +12,7 @@ export type SabotageActionId =
   | 'chainPartialDiscard' | 'chainShuffle' | 'comboReduce' | 'comboCap'
   | 'talismanConfiscate' | 'riteConfiscate' | 'riteForceActivate'
   | 'talismanShuffle' | 'revelationOracleConfiscate' | 'revelationOracleForceActivate' | 'tsukumokaRelease'
-  | 'discardErase' | 'discardBury'
+  | 'discardErase' | 'discardBury' | 'rewardReduce'
 
 // Star.sabotageの型。noneが既存デフォルト、allはSABOTAGE_POOL全件が対象
 // (将来候補が増えても自動的に対象へ加わる)、someは個別指定(将来の拡張用、現状未使用)。
@@ -450,4 +450,7 @@ export interface RunState {
   lastUsedRevelationId: RevelationId | null
   // 直近に使用した秘儀のID、新しい順で最大2件(秘儀回帰が参照する)。
   recentUsedRiteIds: RiteId[]
+  // 妨害「報酬減少」用: Waveクリア報酬から減算する累積量。beginRunで0に初期化され、
+  // rewardReduce発動のたびに加算される。ラン終了までリセットされない(永続的なマイナス)。
+  rewardPenalty: number
 }

@@ -976,7 +976,7 @@ export function createInitialRun(): RunState {
     oracles: [], shop: null, offerPickRemaining: 0, riteOffer: [],
     pendingNewRite: null, pendingNewRevelation: null, pendingNewOracle: null,
     cardSetOffer: [], shopRerollCount: 0,
-    lastUsedRevelationId: null, recentUsedRiteIds: [],
+    lastUsedRevelationId: null, recentUsedRiteIds: [], rewardPenalty: 0,
   }
 }
 
@@ -1022,6 +1022,7 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
     shopRerollCount: 0,
     lastUsedRevelationId: null,
     recentUsedRiteIds: [],
+    rewardPenalty: 0,
   }
 }
 
@@ -1037,7 +1038,7 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
   // stageStarsは常にwaveSlot 1/2/3から生成された3要素配列であり、params.flow.wavesPerStage(3)と
   // 対応している前提でwaveIndexをそのままインデックスとして使う。
   const currentStar = run.stageStars[run.waveIndex]
-  const baseEarned = currentStar?.reward ?? 0
+  const baseEarned = Math.max(0, (currentStar?.reward ?? 0) - run.rewardPenalty)
   const earned = baseEarned + relicWaveEndBonus(params, run, wave, baseEarned)
   const runWithCurrency = {
     ...run,

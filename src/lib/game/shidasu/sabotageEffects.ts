@@ -276,6 +276,10 @@ function applyDiscardBury({ wave, rand }: SabotageContext): SabotageResult {
   return { wave: { stock, discardPile } }
 }
 
+function applyRewardReduce({ run }: SabotageContext): SabotageResult {
+  return { run: { rewardPenalty: run.rewardPenalty + 2 } }
+}
+
 const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => SabotageResult> = {
   stockPurge: applyStockPurge,
   columnReturn: applyColumnReturn,
@@ -305,6 +309,7 @@ const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => Sabo
   tsukumokaRelease: applyTsukumokaRelease,
   discardErase: applyDiscardErase,
   discardBury: applyDiscardBury,
+  rewardReduce: applyRewardReduce,
 }
 
 export function applySabotageEffect(id: SabotageActionId, ctx: SabotageContext): SabotageResult {
