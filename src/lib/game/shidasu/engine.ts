@@ -16,6 +16,7 @@ import { rollCardSetOffer } from './cardSets'
 import { rollShop, itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice, oracleBuyPrice, oracleSellPrice, relicBuyPrice } from './shop'
 import { itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity, relicWaveEndBonus, relicRerollCostStep, relicFirstRerollFree, RELIC_POOL } from './relics'
 import { resetComboFields } from './waveReset'
+import { applySabotageEffect } from './sabotageEffects'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
 
@@ -1143,187 +1144,14 @@ export function resolveComboCap(activeSeal: WaveState['activeSeal']): number | n
 
 // 妨害行動を1つ発動させ、効果を適用した上で次の妨害を再抽選する。
 // applyPlayCard/applyDrawStock(RunState層)から、wave.sabotageTurnsRemainingが0になった時点で呼ばれる。
+// 個々の効果の実装はsabotageEffects.ts(applySabotageEffect)に委譲する。
 export function triggerSabotage(params: ShidasuParams, run: RunState, id: SabotageActionId, rand: () => number = Math.random): RunState {
   if (!run.wave) return run
   const wave = run.wave
-  let nextWave: WaveState = { ...wave, activeSeal: null }
-  let nextRun: RunState = run
-
-  switch (id) {
-    case 'stockPurge': {
-      const n = Math.min(5, wave.stock.length)
-      const purged = wave.stock.slice(wave.stock.length - n)
-      nextWave = { ...nextWave, stock: wave.stock.slice(0, wave.stock.length - n), discardPile: [...wave.discardPile, ...purged] }
-      break
-    }
-    case 'columnReturn': {
-      const colIndex = Math.floor(rand() * wave.tableau.length)
-      const col = wave.tableau[colIndex]
-      const pool = [...wave.stock, ...col]
-      shuffleInPlace(pool, rand)
-      const newCol = pool.slice(0, col.length)
-      const newStock = pool.slice(col.length)
-      const tableau = wave.tableau.map((c, i) => (i === colIndex ? newCol : c))
-      nextWave = { ...nextWave, tableau, stock: newStock }
-      break
-    }
-    case 'chainSettle': {
-      if (wave.stock.length === 0) {
-        nextWave = resetComboFields(nextWave, params)
-      } else {
-        const stock = [...wave.stock]
-        const drawn = stock.pop() as Card
-        nextWave = { ...resetComboFields(nextWave, params, drawn, 'draw'), stock }
-      }
-      break
-    }
-    case 'comboBreather': {
-      nextWave = { ...nextWave, combo: 0 }
-      break
-    }
-    case 'talismanSeal': {
-      if (run.items.length > 0) {
-        const target = run.items[Math.floor(rand() * run.items.length)]
-        nextWave = { ...nextWave, activeSeal: { kind: 'talisman', id: target } }
-      }
-      break
-    }
-    case 'riteSeal': {
-      if (run.rites.length > 0) {
-        const target = run.rites[Math.floor(rand() * run.rites.length)]
-        nextWave = { ...nextWave, activeSeal: { kind: 'rite', id: target } }
-      }
-      break
-    }
-    case 'revelationOracleSeal': {
-      const pool: HeldRevelationOrOracleRef[] = [
-        ...run.revelations.map(refId => ({ kind: 'revelation' as const, id: refId })),
-        ...run.oracles.map(refId => ({ kind: 'oracle' as const, id: refId })),
-      ]
-      if (pool.length > 0) {
-        const ref = pool[Math.floor(rand() * pool.length)]
-        nextWave = { ...nextWave, activeSeal: { kind: 'revelationOrOracle', ref } }
-      }
-      break
-    }
-    case 'relicConfiscate': {
-      if (run.relics.length > 0) {
-        const idx = Math.floor(rand() * run.relics.length)
-        nextRun = { ...nextRun, relics: [...run.relics.slice(0, idx), ...run.relics.slice(idx + 1)] }
-      }
-      break
-    }
-    case 'tableauCardToDiscard': {
-      const positions: { ci: number; ri: number }[] = []
-      wave.tableau.forEach((col, ci) => col.forEach((_c, ri) => positions.push({ ci, ri })))
-      if (positions.length > 0) {
-        const pick = positions[Math.floor(rand() * positions.length)]
-        const card = wave.tableau[pick.ci][pick.ri]
-        const tableau = wave.tableau.map((col, ci) => (ci === pick.ci ? [...col.slice(0, pick.ri), ...col.slice(pick.ri + 1)] : col))
-        nextWave = { ...nextWave, tableau, discardPile: [...wave.discardPile, card] }
-      }
-      break
-    }
-    case 'currencyConfiscate': {
-      nextRun = { ...nextRun, currency: Math.max(0, run.currency - 5) }
-      break
-    }
-    case 'roleSeal': {
-      const names = rollOffer(ORACLE_POOL, 2, rand)
-      nextWave = { ...nextWave, activeSeal: { kind: 'role', names } }
-      break
-    }
-    case 'stockPurgeSmall': {
-      const n = Math.min(2, wave.stock.length)
-      const purged = wave.stock.slice(wave.stock.length - n)
-      nextWave = { ...nextWave, stock: wave.stock.slice(0, wave.stock.length - n), discardPile: [...wave.discardPile, ...purged] }
-      break
-    }
-    case 'stockShuffle': {
-      const stock = [...wave.stock]
-      shuffleInPlace(stock, rand)
-      nextWave = { ...nextWave, stock }
-      break
-    }
-    case 'tableauFullReturn': {
-      const counts = wave.tableau.map(col => col.length)
-      const pool = [...wave.stock, ...wave.tableau.flat()]
-      shuffleInPlace(pool, rand)
-      let cursor = 0
-      const tableau = counts.map(n => {
-        const slice = pool.slice(cursor, cursor + n)
-        cursor += n
-        return slice
-      })
-      nextWave = { ...nextWave, tableau, stock: pool.slice(cursor) }
-      break
-    }
-    case 'tableauShuffle': {
-      const counts = wave.tableau.map(col => col.length)
-      const pool = wave.tableau.flat()
-      shuffleInPlace(pool, rand)
-      let cursor = 0
-      const tableau = counts.map(n => {
-        const slice = pool.slice(cursor, cursor + n)
-        cursor += n
-        return slice
-      })
-      nextWave = { ...nextWave, tableau }
-      break
-    }
-    case 'chainPartialDiscard': {
-      const removeCount = Math.min(2, Math.max(0, wave.chain.length - 1))
-      const removed = wave.chain.slice(0, removeCount)
-      nextWave = {
-        ...nextWave,
-        chain: wave.chain.slice(removeCount),
-        chainOrigin: wave.chainOrigin.slice(removeCount),
-        discardPile: [...wave.discardPile, ...removed],
-      }
-      break
-    }
-    case 'comboReduce': {
-      nextWave = { ...nextWave, combo: Math.max(0, wave.combo - 3) }
-      break
-    }
-    case 'talismanConfiscate': {
-      if (run.items.length > 0) {
-        const idx = Math.floor(rand() * run.items.length)
-        nextRun = { ...nextRun, items: [...run.items.slice(0, idx), ...run.items.slice(idx + 1)] }
-      }
-      break
-    }
-    case 'riteConfiscate': {
-      if (run.rites.length > 0) {
-        const idx = Math.floor(rand() * run.rites.length)
-        nextRun = { ...nextRun, rites: [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)] }
-      }
-      break
-    }
-    case 'chainShuffle': {
-      const indices = wave.chain.map((_c, i) => i)
-      shuffleInPlace(indices, rand)
-      const chain = indices.map(i => wave.chain[i])
-      const chainOrigin = indices.map(i => wave.chainOrigin[i])
-      nextWave = { ...nextWave, chain, chainOrigin, foundation: chain[chain.length - 1] }
-      break
-    }
-    case 'comboCap': {
-      nextWave = { ...nextWave, activeSeal: { kind: 'comboCap', max: wave.combo } }
-      break
-    }
-    case 'riteForceActivate': {
-      const usable = run.rites.filter(riteId => canUseRite(params, wave, riteId))
-      if (usable.length > 0) {
-        const target = usable[Math.floor(rand() * usable.length)]
-        const activatedWave = applyRiteEffect(params, wave, target, rand)
-        const idx = run.rites.indexOf(target)
-        nextWave = { ...activatedWave, activeSeal: null }
-        nextRun = { ...nextRun, rites: [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)] }
-      }
-      break
-    }
-  }
+  const resetWave: WaveState = { ...wave, activeSeal: null }
+  const result = applySabotageEffect(id, { params, run, wave, rand })
+  const nextWave: WaveState = { ...resetWave, ...result.wave }
+  const nextRun: RunState = { ...run, ...result.run, wave: nextWave }
 
   const star = nextRun.stageStars[nextRun.waveIndex]
   const rolled = rollSabotage(star?.sabotage ?? { kind: 'none' }, rand)
