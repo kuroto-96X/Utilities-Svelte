@@ -230,9 +230,13 @@ function applyRevelationOracleConfiscate({ run, rand }: SabotageContext): Sabota
 // grantRevelationReward等が天啓の種類によって動的に返す報酬フィールドを個別に列挙せずに済む)。
 function applyRevelationOracleForceActivate({ params, run, wave, rand, useRevelation, useOracle }: SabotageContext): SabotageResult {
   const usableRevelations = run.revelations.filter(id => canUseRevelation(params, wave, id, run.relics))
+  // useOracleはuseRite/useRevelationと違いwave.statusを見ないため、ここで明示的にガードする。
+  // (triggerSabotageはwave.status==='ended'になった直後にも呼ばれうる。天啓側はuseRevelation内部の
+  // ガードで自然にno-opになるが、神託側だけ無条件に消費されてしまうと非対称な挙動になるため)
+  const usableOracles = wave.status === 'playing' ? run.oracles : []
   const pool: HeldRevelationOrOracleRef[] = [
     ...usableRevelations.map(id => ({ kind: 'revelation' as const, id })),
-    ...run.oracles.map(id => ({ kind: 'oracle' as const, id })),
+    ...usableOracles.map(id => ({ kind: 'oracle' as const, id })),
   ]
   if (pool.length === 0) return {}
   const ref = pool[Math.floor(rand() * pool.length)]

@@ -5183,6 +5183,13 @@ describe('triggerSabotage', () => {
     expect(next.oracles).toEqual([])
     expect(next.wave!.activeSeal).toBeNull()
   })
+
+  it('revelationOracleForceActivate: waveがplaying中でなければ神託は対象プールに含めない(useOracleはwave.statusを見ないため)', () => {
+    const run = runWithWave({ revelations: [], oracles: ['pair'] }, { status: 'ended' })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleForceActivate', () => 0)
+    expect(next.oracles).toEqual(['pair'])
+    expect(next.oracleLevels.pair).toBe(run.oracleLevels.pair)
+  })
 })
 
 // 実運用のtableau top配置(乱数依存)はseedを固定しても常にisPlayableな列が存在するとは限らないため、
