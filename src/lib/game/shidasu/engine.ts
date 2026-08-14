@@ -392,6 +392,9 @@ export function playCard(
 
   // 黄金: 通常のコンボ加算処理そのものを+1ではなく+2にする(他の護符には無干渉)
   // イサ(凍結)発動中は加算自体を行わない。コンボ頭打ち(妨害)発動中はcomboCapで上限クランプする
+  // (注意: comboCapが制限するのは永続する状態フィールドwave.comboのみ。このプレイの得点計算に
+  // 使うeffectiveCombo(下記)はnewComboを起点にbaseComboCount・庇護・大地をさらに適用した別値で、
+  // comboCapの影響を受けない。妨害としては「以後のコンボ数の伸びを止める」効果に限定される)
   const newCombo = Math.min(
     comboCap ?? Infinity,
     wave.comboFrozenThisWave ? wave.combo : wave.combo + (items.includes('golden') ? 2 : 1)
@@ -755,6 +758,7 @@ export function drawStock(
 
     let naiveGained = 0
     let naiveParts: ScorePart[] = []
+    // comboCapが制限するのはwave.comboのみで、得点計算用のeffectiveComboには影響しない(playCardの同様の注釈を参照)
     let naiveCombo = Math.min(comboCap ?? Infinity, wave.combo + sincerityAdd)
     let naiveRoleFiredThisChain = wave.roleFiredThisChain
     let naiveFlushActiveThisCombo = wave.flushActiveThisCombo
