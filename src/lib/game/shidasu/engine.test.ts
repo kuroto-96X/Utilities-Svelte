@@ -4832,6 +4832,23 @@ describe('役封印のoracleLevelへの反映(playCard)', () => {
   })
 })
 
+describe('comboCapのplayCard/drawStockへのクランプ', () => {
+  // 実運用のtableau top配置(乱数依存)はseed=1でも決定的にisPlayableな列が存在するとは限らない
+  // (実測済み: seed=1・stage0/wave0だと foundation rank7 に対しtop札が5,4,12,2,5,2,3となりplayableColが常に-1になる)。
+  // そのため他のplayCard単体テスト同様、makeWaveで確実にプレイ可能な組み合わせを明示的に組み立てる。
+  it('playCard: comboCapを渡すと、コンボが上限でクランプされる', () => {
+    const wave = makeWave({ foundation: card(0, '♠', 5), tableau: [[card(1, '♠', 6)], [card(2, '♦', 2)]], combo: 3 })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), () => 0.5, null, undefined, { zeroRoles: [], oracleBaselineRole: null }, 3)
+    expect(next.combo).toBeLessThanOrEqual(3)
+  })
+
+  it('playCard: comboCapがnullなら通常通り増加する', () => {
+    const wave = makeWave({ foundation: card(0, '♠', 5), tableau: [[card(1, '♠', 6)], [card(2, '♦', 2)]], combo: 3 })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), () => 0.5)
+    expect(next.combo).toBe(4)
+  })
+})
+
 describe('triggerSabotage', () => {
   function runWithWave(overrides: Partial<RunState> = {}, waveOverrides: Partial<WaveState> = {}): RunState {
     const run = createInitialRun()
@@ -5087,6 +5104,16 @@ describe('妨害の発動トリガー統合(applyPlayCard)', () => {
     const next = applyPlayCard(DEFAULT_PARAMS, run, playableCol, () => 0.5)
     // golden(黄金)は通常コンボ+2のところ、封印中は+1のまま(通常の護符無し挙動と同じ)になるはず
     expect(next.wave!.combo).toBe(1)
+  })
+
+  it('comboCap: activeSealがcomboCapのとき、playCardでコンボがcapを超えて増加しない', () => {
+    let run = createInitialRun()
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, run.items, run.deckComposition, 1, 0, defaultOracleLevels())
+    run = { ...run, phase: 'playing', wave: { ...forceWildTopOfColumn0(wave), combo: 3, activeSeal: { kind: 'comboCap', max: 3 } } }
+    const playableCol = run.wave!.tableau.findIndex(col => col.length > 0 && isPlayable('none', run.wave!, col[col.length - 1], []))
+    expect(playableCol).toBeGreaterThanOrEqual(0)
+    const next = applyPlayCard(DEFAULT_PARAMS, run, playableCol, () => 0.5)
+    expect(next.wave!.combo).toBeLessThanOrEqual(3)
   })
 })
 

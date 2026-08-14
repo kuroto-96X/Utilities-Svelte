@@ -377,7 +377,8 @@ export function playCard(
   rand: () => number = Math.random,
   scoreLock: BossScoreLock = null,
   rowIndex?: number,
-  sealedRoleEffect: SealedRoleEffect = { zeroRoles: [], oracleBaselineRole: null }
+  sealedRoleEffect: SealedRoleEffect = { zeroRoles: [], oracleBaselineRole: null },
+  comboCap: number | null = null
 ): { wave: WaveState; deckComposition: DeckCard[] } {
   if (wave.status !== 'playing') return { wave, deckComposition }
   const col = wave.tableau[colIndex]
@@ -390,8 +391,11 @@ export function playCard(
   if (!isPlayable(modifier, wave, card, items)) return { wave, deckComposition }
 
   // 黄金: 通常のコンボ加算処理そのものを+1ではなく+2にする(他の護符には無干渉)
-  // イサ(凍結)発動中は加算自体を行わない
-  const newCombo = wave.comboFrozenThisWave ? wave.combo : wave.combo + (items.includes('golden') ? 2 : 1)
+  // イサ(凍結)発動中は加算自体を行わない。コンボ頭打ち(妨害)発動中はcomboCapで上限クランプする
+  const newCombo = Math.min(
+    comboCap ?? Infinity,
+    wave.comboFrozenThisWave ? wave.combo : wave.combo + (items.includes('golden') ? 2 : 1)
+  )
   let base = params.scoring.basePoint
   const parts: ScorePart[] = [addPart('基礎点', base)]
 
@@ -724,7 +728,8 @@ export function drawStock(
   modifier: StageModifier = 'none',
   rand: () => number = Math.random,
   scoreLock: BossScoreLock = null,
-  sealedRoleEffect: SealedRoleEffect = { zeroRoles: [], oracleBaselineRole: null }
+  sealedRoleEffect: SealedRoleEffect = { zeroRoles: [], oracleBaselineRole: null },
+  comboCap: number | null = null
 ): { wave: WaveState; deckComposition: DeckCard[] } {
   if (wave.status !== 'playing') return { wave, deckComposition }
   if (wave.stock.length === 0) return { wave, deckComposition }
@@ -750,11 +755,14 @@ export function drawStock(
 
     let naiveGained = 0
     let naiveParts: ScorePart[] = []
-    let naiveCombo = wave.combo + sincerityAdd
+    let naiveCombo = Math.min(comboCap ?? Infinity, wave.combo + sincerityAdd)
     let naiveRoleFiredThisChain = wave.roleFiredThisChain
     let naiveFlushActiveThisCombo = wave.flushActiveThisCombo
     if (wouldContinue && items.includes('naive')) {
-      const newCombo = wave.comboFrozenThisWave ? wave.combo : wave.combo + (items.includes('golden') ? 2 : 1)
+      const newCombo = Math.min(
+        comboCap ?? Infinity,
+        wave.comboFrozenThisWave ? wave.combo : wave.combo + (items.includes('golden') ? 2 : 1)
+      )
       let base = params.scoring.basePoint
       const parts: ScorePart[] = [addPart('基礎点', base)]
       // 神託: このパスは明星・ソウィロによる役倍率(roleBonusMultiplier)を通さない既存方針を維持しつつ、
@@ -816,7 +824,7 @@ export function drawStock(
         naiveGained = 0
       }
       naiveParts = parts
-      naiveCombo = newCombo + sincerityAdd
+      naiveCombo = Math.min(comboCap ?? Infinity, newCombo + sincerityAdd)
     }
 
     const continueWave: WaveState = {
@@ -1183,6 +1191,12 @@ export function resolveSealedRoleEffect(activeSeal: WaveState['activeSeal']): Se
   if (activeSeal?.kind === 'role') return { zeroRoles: activeSeal.names, oracleBaselineRole: null }
   if (activeSeal?.kind === 'revelationOrOracle' && activeSeal.ref.kind === 'oracle') return { zeroRoles: [], oracleBaselineRole: activeSeal.ref.id }
   return { zeroRoles: [], oracleBaselineRole: null }
+}
+
+// wave.activeSealがcomboCap封印の場合、上限値を返す。それ以外はnull(上限無し)。
+// applyPlayCard/applyDrawStock/applyStuckCheckからplayCard/drawStockへ渡す。
+export function resolveComboCap(activeSeal: WaveState['activeSeal']): number | null {
+  return activeSeal?.kind === 'comboCap' ? activeSeal.max : null
 }
 
 // 妨害行動を1つ発動させ、効果を適用した上で次の妨害を再抽選する。
@@ -1916,7 +1930,8 @@ export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: nu
   const scoreLock = bossScoreLockFor(params, run)
   const effectiveItems = resolveEffectiveItems(run.items, run.wave.activeSeal)
   const sealedRoleEffect = resolveSealedRoleEffect(run.wave.activeSeal)
-  const { wave, deckComposition } = playCard(params, run.wave, modifier, effectiveItems, target, colIndex, run.deckComposition, rand, scoreLock, rowIndex, sealedRoleEffect)
+  const comboCap = resolveComboCap(run.wave.activeSeal)
+  const { wave, deckComposition } = playCard(params, run.wave, modifier, effectiveItems, target, colIndex, run.deckComposition, rand, scoreLock, rowIndex, sealedRoleEffect, comboCap)
   let next: RunState = { ...run, wave, deckComposition }
   if (wave.pendingSabotageId && wave.sabotageTurnsRemaining <= 0) {
     next = triggerSabotage(params, next, wave.pendingSabotageId, rand)
@@ -1931,7 +1946,8 @@ export function applyDrawStock(params: ShidasuParams, run: RunState, rand: () =>
   const scoreLock = bossScoreLockFor(params, run)
   const effectiveItems = resolveEffectiveItems(run.items, run.wave.activeSeal)
   const sealedRoleEffect = resolveSealedRoleEffect(run.wave.activeSeal)
-  const { wave, deckComposition } = drawStock(params, run.wave, effectiveItems, target, run.deckComposition, modifier, rand, scoreLock, sealedRoleEffect)
+  const comboCap = resolveComboCap(run.wave.activeSeal)
+  const { wave, deckComposition } = drawStock(params, run.wave, effectiveItems, target, run.deckComposition, modifier, rand, scoreLock, sealedRoleEffect, comboCap)
   let next: RunState = { ...run, wave, deckComposition }
   if (wave.pendingSabotageId && wave.sabotageTurnsRemaining <= 0) {
     next = triggerSabotage(params, next, wave.pendingSabotageId, rand)
@@ -1975,7 +1991,8 @@ export function applyStuckCheck(params: ShidasuParams, run: RunState, rand: () =
     const scoreLock = bossScoreLockFor(params, run)
     const effectiveItems = resolveEffectiveItems(run.items, resetWave.activeSeal)
     const sealedRoleEffect = resolveSealedRoleEffect(resetWave.activeSeal)
-    const drawResult = drawStock(params, resetWave, effectiveItems, stageTarget, run.deckComposition, modifier, rand, scoreLock, sealedRoleEffect)
+    const comboCap = resolveComboCap(resetWave.activeSeal)
+    const drawResult = drawStock(params, resetWave, effectiveItems, stageTarget, run.deckComposition, modifier, rand, scoreLock, sealedRoleEffect, comboCap)
     let next: RunState = { ...run, wave: drawResult.wave, deckComposition: drawResult.deckComposition }
     if (drawResult.wave.pendingSabotageId && drawResult.wave.sabotageTurnsRemaining <= 0) {
       next = triggerSabotage(params, next, drawResult.wave.pendingSabotageId, rand)
