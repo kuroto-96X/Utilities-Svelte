@@ -5133,6 +5133,29 @@ describe('triggerSabotage', () => {
     expect(next.items).toEqual([])
     expect(next.wave!.activeSeal).toEqual({ kind: 'talismanHidden' })
   })
+
+  it('revelationOracleConfiscate: 所持天啓・神託からランダムに1つ選び完全に失わせる(天啓が選ばれた場合)', () => {
+    const run = runWithWave({ revelations: ['kaku'], oracles: ['pair'] })
+    // rand()=0固定でMath.floor(rand()*pool.length)は常に0番目(天啓kaku)を選ぶ
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleConfiscate', () => 0)
+    expect(next.revelations).toEqual([])
+    expect(next.oracles).toEqual(['pair'])
+  })
+
+  it('revelationOracleConfiscate: 神託が選ばれた場合、oracleLevelsは変更しない', () => {
+    const run = runWithWave({ revelations: [], oracles: ['pair'] })
+    const beforeLevel = run.oracleLevels.pair
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleConfiscate', () => 0)
+    expect(next.oracles).toEqual([])
+    expect(next.oracleLevels.pair).toBe(beforeLevel)
+  })
+
+  it('revelationOracleConfiscate: 天啓・神託とも0件なら何も起きない', () => {
+    const run = runWithWave({ revelations: [], oracles: [] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleConfiscate', () => 0)
+    expect(next.revelations).toEqual([])
+    expect(next.oracles).toEqual([])
+  })
 })
 
 // 実運用のtableau top配置(乱数依存)はseedを固定しても常にisPlayableな列が存在するとは限らないため、

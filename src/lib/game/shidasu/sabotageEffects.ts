@@ -208,6 +208,21 @@ function applyTalismanShuffle({ run, rand }: SabotageContext): SabotageResult {
   return { run: { items }, wave: { activeSeal: { kind: 'talismanHidden' } } }
 }
 
+function applyRevelationOracleConfiscate({ run, rand }: SabotageContext): SabotageResult {
+  const pool: HeldRevelationOrOracleRef[] = [
+    ...run.revelations.map(id => ({ kind: 'revelation' as const, id })),
+    ...run.oracles.map(id => ({ kind: 'oracle' as const, id })),
+  ]
+  if (pool.length === 0) return {}
+  const ref = pool[Math.floor(rand() * pool.length)]
+  if (ref.kind === 'revelation') {
+    const idx = run.revelations.indexOf(ref.id)
+    return { run: { revelations: [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)] } }
+  }
+  const idx = run.oracles.indexOf(ref.id)
+  return { run: { oracles: [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)] } }
+}
+
 const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => SabotageResult> = {
   stockPurge: applyStockPurge,
   columnReturn: applyColumnReturn,
@@ -232,6 +247,7 @@ const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => Sabo
   riteConfiscate: applyRiteConfiscate,
   riteForceActivate: applyRiteForceActivate,
   talismanShuffle: applyTalismanShuffle,
+  revelationOracleConfiscate: applyRevelationOracleConfiscate,
 }
 
 export function applySabotageEffect(id: SabotageActionId, ctx: SabotageContext): SabotageResult {
