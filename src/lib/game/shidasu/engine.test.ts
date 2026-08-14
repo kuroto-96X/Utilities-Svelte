@@ -5156,6 +5156,33 @@ describe('triggerSabotage', () => {
     expect(next.revelations).toEqual([])
     expect(next.oracles).toEqual([])
   })
+
+  it('revelationOracleForceActivate: 神託が選ばれた場合、useOracleと同じ結果(oracleLevels加算・oraclesから除外)になる', () => {
+    const run = runWithWave({ revelations: [], oracles: ['pair'] })
+    const beforeLevel = run.oracleLevels.pair
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleForceActivate', () => 0)
+    expect(next.oracles).toEqual([])
+    expect(next.oracleLevels.pair).toBe(beforeLevel + 1)
+    expect(next.wave!.oracleLevels.pair).toBe(beforeLevel + 1)
+  })
+
+  it('revelationOracleForceActivate: 列選択を要する天啓が選ばれた場合、ランダムな列に効果を適用する', () => {
+    const run = runWithWave({ revelations: ['kaku'], oracles: [] })
+    const before = run.wave!.tableau.map(col => col.map(c => c.suit))
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleForceActivate', () => 0)
+    expect(next.revelations).toEqual([])
+    const after = next.wave!.tableau.map(col => col.map(c => c.suit))
+    // kaku(列を♠化)の効果が実際に場札へ適用されていること(idだけ消して効果無し、を弾く)
+    expect(after).not.toEqual(before)
+  })
+
+  it('revelationOracleForceActivate: 使用可能な天啓も所持神託も無ければ何も起きない', () => {
+    const run = runWithWave({ revelations: [], oracles: [] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleForceActivate', () => 0)
+    expect(next.revelations).toEqual([])
+    expect(next.oracles).toEqual([])
+    expect(next.wave!.activeSeal).toBeNull()
+  })
 })
 
 // 実運用のtableau top配置(乱数依存)はseedを固定しても常にisPlayableな列が存在するとは限らないため、

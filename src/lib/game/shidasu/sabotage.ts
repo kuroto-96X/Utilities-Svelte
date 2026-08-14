@@ -36,6 +36,7 @@ export const SABOTAGE_POOL: SabotageActionDef[] = [
   { id: 'riteForceActivate', name: '秘儀強制発動', target: '秘儀', intervalTurns: 6, descTemplate: '使用可能な秘儀を1つ選び、即座に効果を発動させて消費する' },
   { id: 'talismanShuffle', name: '護符並び替え', target: '護符', intervalTurns: 5, descTemplate: '所持護符の並び順をランダムにシャッフルし、次の妨害発動まで護符を裏向き表示にする' },
   { id: 'revelationOracleConfiscate', name: '天啓・神託没収', target: '天啓・神託', intervalTurns: 7, descTemplate: '所持している天啓または神託からランダムに1つ選び、完全に失わせる' },
+  { id: 'revelationOracleForceActivate', name: '天啓・神託強制発動', target: '天啓・神託', intervalTurns: 6, descTemplate: '使用可能な天啓または所持神託からランダムに1つ選び、即座に効果を発動させて消費する' },
 ]
 
 export function eligibleSabotageIds(sabotage: StarSabotage): SabotageActionId[] {

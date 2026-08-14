@@ -4,6 +4,7 @@ import type { ShidasuParams } from './params'
 import { shuffleInPlace, rollOffer } from './deck'
 import { ORACLE_POOL } from './oracles'
 import { canUseRite } from './riteEffects'
+import { canUseRevelation, revelationNeedsTarget } from './revelationEffects'
 import { resetComboFields } from './waveReset'
 
 export interface SabotageContext {
@@ -225,6 +226,25 @@ function applyRevelationOracleConfiscate({ run, rand }: SabotageContext): Sabota
   return { run: { oracles: [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)] } }
 }
 
+// useRevelation/useOracleが返す完全なRunStateをそのままrunへ渡す(applyRiteForceActivateと同じ理由:
+// grantRevelationReward等が天啓の種類によって動的に返す報酬フィールドを個別に列挙せずに済む)。
+function applyRevelationOracleForceActivate({ params, run, wave, rand, useRevelation, useOracle }: SabotageContext): SabotageResult {
+  const usableRevelations = run.revelations.filter(id => canUseRevelation(params, wave, id, run.relics))
+  const pool: HeldRevelationOrOracleRef[] = [
+    ...usableRevelations.map(id => ({ kind: 'revelation' as const, id })),
+    ...run.oracles.map(id => ({ kind: 'oracle' as const, id })),
+  ]
+  if (pool.length === 0) return {}
+  const ref = pool[Math.floor(rand() * pool.length)]
+  if (ref.kind === 'oracle') {
+    const used = useOracle(params, run, ref.id)
+    return { wave: { ...used.wave!, activeSeal: null }, run: used }
+  }
+  const targetCol = revelationNeedsTarget(ref.id) ? Math.floor(rand() * wave.tableau.length) : null
+  const used = useRevelation(params, run, ref.id, targetCol, rand)
+  return { wave: { ...used.wave!, activeSeal: null }, run: used }
+}
+
 const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => SabotageResult> = {
   stockPurge: applyStockPurge,
   columnReturn: applyColumnReturn,
@@ -250,6 +270,7 @@ const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => Sabo
   riteForceActivate: applyRiteForceActivate,
   talismanShuffle: applyTalismanShuffle,
   revelationOracleConfiscate: applyRevelationOracleConfiscate,
+  revelationOracleForceActivate: applyRevelationOracleForceActivate,
 }
 
 export function applySabotageEffect(id: SabotageActionId, ctx: SabotageContext): SabotageResult {
