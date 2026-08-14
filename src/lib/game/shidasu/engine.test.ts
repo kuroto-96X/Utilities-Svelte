@@ -5266,6 +5266,42 @@ describe('triggerSabotage', () => {
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'rewardReduce', () => 0)
     expect(next.rewardPenalty).toBe(5)
   })
+
+  it('currencyDrain: 所持通貨の20%を失う(端数切り捨て)', () => {
+    const run = runWithWave({ currency: 47 })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'currencyDrain', () => 0)
+    expect(next.currency).toBe(38) // 47 - floor(47*0.2)=47-9=38
+  })
+
+  it('currencyDrain: 通貨が0未満にはならない', () => {
+    const run = runWithWave({ currency: 0 })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'currencyDrain', () => 0)
+    expect(next.currency).toBe(0)
+  })
+
+  it('roleLevelDecay: ランダムな2役のoracleLevelsを1下げる(run・wave両方に反映)', () => {
+    // どの2役が選ばれてもテストが成立するよう、rand()の具体的な返り値には依存せず、
+    // 「全役3からスタートし、変化した役はちょうど2つ・それぞれ2になる」ことだけを検証する
+    // (shuffleInPlaceの正確な並び替え結果を手計算で決め打ちすると、実装の細部が変わった際に
+    // 無関係な失敗を招きやすいため)。
+    const oracleLevels = Object.fromEntries(Object.keys(defaultOracleLevels()).map(name => [name, 3])) as Record<RoleName, number>
+    const run = runWithWave({ oracleLevels })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'roleLevelDecay', () => 0)
+    const changedNames = (Object.keys(oracleLevels) as RoleName[]).filter(name => next.oracleLevels[name] !== oracleLevels[name])
+    expect(changedNames).toHaveLength(2)
+    for (const name of changedNames) {
+      expect(next.oracleLevels[name]).toBe(2)
+      expect(next.wave!.oracleLevels[name]).toBe(2)
+    }
+  })
+
+  it('roleLevelDecay: 下限1を下回らない', () => {
+    const run = runWithWave() // 全役デフォルト1(defaultOracleLevels())
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'roleLevelDecay', () => 0)
+    for (const level of Object.values(next.oracleLevels)) {
+      expect(level).toBeGreaterThanOrEqual(1)
+    }
+  })
 })
 
 // 実運用のtableau top配置(乱数依存)はseedを固定しても常にisPlayableな列が存在するとは限らないため、

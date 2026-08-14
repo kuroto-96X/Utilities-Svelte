@@ -41,6 +41,8 @@ export const SABOTAGE_POOL: SabotageActionDef[] = [
   { id: 'discardErase', name: '捨て札消去', target: '捨て札', intervalTurns: 6, descTemplate: 'チェーンのカードを捨て札に送り、捨て札全体をシャッフルしてから同じ枚数をチェーンに戻す' },
   { id: 'discardBury', name: '捨て札埋没', target: '捨て札', intervalTurns: 5, descTemplate: '捨て札の中身を山札に戻し混ぜ込み、同じ枚数を山札から裏向きで捨て札に移す' },
   { id: 'rewardReduce', name: '報酬減少', target: '資産(星片)', intervalTurns: 8, descTemplate: 'Waveクリア時の通貨報酬を-2する(複数回発動した場合は累積する)' },
+  { id: 'currencyDrain', name: '通貨強制消費', target: '資産(星片)', intervalTurns: 6, descTemplate: '所持通貨の20%を失わせる' },
+  { id: 'roleLevelDecay', name: '役減衰', target: '役ステータス', intervalTurns: 7, descTemplate: 'ランダムな2役を選び、oracleLevelを1下げる(下限1、永続的なマイナス)' },
 ]
 
 export function eligibleSabotageIds(sabotage: StarSabotage): SabotageActionId[] {

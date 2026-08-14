@@ -280,6 +280,18 @@ function applyRewardReduce({ run }: SabotageContext): SabotageResult {
   return { run: { rewardPenalty: run.rewardPenalty + 2 } }
 }
 
+function applyCurrencyDrain({ run }: SabotageContext): SabotageResult {
+  const loss = Math.floor(run.currency * 0.2)
+  return { run: { currency: Math.max(0, run.currency - loss) } }
+}
+
+function applyRoleLevelDecay({ run, rand }: SabotageContext): SabotageResult {
+  const names = rollOffer(ORACLE_POOL, 2, rand)
+  const oracleLevels = { ...run.oracleLevels }
+  for (const name of names) oracleLevels[name] = Math.max(1, oracleLevels[name] - 1)
+  return { run: { oracleLevels }, wave: { oracleLevels } }
+}
+
 const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => SabotageResult> = {
   stockPurge: applyStockPurge,
   columnReturn: applyColumnReturn,
@@ -310,6 +322,8 @@ const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => Sabo
   discardErase: applyDiscardErase,
   discardBury: applyDiscardBury,
   rewardReduce: applyRewardReduce,
+  currencyDrain: applyCurrencyDrain,
+  roleLevelDecay: applyRoleLevelDecay,
 }
 
 export function applySabotageEffect(id: SabotageActionId, ctx: SabotageContext): SabotageResult {
