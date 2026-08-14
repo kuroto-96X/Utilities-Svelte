@@ -219,6 +219,8 @@ function applyRevelationOracleConfiscate({ run, rand }: SabotageContext): Sabota
     const idx = run.revelations.indexOf(ref.id)
     return { run: { revelations: [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)] } }
   }
+  // 神託を没収してもoracleLevelsは変更しない: run.oraclesに温存中の神託はまだuseOracleで
+  // 消費していないためoracleLevelsに未反映であり、没収してもそこに減らすべき実績が無い
   const idx = run.oracles.indexOf(ref.id)
   return { run: { oracles: [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)] } }
 }
