@@ -11,6 +11,7 @@ export type SabotageActionId =
   | 'stockPurgeSmall' | 'stockShuffle' | 'tableauFullReturn' | 'tableauShuffle'
   | 'chainPartialDiscard' | 'chainShuffle' | 'comboReduce' | 'comboCap'
   | 'talismanConfiscate' | 'riteConfiscate' | 'riteForceActivate'
+  | 'talismanShuffle'
 
 // Star.sabotageの型。noneが既存デフォルト、allはSABOTAGE_POOL全件が対象
 // (将来候補が増えても自動的に対象へ加わる)、someは個別指定(将来の拡張用、現状未使用)。
@@ -291,6 +292,7 @@ export interface WaveState {
     | { kind: 'revelationOrOracle'; ref: HeldRevelationOrOracleRef }
     | { kind: 'role'; names: RoleName[] }
     | { kind: 'comboCap'; max: number }
+    | { kind: 'talismanHidden' }
     | null
 }
 

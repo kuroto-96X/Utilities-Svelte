@@ -5111,6 +5111,28 @@ describe('triggerSabotage', () => {
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'talismanSeal', () => 0)
     expect(next.wave!.activeSeal).toEqual({ kind: 'talisman', id: 'bridge' })
   })
+
+  it('talismanShuffle: 護符の並び順をシャッフルし、次の妨害発動までtalismanHidden封印にする', () => {
+    const run = runWithWave({ items: ['bridge', 'grace', 'golden'] })
+    let call = 0
+    const rand = () => {
+      const values = [0, 0.9, 0]
+      return values[call++] ?? 0
+    }
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'talismanShuffle', rand)
+    // 3枚とも欠落・重複無く残っていること
+    expect([...next.items].sort()).toEqual(['bridge', 'golden', 'grace'])
+    // 実際に並びが変わっていること(no-op実装を弾くための検証)
+    expect(next.items).not.toEqual(['bridge', 'grace', 'golden'])
+    expect(next.wave!.activeSeal).toEqual({ kind: 'talismanHidden' })
+  })
+
+  it('talismanShuffle: 所持護符が0件でもactiveSealは設定される(シャッフル対象が無いだけ)', () => {
+    const run = runWithWave({ items: [] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'talismanShuffle', () => 0)
+    expect(next.items).toEqual([])
+    expect(next.wave!.activeSeal).toEqual({ kind: 'talismanHidden' })
+  })
 })
 
 // 実運用のtableau top配置(乱数依存)はseedを固定しても常にisPlayableな列が存在するとは限らないため、

@@ -202,6 +202,12 @@ function applyRiteForceActivate({ params, run, wave, rand, useRite }: SabotageCo
   return { wave: { ...used.wave!, activeSeal: null }, run: used }
 }
 
+function applyTalismanShuffle({ run, rand }: SabotageContext): SabotageResult {
+  const items = [...run.items]
+  shuffleInPlace(items, rand)
+  return { run: { items }, wave: { activeSeal: { kind: 'talismanHidden' } } }
+}
+
 const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => SabotageResult> = {
   stockPurge: applyStockPurge,
   columnReturn: applyColumnReturn,
@@ -225,6 +231,7 @@ const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => Sabo
   talismanConfiscate: applyTalismanConfiscate,
   riteConfiscate: applyRiteConfiscate,
   riteForceActivate: applyRiteForceActivate,
+  talismanShuffle: applyTalismanShuffle,
 }
 
 export function applySabotageEffect(id: SabotageActionId, ctx: SabotageContext): SabotageResult {
