@@ -5066,14 +5066,30 @@ describe('triggerSabotage', () => {
   it('riteForceActivate: 使用可能な秘儀からランダムに1つ選び即座に発動して消費する', () => {
     const run = runWithWave({ rites: ['raidho'] })
     // raidhoは場札に非絵札・非ワイルドがあれば常にcanUseRiteを満たす(dealされた標準デッキなら通常存在する)
+    const beforeStockIds = run.wave!.stock.map(c => c.id).sort((a, b) => a - b)
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteForceActivate', () => 0)
     expect(next.rites).toEqual([])
+    // 秘儀の消費だけでなく、raidhoの効果(場札の非絵札・非ワイルドを山札と入れ替える)が
+    // 実際にwaveへ適用されたことも確認する(riteConfiscateのようにidだけ消して効果が
+    // 適用されないまま、という不具合を検出するため)
+    const afterStockIds = next.wave!.stock.map(c => c.id).sort((a, b) => a - b)
+    expect(afterStockIds).not.toEqual(beforeStockIds)
   })
 
   it('riteForceActivate: 使用可能な秘儀が無ければ何も起きない', () => {
     const run = runWithWave({ rites: [] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteForceActivate', () => 0)
     expect(next.rites).toEqual([])
+    expect(next.wave!.activeSeal).toBeNull()
+  })
+
+  it('riteForceActivate: 所持している秘儀が全てcanUseRiteを満たさなければ何も消費されない', () => {
+    // geboはdiscardPile.length >= tableau.length(cols)が条件。dealされたばかりのwaveは
+    // discardPileが空なので、常に条件を満たさない(canUseRite自体で個別に検証済み)。
+    const run = runWithWave({ rites: ['gebo'] })
+    expect(run.wave!.discardPile.length).toBe(0)
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteForceActivate', () => 0)
+    expect(next.rites).toEqual(['gebo'])
     expect(next.wave!.activeSeal).toBeNull()
   })
 
