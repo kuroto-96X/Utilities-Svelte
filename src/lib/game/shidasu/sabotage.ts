@@ -9,7 +9,7 @@ export interface SabotageActionDef {
   descTemplate: string
 }
 
-// 妨害行動プール。11件(各操作対象1個ずつ)。詳細はdocs/shidasu/shidasu-star-sabotage-candidates.mdを参照。
+// 妨害行動プール。22件(11ターゲット×先行実装11個+Phase A追加11個)。詳細はdocs/shidasu/shidasu-star-sabotage-candidates.mdを参照。
 // intervalTurnsは初期値の目安(効果が強い・永続的なものほど長め)。数値調整はこの配列を直接編集する。
 export const SABOTAGE_POOL: SabotageActionDef[] = [
   { id: 'stockPurge', name: '大量放出', target: '山札', intervalTurns: 6, descTemplate: '山札の上から5枚を捨て札に置く' },
