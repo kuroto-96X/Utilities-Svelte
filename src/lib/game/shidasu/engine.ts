@@ -1370,6 +1370,17 @@ export function triggerSabotage(params: ShidasuParams, run: RunState, id: Sabota
       nextWave = { ...nextWave, activeSeal: { kind: 'comboCap', max: wave.combo } }
       break
     }
+    case 'riteForceActivate': {
+      const usable = run.rites.filter(riteId => canUseRite(params, wave, riteId))
+      if (usable.length > 0) {
+        const target = usable[Math.floor(rand() * usable.length)]
+        const activatedWave = applyRiteEffect(params, wave, target, rand)
+        const idx = run.rites.indexOf(target)
+        nextWave = { ...activatedWave, activeSeal: null }
+        nextRun = { ...nextRun, rites: [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)] }
+      }
+      break
+    }
   }
 
   const star = nextRun.stageStars[nextRun.waveIndex]

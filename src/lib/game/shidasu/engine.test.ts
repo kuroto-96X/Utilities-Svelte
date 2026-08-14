@@ -5063,6 +5063,20 @@ describe('triggerSabotage', () => {
     expect(next.wave!.combo).toBe(4)
   })
 
+  it('riteForceActivate: 使用可能な秘儀からランダムに1つ選び即座に発動して消費する', () => {
+    const run = runWithWave({ rites: ['raidho'] })
+    // raidhoは場札に非絵札・非ワイルドがあれば常にcanUseRiteを満たす(dealされた標準デッキなら通常存在する)
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteForceActivate', () => 0)
+    expect(next.rites).toEqual([])
+  })
+
+  it('riteForceActivate: 使用可能な秘儀が無ければ何も起きない', () => {
+    const run = runWithWave({ rites: [] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteForceActivate', () => 0)
+    expect(next.rites).toEqual([])
+    expect(next.wave!.activeSeal).toBeNull()
+  })
+
   it('効果適用後、次の妨害が再抽選される(星がsabotage: allの場合)', () => {
     const star: Star = { id: 'test-star', name: 'テスト星', waveSlot: 3, targetMultiplier: 1, reward: 0, restriction: null, sabotage: { kind: 'all' }, descTemplate: '' }
     const run = runWithWave({ stageStars: [star, star, star] })
