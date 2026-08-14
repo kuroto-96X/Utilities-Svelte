@@ -2,17 +2,21 @@
 import type { Card, ChainCardOrigin, WaveState } from './types'
 import type { ShidasuParams } from './params'
 
-// エイワズ(秘儀)によるコンボリセット防止。newFoundationが新しく引かれたカード(通常のdrawStock
-// リセット時)であればチェーンを継続扱いで延長し、全消し・手詰まりのリサイクル時(newFoundation省略、
-// wave.foundationと同一)はチェーン・コンボ状態をそのまま保持する。いずれもresetDirect系護符
-// (沈着・冷静・残響等)の判定はこの関数の外側(呼び出し元)で既に行われているため、シールドが
-// 防ぐのはコンボ・チェーンの状態変化のみである。
+// コンボリセット時に共通で初期化するフィールドをまとめて返す(治癒・再生・不屈の解決は含まない)。
+// newFoundation/newOriginを省略した場合はfoundationを変更せず、chainは[wave.foundation]・
+// chainOriginは現在の末尾要素のみを残す(全消し・手詰まり時に使う。まだ新しいカードを引いていないため)。
+// 通常のdrawStockリセットでは、新しく引いたカードとその起源('draw')を明示的に渡す。
 export function resetComboFields(
   wave: WaveState,
   params: ShidasuParams,
   newFoundation: Card = wave.foundation,
   newOrigin: ChainCardOrigin = wave.chainOrigin[wave.chainOrigin.length - 1]
 ): WaveState {
+  // エイワズ(秘儀)によるコンボリセット防止。newFoundationが新しく引かれたカード(通常のdrawStock
+  // リセット時)であればチェーンを継続扱いで延長し、全消し・手詰まりのリサイクル時(newFoundation省略、
+  // wave.foundationと同一)はチェーン・コンボ状態をそのまま保持する。いずれもresetDirect系護符
+  // (沈着・冷静・残響等)の判定はこの関数の外側(呼び出し元)で既に行われているため、シールドが
+  // 防ぐのはコンボ・チェーンの状態変化のみである。
   if (wave.comboResetShieldRemaining > 0) {
     const isNewCard = newFoundation.id !== wave.foundation.id
     return {
