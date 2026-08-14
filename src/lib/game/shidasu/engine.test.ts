@@ -5202,6 +5202,48 @@ describe('triggerSabotage', () => {
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'tsukumokaRelease', () => 0)
     expect(next.relics).toEqual([{ id: 'fukuzasa', tsukumoka: false }])
   })
+
+  it('discardErase: チェーンを捨て札に送り、捨て札全体をシャッフルしてから同じ枚数をチェーンに戻す', () => {
+    const chain: Card[] = [
+      { id: 1, deckId: 1, suit: '♠', rank: 1, wild: false },
+      { id: 2, deckId: 2, suit: '♥', rank: 2, wild: false },
+    ]
+    const discardPile: Card[] = [
+      { id: 3, deckId: 3, suit: '♦', rank: 3, wild: false },
+      { id: 4, deckId: 4, suit: '♣', rank: 4, wild: false },
+    ]
+    const run = runWithWave({}, { chain, chainOrigin: ['draw', 'play'], discardPile, foundation: chain[1] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'discardErase', () => 0)
+    // チェーン・捨て札の合計4枚が欠落・重複無く保たれていること
+    expect(next.wave!.chain).toHaveLength(2)
+    expect(next.wave!.discardPile).toHaveLength(2)
+    const allIds = [...next.wave!.chain, ...next.wave!.discardPile].map(c => c.id).sort()
+    expect(allIds).toEqual([1, 2, 3, 4])
+    // 再構成後のchainOriginは全て'draw'扱いになる
+    expect(next.wave!.chainOrigin).toEqual(['draw', 'draw'])
+    // 新しい末尾が基準カードになる
+    const newLast = next.wave!.chain[next.wave!.chain.length - 1]
+    expect(next.wave!.foundation.id).toBe(newLast.id)
+  })
+
+  it('discardBury: 捨て札を山札に混ぜ込み、同じ枚数を山札から捨て札に移す(場札・チェーンは不変)', () => {
+    const stock: Card[] = [
+      { id: 1, deckId: 1, suit: '♠', rank: 1, wild: false },
+      { id: 2, deckId: 2, suit: '♥', rank: 2, wild: false },
+      { id: 3, deckId: 3, suit: '♦', rank: 3, wild: false },
+    ]
+    const discardPile: Card[] = [{ id: 4, deckId: 4, suit: '♣', rank: 4, wild: false }]
+    const run = runWithWave({}, { stock, discardPile })
+    const beforeTableau = run.wave!.tableau
+    const beforeChain = run.wave!.chain
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'discardBury', () => 0)
+    expect(next.wave!.discardPile).toHaveLength(1)
+    expect(next.wave!.stock).toHaveLength(3)
+    const allIds = [...next.wave!.stock, ...next.wave!.discardPile].map(c => c.id).sort()
+    expect(allIds).toEqual([1, 2, 3, 4])
+    expect(next.wave!.tableau).toBe(beforeTableau)
+    expect(next.wave!.chain).toBe(beforeChain)
+  })
 })
 
 // 実運用のtableau top配置(乱数依存)はseedを固定しても常にisPlayableな列が存在するとは限らないため、

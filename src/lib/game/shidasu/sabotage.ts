@@ -38,6 +38,8 @@ export const SABOTAGE_POOL: SabotageActionDef[] = [
   { id: 'revelationOracleConfiscate', name: '天啓・神託没収', target: '天啓・神託', intervalTurns: 7, descTemplate: '所持している天啓または神託からランダムに1つ選び、完全に失わせる' },
   { id: 'revelationOracleForceActivate', name: '天啓・神託強制発動', target: '天啓・神託', intervalTurns: 6, descTemplate: '使用可能な天啓または所持神託からランダムに1つ選び、即座に効果を発動させて消費する' },
   { id: 'tsukumokaRelease', name: '付喪化解除', target: 'レリック', intervalTurns: 6, descTemplate: '付喪化済みレリックがあればランダムに1つ選び、未付喪化状態に戻す' },
+  { id: 'discardErase', name: '捨て札消去', target: '捨て札', intervalTurns: 6, descTemplate: 'チェーンのカードを捨て札に送り、捨て札全体をシャッフルしてから同じ枚数をチェーンに戻す' },
+  { id: 'discardBury', name: '捨て札埋没', target: '捨て札', intervalTurns: 5, descTemplate: '捨て札の中身を山札に戻し混ぜ込み、同じ枚数を山札から裏向きで捨て札に移す' },
 ]
 
 export function eligibleSabotageIds(sabotage: StarSabotage): SabotageActionId[] {

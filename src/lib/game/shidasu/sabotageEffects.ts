@@ -257,6 +257,25 @@ function applyTsukumokaRelease({ run, rand }: SabotageContext): SabotageResult {
   return { run: { relics } }
 }
 
+function applyDiscardErase({ wave, rand }: SabotageContext): SabotageResult {
+  const chainCount = wave.chain.length
+  const pool = [...wave.discardPile, ...wave.chain]
+  shuffleInPlace(pool, rand)
+  const chain = pool.slice(0, chainCount)
+  const discardPile = pool.slice(chainCount)
+  const chainOrigin = chain.map(() => 'draw' as const)
+  return { wave: { chain, chainOrigin, discardPile, foundation: chain[chain.length - 1] } }
+}
+
+function applyDiscardBury({ wave, rand }: SabotageContext): SabotageResult {
+  const n = wave.discardPile.length
+  const pool = [...wave.stock, ...wave.discardPile]
+  shuffleInPlace(pool, rand)
+  const discardPile = pool.slice(0, n)
+  const stock = pool.slice(n)
+  return { wave: { stock, discardPile } }
+}
+
 const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => SabotageResult> = {
   stockPurge: applyStockPurge,
   columnReturn: applyColumnReturn,
@@ -284,6 +303,8 @@ const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => Sabo
   revelationOracleConfiscate: applyRevelationOracleConfiscate,
   revelationOracleForceActivate: applyRevelationOracleForceActivate,
   tsukumokaRelease: applyTsukumokaRelease,
+  discardErase: applyDiscardErase,
+  discardBury: applyDiscardBury,
 }
 
 export function applySabotageEffect(id: SabotageActionId, ctx: SabotageContext): SabotageResult {
