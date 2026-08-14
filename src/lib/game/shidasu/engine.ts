@@ -704,7 +704,7 @@ export function playCard(
 
     if (remainingCount(resetWave.tableau) > 0) {
       if (resetWave.stock.length > 0) {
-        return drawStock(params, resetWave, items, target, deckComposition, modifier, rand)
+        return drawStock(params, resetWave, items, target, deckComposition, modifier, rand, scoreLock, sealedRoleEffect, comboCap)
       }
       return { wave: resetWave, deckComposition }
     }
