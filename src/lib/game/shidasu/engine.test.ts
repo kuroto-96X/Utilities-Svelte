@@ -5056,6 +5056,13 @@ describe('triggerSabotage', () => {
     expect(next.wave!.foundation.id).toBe(1)
   })
 
+  it('comboCap: 発動時点のコンボ数を上限としてactiveSealに設定する', () => {
+    const run = runWithWave({}, { combo: 4 })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'comboCap', () => 0)
+    expect(next.wave!.activeSeal).toEqual({ kind: 'comboCap', max: 4 })
+    expect(next.wave!.combo).toBe(4)
+  })
+
   it('効果適用後、次の妨害が再抽選される(星がsabotage: allの場合)', () => {
     const star: Star = { id: 'test-star', name: 'テスト星', waveSlot: 3, targetMultiplier: 1, reward: 0, restriction: null, sabotage: { kind: 'all' }, descTemplate: '' }
     const run = runWithWave({ stageStars: [star, star, star] })

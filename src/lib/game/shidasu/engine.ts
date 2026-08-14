@@ -1366,6 +1366,10 @@ export function triggerSabotage(params: ShidasuParams, run: RunState, id: Sabota
       nextWave = { ...nextWave, chain, chainOrigin, foundation: chain[chain.length - 1] }
       break
     }
+    case 'comboCap': {
+      nextWave = { ...nextWave, activeSeal: { kind: 'comboCap', max: wave.combo } }
+      break
+    }
   }
 
   const star = nextRun.stageStars[nextRun.waveIndex]
