@@ -1344,6 +1344,14 @@ export function triggerSabotage(params: ShidasuParams, run: RunState, id: Sabota
       }
       break
     }
+    case 'chainShuffle': {
+      const indices = wave.chain.map((_c, i) => i)
+      shuffleInPlace(indices, rand)
+      const chain = indices.map(i => wave.chain[i])
+      const chainOrigin = indices.map(i => wave.chainOrigin[i])
+      nextWave = { ...nextWave, chain, chainOrigin, foundation: chain[chain.length - 1] }
+      break
+    }
   }
 
   const star = nextRun.stageStars[nextRun.waveIndex]

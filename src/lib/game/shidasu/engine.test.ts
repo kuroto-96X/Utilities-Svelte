@@ -69,7 +69,7 @@ import {
   triggerSabotage,
 } from './engine'
 import { isFace, chainContinuesPattern } from './patterns'
-import type { Card, WaveState, RunState, ItemId, ShopIndividualSlot, Star, StarRestriction, RoleName } from './types'
+import type { Card, WaveState, RunState, ItemId, ShopIndividualSlot, Star, StarRestriction, RoleName, ChainCardOrigin } from './types'
 import { DEFAULT_PARAMS, type ShidasuParams } from './params'
 import { createRng, standardDeckComposition } from './deck'
 import { card } from './testHelpers'
@@ -4999,6 +4999,37 @@ describe('triggerSabotage', () => {
     const run = runWithWave({ rites: ['gebo', 'fehu'] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteConfiscate', () => 0)
     expect(next.rites).toEqual(['fehu'])
+  })
+
+  it('chainShuffle: チェーンがシャッフルされ、新しい末尾が基準カードになる', () => {
+    const chain: Card[] = [
+      { id: 1, deckId: 1, suit: '♠', rank: 1, wild: false },
+      { id: 2, deckId: 2, suit: '♥', rank: 2, wild: false },
+      { id: 3, deckId: 3, suit: '♦', rank: 3, wild: false },
+    ]
+    const chainOrigin: ChainCardOrigin[] = ['draw', 'play', 'play']
+    const run = runWithWave({}, { chain, chainOrigin, foundation: chain[2] })
+    // randを固定値にし、shuffleInPlace(Fisher-Yates)で並びが反転するようにする
+    let call = 0
+    const rand = () => {
+      const values = [0, 0, 0]
+      return values[call++] ?? 0
+    }
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'chainShuffle', rand)
+    expect(next.wave!.chain).toHaveLength(3)
+    expect(next.wave!.chainOrigin).toHaveLength(3)
+    // シャッフル後の末尾が新しい基準カードになっていること
+    const newLast = next.wave!.chain[next.wave!.chain.length - 1]
+    expect(next.wave!.foundation.id).toBe(newLast.id)
+    // 3枚とも欠落・重複無く残っていること
+    expect(next.wave!.chain.map(c => c.id).sort()).toEqual([1, 2, 3])
+  })
+
+  it('chainShuffle: チェーンが1枚だけなら基準カードは変わらない', () => {
+    const chain: Card[] = [{ id: 1, deckId: 1, suit: '♠', rank: 1, wild: false }]
+    const run = runWithWave({}, { chain, chainOrigin: ['draw'], foundation: chain[0] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'chainShuffle', () => 0)
+    expect(next.wave!.foundation.id).toBe(1)
   })
 
   it('効果適用後、次の妨害が再抽選される(星がsabotage: allの場合)', () => {
