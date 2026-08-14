@@ -3,12 +3,15 @@ import type { ScorePart } from './scoreParts'
 export type Suit = '♠' | '♥' | '♦' | '♣' | '★'
 export type Rank = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13
 export type StageModifier = 'none' | 'noLoop' | 'faceLock'
-// 妨害行動の識別子。11個実装済み(各操作対象1個ずつ)。
+// 妨害行動の識別子。22個実装済み(Phase A: 11個+Phase B先行実装分11個)。
 // 詳細はdocs/shidasu/shidasu-star-sabotage-candidates.mdを参照。
 export type SabotageActionId =
   | 'stockPurge' | 'columnReturn' | 'chainSettle' | 'comboBreather'
   | 'talismanSeal' | 'riteSeal' | 'revelationOracleSeal' | 'relicConfiscate'
   | 'tableauCardToDiscard' | 'currencyConfiscate' | 'roleSeal'
+  | 'stockPurgeSmall' | 'stockShuffle' | 'tableauFullReturn' | 'tableauShuffle'
+  | 'chainPartialDiscard' | 'chainShuffle' | 'comboReduce' | 'comboCap'
+  | 'talismanConfiscate' | 'riteConfiscate' | 'riteForceActivate'
 
 // Star.sabotageの型。noneが既存デフォルト、allはSABOTAGE_POOL全件が対象
 // (将来候補が増えても自動的に対象へ加わる)、someは個別指定(将来の拡張用、現状未使用)。
@@ -288,6 +291,7 @@ export interface WaveState {
     | { kind: 'rite'; id: RiteId }
     | { kind: 'revelationOrOracle'; ref: HeldRevelationOrOracleRef }
     | { kind: 'role'; names: RoleName[] }
+    | { kind: 'comboCap'; max: number }
     | null
 }
 
