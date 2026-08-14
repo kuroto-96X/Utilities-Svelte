@@ -5008,6 +5008,7 @@ describe('triggerSabotage', () => {
       { id: 3, deckId: 3, suit: '♦', rank: 3, wild: false },
     ]
     const chainOrigin: ChainCardOrigin[] = ['draw', 'play', 'play']
+    const originalOriginById = new Map(chain.map((c, i) => [c.id, chainOrigin[i]]))
     const run = runWithWave({}, { chain, chainOrigin, foundation: chain[2] })
     // randを固定値にし、shuffleInPlace(Fisher-Yates)で並びが反転するようにする
     let call = 0
@@ -5020,6 +5021,10 @@ describe('triggerSabotage', () => {
     expect(next.wave!.chainOrigin).toHaveLength(3)
     // 実際に並びが入れ替わっていること(no-op実装を弾くための検証)
     expect(next.wave!.chain.map(c => c.id)).not.toEqual([1, 2, 3])
+    // chainOriginがchainと同じ並び替えを適用されていること(片方だけシャッフルし忘れる不具合を検出する)
+    next.wave!.chain.forEach((card, i) => {
+      expect(next.wave!.chainOrigin[i]).toBe(originalOriginById.get(card.id))
+    })
     // シャッフル後の末尾が新しい基準カードになっていること
     const newLast = next.wave!.chain[next.wave!.chain.length - 1]
     expect(next.wave!.foundation.id).toBe(newLast.id)
