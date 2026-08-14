@@ -1,0 +1,223 @@
+// src/lib/game/shidasu/sabotageEffects.ts
+import type { SabotageActionId, WaveState, RunState, Card, HeldRevelationOrOracleRef } from './types'
+import type { ShidasuParams } from './params'
+import { shuffleInPlace, rollOffer } from './deck'
+import { ORACLE_POOL } from './oracles'
+import { applyRiteEffect, canUseRite } from './riteEffects'
+import { resetComboFields } from './waveReset'
+
+export interface SabotageContext {
+  params: ShidasuParams
+  run: RunState
+  wave: WaveState
+  rand: () => number
+}
+
+// wave・runへの差分(部分更新)。両方ともoptional(片方だけ、あるいはどちらも変更しない場合はキー自体を省略する)
+export interface SabotageResult {
+  wave?: Partial<WaveState>
+  run?: Partial<RunState>
+}
+
+function applyStockPurge({ wave }: SabotageContext): SabotageResult {
+  const n = Math.min(5, wave.stock.length)
+  const purged = wave.stock.slice(wave.stock.length - n)
+  return { wave: { stock: wave.stock.slice(0, wave.stock.length - n), discardPile: [...wave.discardPile, ...purged] } }
+}
+
+function applyColumnReturn({ wave, rand }: SabotageContext): SabotageResult {
+  const colIndex = Math.floor(rand() * wave.tableau.length)
+  const col = wave.tableau[colIndex]
+  const pool = [...wave.stock, ...col]
+  shuffleInPlace(pool, rand)
+  const newCol = pool.slice(0, col.length)
+  const newStock = pool.slice(col.length)
+  const tableau = wave.tableau.map((c, i) => (i === colIndex ? newCol : c))
+  return { wave: { tableau, stock: newStock } }
+}
+
+// chainSettle: 既存のtriggerSabotageは`nextWave`(activeSeal既にnullリセット済み)を起点に
+// resetComboFieldsを呼んでいたが、この関数は`wave`(リセット前、活性のactiveSealを保持している
+// 可能性がある)を受け取る。resetComboFieldsは`...wave`をスプレッドするため、そのままだと古い
+// activeSealが結果へ紛れ込む。明示的に`activeSeal: null`で上書きすることで、triggerSabotage側の
+// ベース(resetWave)に依存せず、この関数単体で正しい結果を返せるようにする。
+function applyChainSettle({ params, wave, rand }: SabotageContext): SabotageResult {
+  if (wave.stock.length === 0) {
+    return { wave: { ...resetComboFields(wave, params), activeSeal: null } }
+  }
+  const stock = [...wave.stock]
+  const drawn = stock.pop() as Card
+  return { wave: { ...resetComboFields(wave, params, drawn, 'draw'), activeSeal: null, stock } }
+}
+
+function applyComboBreather(_ctx: SabotageContext): SabotageResult {
+  return { wave: { combo: 0 } }
+}
+
+function applyTalismanSeal({ run, rand }: SabotageContext): SabotageResult {
+  if (run.items.length === 0) return {}
+  const target = run.items[Math.floor(rand() * run.items.length)]
+  return { wave: { activeSeal: { kind: 'talisman', id: target } } }
+}
+
+function applyRiteSeal({ run, rand }: SabotageContext): SabotageResult {
+  if (run.rites.length === 0) return {}
+  const target = run.rites[Math.floor(rand() * run.rites.length)]
+  return { wave: { activeSeal: { kind: 'rite', id: target } } }
+}
+
+function applyRevelationOracleSeal({ run, rand }: SabotageContext): SabotageResult {
+  const pool: HeldRevelationOrOracleRef[] = [
+    ...run.revelations.map(refId => ({ kind: 'revelation' as const, id: refId })),
+    ...run.oracles.map(refId => ({ kind: 'oracle' as const, id: refId })),
+  ]
+  if (pool.length === 0) return {}
+  const ref = pool[Math.floor(rand() * pool.length)]
+  return { wave: { activeSeal: { kind: 'revelationOrOracle', ref } } }
+}
+
+function applyRelicConfiscate({ run, rand }: SabotageContext): SabotageResult {
+  if (run.relics.length === 0) return {}
+  const idx = Math.floor(rand() * run.relics.length)
+  return { run: { relics: [...run.relics.slice(0, idx), ...run.relics.slice(idx + 1)] } }
+}
+
+function applyTableauCardToDiscard({ wave, rand }: SabotageContext): SabotageResult {
+  const positions: { ci: number; ri: number }[] = []
+  wave.tableau.forEach((col, ci) => col.forEach((_c, ri) => positions.push({ ci, ri })))
+  if (positions.length === 0) return {}
+  const pick = positions[Math.floor(rand() * positions.length)]
+  const card = wave.tableau[pick.ci][pick.ri]
+  const tableau = wave.tableau.map((col, ci) => (ci === pick.ci ? [...col.slice(0, pick.ri), ...col.slice(pick.ri + 1)] : col))
+  return { wave: { tableau, discardPile: [...wave.discardPile, card] } }
+}
+
+function applyCurrencyConfiscate({ run }: SabotageContext): SabotageResult {
+  return { run: { currency: Math.max(0, run.currency - 5) } }
+}
+
+function applyRoleSeal({ rand }: SabotageContext): SabotageResult {
+  const names = rollOffer(ORACLE_POOL, 2, rand)
+  return { wave: { activeSeal: { kind: 'role', names } } }
+}
+
+function applyStockPurgeSmall({ wave }: SabotageContext): SabotageResult {
+  const n = Math.min(2, wave.stock.length)
+  const purged = wave.stock.slice(wave.stock.length - n)
+  return { wave: { stock: wave.stock.slice(0, wave.stock.length - n), discardPile: [...wave.discardPile, ...purged] } }
+}
+
+function applyStockShuffle({ wave, rand }: SabotageContext): SabotageResult {
+  const stock = [...wave.stock]
+  shuffleInPlace(stock, rand)
+  return { wave: { stock } }
+}
+
+function applyTableauFullReturn({ wave, rand }: SabotageContext): SabotageResult {
+  const counts = wave.tableau.map(col => col.length)
+  const pool = [...wave.stock, ...wave.tableau.flat()]
+  shuffleInPlace(pool, rand)
+  let cursor = 0
+  const tableau = counts.map(n => {
+    const slice = pool.slice(cursor, cursor + n)
+    cursor += n
+    return slice
+  })
+  return { wave: { tableau, stock: pool.slice(cursor) } }
+}
+
+function applyTableauShuffle({ wave, rand }: SabotageContext): SabotageResult {
+  const counts = wave.tableau.map(col => col.length)
+  const pool = wave.tableau.flat()
+  shuffleInPlace(pool, rand)
+  let cursor = 0
+  const tableau = counts.map(n => {
+    const slice = pool.slice(cursor, cursor + n)
+    cursor += n
+    return slice
+  })
+  return { wave: { tableau } }
+}
+
+function applyChainPartialDiscard({ wave }: SabotageContext): SabotageResult {
+  const removeCount = Math.min(2, Math.max(0, wave.chain.length - 1))
+  const removed = wave.chain.slice(0, removeCount)
+  return {
+    wave: {
+      chain: wave.chain.slice(removeCount),
+      chainOrigin: wave.chainOrigin.slice(removeCount),
+      discardPile: [...wave.discardPile, ...removed],
+    },
+  }
+}
+
+function applyComboReduce({ wave }: SabotageContext): SabotageResult {
+  return { wave: { combo: Math.max(0, wave.combo - 3) } }
+}
+
+function applyTalismanConfiscate({ run, rand }: SabotageContext): SabotageResult {
+  if (run.items.length === 0) return {}
+  const idx = Math.floor(rand() * run.items.length)
+  return { run: { items: [...run.items.slice(0, idx), ...run.items.slice(idx + 1)] } }
+}
+
+function applyRiteConfiscate({ run, rand }: SabotageContext): SabotageResult {
+  if (run.rites.length === 0) return {}
+  const idx = Math.floor(rand() * run.rites.length)
+  return { run: { rites: [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)] } }
+}
+
+function applyChainShuffle({ wave, rand }: SabotageContext): SabotageResult {
+  const indices = wave.chain.map((_c, i) => i)
+  shuffleInPlace(indices, rand)
+  const chain = indices.map(i => wave.chain[i])
+  const chainOrigin = indices.map(i => wave.chainOrigin[i])
+  return { wave: { chain, chainOrigin, foundation: chain[chain.length - 1] } }
+}
+
+function applyComboCap({ wave }: SabotageContext): SabotageResult {
+  return { wave: { activeSeal: { kind: 'comboCap', max: wave.combo } } }
+}
+
+// 既存のtriggerSabotage実装と同じ理由で、applyRiteEffectが返すactivatedWaveは元のwave.activeSeal
+// を引き継ぐため、明示的に`activeSeal: null`で上書きする(riteForceActivateは常に封印を残さない)。
+function applyRiteForceActivate({ params, run, wave, rand }: SabotageContext): SabotageResult {
+  const usable = run.rites.filter(riteId => canUseRite(params, wave, riteId))
+  if (usable.length === 0) return {}
+  const target = usable[Math.floor(rand() * usable.length)]
+  const activatedWave = applyRiteEffect(params, wave, target, rand)
+  const idx = run.rites.indexOf(target)
+  return {
+    wave: { ...activatedWave, activeSeal: null },
+    run: { rites: [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)] },
+  }
+}
+
+const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => SabotageResult> = {
+  stockPurge: applyStockPurge,
+  columnReturn: applyColumnReturn,
+  chainSettle: applyChainSettle,
+  comboBreather: applyComboBreather,
+  talismanSeal: applyTalismanSeal,
+  riteSeal: applyRiteSeal,
+  revelationOracleSeal: applyRevelationOracleSeal,
+  relicConfiscate: applyRelicConfiscate,
+  tableauCardToDiscard: applyTableauCardToDiscard,
+  currencyConfiscate: applyCurrencyConfiscate,
+  roleSeal: applyRoleSeal,
+  stockPurgeSmall: applyStockPurgeSmall,
+  stockShuffle: applyStockShuffle,
+  tableauFullReturn: applyTableauFullReturn,
+  tableauShuffle: applyTableauShuffle,
+  chainPartialDiscard: applyChainPartialDiscard,
+  chainShuffle: applyChainShuffle,
+  comboReduce: applyComboReduce,
+  comboCap: applyComboCap,
+  talismanConfiscate: applyTalismanConfiscate,
+  riteConfiscate: applyRiteConfiscate,
+  riteForceActivate: applyRiteForceActivate,
+}
+
+export function applySabotageEffect(id: SabotageActionId, ctx: SabotageContext): SabotageResult {
+  return SABOTAGE_HANDLERS[id](ctx)
+}
