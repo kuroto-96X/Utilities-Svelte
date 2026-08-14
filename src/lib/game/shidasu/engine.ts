@@ -1149,7 +1149,7 @@ export function triggerSabotage(params: ShidasuParams, run: RunState, id: Sabota
   if (!run.wave) return run
   const wave = run.wave
   const resetWave: WaveState = { ...wave, activeSeal: null }
-  const result = applySabotageEffect(id, { params, run, wave, rand })
+  const result = applySabotageEffect(id, { params, run, wave, rand, useRite, useRevelation, useOracle })
   const nextWave: WaveState = { ...resetWave, ...result.wave }
   const nextRun: RunState = { ...run, ...result.run, wave: nextWave }
 

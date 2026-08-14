@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/sabotageEffects.ts
-import type { SabotageActionId, WaveState, RunState, Card, HeldRevelationOrOracleRef } from './types'
+import type { SabotageActionId, WaveState, RunState, Card, HeldRevelationOrOracleRef, RiteId, RevelationId, RelicId, RoleName } from './types'
 import type { ShidasuParams } from './params'
 import { shuffleInPlace, rollOffer } from './deck'
 import { ORACLE_POOL } from './oracles'
@@ -11,6 +11,15 @@ export interface SabotageContext {
   run: RunState
   wave: WaveState
   rand: () => number
+  // riteForceActivate・revelationOracleForceActivate用。engine.tsに定義されているが、
+  // sabotageEffects.tsからengine.tsを直接importすると循環importになるため、
+  // 呼び出し元(triggerSabotage)から値として注入する。
+  useRite: (params: ShidasuParams, run: RunState, riteId: RiteId, rand?: () => number) => RunState
+  useRevelation: (
+    params: ShidasuParams, run: RunState, revelationId: RevelationId,
+    targetCol: number | null, rand?: () => number, targetRelicId?: RelicId | null
+  ) => RunState
+  useOracle: (params: ShidasuParams, run: RunState, roleName: RoleName) => RunState
 }
 
 // wave・runへの差分(部分更新)。両方ともoptional(片方だけ、あるいはどちらも変更しない場合はキー自体を省略する)
