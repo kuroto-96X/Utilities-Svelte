@@ -3,7 +3,7 @@ import type { ScorePart } from './scoreParts'
 export type Suit = '♠' | '♥' | '♦' | '♣' | '★'
 export type Rank = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13
 export type StageModifier = 'none' | 'noLoop' | 'faceLock'
-// 妨害行動の識別子。22個実装済み(SABOTAGE_POOLに全件登録済み)。詳細はdocs/shidasu/shidasu-star-sabotage-candidates.mdを参照。
+// 妨害行動の識別子。32個実装済み(SABOTAGE_POOLに全件登録済み)。詳細はdocs/shidasu/shidasu-star-sabotage-candidates.mdを参照。
 export type SabotageActionId =
   | 'stockPurge' | 'columnReturn' | 'chainSettle' | 'comboBreather'
   | 'talismanSeal' | 'riteSeal' | 'revelationOracleSeal' | 'relicConfiscate'
@@ -12,7 +12,7 @@ export type SabotageActionId =
   | 'chainPartialDiscard' | 'chainShuffle' | 'comboReduce' | 'comboCap'
   | 'talismanConfiscate' | 'riteConfiscate' | 'riteForceActivate'
   | 'talismanShuffle' | 'revelationOracleConfiscate' | 'revelationOracleForceActivate' | 'tsukumokaRelease'
-  | 'discardErase' | 'discardBury' | 'rewardReduce' | 'currencyDrain' | 'roleLevelDecay'
+  | 'discardErase' | 'discardBury' | 'rewardReduce' | 'currencyDrain' | 'roleLevelDecay' | 'roleBias'
 
 // Star.sabotageの型。noneが既存デフォルト、allはSABOTAGE_POOL全件が対象
 // (将来候補が増えても自動的に対象へ加わる)、someは個別指定(将来の拡張用、現状未使用)。
@@ -294,6 +294,7 @@ export interface WaveState {
     | { kind: 'role'; names: RoleName[] }
     | { kind: 'comboCap'; max: number }
     | { kind: 'talismanHidden' }
+    | { kind: 'roleBias'; buffed: RoleName[]; nerfed: RoleName[]; multiplier: number }
     | null
 }
 

@@ -16,7 +16,8 @@
   function effectiveLevel(roleName: RoleName, storedLevel: number): number {
     if (sealedRoleEffect.zeroRoles.includes(roleName)) return 0
     if (sealedRoleEffect.oracleBaselineRole === roleName) return 1
-    return storedLevel
+    const mult = sealedRoleEffect.multipliers?.[roleName]
+    return mult !== undefined ? storedLevel * mult : storedLevel
   }
 </script>
 

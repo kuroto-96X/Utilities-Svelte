@@ -292,6 +292,15 @@ function applyRoleLevelDecay({ run, rand }: SabotageContext): SabotageResult {
   return { run: { oracleLevels }, wave: { oracleLevels } }
 }
 
+function applyRoleBias({ rand }: SabotageContext): SabotageResult {
+  const shuffled = [...ORACLE_POOL]
+  shuffleInPlace(shuffled, rand)
+  const half = Math.floor(shuffled.length / 2)
+  const buffed = shuffled.slice(0, half)
+  const nerfed = shuffled.slice(half)
+  return { wave: { activeSeal: { kind: 'roleBias', buffed, nerfed, multiplier: 2 } } }
+}
+
 const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => SabotageResult> = {
   stockPurge: applyStockPurge,
   columnReturn: applyColumnReturn,
@@ -324,6 +333,7 @@ const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => Sabo
   rewardReduce: applyRewardReduce,
   currencyDrain: applyCurrencyDrain,
   roleLevelDecay: applyRoleLevelDecay,
+  roleBias: applyRoleBias,
 }
 
 export function applySabotageEffect(id: SabotageActionId, ctx: SabotageContext): SabotageResult {

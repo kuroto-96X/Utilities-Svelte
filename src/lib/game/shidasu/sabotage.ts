@@ -9,7 +9,7 @@ export interface SabotageActionDef {
   descTemplate: string
 }
 
-// 妨害行動プール。22件(11ターゲット×先行実装11個+Phase A追加11個)。詳細はdocs/shidasu/shidasu-star-sabotage-candidates.mdを参照。
+// 妨害行動プール。32件(先行実装11個+Phase A 11個+Phase B 10個)。詳細はdocs/shidasu/shidasu-star-sabotage-candidates.mdを参照。
 // intervalTurnsは初期値の目安(効果が強い・永続的なものほど長め)。数値調整はこの配列を直接編集する。
 export const SABOTAGE_POOL: SabotageActionDef[] = [
   { id: 'stockPurge', name: '大量放出', target: '山札', intervalTurns: 6, descTemplate: '山札の上から5枚を捨て札に置く' },
@@ -43,6 +43,7 @@ export const SABOTAGE_POOL: SabotageActionDef[] = [
   { id: 'rewardReduce', name: '報酬減少', target: '資産(星片)', intervalTurns: 8, descTemplate: 'Waveクリア時の通貨報酬を-2する(複数回発動した場合は累積する)' },
   { id: 'currencyDrain', name: '通貨強制消費', target: '資産(星片)', intervalTurns: 6, descTemplate: '所持通貨の20%を失わせる' },
   { id: 'roleLevelDecay', name: '役減衰', target: '役ステータス', intervalTurns: 7, descTemplate: 'ランダムな2役を選び、oracleLevelを1下げる(下限1、永続的なマイナス)' },
+  { id: 'roleBias', name: '役偏重', target: '役ステータス', intervalTurns: 6, descTemplate: '次の妨害発動まで、全役を半分ずつ2グループに分け、一方を2倍、他方を1/2倍にする' },
 ]
 
 export function eligibleSabotageIds(sabotage: StarSabotage): SabotageActionId[] {

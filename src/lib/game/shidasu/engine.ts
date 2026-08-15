@@ -279,7 +279,7 @@ export type BossScoreLock =
 // role封印・revelationOrOracle封印(オラクル選択時)によって、playCard/drawStockが役ボーナス・
 // 神託レベルの計算をどう扱うかを表す。zeroRolesに含まれる役はレベル0(=無効)扱い、
 // oracleBaselineRoleに一致する役はレベル1(封印前の基準値)扱いになる。
-export type SealedRoleEffect = { zeroRoles: RoleName[]; oracleBaselineRole: RoleName | null }
+export type SealedRoleEffect = { zeroRoles: RoleName[]; oracleBaselineRole: RoleName | null; multipliers?: Partial<Record<RoleName, number>> }
 
 // scoreLockの種別ごとの無得点化条件を判定する共通ヘルパー。playCard/drawStockの両方から使う。
 function isBossScoreLocked(scoreLock: NonNullable<BossScoreLock>, effectiveCombo: number, card: Card): boolean {
@@ -375,7 +375,9 @@ export function playCard(
   const oracleLevel = (name: RoleName): number => {
     if (sealedRoleEffect.zeroRoles.includes(name)) return 0
     if (sealedRoleEffect.oracleBaselineRole === name) return 1
-    return wave.oracleLevels[name] ?? 1
+    const base = wave.oracleLevels[name] ?? 1
+    const mult = sealedRoleEffect.multipliers?.[name]
+    return mult !== undefined ? base * mult : base
   }
   const chainResult = evaluateChainBonus(params.scoring, wave.chain, card, effectiveStairMinLen, roleBonusMultiplier, effectiveSuitColorMinLen, oracleLevel, items)
   base += chainResult.bonus
@@ -713,7 +715,9 @@ export function drawStock(
       const oracleLevel = (name: RoleName): number => {
         if (sealedRoleEffect.zeroRoles.includes(name)) return 0
         if (sealedRoleEffect.oracleBaselineRole === name) return 1
-        return wave.oracleLevels[name] ?? 1
+        const base = wave.oracleLevels[name] ?? 1
+        const mult = sealedRoleEffect.multipliers?.[name]
+        return mult !== undefined ? base * mult : base
       }
       const chainResult = evaluateChainBonus(params.scoring, wave.chain, drawnCard, effectiveStairMinLen, undefined, effectiveSuitColorMinLen, oracleLevel, items)
       base += chainResult.bonus
@@ -1134,6 +1138,12 @@ function resolveEffectiveItems(items: ItemId[], activeSeal: WaveState['activeSea
 export function resolveSealedRoleEffect(activeSeal: WaveState['activeSeal']): SealedRoleEffect {
   if (activeSeal?.kind === 'role') return { zeroRoles: activeSeal.names, oracleBaselineRole: null }
   if (activeSeal?.kind === 'revelationOrOracle' && activeSeal.ref.kind === 'oracle') return { zeroRoles: [], oracleBaselineRole: activeSeal.ref.id }
+  if (activeSeal?.kind === 'roleBias') {
+    const multipliers: Partial<Record<RoleName, number>> = {}
+    for (const name of activeSeal.buffed) multipliers[name] = activeSeal.multiplier
+    for (const name of activeSeal.nerfed) multipliers[name] = 1 / activeSeal.multiplier
+    return { zeroRoles: [], oracleBaselineRole: null, multipliers }
+  }
   return { zeroRoles: [], oracleBaselineRole: null }
 }
 

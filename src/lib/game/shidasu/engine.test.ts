@@ -4848,6 +4848,30 @@ describe('役封印のoracleLevelへの反映(playCard)', () => {
   })
 })
 
+describe('役偏重(roleBias)のoracleLevelへの反映(playCard)', () => {
+  test('sealedRoleEffect.multipliersに含まれる役は基礎点にその倍率が乗算される(buffed側)', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 1),
+      chain: [card(20, '♥', 11), card(21, '♦', 12)],
+      tableau: [[card(1, '♣', 13)], [card(2, '♦', 2)]],
+    })
+    const baseline = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), () => 0.5)
+    const buffed = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), () => 0.5, null, undefined, { zeroRoles: [], oracleBaselineRole: null, multipliers: { royalSet: 2 } })
+    expect(buffed.wave.score).toBeGreaterThan(baseline.wave.score)
+  })
+
+  test('sealedRoleEffect.multipliersに含まれる役は基礎点にその倍率が乗算される(nerfed側)', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 1),
+      chain: [card(20, '♥', 11), card(21, '♦', 12)],
+      tableau: [[card(1, '♣', 13)], [card(2, '♦', 2)]],
+    })
+    const baseline = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), () => 0.5)
+    const nerfed = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), () => 0.5, null, undefined, { zeroRoles: [], oracleBaselineRole: null, multipliers: { royalSet: 0.5 } })
+    expect(nerfed.wave.score).toBeLessThan(baseline.wave.score)
+  })
+})
+
 describe('comboCapのplayCard/drawStockへのクランプ', () => {
   // 実運用のtableau top配置(乱数依存)はseed=1でも決定的にisPlayableな列が存在するとは限らない
   // (実測済み: seed=1・stage0/wave0だと foundation rank7 に対しtop札が5,4,12,2,5,2,3となりplayableColが常に-1になる)。
@@ -5301,6 +5325,21 @@ describe('triggerSabotage', () => {
     for (const level of Object.values(next.oracleLevels)) {
       expect(level).toBeGreaterThanOrEqual(1)
     }
+  })
+
+  it('roleBias: 10役をランダムに5役ずつ2グループへ分け、buffedを2倍・nerfedを0.5倍のactiveSealにする', () => {
+    const run = runWithWave()
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'roleBias', () => 0)
+    const seal = next.wave!.activeSeal
+    expect(seal?.kind).toBe('roleBias')
+    if (seal?.kind !== 'roleBias') throw new Error('unreachable')
+    expect(seal.buffed).toHaveLength(5)
+    expect(seal.nerfed).toHaveLength(5)
+    expect(seal.multiplier).toBe(2)
+    // 重複・欠落無く10役全てがどちらかに属していること
+    expect([...seal.buffed, ...seal.nerfed].sort()).toEqual(
+      ['alternating', 'color', 'columnSweep', 'completeRun', 'flush', 'pair', 'royalSet', 'sameRank', 'stair', 'suit'].sort()
+    )
   })
 })
 
