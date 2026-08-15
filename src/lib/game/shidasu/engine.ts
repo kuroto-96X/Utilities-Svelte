@@ -1649,40 +1649,36 @@ export function reorderItems(run: RunState, fromIndex: number, toIndex: number):
   return { ...run, items }
 }
 
+// 所持配列から1個を売却し、通貨を得る共通処理。playing/shopフェーズでのみ呼べる。
+// フィールドの動的キーアクセスのため戻り値をRunStateにキャストしている(呼び出し元は
+// 決まった4パターンに限定されるため、型安全性は既存テストで担保する。福袋pick系リファクタの
+// resolvePackOfferPickと同じ理由・同じパターン)。
+function sellFromArray<T>(run: RunState, arrayField: 'items' | 'rites' | 'revelations' | 'oracles', arr: T[], id: T, price: number): RunState {
+  if (run.phase !== 'playing' && run.phase !== 'shop') return run
+  const idx = arr.indexOf(id)
+  if (idx === -1) return run
+  const newArr = [...arr.slice(0, idx), ...arr.slice(idx + 1)]
+  return { ...run, [arrayField]: newArr, currency: run.currency + price } as RunState
+}
+
 // 所持中の護符を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
 export function sellItem(params: ShidasuParams, run: RunState, itemId: ItemId): RunState {
-  if (run.phase !== 'playing' && run.phase !== 'shop') return run
-  const idx = run.items.indexOf(itemId)
-  if (idx === -1) return run
-  const items = [...run.items.slice(0, idx), ...run.items.slice(idx + 1)]
-  return { ...run, items, currency: run.currency + itemSellPrice(params, run, itemId) }
+  return sellFromArray(run, 'items', run.items, itemId, itemSellPrice(params, run, itemId))
 }
 
 // 所持中の秘儀を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
 export function sellRite(params: ShidasuParams, run: RunState, riteId: RiteId): RunState {
-  if (run.phase !== 'playing' && run.phase !== 'shop') return run
-  const idx = run.rites.indexOf(riteId)
-  if (idx === -1) return run
-  const rites = [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)]
-  return { ...run, rites, currency: run.currency + riteSellPrice(params, run) }
+  return sellFromArray(run, 'rites', run.rites, riteId, riteSellPrice(params, run))
 }
 
 // 所持中の天啓を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
 export function sellRevelation(params: ShidasuParams, run: RunState, revelationId: RevelationId): RunState {
-  if (run.phase !== 'playing' && run.phase !== 'shop') return run
-  const idx = run.revelations.indexOf(revelationId)
-  if (idx === -1) return run
-  const revelations = [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
-  return { ...run, revelations, currency: run.currency + revelationSellPrice(params, run) }
+  return sellFromArray(run, 'revelations', run.revelations, revelationId, revelationSellPrice(params, run))
 }
 
 // 所持中の神託を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
 export function sellOracle(params: ShidasuParams, run: RunState, roleName: RoleName): RunState {
-  if (run.phase !== 'playing' && run.phase !== 'shop') return run
-  const idx = run.oracles.indexOf(roleName)
-  if (idx === -1) return run
-  const oracles = [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)]
-  return { ...run, oracles, currency: run.currency + oracleSellPrice(params, run) }
+  return sellFromArray(run, 'oracles', run.oracles, roleName, oracleSellPrice(params, run))
 }
 
 // 大凶クリア後の続行確認画面('continueChoice'フェーズ)で「続ける」を選んだ場合。
