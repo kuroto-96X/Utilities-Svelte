@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, Star, StarRestriction, CardSetGenreId, RelicId, StarSabotage, SabotageActionId } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, Star, StarRestriction, CardSetGenreId, RelicId, StarSabotage, SabotageActionId, ShopState } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition, addCardsToDeckComposition, rollOffer } from './deck'
 import { rollSabotage } from './sabotage'
@@ -1216,17 +1216,33 @@ export function rerollShop(params: ShidasuParams, run: RunState, rand: () => num
   return { ...run, currency: run.currency - cost, shop: rollShop(params, run, rand), shopRerollCount: run.shopRerollCount + 1 }
 }
 
+// バラ売り枠を1つ購入し、対象配列へ追加する共通処理。容量超過・通貨不足ならno-op(スワップは発生しない)。
+// 呼び出し元は既にフェーズ・shop存在・枠のkind一致を確認済みの前提(このヘルパーはその後の
+// 容量判定〜確定処理だけを担当する)。フィールドの動的キーアクセスのため戻り値をRunStateに
+// キャストしている(福袋pick系・売却系リファクタのresolvePackOfferPick/sellFromArrayと同じ理由・同じパターン)。
+function buyIndividualHold<T>(
+  run: RunState,
+  shop: ShopState,
+  slotIndex: number,
+  arrayField: 'items' | 'rites' | 'revelations' | 'oracles',
+  arr: T[],
+  value: T,
+  atCapacity: boolean,
+  price: number
+): RunState {
+  if (atCapacity) return run
+  if (run.currency < price) return run
+  const individual = shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
+  return { ...run, currency: run.currency - price, [arrayField]: [...arr, value], shop: { ...shop, individual } } as RunState
+}
+
 // バラ売り護符購入。所持上限(maxItems、招き布袋像所持時は拡張)到達時・通貨不足時・売り切れ時は何もしない(スワップは発生しない)。
 export function buyIndividualItem(params: ShidasuParams, run: RunState, slotIndex: number): RunState {
   if (run.phase !== 'shop' || !run.shop) return run
   const slot = run.shop.individual[slotIndex]
   if (!slot || slot.sold || slot.kind !== 'item') return run
   const itemId = slot.id as ItemId
-  if (run.items.length >= itemMaxCapacity(params, run)) return run
-  const price = itemBuyPrice(params, run, itemId)
-  if (run.currency < price) return run
-  const individual = run.shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
-  return { ...run, currency: run.currency - price, items: [...run.items, itemId], shop: { ...run.shop, individual } }
+  return buyIndividualHold(run, run.shop, slotIndex, 'items', run.items, itemId, run.items.length >= itemMaxCapacity(params, run), itemBuyPrice(params, run, itemId))
 }
 
 // バラ売り秘儀購入。所持上限(基本3、破魔矢所持時は拡張)到達時・通貨不足時・売り切れ時は何もしない。
@@ -1235,11 +1251,7 @@ export function buyIndividualRite(params: ShidasuParams, run: RunState, slotInde
   const slot = run.shop.individual[slotIndex]
   if (!slot || slot.sold || slot.kind !== 'rite') return run
   const riteId = slot.id as RiteId
-  if (run.rites.length >= riteMaxCapacity(params, run)) return run
-  const price = riteBuyPrice(params, run)
-  if (run.currency < price) return run
-  const individual = run.shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
-  return { ...run, currency: run.currency - price, rites: [...run.rites, riteId], shop: { ...run.shop, individual } }
+  return buyIndividualHold(run, run.shop, slotIndex, 'rites', run.rites, riteId, run.rites.length >= riteMaxCapacity(params, run), riteBuyPrice(params, run))
 }
 
 // レリックを1つ購入する。ショップのレリック専用枠(run.shop.relic配列)からslotIndex番目を購入する。
@@ -1283,12 +1295,8 @@ export function buyIndividualRevelationHold(params: ShidasuParams, run: RunState
   if (run.phase !== 'shop' || !run.shop) return run
   const slot = run.shop.individual[slotIndex]
   if (!slot || slot.sold || slot.kind !== 'revelation') return run
-  if (run.revelations.length + run.oracles.length >= revelationOracleMaxCapacity(params, run)) return run
   const revelationId = slot.id as RevelationId
-  const price = revelationBuyPrice(params, run)
-  if (run.currency < price) return run
-  const individual = run.shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
-  return { ...run, currency: run.currency - price, revelations: [...run.revelations, revelationId], shop: { ...run.shop, individual } }
+  return buyIndividualHold(run, run.shop, slotIndex, 'revelations', run.revelations, revelationId, run.revelations.length + run.oracles.length >= revelationOracleMaxCapacity(params, run), revelationBuyPrice(params, run))
 }
 
 // バラ売り神託・即使う。役レベル+1をrun/wave両方に反映する(pickPackOracleUseと同じ同期が必要)。上限とは無関係に常に購入可。
@@ -1310,12 +1318,8 @@ export function buyIndividualOracleHold(params: ShidasuParams, run: RunState, sl
   if (run.phase !== 'shop' || !run.shop) return run
   const slot = run.shop.individual[slotIndex]
   if (!slot || slot.sold || slot.kind !== 'oracle') return run
-  if (run.revelations.length + run.oracles.length >= revelationOracleMaxCapacity(params, run)) return run
   const roleName = slot.id as RoleName
-  const price = oracleBuyPrice(params, run)
-  if (run.currency < price) return run
-  const individual = run.shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
-  return { ...run, currency: run.currency - price, oracles: [...run.oracles, roleName], shop: { ...run.shop, individual } }
+  return buyIndividualHold(run, run.shop, slotIndex, 'oracles', run.oracles, roleName, run.revelations.length + run.oracles.length >= revelationOracleMaxCapacity(params, run), oracleBuyPrice(params, run))
 }
 
 // 福袋購入。上限とは無関係に常に成立する(通貨不足・売り切れ・shop以外のフェーズでのみブロック)。
