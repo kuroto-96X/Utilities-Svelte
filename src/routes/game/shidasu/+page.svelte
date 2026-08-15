@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
   import { loadParams } from '$lib/game/shidasu/params'
+  import type { ShidasuParams } from '$lib/game/shidasu/params'
   import {
     createInitialRun, beginRun, applyPlayCard, applyDrawStock, applyStuckCheck,
     resolveWaveEnd, continueAfterGreatMisfortune, stopAfterGreatMisfortune, startWave, forceStockTop, useRite,
@@ -278,39 +279,32 @@
     }
   }
 
-  function handlePickPackItem(itemId: ItemId) {
-    run = pickPackItem(params, run, itemId)
+  // 「run = xxxFn(run, arg)」または「run = xxxFn(params, run, arg)」だけで完結する
+  // (追加の副作用呼び出しが無い)ハンドラを生成する薄いファクトリ。天啓関連の一部ハンドラ
+  // (syncRevelationPreviewWithPhase()の追加呼び出しや列選択判定を伴うもの)は対象外で、
+  // 個別関数のまま残す。
+  function bindRunAction<TArg>(fn: (run: RunState, arg: TArg) => RunState): (arg: TArg) => void {
+    return (arg: TArg) => { run = fn(run, arg) }
   }
-  function handleConfirmPackItemSwap(oldItemId: ItemId) {
-    run = confirmPackItemSwap(run, oldItemId)
+  function bindRunActionNoArg(fn: (run: RunState) => RunState): () => void {
+    return () => { run = fn(run) }
   }
-  function handleCancelPackItemSwap() {
-    run = cancelPackItemSwap(run)
-  }
-  function handleClosePackItemSelect() {
-    run = closePackItemSelect(run)
-  }
-
-  function handlePickPackRite(riteId: RiteId) {
-    run = pickPackRite(params, run, riteId)
-  }
-  function handleConfirmPackRiteSwap(oldRiteId: RiteId) {
-    run = confirmPackRiteSwap(run, oldRiteId)
-  }
-  function handleCancelPackRiteSwap() {
-    run = cancelPackRiteSwap(run)
-  }
-  function handleClosePackRiteSelect() {
-    run = closePackRiteSelect(run)
+  function bindParamsRunAction<TArg>(fn: (params: ShidasuParams, run: RunState, arg: TArg) => RunState): (arg: TArg) => void {
+    return (arg: TArg) => { run = fn(params, run, arg) }
   }
 
-  function handlePickPackCardSet(genreId: CardSetGenreId) {
-    run = pickPackCardSet(run, genreId)
-  }
+  const handlePickPackItem = bindParamsRunAction(pickPackItem)
+  const handleConfirmPackItemSwap = bindRunAction(confirmPackItemSwap)
+  const handleCancelPackItemSwap = bindRunActionNoArg(cancelPackItemSwap)
+  const handleClosePackItemSelect = bindRunActionNoArg(closePackItemSelect)
 
-  function handleClosePackCardSetSelect() {
-    run = closePackCardSetSelect(run)
-  }
+  const handlePickPackRite = bindParamsRunAction(pickPackRite)
+  const handleConfirmPackRiteSwap = bindRunAction(confirmPackRiteSwap)
+  const handleCancelPackRiteSwap = bindRunActionNoArg(cancelPackRiteSwap)
+  const handleClosePackRiteSelect = bindRunActionNoArg(closePackRiteSelect)
+
+  const handlePickPackCardSet = bindRunAction(pickPackCardSet)
+  const handleClosePackCardSetSelect = bindRunActionNoArg(closePackCardSetSelect)
 
   // revelationSelectフェーズを離れた(=福袋での天啓選択が完了しshopへ戻った)場合、
   // handleBuyPackで開始したプレビューに片付けアニメーションを発火させる。完了後は
@@ -331,29 +325,17 @@
     run = confirmPackRevelationSwap(run, target)
     syncRevelationPreviewWithPhase()
   }
-  function handleCancelPackRevelationSwap() {
-    run = cancelPackRevelationSwap(run)
-  }
+  const handleCancelPackRevelationSwap = bindRunActionNoArg(cancelPackRevelationSwap)
   function handleClosePackRevelationSelect() {
     run = closePackRevelationSelect(run)
     syncRevelationPreviewWithPhase()
   }
 
-  function handlePickPackOracleUse(roleName: RoleName) {
-    run = pickPackOracleUse(run, roleName)
-  }
-  function handlePickPackOracleHold(roleName: RoleName) {
-    run = pickPackOracleHold(params, run, roleName)
-  }
-  function handleConfirmPackOracleSwap(target: HeldRevelationOrOracleRef) {
-    run = confirmPackOracleSwap(run, target)
-  }
-  function handleCancelPackOracleSwap() {
-    run = cancelPackOracleSwap(run)
-  }
-  function handleClosePackOracleSelect() {
-    run = closePackOracleSelect(run)
-  }
+  const handlePickPackOracleUse = bindRunAction(pickPackOracleUse)
+  const handlePickPackOracleHold = bindParamsRunAction(pickPackOracleHold)
+  const handleConfirmPackOracleSwap = bindRunAction(confirmPackOracleSwap)
+  const handleCancelPackOracleSwap = bindRunActionNoArg(cancelPackOracleSwap)
+  const handleClosePackOracleSelect = bindRunActionNoArg(closePackOracleSelect)
 
   function handleUseOracle(roleName: RoleName) {
     run = useOracle(params, run, roleName)
