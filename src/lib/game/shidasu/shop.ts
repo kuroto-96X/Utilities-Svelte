@@ -70,28 +70,33 @@ export function itemSellPrice(params: ShidasuParams, run: RunState, id: ItemId):
   return Math.round(params.shop.itemPrice[params.talismans[id].rarity].sell * relicSellBonusMultiplier(params, run))
 }
 
+function categoryPrice(params: ShidasuParams, run: RunState, priceConfig: { buy: number; sell: number }, direction: 'buy' | 'sell'): number {
+  const multiplier = direction === 'buy' ? relicPriceMultiplier(params, run) : relicSellBonusMultiplier(params, run)
+  return Math.round(priceConfig[direction] * multiplier)
+}
+
 export function riteBuyPrice(params: ShidasuParams, run: RunState): number {
-  return Math.round(params.shop.ritePrice.buy * relicPriceMultiplier(params, run))
+  return categoryPrice(params, run, params.shop.ritePrice, 'buy')
 }
 
 export function riteSellPrice(params: ShidasuParams, run: RunState): number {
-  return Math.round(params.shop.ritePrice.sell * relicSellBonusMultiplier(params, run))
+  return categoryPrice(params, run, params.shop.ritePrice, 'sell')
 }
 
 export function revelationBuyPrice(params: ShidasuParams, run: RunState): number {
-  return Math.round(params.shop.revelationPrice.buy * relicPriceMultiplier(params, run))
+  return categoryPrice(params, run, params.shop.revelationPrice, 'buy')
 }
 
 export function revelationSellPrice(params: ShidasuParams, run: RunState): number {
-  return Math.round(params.shop.revelationPrice.sell * relicSellBonusMultiplier(params, run))
+  return categoryPrice(params, run, params.shop.revelationPrice, 'sell')
 }
 
 export function oracleBuyPrice(params: ShidasuParams, run: RunState): number {
-  return Math.round(params.shop.oraclePrice.buy * relicPriceMultiplier(params, run))
+  return categoryPrice(params, run, params.shop.oraclePrice, 'buy')
 }
 
 export function oracleSellPrice(params: ShidasuParams, run: RunState): number {
-  return Math.round(params.shop.oraclePrice.sell * relicSellBonusMultiplier(params, run))
+  return categoryPrice(params, run, params.shop.oraclePrice, 'sell')
 }
 
 export function relicBuyPrice(params: ShidasuParams, run: RunState, id: RelicId): number {
