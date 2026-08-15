@@ -245,29 +245,12 @@
     showStageScreen = false
   }
 
-  function handleBuyIndividualItem(slotIndex: number) {
-    run = buyIndividualItem(params, run, slotIndex)
-  }
-
-  function handleBuyIndividualRite(slotIndex: number) {
-    run = buyIndividualRite(params, run, slotIndex)
-  }
-
-  function handleBuyRelic(slotIndex: number) {
-    run = buyRelic(params, run, slotIndex)
-  }
-
-  function handleBuyIndividualRevelationHold(slotIndex: number) {
-    run = buyIndividualRevelationHold(params, run, slotIndex)
-  }
-
-  function handleBuyIndividualOracleUse(slotIndex: number) {
-    run = buyIndividualOracleUse(params, run, slotIndex)
-  }
-
-  function handleBuyIndividualOracleHold(slotIndex: number) {
-    run = buyIndividualOracleHold(params, run, slotIndex)
-  }
+  const handleBuyIndividualItem = bindParamsRunAction(buyIndividualItem)
+  const handleBuyIndividualRite = bindParamsRunAction(buyIndividualRite)
+  const handleBuyRelic = bindParamsRunAction(buyRelic)
+  const handleBuyIndividualRevelationHold = bindParamsRunAction(buyIndividualRevelationHold)
+  const handleBuyIndividualOracleUse = bindParamsRunAction(buyIndividualOracleUse)
+  const handleBuyIndividualOracleHold = bindParamsRunAction(buyIndividualOracleHold)
 
   function handleBuyPack(slotIndex: number) {
     run = buyPack(params, run, slotIndex)
@@ -370,18 +353,10 @@
     draggingItemIndex = null
   }
 
-  function handleSellItem(itemId: ItemId) {
-    run = sellItem(params, run, itemId)
-  }
-  function handleSellRite(riteId: RiteId) {
-    run = sellRite(params, run, riteId)
-  }
-  function handleSellRevelation(revelationId: RevelationId) {
-    run = sellRevelation(params, run, revelationId)
-  }
-  function handleSellOracle(roleName: RoleName) {
-    run = sellOracle(params, run, roleName)
-  }
+  const handleSellItem = bindParamsRunAction(sellItem)
+  const handleSellRite = bindParamsRunAction(sellRite)
+  const handleSellRevelation = bindParamsRunAction(sellRevelation)
+  const handleSellOracle = bindParamsRunAction(sellOracle)
 
   // sourceが'individual'/'pack'(ショップでの購入・福袋の中身選択)はwaveの進行に関与しないため
   // afterAction()を呼ばない。'held'(保有天啓をプレイ中に使用)のみwave進行に影響するため必要。
