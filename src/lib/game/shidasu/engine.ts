@@ -1413,23 +1413,13 @@ export function closePackRiteSelect(run: RunState): RunState {
   return { ...run, phase: 'shop', riteOffer: [], pendingNewRite: null, offerPickRemaining: 0 }
 }
 
-function resolvePackRevelationPick(run: RunState, pickedId: RevelationId): RunState {
-  const idx = run.revelationOffer.indexOf(pickedId)
-  const revelationOffer = idx === -1 ? run.revelationOffer : [...run.revelationOffer.slice(0, idx), ...run.revelationOffer.slice(idx + 1)]
-  const offerPickRemaining = run.offerPickRemaining - 1
-  if (offerPickRemaining <= 0) {
-    return { ...run, phase: 'shop', revelationOffer: [], pendingNewRevelation: null, offerPickRemaining: 0 }
-  }
-  return { ...run, revelationOffer, pendingNewRevelation: null, offerPickRemaining }
-}
-
 // 天啓の福袋(revelationSelect)から1つ選び、その場で使用する(所持には加わらない、上限とは無関係)。
 export function pickPackRevelationUse(params: ShidasuParams, run: RunState, revelationId: RevelationId, targetCol: number | null, rand: () => number = Math.random): RunState {
   if (run.phase !== 'revelationSelect' || !run.wave || !run.revelationOffer.includes(revelationId)) return run
   if (!canUseRevelation(params, run.wave, revelationId, run.relics)) return run
   const { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
   const extraTableauRows = run.extraTableauRows
-  return resolvePackRevelationPick({ ...run, wave, deckComposition, extraTableauRows }, revelationId)
+  return resolvePackOfferPick({ ...run, wave, deckComposition, extraTableauRows }, 'revelationOffer', 'pendingNewRevelation', run.revelationOffer, id => id === revelationId)
 }
 
 // 天啓の福袋から1つ選び、温存する(所持に加える)。天啓・神託合算上限(基本2、千羽鶴所持時は拡張)到達時はpendingNewRevelationにセットしスワップ待ちにする。
@@ -1438,7 +1428,7 @@ export function pickPackRevelationHold(params: ShidasuParams, run: RunState, rev
   if (run.revelations.length + run.oracles.length >= revelationOracleMaxCapacity(params, run)) {
     return { ...run, pendingNewRevelation: revelationId }
   }
-  return resolvePackRevelationPick({ ...run, revelations: [...run.revelations, revelationId] }, revelationId)
+  return resolvePackOfferPick({ ...run, revelations: [...run.revelations, revelationId] }, 'revelationOffer', 'pendingNewRevelation', run.revelationOffer, id => id === revelationId)
 }
 
 // スワップ待ち中、targetで指定した所持中の天啓または神託と入れ替えて確定する。
@@ -1448,11 +1438,11 @@ export function confirmPackRevelationSwap(run: RunState, target: HeldRevelationO
   if (target.kind === 'revelation') {
     const idx = run.revelations.indexOf(target.id)
     const remaining = idx === -1 ? run.revelations : [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
-    return resolvePackRevelationPick({ ...run, revelations: [...remaining, newId], pendingNewRevelation: null }, newId)
+    return resolvePackOfferPick({ ...run, revelations: [...remaining, newId] }, 'revelationOffer', 'pendingNewRevelation', run.revelationOffer, id => id === newId)
   }
   const idx = run.oracles.indexOf(target.id)
   const oracles = idx === -1 ? run.oracles : [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)]
-  return resolvePackRevelationPick({ ...run, oracles, revelations: [...run.revelations, newId], pendingNewRevelation: null }, newId)
+  return resolvePackOfferPick({ ...run, oracles, revelations: [...run.revelations, newId] }, 'revelationOffer', 'pendingNewRevelation', run.revelationOffer, id => id === newId)
 }
 
 export function cancelPackRevelationSwap(run: RunState): RunState {
@@ -1562,16 +1552,6 @@ export function useRevelation(
   return { ...run, wave, deckComposition, revelations, extraTableauRows, lastUsedRevelationId, ...reward }
 }
 
-function resolvePackOraclePick(run: RunState, pickedRole: RoleName): RunState {
-  const idx = run.oracleOffer.indexOf(pickedRole)
-  const oracleOffer = idx === -1 ? run.oracleOffer : [...run.oracleOffer.slice(0, idx), ...run.oracleOffer.slice(idx + 1)]
-  const offerPickRemaining = run.offerPickRemaining - 1
-  if (offerPickRemaining <= 0) {
-    return { ...run, phase: 'shop', oracleOffer: [], pendingNewOracle: null, offerPickRemaining: 0 }
-  }
-  return { ...run, oracleOffer, pendingNewOracle: null, offerPickRemaining }
-}
-
 // 神託の福袋(oracleSelect)から1つ選び、その場で使用する(役レベル+1、所持には加わらない、上限とは無関係)。
 // run.oracleLevelsだけでなくwave.oracleLevelsも同期する。得点計算時にwave.oracleLevelsが参照されるため、
 // 同期を怠ると効果が次のウェーブまで反映されない不整合が起きる。
@@ -1579,7 +1559,7 @@ export function pickPackOracleUse(run: RunState, roleName: RoleName): RunState {
   if (run.phase !== 'oracleSelect' || !run.oracleOffer.includes(roleName)) return run
   const oracleLevels = { ...run.oracleLevels, [roleName]: run.oracleLevels[roleName] + 1 }
   const wave = run.wave ? { ...run.wave, oracleLevels } : run.wave
-  return resolvePackOraclePick({ ...run, oracleLevels, wave }, roleName)
+  return resolvePackOfferPick({ ...run, oracleLevels, wave }, 'oracleOffer', 'pendingNewOracle', run.oracleOffer, role => role === roleName)
 }
 
 // 神託の福袋から1つ選び、温存する(所持に加える)。天啓・神託合算上限(基本2、千羽鶴所持時は拡張)到達時はpendingNewOracleにセットしスワップ待ちにする。
@@ -1588,7 +1568,7 @@ export function pickPackOracleHold(params: ShidasuParams, run: RunState, roleNam
   if (run.revelations.length + run.oracles.length >= revelationOracleMaxCapacity(params, run)) {
     return { ...run, pendingNewOracle: roleName }
   }
-  return resolvePackOraclePick({ ...run, oracles: [...run.oracles, roleName] }, roleName)
+  return resolvePackOfferPick({ ...run, oracles: [...run.oracles, roleName] }, 'oracleOffer', 'pendingNewOracle', run.oracleOffer, role => role === roleName)
 }
 
 // スワップ待ち中、targetで指定した所持中の天啓または神託と入れ替えて確定する。
@@ -1598,11 +1578,11 @@ export function confirmPackOracleSwap(run: RunState, target: HeldRevelationOrOra
   if (target.kind === 'oracle') {
     const idx = run.oracles.indexOf(target.id)
     const remaining = idx === -1 ? run.oracles : [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)]
-    return resolvePackOraclePick({ ...run, oracles: [...remaining, newRole], pendingNewOracle: null }, newRole)
+    return resolvePackOfferPick({ ...run, oracles: [...remaining, newRole] }, 'oracleOffer', 'pendingNewOracle', run.oracleOffer, role => role === newRole)
   }
   const idx = run.revelations.indexOf(target.id)
   const revelations = idx === -1 ? run.revelations : [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
-  return resolvePackOraclePick({ ...run, revelations, oracles: [...run.oracles, newRole], pendingNewOracle: null }, newRole)
+  return resolvePackOfferPick({ ...run, revelations, oracles: [...run.oracles, newRole] }, 'oracleOffer', 'pendingNewOracle', run.oracleOffer, role => role === newRole)
 }
 
 export function cancelPackOracleSwap(run: RunState): RunState {
