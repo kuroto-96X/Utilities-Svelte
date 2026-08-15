@@ -1357,6 +1357,16 @@ function resolvePackOfferPick<T>(
   return { ...run, ...pendingUpdate, [offerField]: newOffer, offerPickRemaining } as RunState
 }
 
+// 福袋の残りの選択を放棄してshopへ戻る共通処理。
+function closePackOfferSelect(
+  run: RunState,
+  offerField: 'offer' | 'riteOffer' | 'revelationOffer' | 'oracleOffer' | 'cardSetOffer',
+  pendingField: 'pendingNewItem' | 'pendingNewRite' | 'pendingNewRevelation' | 'pendingNewOracle' | null
+): RunState {
+  const pendingUpdate = pendingField ? { [pendingField]: null } : {}
+  return { ...run, ...pendingUpdate, phase: 'shop', [offerField]: [], offerPickRemaining: 0 } as RunState
+}
+
 // 護符の福袋(itemSelect)から1つ選ぶ。所持上限到達時はpendingNewItemにセットしてスワップ待ちにする。
 export function pickPackItem(params: ShidasuParams, run: RunState, itemId: ItemId): RunState {
   if (run.phase !== 'itemSelect' || !run.offer.includes(itemId)) return run
@@ -1383,7 +1393,7 @@ export function cancelPackItemSwap(run: RunState): RunState {
 // 残りの選択を放棄してshopへ戻る。
 export function closePackItemSelect(run: RunState): RunState {
   if (run.phase !== 'itemSelect') return run
-  return { ...run, phase: 'shop', offer: [], pendingNewItem: null, offerPickRemaining: 0 }
+  return closePackOfferSelect(run, 'offer', 'pendingNewItem')
 }
 
 // 秘儀の福袋(riteSelect)から1つ選ぶ。所持上限(基本3、破魔矢所持時は拡張)到達時はpendingNewRiteにセットしてスワップ待ちにする。
@@ -1410,7 +1420,7 @@ export function cancelPackRiteSwap(run: RunState): RunState {
 
 export function closePackRiteSelect(run: RunState): RunState {
   if (run.phase !== 'riteSelect') return run
-  return { ...run, phase: 'shop', riteOffer: [], pendingNewRite: null, offerPickRemaining: 0 }
+  return closePackOfferSelect(run, 'riteOffer', 'pendingNewRite')
 }
 
 // 天啓の福袋(revelationSelect)から1つ選び、その場で使用する(所持には加わらない、上限とは無関係)。
@@ -1452,7 +1462,7 @@ export function cancelPackRevelationSwap(run: RunState): RunState {
 
 export function closePackRevelationSelect(run: RunState): RunState {
   if (run.phase !== 'revelationSelect') return run
-  return { ...run, phase: 'shop', revelationOffer: [], pendingNewRevelation: null, offerPickRemaining: 0 }
+  return closePackOfferSelect(run, 'revelationOffer', 'pendingNewRevelation')
 }
 
 // 天啓・神託の合算所持枠(基本上限2、千羽鶴所持時は拡張)のうち、残り何枠使えるかを返す。
@@ -1592,17 +1602,7 @@ export function cancelPackOracleSwap(run: RunState): RunState {
 
 export function closePackOracleSelect(run: RunState): RunState {
   if (run.phase !== 'oracleSelect') return run
-  return { ...run, phase: 'shop', oracleOffer: [], pendingNewOracle: null, offerPickRemaining: 0 }
-}
-
-function resolvePackCardSetPick(run: RunState, pickedGenreId: CardSetGenreId): RunState {
-  const idx = run.cardSetOffer.findIndex(o => o.genreId === pickedGenreId)
-  const cardSetOffer = idx === -1 ? run.cardSetOffer : [...run.cardSetOffer.slice(0, idx), ...run.cardSetOffer.slice(idx + 1)]
-  const offerPickRemaining = run.offerPickRemaining - 1
-  if (offerPickRemaining <= 0) {
-    return { ...run, phase: 'shop', cardSetOffer: [], offerPickRemaining: 0 }
-  }
-  return { ...run, cardSetOffer, offerPickRemaining }
+  return closePackOfferSelect(run, 'oracleOffer', 'pendingNewOracle')
 }
 
 // カードセットの福袋(cardSetSelect)から1つ選び、そのカードをdeckCompositionへ即座に追加する。
@@ -1613,13 +1613,13 @@ export function pickPackCardSet(run: RunState, genreId: CardSetGenreId): RunStat
   const offer = run.cardSetOffer.find(o => o.genreId === genreId)
   if (!offer) return run
   const deckComposition = addCardsToDeckComposition(run.deckComposition, offer.cards)
-  return resolvePackCardSetPick({ ...run, deckComposition }, genreId)
+  return resolvePackOfferPick({ ...run, deckComposition }, 'cardSetOffer', null, run.cardSetOffer, o => o.genreId === genreId)
 }
 
 // 残りの選択を放棄してshopへ戻る。
 export function closePackCardSetSelect(run: RunState): RunState {
   if (run.phase !== 'cardSetSelect') return run
-  return { ...run, phase: 'shop', cardSetOffer: [], offerPickRemaining: 0 }
+  return closePackOfferSelect(run, 'cardSetOffer', null)
 }
 
 // 所持中の神託を1つ消費する。playingフェーズでのみ呼べる(ショップ内フェーズでは呼べない)。
