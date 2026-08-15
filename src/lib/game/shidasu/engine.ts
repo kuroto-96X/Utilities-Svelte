@@ -1334,13 +1334,27 @@ export function buyPack(params: ShidasuParams, run: RunState, slotIndex: number,
   return { ...base, phase: 'cardSetSelect', cardSetOffer: rollCardSetOffer(rand, slot.offerCount) }
 }
 
-function resolvePackItemPick(run: RunState, newItems: ItemId[], pickedId: ItemId): RunState {
-  const offer = run.offer.filter(id => id !== pickedId)
+// 福袋の残り選択が1件確定した後の共通処理。オファー配列からmatchesに一致する最初の1件を除去し、
+// offerPickRemainingをデクリメントし、0以下になればphase: 'shop'へ戻る。
+// 所持側の更新(items/rites/revelations/oracles等)は呼び出し元がrunへ事前にマージしてから渡すこと
+// (このヘルパー自身は所持側には一切関知しない)。
+// オファー配列・pendingフィールドの参照はRunStateの動的キーアクセスになるため、戻り値をRunStateに
+// キャストしている(呼び出し元は決まった数のパターンに限定されるため、型安全性は既存テストで担保する)。
+function resolvePackOfferPick<T>(
+  run: RunState,
+  offerField: 'offer' | 'riteOffer' | 'revelationOffer' | 'oracleOffer' | 'cardSetOffer',
+  pendingField: 'pendingNewItem' | 'pendingNewRite' | 'pendingNewRevelation' | 'pendingNewOracle' | null,
+  offer: T[],
+  matches: (entry: T) => boolean
+): RunState {
+  const idx = offer.findIndex(matches)
+  const newOffer = idx === -1 ? offer : [...offer.slice(0, idx), ...offer.slice(idx + 1)]
   const offerPickRemaining = run.offerPickRemaining - 1
+  const pendingUpdate = pendingField ? { [pendingField]: null } : {}
   if (offerPickRemaining <= 0) {
-    return { ...run, phase: 'shop', items: newItems, offer: [], pendingNewItem: null, offerPickRemaining: 0 }
+    return { ...run, ...pendingUpdate, phase: 'shop', [offerField]: [], offerPickRemaining: 0 } as RunState
   }
-  return { ...run, items: newItems, offer, pendingNewItem: null, offerPickRemaining }
+  return { ...run, ...pendingUpdate, [offerField]: newOffer, offerPickRemaining } as RunState
 }
 
 // 護符の福袋(itemSelect)から1つ選ぶ。所持上限到達時はpendingNewItemにセットしてスワップ待ちにする。
@@ -1349,7 +1363,7 @@ export function pickPackItem(params: ShidasuParams, run: RunState, itemId: ItemI
   if (run.items.length >= itemMaxCapacity(params, run)) {
     return { ...run, pendingNewItem: itemId }
   }
-  return resolvePackItemPick(run, [...run.items, itemId], itemId)
+  return resolvePackOfferPick({ ...run, items: [...run.items, itemId] }, 'offer', 'pendingNewItem', run.offer, id => id === itemId)
 }
 
 // スワップ待ち中に既存の護符と入れ替えて確定する。
@@ -1357,8 +1371,8 @@ export function confirmPackItemSwap(run: RunState, oldItemId: ItemId): RunState 
   if (run.phase !== 'itemSelect' || run.pendingNewItem === null) return run
   const idx = run.items.indexOf(oldItemId)
   const remaining = idx === -1 ? [...run.items] : [...run.items.slice(0, idx), ...run.items.slice(idx + 1)]
-  const newItems = [...remaining, run.pendingNewItem]
-  return resolvePackItemPick(run, newItems, run.pendingNewItem)
+  const newItemId = run.pendingNewItem
+  return resolvePackOfferPick({ ...run, items: [...remaining, newItemId] }, 'offer', 'pendingNewItem', run.offer, id => id === newItemId)
 }
 
 export function cancelPackItemSwap(run: RunState): RunState {
@@ -1372,31 +1386,21 @@ export function closePackItemSelect(run: RunState): RunState {
   return { ...run, phase: 'shop', offer: [], pendingNewItem: null, offerPickRemaining: 0 }
 }
 
-function resolvePackRitePick(run: RunState, newRites: RiteId[], pickedId: RiteId): RunState {
-  const idx = run.riteOffer.indexOf(pickedId)
-  const riteOffer = idx === -1 ? run.riteOffer : [...run.riteOffer.slice(0, idx), ...run.riteOffer.slice(idx + 1)]
-  const offerPickRemaining = run.offerPickRemaining - 1
-  if (offerPickRemaining <= 0) {
-    return { ...run, phase: 'shop', rites: newRites, riteOffer: [], pendingNewRite: null, offerPickRemaining: 0 }
-  }
-  return { ...run, rites: newRites, riteOffer, pendingNewRite: null, offerPickRemaining }
-}
-
 // 秘儀の福袋(riteSelect)から1つ選ぶ。所持上限(基本3、破魔矢所持時は拡張)到達時はpendingNewRiteにセットしてスワップ待ちにする。
 export function pickPackRite(params: ShidasuParams, run: RunState, riteId: RiteId): RunState {
   if (run.phase !== 'riteSelect' || !run.riteOffer.includes(riteId)) return run
   if (run.rites.length >= riteMaxCapacity(params, run)) {
     return { ...run, pendingNewRite: riteId }
   }
-  return resolvePackRitePick(run, [...run.rites, riteId], riteId)
+  return resolvePackOfferPick({ ...run, rites: [...run.rites, riteId] }, 'riteOffer', 'pendingNewRite', run.riteOffer, id => id === riteId)
 }
 
 export function confirmPackRiteSwap(run: RunState, oldRiteId: RiteId): RunState {
   if (run.phase !== 'riteSelect' || run.pendingNewRite === null) return run
   const idx = run.rites.indexOf(oldRiteId)
   const remaining = idx === -1 ? [...run.rites] : [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)]
-  const newRites = [...remaining, run.pendingNewRite]
-  return resolvePackRitePick(run, newRites, run.pendingNewRite)
+  const newRiteId = run.pendingNewRite
+  return resolvePackOfferPick({ ...run, rites: [...remaining, newRiteId] }, 'riteOffer', 'pendingNewRite', run.riteOffer, id => id === newRiteId)
 }
 
 export function cancelPackRiteSwap(run: RunState): RunState {
