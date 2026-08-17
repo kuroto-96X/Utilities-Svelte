@@ -311,6 +311,16 @@ function resolveBridgeAdjustedLengths(params: ShidasuParams, items: ItemId[]): {
   return { effectiveStairMinLen, effectiveSuitColorMinLen }
 }
 
+function makeOracleLevelResolver(wave: WaveState, sealedRoleEffect: SealedRoleEffect): (name: RoleName) => number {
+  return (name: RoleName): number => {
+    if (sealedRoleEffect.zeroRoles.includes(name)) return 0
+    if (sealedRoleEffect.oracleBaselineRole === name) return 1
+    const base = wave.oracleLevels[name] ?? 1
+    const mult = sealedRoleEffect.multipliers?.[name]
+    return mult !== undefined ? base * mult : base
+  }
+}
+
 export function playCard(
   params: ShidasuParams,
   wave: WaveState,
@@ -377,13 +387,7 @@ export function playCard(
   // 神託: 役ごとの現在レベルをそのまま基礎点の乗数として渡す(ウェーブ開始時点で固定済み)。
   // 役封印中はzeroRolesに含まれる役を0倍、天啓・神託封印でオラクルが選ばれた場合は
   // oracleBaselineRoleに一致する役だけレベル1相当(封印前の水準)に戻す。
-  const oracleLevel = (name: RoleName): number => {
-    if (sealedRoleEffect.zeroRoles.includes(name)) return 0
-    if (sealedRoleEffect.oracleBaselineRole === name) return 1
-    const base = wave.oracleLevels[name] ?? 1
-    const mult = sealedRoleEffect.multipliers?.[name]
-    return mult !== undefined ? base * mult : base
-  }
+  const oracleLevel = makeOracleLevelResolver(wave, sealedRoleEffect)
   const chainResult = evaluateChainBonus(params.scoring, wave.chain, card, effectiveStairMinLen, roleBonusMultiplier, effectiveSuitColorMinLen, oracleLevel, items)
   base += chainResult.bonus
   parts.push(...chainResult.parts)
@@ -716,13 +720,7 @@ export function drawStock(
       const parts: ScorePart[] = [addPart('基礎点', base)]
       // 神託: このパスは明星・ソウィロによる役倍率(roleBonusMultiplier)を通さない既存方針を維持しつつ、
       // 神託レベルは永続的な基礎点の一部として引き続き適用する
-      const oracleLevel = (name: RoleName): number => {
-        if (sealedRoleEffect.zeroRoles.includes(name)) return 0
-        if (sealedRoleEffect.oracleBaselineRole === name) return 1
-        const base = wave.oracleLevels[name] ?? 1
-        const mult = sealedRoleEffect.multipliers?.[name]
-        return mult !== undefined ? base * mult : base
-      }
+      const oracleLevel = makeOracleLevelResolver(wave, sealedRoleEffect)
       const chainResult = evaluateChainBonus(params.scoring, wave.chain, drawnCard, effectiveStairMinLen, undefined, effectiveSuitColorMinLen, oracleLevel, items)
       base += chainResult.bonus
       parts.push(...chainResult.parts)
