@@ -303,6 +303,9 @@
   // 配布アニメーション進行中は、このSetに含まれないマス目を非表示にする。
   let dealtCells = $state<Set<string>>(new Set())
   let dealAnimationActive = $derived(dealingCards.length > 0)
+  // いずれかのアニメーション(カードプレイ・得点演出・清算・チェーンリセット・配布)が進行中かどうか。
+  // 進行中は操作(カードプレイ・山札引き・秘儀/天啓使用)を無効化する。
+  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive)
   let dealTimers: ReturnType<typeof setTimeout>[] = []
   // 初期値をundefinedにしておくことで、マウント直後(ゲーム開始直後の最初のWave)にも
   // 「waveKeyが変化した」と判定され配布アニメーションが発火する。他のprevious系変数
@@ -910,9 +913,9 @@
               {@const isCardPlayable = !columnTargetMode && wave.status === 'playing' && isPlayable(modifier, wave, card, items)}
               <button
                 type="button"
-                disabled={playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive}
+                disabled={anyAnimationActive}
                 onclick={() => (columnTargetMode ? (isTargetable && onTargetColumn?.(ci)) : (isCardPlayable && startPlayCardAnimation(ci, ri, card)))}
-                class="block w-full text-left {columnTargetMode ? (isTargetable ? 'ring-2 ring-fuchsia-400 shadow-lg -translate-y-0.5' : '') : (isCardPlayable && playingAnimation === null && scoreReveal === null && cleanupAnimation === null && chainResetAnimation === null && !dealAnimationActive ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : '')} transition-transform disabled:cursor-not-allowed"
+                class="block w-full text-left {columnTargetMode ? (isTargetable ? 'ring-2 ring-fuchsia-400 shadow-lg -translate-y-0.5' : '') : (isCardPlayable && !anyAnimationActive ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : '')} transition-transform disabled:cursor-not-allowed"
               >
                 <CardFace {card} covered={false} {items} />
               </button>
@@ -947,7 +950,7 @@
     <button
       type="button"
       onclick={onDraw}
-      disabled={wave.stock.length === 0 || !allowDraw || playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive}
+      disabled={wave.stock.length === 0 || !allowDraw || anyAnimationActive}
       data-drop-stock
       bind:this={stockButtonEl}
       style="aspect-ratio: 2 / 3;"
@@ -998,7 +1001,7 @@
 {#if rites.length > 0}
   <div class="px-4 pb-4 flex items-center gap-2">
     {#each rites as riteId, i (i)}
-      {@const usable = canUseRite(params, wave, riteId) && playingAnimation === null && scoreReveal === null && cleanupAnimation === null && chainResetAnimation === null && !dealAnimationActive}
+      {@const usable = canUseRite(params, wave, riteId) && !anyAnimationActive}
       <button
         type="button"
         onclick={() => onUseRite?.(riteId)}
@@ -1014,7 +1017,7 @@
 {#if revelations.length > 0}
   <div class="px-4 pb-4 flex items-center gap-2">
     {#each revelations as revelationId, i (i)}
-      {@const usable = canUseRevelation(params, wave, revelationId, relics) && playingAnimation === null && scoreReveal === null && cleanupAnimation === null && chainResetAnimation === null && !dealAnimationActive}
+      {@const usable = canUseRevelation(params, wave, revelationId, relics) && !anyAnimationActive}
       <button
         type="button"
         onclick={() => onUseRevelationClick?.(revelationId)}
