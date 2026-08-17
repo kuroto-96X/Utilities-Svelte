@@ -159,8 +159,7 @@ export function startWave(
     tableau.push(deck.splice(0, rows))
   }
   const foundation = deck.pop() as Card
-  const effectiveStairMinLenAtDeal = items.includes('bridge') ? params.scoring.stairMinLen - params.talismans.bridge.m : params.scoring.stairMinLen
-  const effectiveSuitColorMinLenAtDeal = items.includes('bridge') ? params.scoring.suitColorMinLen - params.talismans.bridge.m : params.scoring.suitColorMinLen
+  const { effectiveStairMinLen: effectiveStairMinLenAtDeal, effectiveSuitColorMinLen: effectiveSuitColorMinLenAtDeal } = resolveBridgeAdjustedLengths(params, items)
   const stockAfterDeal = items.includes('promise')
     ? arrangeNextCardForContinuation(params.scoring, deck, [foundation], effectiveStairMinLenAtDeal, effectiveSuitColorMinLenAtDeal, items)
     : deck
