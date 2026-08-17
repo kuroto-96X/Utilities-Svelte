@@ -252,56 +252,36 @@ export function canUseRite(_params: ShidasuParams, wave: WaveState, riteId: Rite
   }
 }
 
+type RiteHandler = (wave: WaveState, params: ShidasuParams, rand: () => number) => WaveState
+
+const RITE_HANDLERS: Record<RiteId, RiteHandler> = {
+  raidho: (wave, _params, rand) => applyRaidho(wave, rand),
+  jera: (wave, _params, rand) => applyJera(wave, rand),
+  wunjo: (wave, _params, rand) => applyWunjo(wave, rand),
+  othala: (wave, _params, rand) => applyOthala(wave, rand),
+  perthro: (wave) => applyPerthro(wave),
+  uruz: (wave, params) => applyUruz(wave, params.rites.uruz.n),
+  ingwaz: (wave, params) => applyIngwaz(wave, params.rites.ingwaz.n),
+  gebo: (wave, _params, rand) => applyGebo(wave, rand),
+  fehu: (wave) => applyFehu(wave),
+  dagaz: (wave, _params, rand) => applyDagaz(wave, rand),
+  algiz: (wave) => applyAlgiz(wave),
+  tiwaz: (wave) => applyTiwaz(wave),
+  laguz: (wave, _params, rand) => applyLaguz(wave, rand),
+  eihwaz: (wave, params) => applyEihwaz(wave, params.rites.eihwaz.n),
+  ansuz: (wave) => applyAnsuz(wave),
+  kenaz: (wave, _params, rand) => applyKenaz(wave, rand),
+  thurisaz: (wave, params) => applyThurisaz(wave, params.rites.thurisaz.x),
+  hagalaz: (wave, _params, rand) => applyHagalaz(wave, rand),
+  nauthiz: (wave) => applyNauthiz(wave),
+  isa: (wave) => applyIsa(wave),
+  sowilo: (wave) => applySowilo(wave),
+  berkano: (wave, params) => applyBerkano(wave, params.rites.berkano.x),
+  mannaz: (wave) => applyMannaz(wave),
+  ehwaz: (wave) => applyEhwaz(wave),
+}
+
 // 指定した秘儀の効果を適用した新しいWaveStateを返す。所持からの削除はengine.tsのuseRite側で行う。
 export function applyRiteEffect(params: ShidasuParams, wave: WaveState, riteId: RiteId, rand: () => number): WaveState {
-  switch (riteId) {
-    case 'raidho':
-      return applyRaidho(wave, rand)
-    case 'jera':
-      return applyJera(wave, rand)
-    case 'wunjo':
-      return applyWunjo(wave, rand)
-    case 'othala':
-      return applyOthala(wave, rand)
-    case 'perthro':
-      return applyPerthro(wave)
-    case 'uruz':
-      return applyUruz(wave, params.rites.uruz.n)
-    case 'ingwaz':
-      return applyIngwaz(wave, params.rites.ingwaz.n)
-    case 'gebo':
-      return applyGebo(wave, rand)
-    case 'fehu':
-      return applyFehu(wave)
-    case 'dagaz':
-      return applyDagaz(wave, rand)
-    case 'algiz':
-      return applyAlgiz(wave)
-    case 'tiwaz':
-      return applyTiwaz(wave)
-    case 'laguz':
-      return applyLaguz(wave, rand)
-    case 'eihwaz':
-      return applyEihwaz(wave, params.rites.eihwaz.n)
-    case 'ansuz':
-      return applyAnsuz(wave)
-    case 'kenaz':
-      return applyKenaz(wave, rand)
-    case 'thurisaz':
-      return applyThurisaz(wave, params.rites.thurisaz.x)
-    case 'hagalaz':
-      return applyHagalaz(wave, rand)
-    case 'nauthiz':
-      return applyNauthiz(wave)
-    case 'isa':
-      return applyIsa(wave)
-    case 'sowilo':
-      return applySowilo(wave)
-    case 'berkano':
-      return applyBerkano(wave, params.rites.berkano.x)
-    case 'mannaz':
-      return applyMannaz(wave)
-    case 'ehwaz':
-      return applyEhwaz(wave)
-  }
+  return RITE_HANDLERS[riteId](wave, params, rand)
 }
