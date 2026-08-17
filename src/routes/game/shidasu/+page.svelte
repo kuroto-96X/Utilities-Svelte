@@ -184,16 +184,27 @@
     if (run.phase === 'playing') afterAction()
   }
 
+  // 天啓プレビュー盤面(revelationPreviewWave)に対してfnを適用する共通処理。run.waveを
+  // 一時的にプレビューへすり替えてfnを呼び出し、結果からwave以外(deckComposition・
+  // currency・shop・revelations等の永続的な変更)を本番runへ反映する。本番run.wave自体は
+  // 変更しない(直前Waveのended状態のまま維持する)。呼び出し元は返り値(適用後のプレビュー
+  // wave、効果が無効化された場合はnullになりうる)を見て、revelationPreviewWaveをどう
+  // 更新するか(そのまま/終了扱い/破棄)を判断する。呼び出し元は事前にrevelationPreviewWaveが
+  // 非nullであることを確認済みである前提で、ここでは改めてチェックしない。
+  function applyToRevelationPreview(fn: (runForPreview: RunState) => RunState): WaveState | null {
+    const runForPreview = { ...run, wave: revelationPreviewWave }
+    const resultRun = fn(runForPreview)
+    run = { ...resultRun, wave: run.wave }
+    return resultRun.wave
+  }
+
   // 天啓プレビュー表示中、所持秘儀を使用した際に呼ぶ。run.waveを一時的にプレビューへ
   // すり替えてuseRiteを適用し、結果のwaveをプレビューへ反映する(秘儀は即時適用でコラム
   // 選択が無いため、片付けアニメーションは発火させない)。本番runにはwave以外の変更
   // (秘儀の所持数減少)のみ反映する。revelationPreviewWaveがnullの間は何もしない。
   function handleUseRiteInPreview(riteId: RiteId) {
     if (!revelationPreviewWave) return
-    const runForPreview = { ...run, wave: revelationPreviewWave }
-    const resultRun = useRite(params, runForPreview, riteId)
-    const previewResultWave = resultRun.wave
-    run = { ...resultRun, wave: run.wave }
+    const previewResultWave = applyToRevelationPreview((runForPreview) => useRite(params, runForPreview, riteId))
     if (previewResultWave) {
       revelationPreviewWave = previewResultWave
     }
@@ -394,13 +405,12 @@
       // ターゲット不要な天啓もプレビュー盤面に対して適用する。run.waveへ直接適用すると、
       // 本番の直前Wave(ended状態)のデータが意図せず書き換わり、その変化を本番PlayAreaが
       // 検知して片付けアニメーションが誤って再生されてしまう不具合があった。
-      const runForPreview = { ...run, wave: revelationPreviewWave }
-      const resultRun = pickPackRevelationUse(params, runForPreview, revelationId, null)
-      const previewResultWave = resultRun.wave
-      run = { ...resultRun, wave: run.wave }
+      const previewResultWave = applyToRevelationPreview((runForPreview) =>
+        pickPackRevelationUse(params, runForPreview, revelationId, null)
+      )
       if (!previewResultWave) {
         revelationPreviewWave = null
-      } else if (resultRun.phase === 'revelationSelect') {
+      } else if (run.phase === 'revelationSelect') {
         revelationPreviewWave = previewResultWave
       } else {
         revelationPreviewWave = { ...previewResultWave, status: 'ended', endReason: 'previewDismissed' }
@@ -429,10 +439,9 @@
     if (revelationPreviewWave) {
       // プレビュー表示中の即時適用天啓(コラム選択不要)は、プレビュー盤面に対して
       // 適用する。片付けアニメーションは発火させない(秘儀の即時使用と同様)。
-      const runForPreview = { ...run, wave: revelationPreviewWave }
-      const resultRun = useRevelation(params, runForPreview, revelationId, null)
-      const previewResultWave = resultRun.wave
-      run = { ...resultRun, wave: run.wave }
+      const previewResultWave = applyToRevelationPreview((runForPreview) =>
+        useRevelation(params, runForPreview, revelationId, null)
+      )
       if (previewResultWave) {
         revelationPreviewWave = previewResultWave
       }
@@ -474,20 +483,18 @@
       // であり、本番run.waveへ反映すると通常のショップ/プレイ画面にプレビュー内容が
       // 漏れてしまうため、wave自体は呼び出し前のrun.wave(直前Waveのended状態)のまま
       // 変更しない。
-      const runForPreview = { ...run, wave: revelationPreviewWave }
-      let resultRun: RunState
-      if (target.source === 'individual') {
-        resultRun = buyIndividualRevelationUse(params, runForPreview, target.slotIndex, colIndex)
-      } else if (target.source === 'pack') {
-        resultRun = pickPackRevelationUse(params, runForPreview, target.revelationId, colIndex)
-      } else {
-        resultRun = useRevelation(params, runForPreview, target.revelationId, colIndex)
-      }
-      const previewResultWave = resultRun.wave
-      run = { ...resultRun, wave: run.wave }
+      const previewResultWave = applyToRevelationPreview((runForPreview) => {
+        if (target.source === 'individual') {
+          return buyIndividualRevelationUse(params, runForPreview, target.slotIndex, colIndex)
+        }
+        if (target.source === 'pack') {
+          return pickPackRevelationUse(params, runForPreview, target.revelationId, colIndex)
+        }
+        return useRevelation(params, runForPreview, target.revelationId, colIndex)
+      })
       if (!previewResultWave) {
         revelationPreviewWave = null
-      } else if (target.source === 'held' || resultRun.phase === 'revelationSelect') {
+      } else if (target.source === 'held' || run.phase === 'revelationSelect') {
         // 所持天啓の使用(held)は福袋選択そのものではないため、コラム確定してもプレビューは
         // 終了させない(即時反映のみ、秘儀・コラム不要天啓のプレビュー内使用と同様)。
         // 福袋選択(pack)は、選択後もofferPickRemainingが残っていればresolvePackRevelationPick
