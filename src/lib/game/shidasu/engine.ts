@@ -305,6 +305,12 @@ function bossScoreLockMessage(scoreLock: NonNullable<BossScoreLock>): string {
   return `${scoreLock.tierLabel}: 獲得点0`
 }
 
+function resolveBridgeAdjustedLengths(params: ShidasuParams, items: ItemId[]): { effectiveStairMinLen: number; effectiveSuitColorMinLen: number } {
+  const effectiveStairMinLen = items.includes('bridge') ? params.scoring.stairMinLen - params.talismans.bridge.m : params.scoring.stairMinLen
+  const effectiveSuitColorMinLen = items.includes('bridge') ? params.scoring.suitColorMinLen - params.talismans.bridge.m : params.scoring.suitColorMinLen
+  return { effectiveStairMinLen, effectiveSuitColorMinLen }
+}
+
 export function playCard(
   params: ShidasuParams,
   wave: WaveState,
@@ -347,8 +353,7 @@ export function playCard(
     parts.push(addPart(`鋼鉄(${wave.pendingRoleEcho.name})`, wave.pendingRoleEcho.amount))
   }
 
-  const effectiveStairMinLen = items.includes('bridge') ? params.scoring.stairMinLen - params.talismans.bridge.m : params.scoring.stairMinLen
-  const effectiveSuitColorMinLen = items.includes('bridge') ? params.scoring.suitColorMinLen - params.talismans.bridge.m : params.scoring.suitColorMinLen
+  const { effectiveStairMinLen, effectiveSuitColorMinLen } = resolveBridgeAdjustedLengths(params, items)
   // 明星: 役の種類ごとのウェーブ内累積成立回数(今回成立分は含まない)に応じて役ボーナス額を倍率適用する
   // ソウィロ: 発動後に初めて成立が確定した役をこのプレイ内で記憶し(sowiloCommittedThisPlay)、
   // その役をx倍にする。以後のプレイではsowiloBoostedRoleが確定済みのため同じ役だけがx倍になる。
@@ -681,8 +686,7 @@ export function drawStock(
   const newStock = [...wave.stock]
   const drawnCard = newStock.pop() as Card
 
-  const effectiveStairMinLen = items.includes('bridge') ? params.scoring.stairMinLen - params.talismans.bridge.m : params.scoring.stairMinLen
-  const effectiveSuitColorMinLen = items.includes('bridge') ? params.scoring.suitColorMinLen - params.talismans.bridge.m : params.scoring.suitColorMinLen
+  const { effectiveStairMinLen, effectiveSuitColorMinLen } = resolveBridgeAdjustedLengths(params, items)
   const wouldContinue = wave.linked && chainContinuesPattern(params.scoring, wave.chain, drawnCard, effectiveStairMinLen, effectiveSuitColorMinLen, items)
   const benevolenceFires = !wouldContinue && items.includes('benevolence') && !wave.benevolenceUsedThisCombo
   const patternContinues = wouldContinue || benevolenceFires
