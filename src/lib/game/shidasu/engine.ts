@@ -1671,36 +1671,41 @@ export function restartRun(params: ShidasuParams, seed?: number): RunState {
   return beginRun(params, seed)
 }
 
-export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: number, rand: () => number = Math.random, rowIndex?: number): RunState {
-  if (run.phase !== 'playing' || !run.wave) return run
-  const target = waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars)
-  const modifier = stageModifierFor(params, run)
-  const scoreLock = bossScoreLockFor(params, run)
-  const effectiveItems = resolveEffectiveItems(run.items, run.wave.activeSeal)
-  const sealedRoleEffect = resolveSealedRoleEffect(run.wave.activeSeal)
-  const comboCap = resolveComboCap(run.wave.activeSeal)
-  const { wave, deckComposition } = playCard(params, run.wave, modifier, effectiveItems, target, colIndex, run.deckComposition, rand, scoreLock, rowIndex, sealedRoleEffect, comboCap)
-  let next: RunState = { ...run, wave, deckComposition }
+// playCard/drawStock呼び出しに必要な文脈値(目標スコア・得点ロック・実効護符・役封印効果・コンボ上限)をまとめて算出する。
+// stageModifierFor(modifier)はここに含めない: applyStuckCheckがisStuck判定より前に単独で必要とするため、
+// このヘルパーに含めると呼び出し元で二重計算・不自然な分離が発生する。
+function resolvePlayContext(params: ShidasuParams, run: RunState, wave: WaveState) {
+  return {
+    target: waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars),
+    scoreLock: bossScoreLockFor(params, run),
+    effectiveItems: resolveEffectiveItems(run.items, wave.activeSeal),
+    sealedRoleEffect: resolveSealedRoleEffect(wave.activeSeal),
+    comboCap: resolveComboCap(wave.activeSeal),
+  }
+}
+
+// playCard/drawStock適用後、妨害発動タイミング(sabotageTurnsRemaining<=0)なら即座にtriggerSabotageを適用する。
+function resolveActionSabotage(params: ShidasuParams, next: RunState, wave: WaveState, rand: () => number): RunState {
   if (wave.pendingSabotageId && wave.sabotageTurnsRemaining <= 0) {
-    next = triggerSabotage(params, next, wave.pendingSabotageId, rand)
+    return triggerSabotage(params, next, wave.pendingSabotageId, rand)
   }
   return next
 }
 
+export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: number, rand: () => number = Math.random, rowIndex?: number): RunState {
+  if (run.phase !== 'playing' || !run.wave) return run
+  const modifier = stageModifierFor(params, run)
+  const { target, scoreLock, effectiveItems, sealedRoleEffect, comboCap } = resolvePlayContext(params, run, run.wave)
+  const { wave, deckComposition } = playCard(params, run.wave, modifier, effectiveItems, target, colIndex, run.deckComposition, rand, scoreLock, rowIndex, sealedRoleEffect, comboCap)
+  return resolveActionSabotage(params, { ...run, wave, deckComposition }, wave, rand)
+}
+
 export function applyDrawStock(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
   if (run.phase !== 'playing' || !run.wave) return run
-  const target = waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars)
   const modifier = stageModifierFor(params, run)
-  const scoreLock = bossScoreLockFor(params, run)
-  const effectiveItems = resolveEffectiveItems(run.items, run.wave.activeSeal)
-  const sealedRoleEffect = resolveSealedRoleEffect(run.wave.activeSeal)
-  const comboCap = resolveComboCap(run.wave.activeSeal)
+  const { target, scoreLock, effectiveItems, sealedRoleEffect, comboCap } = resolvePlayContext(params, run, run.wave)
   const { wave, deckComposition } = drawStock(params, run.wave, effectiveItems, target, run.deckComposition, modifier, rand, scoreLock, sealedRoleEffect, comboCap)
-  let next: RunState = { ...run, wave, deckComposition }
-  if (wave.pendingSabotageId && wave.sabotageTurnsRemaining <= 0) {
-    next = triggerSabotage(params, next, wave.pendingSabotageId, rand)
-  }
-  return next
+  return resolveActionSabotage(params, { ...run, wave, deckComposition }, wave, rand)
 }
 
 // 手詰まり判定と、手詰まり時の護符(治癒・不屈)による救済処理を行う。
@@ -1735,17 +1740,9 @@ export function applyStuckCheck(params: ShidasuParams, run: RunState, rand: () =
   }
 
   if (resetWave.stock.length > 0) {
-    const stageTarget = waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars)
-    const scoreLock = bossScoreLockFor(params, run)
-    const effectiveItems = resolveEffectiveItems(run.items, resetWave.activeSeal)
-    const sealedRoleEffect = resolveSealedRoleEffect(resetWave.activeSeal)
-    const comboCap = resolveComboCap(resetWave.activeSeal)
+    const { target: stageTarget, scoreLock, effectiveItems, sealedRoleEffect, comboCap } = resolvePlayContext(params, run, resetWave)
     const drawResult = drawStock(params, resetWave, effectiveItems, stageTarget, run.deckComposition, modifier, rand, scoreLock, sealedRoleEffect, comboCap)
-    let next: RunState = { ...run, wave: drawResult.wave, deckComposition: drawResult.deckComposition }
-    if (drawResult.wave.pendingSabotageId && drawResult.wave.sabotageTurnsRemaining <= 0) {
-      next = triggerSabotage(params, next, drawResult.wave.pendingSabotageId, rand)
-    }
-    return next
+    return resolveActionSabotage(params, { ...run, wave: drawResult.wave, deckComposition: drawResult.deckComposition }, drawResult.wave, rand)
   }
 
   return { ...run, wave: markStuck(resetWave) }
