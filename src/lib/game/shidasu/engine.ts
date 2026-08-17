@@ -1034,7 +1034,7 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
 }
 
 // 果断・星霜: 天啓・神託・秘儀のいずれかを使用するたび、waveのdiscretionN/frostXへ永続的に加算する。
-function applyDiscretionFrostBonus(run: RunState, params: ShidasuParams, wave: WaveState): WaveState {
+function applyDiscretionFrostBonus(params: ShidasuParams, run: RunState, wave: WaveState): WaveState {
   let next = wave
   if (run.items.includes('discretion')) next = { ...next, discretionN: next.discretionN + params.talismans.discretion.n }
   if (run.items.includes('frost')) next = { ...next, frostX: next.frostX + params.talismans.frost.x }
@@ -1049,7 +1049,7 @@ export function useRite(params: ShidasuParams, run: RunState, riteId: RiteId, ra
   const idx = run.rites.indexOf(riteId)
   if (idx === -1) return run
   let wave = applyRiteEffect(params, run.wave, riteId, rand)
-  wave = applyDiscretionFrostBonus(run, params, wave)
+  wave = applyDiscretionFrostBonus(params, run, wave)
   const rites = [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)]
   const recentUsedRiteIds = [riteId, ...run.recentUsedRiteIds].slice(0, 2)
   return { ...run, wave, rites, recentUsedRiteIds }
@@ -1529,7 +1529,7 @@ export function useRevelation(
   if (idx === -1) return run
   if (!canUseRevelation(params, run.wave, revelationId, run.relics)) return run
   let { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
-  wave = applyDiscretionFrostBonus(run, params, wave)
+  wave = applyDiscretionFrostBonus(params, run, wave)
   const extraTableauRows = run.extraTableauRows
   const revelations = [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
   const reward = grantRevelationReward(params, { ...run, revelations }, revelationId, targetRelicId, rand)
@@ -1607,7 +1607,7 @@ export function useOracle(params: ShidasuParams, run: RunState, roleName: RoleNa
   const oracles = [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)]
   const oracleLevels = { ...run.oracleLevels, [roleName]: run.oracleLevels[roleName] + 1 }
   let wave = run.wave ? { ...run.wave, oracleLevels } : run.wave
-  if (wave) wave = applyDiscretionFrostBonus(run, params, wave)
+  if (wave) wave = applyDiscretionFrostBonus(params, run, wave)
   return { ...run, oracles, oracleLevels, wave }
 }
 
