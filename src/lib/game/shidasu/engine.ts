@@ -321,6 +321,20 @@ function makeOracleLevelResolver(wave: WaveState, sealedRoleEffect: SealedRoleEf
   }
 }
 
+// 庇護: effectiveComboがprotection.c未満なら底上げする。大地: effectiveComboにearth.cを加算する。
+// 所持順(items配列の並び順)で順に適用する。
+function applyProtectionEarthFloor(items: ItemId[], params: ShidasuParams, startingCombo: number): number {
+  let effectiveCombo = startingCombo
+  for (const id of items) {
+    if (id === 'protection' && effectiveCombo < params.talismans.protection.c) {
+      effectiveCombo = params.talismans.protection.c
+    } else if (id === 'earth') {
+      effectiveCombo += params.talismans.earth.c
+    }
+  }
+  return effectiveCombo
+}
+
 export function playCard(
   params: ShidasuParams,
   wave: WaveState,
@@ -477,14 +491,7 @@ export function playCard(
 
   // 基礎コンボ数は計算用のコンボ数に常に加算する(このプレイで祝福により増えた分も含む)。
   // 庇護・大地: 所持順(itemsの並び順)でさらに一時comboに適用する。wave.combo(実コンボ)自体は変化しない。
-  let effectiveCombo = newCombo + newBaseComboCount
-  for (const id of items) {
-    if (id === 'protection' && effectiveCombo < params.talismans.protection.c) {
-      effectiveCombo = params.talismans.protection.c
-    } else if (id === 'earth') {
-      effectiveCombo += params.talismans.earth.c
-    }
-  }
+  const effectiveCombo = applyProtectionEarthFloor(items, params, newCombo + newBaseComboCount)
 
   // 明星: 今回成立した役の種類ごとに、ウェーブ内累積成立回数を+1する(今回分は次回以降に反映)
   let newRoleOccurrenceCountThisWave = wave.roleOccurrenceCountThisWave
@@ -727,14 +734,7 @@ export function drawStock(
       naiveRoleFiredThisChain = wave.roleFiredThisChain || chainResult.roleFired.length > 0
       naiveFlushActiveThisCombo = wave.flushActiveThisCombo || chainResult.roleFired.some(r => r.name === 'flush')
       // 基礎コンボ数は計算用のコンボ数に常に加算する(素朴パスでは祝福による基礎コンボ数の増加は発生しない)。
-      let effectiveCombo = newCombo + sincerityAdd + wave.baseComboCount
-      for (const id of items) {
-        if (id === 'protection' && effectiveCombo < params.talismans.protection.c) {
-          effectiveCombo = params.talismans.protection.c
-        } else if (id === 'earth') {
-          effectiveCombo += params.talismans.earth.c
-        }
-      }
+      const effectiveCombo = applyProtectionEarthFloor(items, params, newCombo + sincerityAdd + wave.baseComboCount)
 
       const naiveCtx: ItemEffectContext = {
         card: drawnCard,
