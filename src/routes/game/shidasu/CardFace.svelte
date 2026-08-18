@@ -2,14 +2,9 @@
   import { rankLabel } from '$lib/game/shidasu/engine'
   import { isRed } from '$lib/game/shidasu/patterns'
   import type { Card, ItemId } from '$lib/game/shidasu/types'
+  import { CARD_BACK_STYLE } from './cardBackStyle'
 
   let { card, covered, faceUp = true, items = [] }: { card: Card; covered: boolean; faceUp?: boolean; items?: ItemId[] } = $props()
-
-  const CARD_BACK_STYLE =
-    'background:#0f172a;' +
-    'background-image:' +
-    'repeating-linear-gradient(0deg,transparent,transparent 7px,rgba(99,102,241,0.25) 7px,rgba(99,102,241,0.25) 8px),' +
-    'repeating-linear-gradient(90deg,transparent,transparent 7px,rgba(99,102,241,0.25) 7px,rgba(99,102,241,0.25) 8px);'
 
   let hideColorAndSuit = $derived(items.includes('silver'))
 

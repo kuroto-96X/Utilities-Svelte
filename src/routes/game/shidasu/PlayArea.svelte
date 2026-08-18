@@ -12,6 +12,7 @@
   import { runningTotalsFromScoreParts, type ScorePart } from '$lib/game/shidasu/scoreParts'
   import CardFace from './CardFace.svelte'
   import SuitCountPanel from './SuitCountPanel.svelte'
+  import { CARD_BACK_STYLE } from './cardBackStyle'
 
   let {
     wave, params, modifier, target, items, onPlayCard, onDraw, dropTarget = null, headerExtra, extraFooter,
@@ -1132,8 +1133,8 @@
       disabled={wave.stock.length === 0 || !allowDraw || anyAnimationActive}
       data-drop-stock
       bind:this={stockButtonEl}
-      style="aspect-ratio: 2 / 3;"
-      class="w-16 shrink-0 rounded-lg border-2 flex flex-col items-center justify-center font-black active:scale-95 transition-transform {dropTarget === 'stockTop' ? 'ring-4 ring-sky-400' : ''} {wave.stock.length > 0 ? 'bg-emerald-700 border-emerald-500 text-amber-50' : 'bg-emerald-900 border-emerald-800 text-emerald-700'}"
+      style="aspect-ratio: 2 / 3; {wave.stock.length > 0 ? CARD_BACK_STYLE : ''}"
+      class="w-16 shrink-0 rounded-lg border-2 flex flex-col items-center justify-center font-black active:scale-95 transition-transform {dropTarget === 'stockTop' ? 'ring-4 ring-sky-400' : ''} {wave.stock.length > 0 ? 'border-indigo-500/50 text-amber-50' : 'bg-emerald-900 border-emerald-800 text-emerald-700'}"
     >
       <div class="text-xs">山札</div>
       <div class="text-lg tabular-nums">{wave.stock.length}</div>
