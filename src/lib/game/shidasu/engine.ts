@@ -1141,7 +1141,15 @@ export function triggerSabotage(params: ShidasuParams, run: RunState, id: Sabota
 
   const star = nextRun.stageStars[nextRun.waveIndex]
   const rolled = rollSabotage(star?.sabotage ?? { kind: 'none' }, rand)
-  return { ...nextRun, wave: { ...nextWave, pendingSabotageId: rolled.pendingSabotageId, sabotageTurnsRemaining: rolled.sabotageTurnsRemaining } }
+  return {
+    ...nextRun,
+    wave: {
+      ...nextWave,
+      pendingSabotageId: rolled.pendingSabotageId,
+      sabotageTurnsRemaining: rolled.sabotageTurnsRemaining,
+      lastSabotage: { id, seq: (wave.lastSabotage?.seq ?? 0) + 1 },
+    },
+  }
 }
 
 // ステージ画面のスキップボタンから呼ぶ。ボスWave(isBossWaveがtrueを返すwaveIndex、通常は

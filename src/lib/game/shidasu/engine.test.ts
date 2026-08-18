@@ -4904,6 +4904,14 @@ describe('triggerSabotage', () => {
     expect(next.wave!.discardPile.length).toBe(5)
   })
 
+  it('triggerSabotage: 発動のたびにwave.lastSabotageのidとseqが更新される', () => {
+    const run = runWithWave()
+    const next1 = triggerSabotage(DEFAULT_PARAMS, run, 'stockPurge', () => 0)
+    expect(next1.wave!.lastSabotage).toEqual({ id: 'stockPurge', seq: 1 })
+    const next2 = triggerSabotage(DEFAULT_PARAMS, next1, 'comboBreather', () => 0)
+    expect(next2.wave!.lastSabotage).toEqual({ id: 'comboBreather', seq: 2 })
+  })
+
   it('columnReturn: 選んだ列が山札に戻りシャッフルされ、同じ枚数で再配布される', () => {
     const run = runWithWave()
     const colIndex = 0

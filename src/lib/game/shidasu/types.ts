@@ -301,6 +301,11 @@ export interface WaveState {
     | { kind: 'talismanHidden' }
     | { kind: 'roleBias'; buffed: RoleName[]; nerfed: RoleName[]; multiplier: number }
     | null
+  // 直近発動した妨害行動の識別情報。UI(PlayArea.svelte)がこの値の変化を検知して
+  // 専用アニメーションを起動するために使う。発動のたびにseqをインクリメントし、
+  // 同じIDが連続発動しても検知できるようにする。undefinedは「まだ一度も妨害が
+  // 発動していない」状態を表す。
+  lastSabotage?: { id: SabotageActionId; seq: number }
 }
 
 export type RunPhase = 'title' | 'playing' | 'shop' | 'itemSelect' | 'riteSelect' | 'revelationSelect' | 'oracleSelect' | 'cardSetSelect' | 'continueChoice' | 'allClear' | 'gameOver'
