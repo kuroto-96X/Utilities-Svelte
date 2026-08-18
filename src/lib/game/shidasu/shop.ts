@@ -63,11 +63,11 @@ export function rollShop(params: ShidasuParams, run: RunState, rand: () => numbe
 }
 
 export function itemBuyPrice(params: ShidasuParams, run: RunState, id: ItemId): number {
-  return Math.round(params.shop.itemPrice[params.talismans[id].rarity].buy * relicPriceMultiplier(params, run))
+  return categoryPrice(params, run, params.shop.itemPrice[params.talismans[id].rarity], 'buy')
 }
 
 export function itemSellPrice(params: ShidasuParams, run: RunState, id: ItemId): number {
-  return Math.round(params.shop.itemPrice[params.talismans[id].rarity].sell * relicSellBonusMultiplier(params, run))
+  return categoryPrice(params, run, params.shop.itemPrice[params.talismans[id].rarity], 'sell')
 }
 
 function categoryPrice(params: ShidasuParams, run: RunState, priceConfig: { buy: number; sell: number }, direction: 'buy' | 'sell'): number {
