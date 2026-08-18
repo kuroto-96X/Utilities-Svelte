@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { loadParams } from '$lib/game/shidasu/params'
-  import { startWave, playCard, drawStock, forceStockTop } from '$lib/game/shidasu/engine'
+  import { startWave, playCard, drawStock, forceStockTop, triggerSabotage, createInitialRun } from '$lib/game/shidasu/engine'
+  import { SABOTAGE_POOL } from '$lib/game/shidasu/sabotage'
   import { applyRiteEffect } from '$lib/game/shidasu/riteEffects'
   import { applyRevelationEffect, revelationNeedsTarget } from '$lib/game/shidasu/revelationEffects'
   import RiteExecutePanel from './RiteExecutePanel.svelte'
@@ -10,7 +11,7 @@
   import { ITEM_POOL, itemDesc, itemName } from '$lib/game/shidasu/items'
   import { defaultOracleLevels } from '$lib/game/shidasu/oracles'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
-  import type { WaveState, Card, ItemId, DeckCard, Suit, Rank, RiteId, RevelationId, RoleName } from '$lib/game/shidasu/types'
+  import type { WaveState, Card, ItemId, DeckCard, Suit, Rank, RiteId, RevelationId, RoleName, SabotageActionId } from '$lib/game/shidasu/types'
   import ItemChecklist from './ItemChecklist.svelte'
   import DebugStatePanel from './DebugStatePanel.svelte'
   import CardPalette from './CardPalette.svelte'
@@ -88,6 +89,13 @@
     const result = drawStock(params, wave, items, TARGET, deckComposition, 'none')
     wave = result.wave
     deckComposition = result.deckComposition
+    lastSnapshot = null
+  }
+
+  function handleTriggerSabotage(id: SabotageActionId) {
+    const run = { ...createInitialRun(), items, wave }
+    const next = triggerSabotage(params, run, id, Math.random)
+    if (next.wave) wave = next.wave
     lastSnapshot = null
   }
 
@@ -297,6 +305,18 @@
     <div class="grid gap-4 items-start" style="grid-template-columns: minmax(420px, 1fr) minmax(480px, 1.4fr) minmax(260px, 0.8fr) minmax(260px, 0.8fr);">
       <CardPalette onCardPointerDown={onPaletteCardPointerDown} onUnifySuit={unifySuit} />
       <div class="bg-emerald-950 rounded-lg p-3 flex flex-col" style="max-height: 70vh;">
+        <div class="p-2 border rounded space-y-1">
+          <p class="text-xs text-slate-500">星の妨害行動を直接発動(デバッグ用)</p>
+          <div class="flex flex-wrap gap-1">
+            {#each SABOTAGE_POOL as def (def.id)}
+              <button
+                type="button"
+                onclick={() => handleTriggerSabotage(def.id)}
+                class="text-xs px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-100"
+              >{def.name}</button>
+            {/each}
+          </div>
+        </div>
         <PlayArea
           {wave} {params} modifier={'none'} target={TARGET} {items} onPlayCard={handlePlayCard} onDraw={handleDraw} {dropTarget}
           extraFooter={itemBadges}
