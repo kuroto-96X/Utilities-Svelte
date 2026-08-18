@@ -27,6 +27,11 @@ export interface SabotageContext {
 export interface SabotageResult {
   wave?: Partial<WaveState>
   run?: Partial<RunState>
+  // 今回のトリガーで実際に再配布された場札の列インデックス。裏向き配布アニメーション
+  // (PlayArea.svelte)が対象列を特定するために使う。wave側のCard.faceUpフラグは
+  // 過去の別トリガーで裏向きのまま残っているカードとも区別が付かないため、
+  // 「今回触った列」を明示的にここで伝える。tableauFullReturn/columnReturn以外は未設定でよい。
+  affectedTableauCols?: number[]
 }
 
 function applyStockPurge({ wave }: SabotageContext): SabotageResult {
@@ -43,7 +48,7 @@ function applyColumnReturn({ wave, rand }: SabotageContext): SabotageResult {
   const newCol = pool.slice(0, col.length).map(c => ({ ...c, faceUp: false }))
   const newStock = pool.slice(col.length)
   const tableau = wave.tableau.map((c, i) => (i === colIndex ? newCol : c))
-  return { wave: { tableau, stock: newStock } }
+  return { wave: { tableau, stock: newStock }, affectedTableauCols: [colIndex] }
 }
 
 // chainSettle: 既存のtriggerSabotageは`nextWave`(activeSeal既にnullリセット済み)を起点に
@@ -133,7 +138,7 @@ function applyTableauFullReturn({ wave, rand }: SabotageContext): SabotageResult
     cursor += n
     return slice
   })
-  return { wave: { tableau, stock: pool.slice(cursor) } }
+  return { wave: { tableau, stock: pool.slice(cursor) }, affectedTableauCols: wave.tableau.map((_, i) => i) }
 }
 
 function applyTableauShuffle({ wave, rand }: SabotageContext): SabotageResult {

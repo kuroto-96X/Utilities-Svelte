@@ -304,8 +304,11 @@ export interface WaveState {
   // 直近発動した妨害行動の識別情報。UI(PlayArea.svelte)がこの値の変化を検知して
   // 専用アニメーションを起動するために使う。発動のたびにseqをインクリメントし、
   // 同じIDが連続発動しても検知できるようにする。undefinedは「まだ一度も妨害が
-  // 発動していない」状態を表す。
-  lastSabotage?: { id: SabotageActionId; seq: number }
+  // 発動していない」状態を表す。affectedColsは今回のトリガーで実際に再配布された
+  // 場札の列インデックス(tableauFullReturn/columnReturn以外はundefined)。
+  // Card.faceUpフラグ(過去の別トリガーで裏向きのまま残っているカードとも区別が
+  // 付かない)から逆算せず、ここで明示的に伝える。
+  lastSabotage?: { id: SabotageActionId; seq: number; affectedCols?: number[] }
 }
 
 export type RunPhase = 'title' | 'playing' | 'shop' | 'itemSelect' | 'riteSelect' | 'revelationSelect' | 'oracleSelect' | 'cardSetSelect' | 'continueChoice' | 'allClear' | 'gameOver'

@@ -386,12 +386,8 @@
     const current = wave.lastSabotage
     if (!current || current.seq === previousSabotageSeq) return
     previousSabotageSeq = current.seq
-    if (current.id === 'tableauFullReturn' || current.id === 'columnReturn') {
-      const affectedCols = wave.tableau
-        .map((col, ci) => ({ ci, hidden: col.some(c => c.faceUp === false) }))
-        .filter(x => x.hidden)
-        .map(x => x.ci)
-      startSabotageRedistributeAnimation(affectedCols)
+    if ((current.id === 'tableauFullReturn' || current.id === 'columnReturn') && current.affectedCols) {
+      startSabotageRedistributeAnimation(current.affectedCols)
     }
   })
 

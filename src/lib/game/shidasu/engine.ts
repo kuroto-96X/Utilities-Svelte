@@ -1147,7 +1147,7 @@ export function triggerSabotage(params: ShidasuParams, run: RunState, id: Sabota
       ...nextWave,
       pendingSabotageId: rolled.pendingSabotageId,
       sabotageTurnsRemaining: rolled.sabotageTurnsRemaining,
-      lastSabotage: { id, seq: (wave.lastSabotage?.seq ?? 0) + 1 },
+      lastSabotage: { id, seq: (wave.lastSabotage?.seq ?? 0) + 1, affectedCols: result.affectedTableauCols },
     },
   }
 }

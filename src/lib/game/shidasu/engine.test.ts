@@ -4912,6 +4912,19 @@ describe('triggerSabotage', () => {
     expect(next2.wave!.lastSabotage).toEqual({ id: 'comboBreather', seq: 2 })
   })
 
+  it('triggerSabotage: columnReturn/tableauFullReturnはlastSabotage.affectedColsに今回対象になった列のみを設定する(過去のトリガーを引きずらない)', () => {
+    const run = runWithWave()
+    const cols = run.wave!.tableau.length
+    const columnNext = triggerSabotage(DEFAULT_PARAMS, run, 'columnReturn', () => 0)
+    expect(columnNext.wave!.lastSabotage?.affectedCols).toEqual([0])
+    const fullNext = triggerSabotage(DEFAULT_PARAMS, columnNext, 'tableauFullReturn', () => 0)
+    expect(fullNext.wave!.lastSabotage?.affectedCols).toEqual(Array.from({ length: cols }, (_, i) => i))
+    // 直前がtableauFullReturn(全列)でも、無関係な妨害行動が発動すればaffectedColsは
+    // 引き継がれずundefinedに戻る(古いトリガーの情報が残らないことの確認)。
+    const otherNext = triggerSabotage(DEFAULT_PARAMS, fullNext, 'stockPurge', () => 0)
+    expect(otherNext.wave!.lastSabotage?.affectedCols).toBeUndefined()
+  })
+
   it('columnReturn: 選んだ列が山札に戻りシャッフルされ、同じ枚数で再配布される', () => {
     const run = runWithWave()
     const colIndex = 0
