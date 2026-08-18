@@ -521,11 +521,14 @@
   function startSabotageDealAnimation(affectedCols: number[]) {
     // 対象列を「未配布」扱いに戻す(isNotYetDealtの判定に使うdealtCellsから除去)。
     dealtCells = new Set([...dealtCells].filter(key => !affectedCols.includes(Number(key.split('-')[0]))))
+    // sabotageAnimatingColumnsによる列全体の非表示は収束フェーズ専用。配布フェーズが
+    // 始まった時点でクリアし、以後は1枚ずつ着地するたびにdealtCellsへ登録される
+    // isNotYetDealt判定に表示制御を委ねる(このクリアを配布完了まで遅らせると、
+    // 対象列が全カード着地するまで丸ごと非表示のままになり、対象列数・枚数が多い
+    // 総戻しほど「配布完了まで何も見えない」不具合が顕著になっていた)。
+    sabotageAnimatingColumns = new Set()
 
-    if (!stockButtonEl) {
-      sabotageAnimatingColumns = new Set()
-      return
-    }
+    if (!stockButtonEl) return
     const fromRect = stockButtonEl.getBoundingClientRect()
     const fromLeft = fromRect.left + fromRect.width / 2
     const fromTop = fromRect.top + fromRect.height / 2
@@ -539,19 +542,14 @@
       }
     }
 
-    let landedCount = 0
     order.forEach((entry, index) => {
       const timer = setTimeout(() => {
         const isTopOfColumn = entry.rowIndex === wave.tableau[entry.colIndex].length - 1
         dealOneCard(entry, fromLeft, fromTop, false, landedEntry => {
-          landedCount += 1
           if (isTopOfColumn) {
             startFlipReveal(landedEntry.colIndex, landedEntry.rowIndex, landedEntry.card)
           } else {
             dealtCells = new Set([...dealtCells, `${landedEntry.colIndex}-${landedEntry.rowIndex}`])
-          }
-          if (landedCount === order.length) {
-            sabotageAnimatingColumns = new Set()
           }
         })
       }, index * DEAL_INTERVAL_MS)
