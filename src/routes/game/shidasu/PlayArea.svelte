@@ -207,6 +207,7 @@
     left: number
     top: number
     transitionMs: number
+    faceUp: boolean
   }
 
   // 「複数カードを1山にまとめてから移動先へ移動させる」gather→moveの2フェーズ
@@ -298,6 +299,20 @@
   let cleanupTimer: ReturnType<typeof setTimeout> | undefined
   let chainResetAnimation = $state<ChainResetAnimation | null>(null)
   let chainResetTimer: ReturnType<typeof setTimeout> | undefined
+
+  interface SabotageRedistributeAnimation {
+    phase: 'gather' | 'move'
+    left: number
+    top: number
+    transitionMs: number
+    gatherCards: GatherMoveCardPosition[]
+  }
+  let sabotageRedistributeAnimation = $state<SabotageRedistributeAnimation | null>(null)
+  let sabotageRedistributeTimer: ReturnType<typeof setTimeout> | undefined
+  // 「総戻し」「一列戻し」発動により再収束・再配布中の列インデックス。この間、対象列の
+  // 本物の場札描画(既に妨害後のデータになっている)を隠し、代わりにアニメーション用の
+  // オーバーレイを表示する。
+  let sabotageAnimatingColumns = $state<Set<number>>(new Set())
   let dealingCards = $state<DealingCard[]>([])
   // 着地済み(実表示に切り替え済み)のマス目を"col-row"形式の文字列で追跡する。
   // 配布アニメーション進行中は、このSetに含まれないマス目を非表示にする。
@@ -305,7 +320,7 @@
   let dealAnimationActive = $derived(dealingCards.length > 0)
   // いずれかのアニメーション(カードプレイ・得点演出・清算・チェーンリセット・配布)が進行中かどうか。
   // 進行中は操作(カードプレイ・山札引き・秘儀/天啓使用)を無効化する。
-  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive)
+  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0)
   let dealTimers: ReturnType<typeof setTimeout>[] = []
   // 初期値をundefinedにしておくことで、マウント直後(ゲーム開始直後の最初のWave)にも
   // 「waveKeyが変化した」と判定され配布アニメーションが発火する。他のprevious系変数
@@ -355,6 +370,20 @@
     startChainResetAnimation(resetCards)
   })
 
+  let previousSabotageSeq = wave.lastSabotage?.seq ?? 0
+  $effect.pre(() => {
+    const current = wave.lastSabotage
+    if (!current || current.seq === previousSabotageSeq) return
+    previousSabotageSeq = current.seq
+    if (current.id === 'tableauFullReturn' || current.id === 'columnReturn') {
+      const affectedCols = wave.tableau
+        .map((col, ci) => ({ ci, hidden: col.some(c => c.faceUp === false) }))
+        .filter(x => x.hidden)
+        .map(x => x.ci)
+      startSabotageRedistributeAnimation(affectedCols)
+    }
+  })
+
   // chainResetAnimationが実行されていない間は、捨て札常設UIの表示を
   // 常に最新のwave.discardPileへ追従させる(アニメーション中のみ、
   // 上のeffect.preでの検知とstartChainResetAnimation側の更新で固定される)。
@@ -392,6 +421,107 @@
     startCleanupItem(item)
   }
 
+  // Task 4で本実装に置き換える。現時点では即座にdealtCellsへ登録するだけの仮実装。
+  function startFlipReveal(colIndex: number, rowIndex: number, _card: Card) {
+    dealtCells = new Set([...dealtCells, `${colIndex}-${rowIndex}`])
+  }
+
+  // 「総戻し」「一列戻し」発動時、対象列のカードを山札の位置へ収束させるアニメーションを
+  // 開始する。完了後、startSabotageDealAnimationへ引き継ぐ。
+  function startSabotageRedistributeAnimation(affectedCols: number[]) {
+    if (affectedCols.length === 0 || !tableauEl || !stockButtonEl) return
+
+    const gatherCards: GatherMoveCardPosition[] = []
+    affectedCols.forEach(ci => {
+      const col = wave.tableau[ci]
+      col.forEach((card, ri) => {
+        const cardEl = tableauEl?.querySelector<HTMLElement>(`[data-drop-col="${ci}"][data-drop-row="${ri}"]`)
+        if (!cardEl) return
+        const cardRect = cardEl.getBoundingClientRect()
+        gatherCards.push({ card, left: cardRect.left + cardRect.width / 2, top: cardRect.top + cardRect.height / 2 })
+      })
+    })
+    if (gatherCards.length === 0) return
+
+    sabotageAnimatingColumns = new Set(affectedCols)
+
+    const firstCardEl = tableauEl.querySelector<HTMLElement>(`[data-drop-col="${affectedCols[0]}"][data-drop-row="0"]`)
+    const gatherRect = (firstCardEl ?? tableauEl).getBoundingClientRect()
+    const gatherLeft = gatherRect.left + gatherRect.width / 2
+    const gatherTop = gatherRect.top + gatherRect.height / 2
+
+    sabotageRedistributeAnimation = {
+      phase: 'gather',
+      left: gatherLeft,
+      top: gatherTop,
+      transitionMs: 0,
+      gatherCards,
+    }
+
+    runGatherAndMoveAnimation({
+      getAnimation: () => sabotageRedistributeAnimation,
+      setAnimation: next => { sabotageRedistributeAnimation = next },
+      setTimer: timer => { sabotageRedistributeTimer = timer },
+      gatherCards,
+      representativeCard: gatherCards[0].card,
+      gatherLeft,
+      gatherTop,
+      getMoveTarget: () => {
+        if (!stockButtonEl) return null
+        const rect = stockButtonEl.getBoundingClientRect()
+        return { left: rect.left + rect.width / 2, top: rect.top + rect.height / 2 }
+      },
+      gatherMs: CLEANUP_GATHER_MS,
+      moveMs: CLEANUP_MOVE_MS,
+      onComplete: () => startSabotageDealAnimation(affectedCols),
+    })
+  }
+
+  // 収束アニメーション完了後、対象列のみへカードを裏向きで配り直す。配布順序は
+  // 対象列内でrow=0から順に、複数列がある場合は列をまたいでrow単位で揃える
+  // (startDealAnimationと同じ考え方)。着地したカードがその列の一番上であれば
+  // フリップ演出(startFlipReveal)を、そうでなければ即座にdealtCellsへ登録する。
+  function startSabotageDealAnimation(affectedCols: number[]) {
+    // 対象列を「未配布」扱いに戻す(isNotYetDealtの判定に使うdealtCellsから除去)。
+    dealtCells = new Set([...dealtCells].filter(key => !affectedCols.includes(Number(key.split('-')[0]))))
+
+    if (!stockButtonEl) {
+      sabotageAnimatingColumns = new Set()
+      return
+    }
+    const fromRect = stockButtonEl.getBoundingClientRect()
+    const fromLeft = fromRect.left + fromRect.width / 2
+    const fromTop = fromRect.top + fromRect.height / 2
+
+    const maxRows = Math.max(0, ...affectedCols.map(ci => wave.tableau[ci].length))
+    const order: { card: Card; colIndex: number; rowIndex: number }[] = []
+    for (let ri = 0; ri < maxRows; ri++) {
+      for (const ci of affectedCols) {
+        const card = wave.tableau[ci][ri]
+        if (card) order.push({ card, colIndex: ci, rowIndex: ri })
+      }
+    }
+
+    let landedCount = 0
+    order.forEach((entry, index) => {
+      const timer = setTimeout(() => {
+        const isTopOfColumn = entry.rowIndex === wave.tableau[entry.colIndex].length - 1
+        dealOneCard(entry, fromLeft, fromTop, false, landedEntry => {
+          landedCount += 1
+          if (isTopOfColumn) {
+            startFlipReveal(landedEntry.colIndex, landedEntry.rowIndex, landedEntry.card)
+          } else {
+            dealtCells = new Set([...dealtCells, `${landedEntry.colIndex}-${landedEntry.rowIndex}`])
+          }
+          if (landedCount === order.length) {
+            sabotageAnimatingColumns = new Set()
+          }
+        })
+      }, index * DEAL_INTERVAL_MS)
+      dealTimers.push(timer)
+    })
+  }
+
   // 新Wave開始時、山札の位置から場札の各マス目へカードを配るアニメーションを開始する。
   // 配布順序はrow=0を全列左→右に1枚ずつ、次にrow=1を全列左→右…という順。
   function startDealAnimation() {
@@ -424,7 +554,15 @@
 
   // 1枚のカードを山札の位置からマス目の位置へ移動させ、着地したらdealtCellsに登録して
   // 実表示へ切り替える。複数枚が時間差で同時並行するため、dealingCardsは配列で管理する。
-  function dealOneCard(entry: { card: Card; colIndex: number; rowIndex: number }, fromLeft: number, fromTop: number) {
+  // faceUpは配布中の表示に使う(通常配布は常にtrue、妨害再配布はfalse)。onLandedは
+  // 着地時にdealtCells登録の代わりに独自処理をしたい呼び出し元(妨害再配布)向けのフック。
+  function dealOneCard(
+    entry: { card: Card; colIndex: number; rowIndex: number },
+    fromLeft: number,
+    fromTop: number,
+    faceUp: boolean = true,
+    onLanded?: (entry: { card: Card; colIndex: number; rowIndex: number }) => void
+  ) {
     if (!tableauEl) return
     const targetEl = tableauEl.querySelector<HTMLElement>(`[data-drop-col="${entry.colIndex}"][data-drop-row="${entry.rowIndex}"]`)
     if (!targetEl) return
@@ -434,7 +572,7 @@
 
     dealingCards = [
       ...dealingCards,
-      { card: entry.card, colIndex: entry.colIndex, rowIndex: entry.rowIndex, left: fromLeft, top: fromTop, transitionMs: 0 },
+      { card: entry.card, colIndex: entry.colIndex, rowIndex: entry.rowIndex, left: fromLeft, top: fromTop, transitionMs: 0, faceUp },
     ]
 
     requestAnimationFrame(() => {
@@ -448,8 +586,12 @@
     })
 
     const timer = setTimeout(() => {
-      dealtCells = new Set([...dealtCells, `${entry.colIndex}-${entry.rowIndex}`])
       dealingCards = dealingCards.filter(d => !(d.colIndex === entry.colIndex && d.rowIndex === entry.rowIndex))
+      if (onLanded) {
+        onLanded(entry)
+      } else {
+        dealtCells = new Set([...dealtCells, `${entry.colIndex}-${entry.rowIndex}`])
+      }
     }, DEAL_MOVE_MS)
     dealTimers.push(timer)
   }
@@ -902,8 +1044,9 @@
           {@const isAnimatingThisCard = playingAnimation?.colIndex === ci && playingAnimation?.rowIndex === ri}
           {@const isCleaningUpThisColumn = (cleanupAnimation?.kind === 'column' && cleanupAnimation.columnIndex === ci) || cleanedUpColumns.has(ci)}
           {@const isNotYetDealt = dealAnimationActive && !dealtCells.has(`${ci}-${ri}`)}
+          {@const isHiddenForSabotageRedistribute = sabotageAnimatingColumns.has(ci)}
           <div
-            class="absolute left-0 right-0 {dropTarget && dropTarget !== 'stockTop' && dropTarget.col === ci && dropTarget.row === ri ? 'ring-4 ring-sky-400 rounded-lg' : ''} {isAnimatingThisCard || isCleaningUpThisColumn || isNotYetDealt ? 'invisible' : ''}"
+            class="absolute left-0 right-0 {dropTarget && dropTarget !== 'stockTop' && dropTarget.col === ci && dropTarget.row === ri ? 'ring-4 ring-sky-400 rounded-lg' : ''} {isAnimatingThisCard || isCleaningUpThisColumn || isNotYetDealt || isHiddenForSabotageRedistribute ? 'invisible' : ''}"
             style="top:{ri * 18}px; z-index:{ri};"
             data-drop-col={ci}
             data-drop-row={ri}
@@ -1083,11 +1226,22 @@
   {/each}
 {/if}
 
+{#if sabotageRedistributeAnimation}
+  {#each sabotageRedistributeAnimation.gatherCards as gatherCard, i (i)}
+    <div
+      class="fixed pointer-events-none z-[100] ease-out"
+      style="left:{sabotageRedistributeAnimation.left}px; top:{sabotageRedistributeAnimation.top}px; width:64px; transform: translate(-50%, -50%); transition-property: left, top; transition-duration:{sabotageRedistributeAnimation.transitionMs}ms;"
+    >
+      <CardFace card={gatherCard.card} covered={false} faceUp={false} {items} />
+    </div>
+  {/each}
+{/if}
+
 {#each dealingCards as dealingCard (`${dealingCard.colIndex}-${dealingCard.rowIndex}`)}
   <div
     class="fixed pointer-events-none z-[100] ease-out"
     style="left:{dealingCard.left}px; top:{dealingCard.top}px; width:64px; transform: translate(-50%, -50%); transition-property: left, top; transition-duration:{dealingCard.transitionMs}ms;"
   >
-    <CardFace card={dealingCard.card} covered={false} {items} />
+    <CardFace card={dealingCard.card} covered={false} faceUp={dealingCard.faceUp} {items} />
   </div>
 {/each}
