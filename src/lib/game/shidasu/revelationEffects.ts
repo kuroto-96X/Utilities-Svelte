@@ -241,6 +241,56 @@ export function revelationNeedsTarget(revelationId: RevelationId): boolean {
   }
 }
 
+type RevelationHandler = (
+  wave: WaveState,
+  deckComposition: DeckCard[],
+  targetCol: number | null,
+  params: ShidasuParams,
+  rand: () => number
+) => { wave: WaveState; deckComposition: DeckCard[] }
+
+const noop: RevelationHandler = (wave, deckComposition) => ({ wave, deckComposition })
+
+const REVELATION_HANDLERS: Record<RevelationId, RevelationHandler> = {
+  kaku: (wave, deckComposition, targetCol) =>
+    targetCol === null ? { wave, deckComposition } : convertColumnToSuit(wave, deckComposition, targetCol, '♠'),
+  kou: (wave, deckComposition, targetCol) =>
+    targetCol === null ? { wave, deckComposition } : convertColumnToSuit(wave, deckComposition, targetCol, '♥'),
+  tei: (wave, deckComposition, targetCol) =>
+    targetCol === null ? { wave, deckComposition } : convertColumnToSuit(wave, deckComposition, targetCol, '♦'),
+  bou: (wave, deckComposition, targetCol) =>
+    targetCol === null ? { wave, deckComposition } : convertColumnToSuit(wave, deckComposition, targetCol, '♣'),
+  shin: (wave, deckComposition) => convertTableauSuit(wave, deckComposition, '♠', '♥'),
+  bi: (wave, deckComposition) => convertTableauSuit(wave, deckComposition, '♥', '♣'),
+  ki: (wave, deckComposition) => convertTableauSuit(wave, deckComposition, '♣', '♦'),
+  to: (wave, deckComposition) => convertTableauSuit(wave, deckComposition, '♦', '♠'),
+  gyu: (wave, deckComposition, targetCol, _params, rand) =>
+    targetCol === null ? { wave, deckComposition } : convertColumnToRandomRank(wave, deckComposition, targetCol, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rand),
+  jo: (wave, deckComposition, targetCol, _params, rand) =>
+    targetCol === null ? { wave, deckComposition } : convertColumnToRandomRank(wave, deckComposition, targetCol, [11, 12, 13], rand),
+  kyo: noop,
+  aya: (wave, deckComposition, targetCol) =>
+    targetCol === null ? { wave, deckComposition } : addWildToColumnTop(wave, deckComposition, targetCol),
+  shitsu: (wave, deckComposition, targetCol) =>
+    targetCol === null ? { wave, deckComposition } : convertColumnChainFromLeft(wave, deckComposition, targetCol),
+  heki: (wave, deckComposition) => convertTableauSuitCycle(wave, deckComposition),
+  kei: (wave, deckComposition) => stairAlignTopCards(wave, deckComposition),
+  rou: (wave, deckComposition) => discardColumnTops(wave, deckComposition),
+  i: (wave, deckComposition, _targetCol, _params, rand) => wildifyExtremeRanks(wave, deckComposition, rand),
+  hitsu: (wave, deckComposition, targetCol, _params, rand) =>
+    targetCol === null ? { wave, deckComposition } : convertColumnToStair(wave, deckComposition, targetCol, rand),
+  shi: (wave, deckComposition) => wildifyChainTop(wave, deckComposition),
+  sei: (wave, deckComposition, _targetCol, params, rand) => wildifyRandomTableauCards(wave, deckComposition, params.revelations.sei.n, rand),
+  subaru: noop,
+  ryuu: noop,
+  hotori: noop,
+  chou: noop,
+  yoku: noop,
+  mitsu: noop,
+  karasu: noop,
+  oni: noop,
+}
+
 // 指定した天啓の効果を適用した新しいwave・deckCompositionを返す。所持からの削除はengine.ts側で行う。
 // targetColは列選択が不要な天啓では無視される。
 export function applyRevelationEffect(
@@ -251,62 +301,5 @@ export function applyRevelationEffect(
   targetCol: number | null,
   rand: () => number
 ): { wave: WaveState; deckComposition: DeckCard[] } {
-  switch (revelationId) {
-    case 'kaku':
-      return targetCol === null ? { wave, deckComposition } : convertColumnToSuit(wave, deckComposition, targetCol, '♠')
-    case 'kou':
-      return targetCol === null ? { wave, deckComposition } : convertColumnToSuit(wave, deckComposition, targetCol, '♥')
-    case 'tei':
-      return targetCol === null ? { wave, deckComposition } : convertColumnToSuit(wave, deckComposition, targetCol, '♦')
-    case 'bou':
-      return targetCol === null ? { wave, deckComposition } : convertColumnToSuit(wave, deckComposition, targetCol, '♣')
-    case 'shin':
-      return convertTableauSuit(wave, deckComposition, '♠', '♥')
-    case 'bi':
-      return convertTableauSuit(wave, deckComposition, '♥', '♣')
-    case 'ki':
-      return convertTableauSuit(wave, deckComposition, '♣', '♦')
-    case 'to':
-      return convertTableauSuit(wave, deckComposition, '♦', '♠')
-    case 'gyu':
-      return targetCol === null ? { wave, deckComposition } : convertColumnToRandomRank(wave, deckComposition, targetCol, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rand)
-    case 'jo':
-      return targetCol === null ? { wave, deckComposition } : convertColumnToRandomRank(wave, deckComposition, targetCol, [11, 12, 13], rand)
-    case 'kyo':
-      return { wave, deckComposition }
-    case 'aya':
-      return targetCol === null ? { wave, deckComposition } : addWildToColumnTop(wave, deckComposition, targetCol)
-    case 'shitsu':
-      return targetCol === null ? { wave, deckComposition } : convertColumnChainFromLeft(wave, deckComposition, targetCol)
-    case 'heki':
-      return convertTableauSuitCycle(wave, deckComposition)
-    case 'kei':
-      return stairAlignTopCards(wave, deckComposition)
-    case 'rou':
-      return discardColumnTops(wave, deckComposition)
-    case 'i':
-      return wildifyExtremeRanks(wave, deckComposition, rand)
-    case 'hitsu':
-      return targetCol === null ? { wave, deckComposition } : convertColumnToStair(wave, deckComposition, targetCol, rand)
-    case 'shi':
-      return wildifyChainTop(wave, deckComposition)
-    case 'sei':
-      return wildifyRandomTableauCards(wave, deckComposition, params.revelations.sei.n, rand)
-    case 'subaru':
-      return { wave, deckComposition }
-    case 'ryuu':
-      return { wave, deckComposition }
-    case 'hotori':
-      return { wave, deckComposition }
-    case 'chou':
-      return { wave, deckComposition }
-    case 'yoku':
-      return { wave, deckComposition }
-    case 'mitsu':
-      return { wave, deckComposition }
-    case 'karasu':
-      return { wave, deckComposition }
-    case 'oni':
-      return { wave, deckComposition }
-  }
+  return REVELATION_HANDLERS[revelationId](wave, deckComposition, targetCol, params, rand)
 }
