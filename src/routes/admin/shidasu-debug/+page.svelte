@@ -39,6 +39,12 @@
   let oracleLevels = $state<Record<RoleName, number>>(defaultOracleLevels())
   let wave = $state<WaveState>(startWave(params, 0, 0, items, deckComposition, undefined, 0, oracleLevels).wave)
   let lastSnapshot = $state<WaveState | null>(null)
+  // PlayAreaのwaveKey propに渡す世代カウンタ。本編(+page.svelte)のrun.waveGenerationと
+  // 同じ役割で、新しいWave生成のたびに増やす。これが無いとPlayArea内のwaveKey監視effect
+  // (Wave開始時の配布アニメーション起動、dealtCellsの初期化)が一度も発火せず、dealtCellsが
+  // 常に空のままになる。妨害演出等でdealAnimationActiveがtrueになった際、対象外の列まで
+  // 「まだ配布されていない」扱いで非表示になってしまう不具合があったため追加した。
+  let waveGeneration = $state(0)
 
   interface DragState {
     source: { suit: Suit; rank: Rank; wild: boolean }
@@ -58,6 +64,7 @@
     deckComposition = result.deckComposition
     lastSnapshot = null
     pendingDebugRevelation = null
+    waveGeneration += 1
   }
 
   function resetDeck() {
@@ -69,6 +76,7 @@
     deckComposition = result.deckComposition
     lastSnapshot = null
     pendingDebugRevelation = null
+    waveGeneration += 1
   }
 
   function handleSetOracleLevel(roleName: RoleName, level: number) {
@@ -319,6 +327,7 @@
         </div>
         <PlayArea
           {wave} {params} modifier={'none'} target={TARGET} {items} onPlayCard={handlePlayCard} onDraw={handleDraw} {dropTarget}
+          waveKey={`wave-${waveGeneration}`}
           extraFooter={itemBadges}
           columnTargetMode={pendingDebugRevelation !== null}
           canTargetColumn={canTargetDebugColumn}
