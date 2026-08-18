@@ -144,6 +144,11 @@ export interface Card {
   suit: Suit
   rank: Rank
   wild: boolean
+  // カードが表向きかどうか。undefinedは表向き扱い(既存の全カード生成箇所は変更不要)。
+  // falseは「総戻し」「一列戻し」「捨て札埋没」の3妨害行動でのみ設定される。表示側
+  // (PlayArea.svelte)が、場札の列の一番上かどうかを都度判定して裏向き表示を決める
+  // ため、エンジン側でこの値をtrueへ書き戻す処理は存在しない。
+  faceUp?: boolean
 }
 
 // ラン全体で持続するデッキの中身(idを持たない。ウェーブ開始のたびに新しいidを振ってCardを生成する)。

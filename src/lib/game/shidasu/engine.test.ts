@@ -4914,6 +4914,14 @@ describe('triggerSabotage', () => {
     expect(next.wave!.stock.length).toBe(stockBefore)
   })
 
+  it('columnReturn: 再配布された列のカードは全てfaceUp:falseになる(山札に戻る余りは変更しない)', () => {
+    const run = runWithWave()
+    const colIndex = 0
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'columnReturn', () => 0)
+    expect(next.wave!.tableau[colIndex].every(c => c.faceUp === false)).toBe(true)
+    expect(next.wave!.stock.some(c => c.faceUp === false)).toBe(false)
+  })
+
   it('chainSettle: チェーンが捨て札に送られ、コンボが0になる', () => {
     const run = runWithWave({}, { combo: 3, chain: [card(1, '♠', 1), card(2, '♠', 2)] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'chainSettle', () => 0)
@@ -5002,6 +5010,13 @@ describe('triggerSabotage', () => {
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'tableauFullReturn', () => 0)
     expect(next.wave!.tableau.map(c => c.length)).toEqual(colLengthsBefore)
     expect(next.wave!.stock.length + next.wave!.tableau.flat().length).toBe(totalBefore)
+  })
+
+  it('tableauFullReturn: 場札に配られたカードは全てfaceUp:falseになる(山札に戻る余りは変更しない)', () => {
+    const run = runWithWave()
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'tableauFullReturn', () => 0)
+    expect(next.wave!.tableau.flat().every(c => c.faceUp === false)).toBe(true)
+    expect(next.wave!.stock.some(c => c.faceUp === false)).toBe(false)
   })
 
   it('tableauShuffle: 場札の各列の枚数は変わらず、山札の枚数も変わらない', () => {
@@ -5283,6 +5298,19 @@ describe('triggerSabotage', () => {
     expect(allIds).toEqual([1, 2, 3, 4])
     expect(next.wave!.tableau).toBe(beforeTableau)
     expect(next.wave!.chain).toBe(beforeChain)
+  })
+
+  it('discardBury: 新しい捨て札は全てfaceUp:falseになる(山札に戻る側は変更しない)', () => {
+    const stock: Card[] = [
+      { id: 1, deckId: 1, suit: '♠', rank: 1, wild: false },
+      { id: 2, deckId: 2, suit: '♥', rank: 2, wild: false },
+      { id: 3, deckId: 3, suit: '♦', rank: 3, wild: false },
+    ]
+    const discardPile: Card[] = [{ id: 4, deckId: 4, suit: '♣', rank: 4, wild: false }]
+    const run = runWithWave({}, { stock, discardPile })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'discardBury', () => 0)
+    expect(next.wave!.discardPile.every(c => c.faceUp === false)).toBe(true)
+    expect(next.wave!.stock.some(c => c.faceUp === false)).toBe(false)
   })
 
   it('rewardReduce: rewardPenaltyを2加算する(累積)', () => {

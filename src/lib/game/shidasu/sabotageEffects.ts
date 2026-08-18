@@ -40,7 +40,7 @@ function applyColumnReturn({ wave, rand }: SabotageContext): SabotageResult {
   const col = wave.tableau[colIndex]
   const pool = [...wave.stock, ...col]
   shuffleInPlace(pool, rand)
-  const newCol = pool.slice(0, col.length)
+  const newCol = pool.slice(0, col.length).map(c => ({ ...c, faceUp: false }))
   const newStock = pool.slice(col.length)
   const tableau = wave.tableau.map((c, i) => (i === colIndex ? newCol : c))
   return { wave: { tableau, stock: newStock } }
@@ -129,7 +129,7 @@ function applyTableauFullReturn({ wave, rand }: SabotageContext): SabotageResult
   shuffleInPlace(pool, rand)
   let cursor = 0
   const tableau = counts.map(n => {
-    const slice = pool.slice(cursor, cursor + n)
+    const slice = pool.slice(cursor, cursor + n).map(c => ({ ...c, faceUp: false }))
     cursor += n
     return slice
   })
@@ -271,7 +271,7 @@ function applyDiscardBury({ wave, rand }: SabotageContext): SabotageResult {
   const n = wave.discardPile.length
   const pool = [...wave.stock, ...wave.discardPile]
   shuffleInPlace(pool, rand)
-  const discardPile = pool.slice(0, n)
+  const discardPile = pool.slice(0, n).map(c => ({ ...c, faceUp: false }))
   const stock = pool.slice(n)
   return { wave: { stock, discardPile } }
 }
