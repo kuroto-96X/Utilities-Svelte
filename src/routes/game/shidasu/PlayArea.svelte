@@ -917,10 +917,10 @@
                 onclick={() => (columnTargetMode ? (isTargetable && onTargetColumn?.(ci)) : (isCardPlayable && startPlayCardAnimation(ci, ri, card)))}
                 class="block w-full text-left {columnTargetMode ? (isTargetable ? 'ring-2 ring-fuchsia-400 shadow-lg -translate-y-0.5' : '') : (isCardPlayable && !anyAnimationActive ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : '')} transition-transform disabled:cursor-not-allowed"
               >
-                <CardFace {card} covered={false} {items} />
+                <CardFace {card} covered={false} faceUp={card.faceUp !== false || isTop} {items} />
               </button>
             {:else}
-              <CardFace {card} covered={false} {items} />
+              <CardFace {card} covered={false} faceUp={card.faceUp !== false || isTop} {items} />
             {/if}
           </div>
         {/each}
@@ -961,7 +961,7 @@
     </button>
     <div bind:this={discardPileEl} class="w-16 {cleanupAnimation?.kind === 'discard' ? 'invisible' : ''}">
       {#if displayedDiscardTop}
-        <CardFace card={displayedDiscardTop} covered={false} {items} />
+        <CardFace card={displayedDiscardTop} covered={false} faceUp={displayedDiscardTop.faceUp !== false} {items} />
       {:else}
         <div class="w-full rounded-lg border-2 border-dashed border-emerald-800 flex items-center justify-center text-[10px] text-emerald-700" style="aspect-ratio: 2 / 3;">捨て札</div>
       {/if}

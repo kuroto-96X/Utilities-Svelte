@@ -3,7 +3,13 @@
   import { isRed } from '$lib/game/shidasu/patterns'
   import type { Card, ItemId } from '$lib/game/shidasu/types'
 
-  let { card, covered, items = [] }: { card: Card; covered: boolean; items?: ItemId[] } = $props()
+  let { card, covered, faceUp = true, items = [] }: { card: Card; covered: boolean; faceUp?: boolean; items?: ItemId[] } = $props()
+
+  const CARD_BACK_STYLE =
+    'background:#0f172a;' +
+    'background-image:' +
+    'repeating-linear-gradient(0deg,transparent,transparent 7px,rgba(99,102,241,0.25) 7px,rgba(99,102,241,0.25) 8px),' +
+    'repeating-linear-gradient(90deg,transparent,transparent 7px,rgba(99,102,241,0.25) 7px,rgba(99,102,241,0.25) 8px);'
 
   let hideColorAndSuit = $derived(items.includes('silver'))
 
@@ -22,7 +28,9 @@
   const FACE_CHAR: Record<number, string> = { 11: '♞', 12: '♛', 13: '♚' }
 </script>
 
-{#if card.wild}
+{#if !faceUp}
+  <div class="w-full rounded-lg border border-indigo-500/50" style="aspect-ratio: 2 / 3; {CARD_BACK_STYLE}"></div>
+{:else if card.wild}
   <div
     class="relative w-full rounded-lg border p-1 flex flex-col items-start overflow-hidden select-none"
     style="aspect-ratio: 2 / 3; background:#EDE4FF; border-color:#A78BFA; color:#6D28D9;"
