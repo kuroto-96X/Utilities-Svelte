@@ -251,34 +251,35 @@ type RevelationHandler = (
 
 const noop: RevelationHandler = (wave, deckComposition) => ({ wave, deckComposition })
 
+function withTarget(
+  fn: (wave: WaveState, deckComposition: DeckCard[], targetCol: number, params: ShidasuParams, rand: () => number) => { wave: WaveState; deckComposition: DeckCard[] }
+): RevelationHandler {
+  return (wave, deckComposition, targetCol, params, rand) =>
+    targetCol === null ? { wave, deckComposition } : fn(wave, deckComposition, targetCol, params, rand)
+}
+
 const REVELATION_HANDLERS: Record<RevelationId, RevelationHandler> = {
-  kaku: (wave, deckComposition, targetCol) =>
-    targetCol === null ? { wave, deckComposition } : convertColumnToSuit(wave, deckComposition, targetCol, '♠'),
-  kou: (wave, deckComposition, targetCol) =>
-    targetCol === null ? { wave, deckComposition } : convertColumnToSuit(wave, deckComposition, targetCol, '♥'),
-  tei: (wave, deckComposition, targetCol) =>
-    targetCol === null ? { wave, deckComposition } : convertColumnToSuit(wave, deckComposition, targetCol, '♦'),
-  bou: (wave, deckComposition, targetCol) =>
-    targetCol === null ? { wave, deckComposition } : convertColumnToSuit(wave, deckComposition, targetCol, '♣'),
+  kaku: withTarget((wave, deckComposition, targetCol) => convertColumnToSuit(wave, deckComposition, targetCol, '♠')),
+  kou: withTarget((wave, deckComposition, targetCol) => convertColumnToSuit(wave, deckComposition, targetCol, '♥')),
+  tei: withTarget((wave, deckComposition, targetCol) => convertColumnToSuit(wave, deckComposition, targetCol, '♦')),
+  bou: withTarget((wave, deckComposition, targetCol) => convertColumnToSuit(wave, deckComposition, targetCol, '♣')),
   shin: (wave, deckComposition) => convertTableauSuit(wave, deckComposition, '♠', '♥'),
   bi: (wave, deckComposition) => convertTableauSuit(wave, deckComposition, '♥', '♣'),
   ki: (wave, deckComposition) => convertTableauSuit(wave, deckComposition, '♣', '♦'),
   to: (wave, deckComposition) => convertTableauSuit(wave, deckComposition, '♦', '♠'),
-  gyu: (wave, deckComposition, targetCol, _params, rand) =>
-    targetCol === null ? { wave, deckComposition } : convertColumnToRandomRank(wave, deckComposition, targetCol, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rand),
-  jo: (wave, deckComposition, targetCol, _params, rand) =>
-    targetCol === null ? { wave, deckComposition } : convertColumnToRandomRank(wave, deckComposition, targetCol, [11, 12, 13], rand),
+  gyu: withTarget((wave, deckComposition, targetCol, _params, rand) =>
+    convertColumnToRandomRank(wave, deckComposition, targetCol, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rand)),
+  jo: withTarget((wave, deckComposition, targetCol, _params, rand) =>
+    convertColumnToRandomRank(wave, deckComposition, targetCol, [11, 12, 13], rand)),
   kyo: noop,
-  aya: (wave, deckComposition, targetCol) =>
-    targetCol === null ? { wave, deckComposition } : addWildToColumnTop(wave, deckComposition, targetCol),
-  shitsu: (wave, deckComposition, targetCol) =>
-    targetCol === null ? { wave, deckComposition } : convertColumnChainFromLeft(wave, deckComposition, targetCol),
+  aya: withTarget((wave, deckComposition, targetCol) => addWildToColumnTop(wave, deckComposition, targetCol)),
+  shitsu: withTarget((wave, deckComposition, targetCol) => convertColumnChainFromLeft(wave, deckComposition, targetCol)),
   heki: (wave, deckComposition) => convertTableauSuitCycle(wave, deckComposition),
   kei: (wave, deckComposition) => stairAlignTopCards(wave, deckComposition),
   rou: (wave, deckComposition) => discardColumnTops(wave, deckComposition),
   i: (wave, deckComposition, _targetCol, _params, rand) => wildifyExtremeRanks(wave, deckComposition, rand),
-  hitsu: (wave, deckComposition, targetCol, _params, rand) =>
-    targetCol === null ? { wave, deckComposition } : convertColumnToStair(wave, deckComposition, targetCol, rand),
+  hitsu: withTarget((wave, deckComposition, targetCol, _params, rand) =>
+    convertColumnToStair(wave, deckComposition, targetCol, rand)),
   shi: (wave, deckComposition) => wildifyChainTop(wave, deckComposition),
   sei: (wave, deckComposition, _targetCol, params, rand) => wildifyRandomTableauCards(wave, deckComposition, params.revelations.sei.n, rand),
   subaru: noop,
