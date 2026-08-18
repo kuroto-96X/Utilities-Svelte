@@ -7,6 +7,17 @@ function pickRandom<T>(arr: T[], rand: () => number): T {
   return arr[Math.floor(rand() * arr.length)]
 }
 
+function redistributeAcrossTableau(tableau: Card[][], source: Card[]): { tableau: Card[][]; remainder: Card[] } {
+  let cursor = 0
+  const newTableau = tableau.map(col => {
+    const take = col.length
+    const newCol = source.slice(cursor, cursor + take)
+    cursor += take
+    return newCol
+  })
+  return { tableau: newTableau, remainder: source.slice(cursor) }
+}
+
 function applyRaidho(wave: WaveState, rand: () => number): WaveState {
   const positions: { ci: number; ri: number }[] = []
   wave.tableau.forEach((col, ci) => col.forEach((c, ri) => {
@@ -26,14 +37,7 @@ function applyRaidho(wave: WaveState, rand: () => number): WaveState {
 function applyWunjo(wave: WaveState, rand: () => number): WaveState {
   const pool = [...wave.tableau.flat(), ...wave.discardPile]
   shuffleInPlace(pool, rand)
-  let cursor = 0
-  const tableau = wave.tableau.map(col => {
-    const take = col.length
-    const newCol = pool.slice(cursor, cursor + take)
-    cursor += take
-    return newCol
-  })
-  const discardPile = pool.slice(cursor)
+  const { tableau, remainder: discardPile } = redistributeAcrossTableau(wave.tableau, pool)
   return { ...wave, tableau, discardPile }
 }
 
@@ -117,14 +121,7 @@ function applyKenaz(wave: WaveState, rand: () => number): WaveState {
     shuffleInPlace(group, rand)
     dealSequence.push(...group)
   })
-  let cursor = 0
-  const tableau = wave.tableau.map(col => {
-    const take = col.length
-    const newCol = dealSequence.slice(cursor, cursor + take)
-    cursor += take
-    return newCol
-  })
-  const stock = dealSequence.slice(cursor)
+  const { tableau, remainder: stock } = redistributeAcrossTableau(wave.tableau, dealSequence)
   return { ...wave, tableau, stock }
 }
 
@@ -189,14 +186,7 @@ function applyEihwaz(wave: WaveState, n: number): WaveState {
 function applyHagalaz(wave: WaveState, rand: () => number): WaveState {
   const pool = [...wave.tableau.flat(), ...wave.stock]
   shuffleInPlace(pool, rand)
-  let cursor = 0
-  const tableau = wave.tableau.map(col => {
-    const take = col.length
-    const newCol = pool.slice(cursor, cursor + take)
-    cursor += take
-    return newCol
-  })
-  const stock = pool.slice(cursor)
+  const { tableau, remainder: stock } = redistributeAcrossTableau(wave.tableau, pool)
   return { ...wave, tableau, stock }
 }
 
