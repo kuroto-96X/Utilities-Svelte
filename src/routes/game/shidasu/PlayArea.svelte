@@ -313,6 +313,17 @@
   // 本物の場札描画(既に妨害後のデータになっている)を隠し、代わりにアニメーション用の
   // オーバーレイを表示する。
   let sabotageAnimatingColumns = $state<Set<number>>(new Set())
+  interface FlippingCard {
+    colIndex: number
+    rowIndex: number
+    card: Card
+    revealed: boolean
+    rotation: number
+    transitionMs: number
+  }
+  let flippingCards = $state<FlippingCard[]>([])
+
+  const FLIP_HALF_MS = 100
   let dealingCards = $state<DealingCard[]>([])
   // 着地済み(実表示に切り替え済み)のマス目を"col-row"形式の文字列で追跡する。
   // 配布アニメーション進行中は、このSetに含まれないマス目を非表示にする。
@@ -320,7 +331,7 @@
   let dealAnimationActive = $derived(dealingCards.length > 0)
   // いずれかのアニメーション(カードプレイ・得点演出・清算・チェーンリセット・配布)が進行中かどうか。
   // 進行中は操作(カードプレイ・山札引き・秘儀/天啓使用)を無効化する。
-  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0)
+  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0 || flippingCards.length > 0)
   let dealTimers: ReturnType<typeof setTimeout>[] = []
   // 初期値をundefinedにしておくことで、マウント直後(ゲーム開始直後の最初のWave)にも
   // 「waveKeyが変化した」と判定され配布アニメーションが発火する。他のprevious系変数
@@ -421,9 +432,39 @@
     startCleanupItem(item)
   }
 
-  // Task 4で本実装に置き換える。現時点では即座にdealtCellsへ登録するだけの仮実装。
-  function startFlipReveal(colIndex: number, rowIndex: number, _card: Card) {
-    dealtCells = new Set([...dealtCells, `${colIndex}-${rowIndex}`])
+  // 配布アニメーションで着地したカードが列の一番上だった場合に呼ぶ。裏面のまま真横まで
+  // 回転させ(見た目上不可視になった瞬間にrevealedをtrueへ切り替えて表向きの中身に差し替え)、
+  // 続けて正面まで回転させて表向き表示を完了する。完了後はdealtCellsへ登録し、以後は
+  // 通常の場札描画(既存のfaceUp={card.faceUp !== false || isTop}ルール)にそのまま委ねる。
+  function startFlipReveal(colIndex: number, rowIndex: number, card: Card) {
+    flippingCards = [...flippingCards, { colIndex, rowIndex, card, revealed: false, rotation: 0, transitionMs: 0 }]
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        flippingCards = flippingCards.map(f =>
+          f.colIndex === colIndex && f.rowIndex === rowIndex ? { ...f, rotation: 90, transitionMs: FLIP_HALF_MS } : f
+        )
+      })
+    })
+
+    const timer1 = setTimeout(() => {
+      flippingCards = flippingCards.map(f =>
+        f.colIndex === colIndex && f.rowIndex === rowIndex ? { ...f, revealed: true, rotation: 90, transitionMs: 0 } : f
+      )
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          flippingCards = flippingCards.map(f =>
+            f.colIndex === colIndex && f.rowIndex === rowIndex ? { ...f, rotation: 0, transitionMs: FLIP_HALF_MS } : f
+          )
+        })
+      })
+      const timer2 = setTimeout(() => {
+        flippingCards = flippingCards.filter(f => !(f.colIndex === colIndex && f.rowIndex === rowIndex))
+        dealtCells = new Set([...dealtCells, `${colIndex}-${rowIndex}`])
+      }, FLIP_HALF_MS)
+      dealTimers.push(timer2)
+    }, FLIP_HALF_MS)
+    dealTimers.push(timer1)
   }
 
   // 「総戻し」「一列戻し」発動時、対象列のカードを山札の位置へ収束させるアニメーションを
@@ -1045,8 +1086,9 @@
           {@const isCleaningUpThisColumn = (cleanupAnimation?.kind === 'column' && cleanupAnimation.columnIndex === ci) || cleanedUpColumns.has(ci)}
           {@const isNotYetDealt = dealAnimationActive && !dealtCells.has(`${ci}-${ri}`)}
           {@const isHiddenForSabotageRedistribute = sabotageAnimatingColumns.has(ci)}
+          {@const flippingHere = flippingCards.find(f => f.colIndex === ci && f.rowIndex === ri)}
           <div
-            class="absolute left-0 right-0 {dropTarget && dropTarget !== 'stockTop' && dropTarget.col === ci && dropTarget.row === ri ? 'ring-4 ring-sky-400 rounded-lg' : ''} {isAnimatingThisCard || isCleaningUpThisColumn || isNotYetDealt || isHiddenForSabotageRedistribute ? 'invisible' : ''}"
+            class="absolute left-0 right-0 {dropTarget && dropTarget !== 'stockTop' && dropTarget.col === ci && dropTarget.row === ri ? 'ring-4 ring-sky-400 rounded-lg' : ''} {isAnimatingThisCard || isCleaningUpThisColumn || isNotYetDealt || isHiddenForSabotageRedistribute || flippingHere ? 'invisible' : ''}"
             style="top:{ri * 18}px; z-index:{ri};"
             data-drop-col={ci}
             data-drop-row={ri}
@@ -1236,6 +1278,19 @@
     </div>
   {/each}
 {/if}
+
+{#each flippingCards as flippingCard (`${flippingCard.colIndex}-${flippingCard.rowIndex}`)}
+  {@const cellEl = tableauEl?.querySelector(`[data-drop-col="${flippingCard.colIndex}"][data-drop-row="${flippingCard.rowIndex}"]`)}
+  {@const cellRect = cellEl?.getBoundingClientRect()}
+  {#if cellRect}
+    <div
+      class="fixed pointer-events-none z-[100] ease-out"
+      style="left:{cellRect.left}px; top:{cellRect.top}px; width:{cellRect.width}px; transform: perspective(600px) rotateY({flippingCard.rotation}deg); transition-property: transform; transition-duration:{flippingCard.transitionMs}ms;"
+    >
+      <CardFace card={flippingCard.card} covered={false} faceUp={flippingCard.revealed} items={[]} />
+    </div>
+  {/if}
+{/each}
 
 {#each dealingCards as dealingCard (`${dealingCard.colIndex}-${dealingCard.rowIndex}`)}
   <div
