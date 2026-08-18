@@ -555,7 +555,11 @@
       {#each [...new Set(run.items)] as id (id)}
         {@const n = run.items.filter(x => x === id).length}
         {@const talismanHidden = wave?.activeSeal?.kind === 'talismanHidden'}
-        <span class="text-xs bg-emerald-900 text-yellow-200/90 border border-yellow-600/40 rounded px-1.5 py-0.5 {highlightedItemId === id ? 'ring-2 ring-yellow-400' : ''}" title={talismanHidden ? '護符並び替え: 次の妨害発動まで内容が見えない' : itemDesc(id, params)}>
+        <span
+          class="text-xs rounded px-1.5 py-0.5 {highlightedItemId === id ? 'ring-2 ring-yellow-400' : ''} {talismanHidden ? 'border' : 'bg-emerald-900 text-yellow-200/90 border border-yellow-600/40'}"
+          style={talismanHidden ? 'background:#1c1917; color:#78350f; border-color: rgba(217,119,6,0.5); background-image: repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(217,119,6,0.35) 5px,rgba(217,119,6,0.35) 6px);' : ''}
+          title={talismanHidden ? '護符並び替え: 次の妨害発動まで内容が見えない' : itemDesc(id, params)}
+        >
           {talismanHidden ? '？？？' : itemName(id, params)}{n > 1 ? `×${n}` : ''}
         </span>
       {/each}
@@ -879,19 +883,21 @@
         <p class="text-xs text-slate-500">所持護符(ドラッグで並べ替え・売却可)</p>
         <div class="flex flex-wrap gap-1">
           {#each run.items as itemId, i (itemId)}
+            {@const talismanHidden = wave?.activeSeal?.kind === 'talismanHidden'}
             <div
               role="button"
               tabindex="0"
               data-item-index={i}
-              title={itemDesc(itemId, params)}
+              title={talismanHidden ? '護符並び替え: 次の妨害発動まで内容が見えない' : itemDesc(itemId, params)}
               onpointerdown={(e) => handleItemPointerDown(i, e)}
               onpointermove={handleItemPointerMove}
               onpointerup={handleItemPointerUp}
               onpointercancel={handleItemPointerUp}
-              class="flex items-center gap-1 text-xs text-slate-800 px-2 py-1 rounded border touch-none select-none {draggingItemIndex === i ? 'border-teal-500 bg-teal-50 shadow-md' : 'border-slate-200 bg-white cursor-grab'}"
+              class="flex items-center gap-1 text-xs px-2 py-1 rounded border touch-none select-none {talismanHidden ? '' : (draggingItemIndex === i ? 'border-teal-500 bg-teal-50 shadow-md text-slate-800' : 'border-slate-200 bg-white cursor-grab text-slate-800')}"
+              style={talismanHidden ? 'background:#1c1917; color:#78350f; border-color: rgba(217,119,6,0.5); background-image: repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(217,119,6,0.35) 5px,rgba(217,119,6,0.35) 6px);' : ''}
             >
-              <span>{itemName(itemId, params)}</span>
-              <button onpointerdown={(e) => e.stopPropagation()} onclick={() => handleSellItem(itemId)} class="text-slate-400 hover:text-slate-700">売({itemSellPrice(params, run, itemId)})</button>
+              <span>{talismanHidden ? '？？？' : itemName(itemId, params)}</span>
+              <button onpointerdown={(e) => e.stopPropagation()} onclick={() => handleSellItem(itemId)} class="{talismanHidden ? '' : 'text-slate-400 hover:text-slate-700'}">売({talismanHidden ? '？' : itemSellPrice(params, run, itemId)})</button>
             </div>
           {/each}
         </div>
