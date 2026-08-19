@@ -5414,6 +5414,36 @@ describe('triggerSabotage', () => {
       ['alternating', 'color', 'columnSweep', 'completeRun', 'flush', 'pair', 'royalSet', 'sameRank', 'stair', 'suit'].sort()
     )
   })
+
+  it('triggerSabotage: stockShuffle発動時にlastStockShuffle.seqが1から始まりインクリメントされる', () => {
+    const run = runWithWave()
+    const next1 = triggerSabotage(DEFAULT_PARAMS, run, 'stockShuffle', () => 0)
+    expect(next1.wave!.lastStockShuffle).toEqual({ seq: 1 })
+    const next2 = triggerSabotage(DEFAULT_PARAMS, next1, 'stockShuffle', () => 0)
+    expect(next2.wave!.lastStockShuffle).toEqual({ seq: 2 })
+  })
+
+  it('triggerSabotage: stockShuffle以外の妨害行動発動時はlastStockShuffleの値を維持する', () => {
+    const run = runWithWave()
+    const afterShuffle = triggerSabotage(DEFAULT_PARAMS, run, 'stockShuffle', () => 0)
+    expect(afterShuffle.wave!.lastStockShuffle).toEqual({ seq: 1 })
+    const afterOther = triggerSabotage(DEFAULT_PARAMS, afterShuffle, 'comboBreather', () => 0)
+    expect(afterOther.wave!.lastStockShuffle).toEqual({ seq: 1 })
+  })
+
+  it('useRite: dagaz使用時にlastStockShuffle.seqが1から始まりインクリメントされる', () => {
+    const run: RunState = { ...runWithWave(), rites: ['dagaz'] }
+    const next = useRite(DEFAULT_PARAMS, run, 'dagaz', () => 0)
+    expect(next.wave!.lastStockShuffle).toEqual({ seq: 1 })
+  })
+
+  it('useRite: dagaz以外の秘儀使用時はlastStockShuffleの値を維持する', () => {
+    const run: RunState = { ...runWithWave(), rites: ['dagaz', 'jera'] }
+    const afterDagaz = useRite(DEFAULT_PARAMS, run, 'dagaz', () => 0)
+    expect(afterDagaz.wave!.lastStockShuffle).toEqual({ seq: 1 })
+    const afterJera = useRite(DEFAULT_PARAMS, afterDagaz, 'jera', () => 0)
+    expect(afterJera.wave!.lastStockShuffle).toEqual({ seq: 1 })
+  })
 })
 
 // 実運用のtableau top配置(乱数依存)はseedを固定しても常にisPlayableな列が存在するとは限らないため、

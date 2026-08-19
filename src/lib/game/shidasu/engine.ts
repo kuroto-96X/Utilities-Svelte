@@ -1051,6 +1051,9 @@ export function useRite(params: ShidasuParams, run: RunState, riteId: RiteId, ra
   if (idx === -1) return run
   let wave = applyRiteEffect(params, run.wave, riteId, rand)
   wave = applyDiscretionFrostBonus(params, run, wave)
+  if (riteId === 'dagaz') {
+    wave = { ...wave, lastStockShuffle: { seq: (run.wave.lastStockShuffle?.seq ?? 0) + 1 } }
+  }
   const rites = [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)]
   const recentUsedRiteIds = [riteId, ...run.recentUsedRiteIds].slice(0, 2)
   return { ...run, wave, rites, recentUsedRiteIds }
@@ -1148,6 +1151,7 @@ export function triggerSabotage(params: ShidasuParams, run: RunState, id: Sabota
       pendingSabotageId: rolled.pendingSabotageId,
       sabotageTurnsRemaining: rolled.sabotageTurnsRemaining,
       lastSabotage: { id, seq: (wave.lastSabotage?.seq ?? 0) + 1, affectedCols: result.affectedTableauCols, purgedToDiscardCount: result.purgedToDiscardCount },
+      lastStockShuffle: id === 'stockShuffle' ? { seq: (wave.lastStockShuffle?.seq ?? 0) + 1 } : wave.lastStockShuffle,
     },
   }
 }
