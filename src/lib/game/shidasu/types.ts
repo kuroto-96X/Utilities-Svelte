@@ -310,6 +310,10 @@ export interface WaveState {
   // 付かない)から逆算せず、ここで明示的に伝える。purgedToDiscardCountは今回
   // stockPurge/stockPurgeSmallで山札から捨て札へ移動した枚数(それ以外はundefined)。
   lastSabotage?: { id: SabotageActionId; seq: number; affectedCols?: number[]; purgedToDiscardCount?: number }
+  // 山札シャッフル演出(揺れアニメーション)のトリガー用。stockShuffle(妨害行動)・
+  // dagaz(秘儀)発動時にseqをインクリメントする。PlayArea.svelteがseqの変化を検知して
+  // 山札ボタンの揺れ演出を起動する。undefinedは「まだ一度も発動していない」状態。
+  lastStockShuffle?: { seq: number }
 }
 
 export type RunPhase = 'title' | 'playing' | 'shop' | 'itemSelect' | 'riteSelect' | 'revelationSelect' | 'oracleSelect' | 'cardSetSelect' | 'continueChoice' | 'allClear' | 'gameOver'
