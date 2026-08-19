@@ -324,6 +324,25 @@
   }
   let flippingCards = $state<FlippingCard[]>([])
 
+  // 「大量放出」「少量放出」発動時、山札から捨て札へ飛んでいくカードの状態。
+  // 捨て札は常に1枚しか表示しないため、複数枚が同時に飛んでいても着地順に処理する。
+  interface DiscardPurgeCard {
+    card: Card
+    left: number
+    top: number
+    transitionMs: number
+  }
+  let discardPurgeCards = $state<DiscardPurgeCard[]>([])
+  // 大量放出・少量放出で移動したカードが通常(表向き)の場合のフリップ状態。捨て札は
+  // 常に1箇所しか無いため、複数列を扱うflippingCards配列とは別に単純なstateで持つ。
+  interface DiscardFlip {
+    card: Card
+    revealed: boolean
+    rotation: number
+    transitionMs: number
+  }
+  let discardFlip = $state<DiscardFlip | null>(null)
+
   const FLIP_HALF_MS = 100
   let dealingCards = $state<DealingCard[]>([])
   // 着地済み(実表示に切り替え済み)のマス目を"col-row"形式の文字列で追跡する。
@@ -332,7 +351,7 @@
   let dealAnimationActive = $derived(dealingCards.length > 0)
   // いずれかのアニメーション(カードプレイ・得点演出・清算・チェーンリセット・配布)が進行中かどうか。
   // 進行中は操作(カードプレイ・山札引き・秘儀/天啓使用)を無効化する。
-  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0 || flippingCards.length > 0)
+  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0 || flippingCards.length > 0 || discardPurgeCards.length > 0 || discardFlip !== null)
   let dealTimers: ReturnType<typeof setTimeout>[] = []
   // 初期値をundefinedにしておくことで、マウント直後(ゲーム開始直後の最初のWave)にも
   // 「waveKeyが変化した」と判定され配布アニメーションが発火する。他のprevious系変数
@@ -389,6 +408,8 @@
     previousSabotageSeq = current.seq
     if ((current.id === 'tableauFullReturn' || current.id === 'columnReturn') && current.affectedCols) {
       startSabotageRedistributeAnimation(current.affectedCols)
+    } else if ((current.id === 'stockPurge' || current.id === 'stockPurgeSmall') && current.purgedToDiscardCount) {
+      startStockPurgeAnimation(current.purgedToDiscardCount)
     }
   })
 
@@ -396,7 +417,7 @@
   // 常に最新のwave.discardPileへ追従させる(アニメーション中のみ、
   // 上のeffect.preでの検知とstartChainResetAnimation側の更新で固定される)。
   $effect(() => {
-    if (chainResetAnimation !== null) return
+    if (chainResetAnimation !== null || discardPurgeCards.length > 0 || discardFlip !== null) return
     displayedDiscardTop = wave.discardPile[wave.discardPile.length - 1]
   })
 
@@ -462,6 +483,79 @@
       dealTimers.push(timer2)
     }, FLIP_HALF_MS)
     dealTimers.push(timer1)
+  }
+
+  // 大量放出・少量放出で捨て札へ移動したカードが通常(表向き)の場合に呼ぶ。捨て札位置で
+  // 裏面のまま真横まで回転させ、真横で不可視になった瞬間にrevealedをtrueへ切り替えて
+  // 表向きの中身に差し替え、続けて正面まで回転させる。startFlipRevealの捨て札専用版
+  // (捨て札は常に1箇所しか無いため、複数列を扱うflippingCards配列ではなく単一の
+  // discardFlip stateで実装する)。完了後はdisplayedDiscardTopを更新し、以後は
+  // 通常の捨て札表示(既存のfaceUp={displayedDiscardTop.faceUp !== false}ルール)に
+  // そのまま委ねる。
+  function startDiscardFlipReveal(card: Card) {
+    discardFlip = { card, revealed: false, rotation: 0, transitionMs: 0 }
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        discardFlip = discardFlip ? { ...discardFlip, rotation: 90, transitionMs: FLIP_HALF_MS } : null
+      })
+    })
+
+    const timer1 = setTimeout(() => {
+      discardFlip = discardFlip ? { ...discardFlip, revealed: true, rotation: 90, transitionMs: 0 } : null
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          discardFlip = discardFlip ? { ...discardFlip, rotation: 0, transitionMs: FLIP_HALF_MS } : null
+        })
+      })
+      const timer2 = setTimeout(() => {
+        discardFlip = null
+        displayedDiscardTop = card
+      }, FLIP_HALF_MS)
+      dealTimers.push(timer2)
+    }, FLIP_HALF_MS)
+    dealTimers.push(timer1)
+  }
+
+  // 「大量放出」「少量放出」発動時、山札から捨て札へcount枚を裏向きで個別に飛ばす。
+  // 最後の1枚が着地したら、移動したカードのfaceUp(sabotageEffects.ts側で捨て札の
+  // 現在の状態を継承して確定済み)を見て、フリップ演出(表向き)するか裏向きのまま
+  // 据え置くかを決める。
+  function startStockPurgeAnimation(count: number) {
+    if (count <= 0 || !stockButtonEl || !discardPileEl) return
+    const fromRect = stockButtonEl.getBoundingClientRect()
+    const fromLeft = fromRect.left + fromRect.width / 2
+    const fromTop = fromRect.top + fromRect.height / 2
+    const toRect = discardPileEl.getBoundingClientRect()
+    const toLeft = toRect.left + toRect.width / 2
+    const toTop = toRect.top + toRect.height / 2
+
+    const purged = wave.discardPile.slice(wave.discardPile.length - count)
+
+    purged.forEach((card, index) => {
+      const timer = setTimeout(() => {
+        discardPurgeCards = [...discardPurgeCards, { card, left: fromLeft, top: fromTop, transitionMs: 0 }]
+
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            discardPurgeCards = discardPurgeCards.map(d => (d.card.id === card.id ? { ...d, left: toLeft, top: toTop, transitionMs: DEAL_MOVE_MS } : d))
+          })
+        })
+
+        const landTimer = setTimeout(() => {
+          discardPurgeCards = discardPurgeCards.filter(d => d.card.id !== card.id)
+          if (index === purged.length - 1) {
+            if (card.faceUp === false) {
+              displayedDiscardTop = card
+            } else {
+              startDiscardFlipReveal(card)
+            }
+          }
+        }, DEAL_MOVE_MS)
+        dealTimers.push(landTimer)
+      }, index * DEAL_INTERVAL_MS)
+      dealTimers.push(timer)
+    })
   }
 
   // 「総戻し」「一列戻し」発動時、対象列のカードを山札の位置へ収束させるアニメーションを
@@ -1139,7 +1233,7 @@
       <div class="text-xs">山札</div>
       <div class="text-lg tabular-nums">{wave.stock.length}</div>
     </button>
-    <div bind:this={discardPileEl} class="w-16 {cleanupAnimation?.kind === 'discard' ? 'invisible' : ''}">
+    <div bind:this={discardPileEl} class="w-16 {cleanupAnimation?.kind === 'discard' || discardPurgeCards.length > 0 || discardFlip !== null ? 'invisible' : ''}">
       {#if displayedDiscardTop}
         <CardFace card={displayedDiscardTop} covered={false} faceUp={displayedDiscardTop.faceUp !== false} {items} />
       {:else}
@@ -1295,3 +1389,24 @@
     <CardFace card={dealingCard.card} covered={false} faceUp={dealingCard.faceUp} {items} />
   </div>
 {/each}
+
+{#each discardPurgeCards as purgeCard (purgeCard.card.id)}
+  <div
+    class="fixed pointer-events-none z-[100] ease-out"
+    style="left:{purgeCard.left}px; top:{purgeCard.top}px; width:64px; transform: translate(-50%, -50%); transition-property: left, top; transition-duration:{purgeCard.transitionMs}ms;"
+  >
+    <CardFace card={purgeCard.card} covered={false} faceUp={false} items={[]} />
+  </div>
+{/each}
+
+{#if discardFlip}
+  {@const pileRect = discardPileEl?.getBoundingClientRect()}
+  {#if pileRect}
+    <div
+      class="fixed pointer-events-none z-[100] ease-out"
+      style="left:{pileRect.left}px; top:{pileRect.top}px; width:{pileRect.width}px; transform: perspective(600px) rotateY({discardFlip.rotation}deg); transition-property: transform; transition-duration:{discardFlip.transitionMs}ms;"
+    >
+      <CardFace card={discardFlip.card} covered={false} faceUp={discardFlip.revealed} items={[]} />
+    </div>
+  {/if}
+{/if}
