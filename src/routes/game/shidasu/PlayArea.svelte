@@ -342,6 +342,14 @@
     transitionMs: number
   }
   let discardFlip = $state<DiscardFlip | null>(null)
+  // startStockPurgeAnimation開始から完了(据え置き確定 or フリップ完了)までを覆う同期フラグ。
+  // discardPurgeCards/discardFlipへの実際の書き込みはsetTimeout内(1枚目でも0ms遅延=次の
+  // マクロタスク)で行われるため、これらだけをガードに使うと、$effect.pre内で
+  // startStockPurgeAnimationを呼んだ直後・まだ何も配列に積まれていない一瞬の間に
+  // displayedDiscardTop追従effectが素通りし、移動後のカードが一瞬先出しされてしまう
+  // (CLAUDE.md「移動アニメーション実装時の注意」に該当する不具合)。この関数の先頭で
+  // 同期的にtrueへ切り替えることで、その隙間を無くす。
+  let discardPurgeActive = $state(false)
 
   const FLIP_HALF_MS = 100
   let dealingCards = $state<DealingCard[]>([])
@@ -351,7 +359,7 @@
   let dealAnimationActive = $derived(dealingCards.length > 0)
   // いずれかのアニメーション(カードプレイ・得点演出・清算・チェーンリセット・配布)が進行中かどうか。
   // 進行中は操作(カードプレイ・山札引き・秘儀/天啓使用)を無効化する。
-  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0 || flippingCards.length > 0 || discardPurgeCards.length > 0 || discardFlip !== null)
+  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0 || flippingCards.length > 0 || discardPurgeActive)
   let dealTimers: ReturnType<typeof setTimeout>[] = []
   // 初期値をundefinedにしておくことで、マウント直後(ゲーム開始直後の最初のWave)にも
   // 「waveKeyが変化した」と判定され配布アニメーションが発火する。他のprevious系変数
@@ -417,7 +425,7 @@
   // 常に最新のwave.discardPileへ追従させる(アニメーション中のみ、
   // 上のeffect.preでの検知とstartChainResetAnimation側の更新で固定される)。
   $effect(() => {
-    if (chainResetAnimation !== null || discardPurgeCards.length > 0 || discardFlip !== null) return
+    if (chainResetAnimation !== null || discardPurgeActive) return
     displayedDiscardTop = wave.discardPile[wave.discardPile.length - 1]
   })
 
@@ -511,6 +519,7 @@
       const timer2 = setTimeout(() => {
         discardFlip = null
         displayedDiscardTop = card
+        discardPurgeActive = false
       }, FLIP_HALF_MS)
       dealTimers.push(timer2)
     }, FLIP_HALF_MS)
@@ -523,6 +532,7 @@
   // 据え置くかを決める。
   function startStockPurgeAnimation(count: number) {
     if (count <= 0 || !stockButtonEl || !discardPileEl) return
+    discardPurgeActive = true
     const fromRect = stockButtonEl.getBoundingClientRect()
     const fromLeft = fromRect.left + fromRect.width / 2
     const fromTop = fromRect.top + fromRect.height / 2
@@ -547,6 +557,7 @@
           if (index === purged.length - 1) {
             if (card.faceUp === false) {
               displayedDiscardTop = card
+              discardPurgeActive = false
             } else {
               startDiscardFlipReveal(card)
             }
@@ -1233,7 +1244,7 @@
       <div class="text-xs">山札</div>
       <div class="text-lg tabular-nums">{wave.stock.length}</div>
     </button>
-    <div bind:this={discardPileEl} class="w-16 {cleanupAnimation?.kind === 'discard' || discardPurgeCards.length > 0 || discardFlip !== null ? 'invisible' : ''}">
+    <div bind:this={discardPileEl} class="w-16 {cleanupAnimation?.kind === 'discard' || discardPurgeActive ? 'invisible' : ''}">
       {#if displayedDiscardTop}
         <CardFace card={displayedDiscardTop} covered={false} faceUp={displayedDiscardTop.faceUp !== false} {items} />
       {:else}
