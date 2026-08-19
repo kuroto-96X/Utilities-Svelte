@@ -4904,10 +4904,26 @@ describe('triggerSabotage', () => {
     expect(next.wave!.discardPile.length).toBe(5)
   })
 
+  it('stockPurge: 捨て札が通常(表向き)のとき、移動したカードはfaceUpが設定されずlastSabotage.purgedToDiscardCountが5になる', () => {
+    const run = runWithWave()
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'stockPurge', () => 0)
+    const movedCards = next.wave!.discardPile.slice(-5)
+    expect(movedCards.every(c => c.faceUp !== false)).toBe(true)
+    expect(next.wave!.lastSabotage?.purgedToDiscardCount).toBe(5)
+  })
+
+  it('stockPurge: 捨て札が裏向き(捨て札埋没後)のとき、移動したカードもfaceUp:falseを継承する', () => {
+    const discardPile: Card[] = [{ id: 900, deckId: 900, suit: '♠', rank: 5, wild: false, faceUp: false }]
+    const run = runWithWave({}, { discardPile })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'stockPurge', () => 0)
+    const movedCards = next.wave!.discardPile.slice(-5)
+    expect(movedCards.every(c => c.faceUp === false)).toBe(true)
+  })
+
   it('triggerSabotage: 発動のたびにwave.lastSabotageのidとseqが更新される', () => {
     const run = runWithWave()
     const next1 = triggerSabotage(DEFAULT_PARAMS, run, 'stockPurge', () => 0)
-    expect(next1.wave!.lastSabotage).toEqual({ id: 'stockPurge', seq: 1 })
+    expect(next1.wave!.lastSabotage).toEqual({ id: 'stockPurge', seq: 1, purgedToDiscardCount: 5 })
     const next2 = triggerSabotage(DEFAULT_PARAMS, next1, 'comboBreather', () => 0)
     expect(next2.wave!.lastSabotage).toEqual({ id: 'comboBreather', seq: 2 })
   })
@@ -5015,6 +5031,14 @@ describe('triggerSabotage', () => {
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'stockPurgeSmall', () => 0)
     expect(next.wave!.stock.length).toBe(stockBefore - 2)
     expect(next.wave!.discardPile.length).toBe(2)
+  })
+
+  it('stockPurgeSmall: 捨て札が通常(表向き)のとき、移動したカードはfaceUpが設定されずlastSabotage.purgedToDiscardCountが2になる', () => {
+    const run = runWithWave()
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'stockPurgeSmall', () => 0)
+    const movedCards = next.wave!.discardPile.slice(-2)
+    expect(movedCards.every(c => c.faceUp !== false)).toBe(true)
+    expect(next.wave!.lastSabotage?.purgedToDiscardCount).toBe(2)
   })
 
   it('stockShuffle: 山札の枚数は変わらない', () => {

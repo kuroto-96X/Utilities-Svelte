@@ -32,12 +32,16 @@ export interface SabotageResult {
   // 過去の別トリガーで裏向きのまま残っているカードとも区別が付かないため、
   // 「今回触った列」を明示的にここで伝える。tableauFullReturn/columnReturn以外は未設定でよい。
   affectedTableauCols?: number[]
+  // 今回「大量放出」「少量放出」で山札から捨て札へ移動した枚数。裏向き移動アニメーション
+  // (PlayArea.svelte)が対象枚数を特定するために使う。stockPurge/stockPurgeSmall以外は未設定でよい。
+  purgedToDiscardCount?: number
 }
 
 function applyStockPurge({ wave }: SabotageContext): SabotageResult {
   const n = Math.min(5, wave.stock.length)
-  const purged = wave.stock.slice(wave.stock.length - n)
-  return { wave: { stock: wave.stock.slice(0, wave.stock.length - n), discardPile: [...wave.discardPile, ...purged] } }
+  const discardIsHidden = wave.discardPile[wave.discardPile.length - 1]?.faceUp === false
+  const purged = wave.stock.slice(wave.stock.length - n).map(c => (discardIsHidden ? { ...c, faceUp: false } : c))
+  return { wave: { stock: wave.stock.slice(0, wave.stock.length - n), discardPile: [...wave.discardPile, ...purged] }, purgedToDiscardCount: n }
 }
 
 function applyColumnReturn({ wave, rand }: SabotageContext): SabotageResult {
@@ -118,8 +122,9 @@ function applyRoleSeal({ rand }: SabotageContext): SabotageResult {
 
 function applyStockPurgeSmall({ wave }: SabotageContext): SabotageResult {
   const n = Math.min(2, wave.stock.length)
-  const purged = wave.stock.slice(wave.stock.length - n)
-  return { wave: { stock: wave.stock.slice(0, wave.stock.length - n), discardPile: [...wave.discardPile, ...purged] } }
+  const discardIsHidden = wave.discardPile[wave.discardPile.length - 1]?.faceUp === false
+  const purged = wave.stock.slice(wave.stock.length - n).map(c => (discardIsHidden ? { ...c, faceUp: false } : c))
+  return { wave: { stock: wave.stock.slice(0, wave.stock.length - n), discardPile: [...wave.discardPile, ...purged] }, purgedToDiscardCount: n }
 }
 
 function applyStockShuffle({ wave, rand }: SabotageContext): SabotageResult {

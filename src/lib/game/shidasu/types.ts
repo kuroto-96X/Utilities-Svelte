@@ -307,8 +307,9 @@ export interface WaveState {
   // 発動していない」状態を表す。affectedColsは今回のトリガーで実際に再配布された
   // 場札の列インデックス(tableauFullReturn/columnReturn以外はundefined)。
   // Card.faceUpフラグ(過去の別トリガーで裏向きのまま残っているカードとも区別が
-  // 付かない)から逆算せず、ここで明示的に伝える。
-  lastSabotage?: { id: SabotageActionId; seq: number; affectedCols?: number[] }
+  // 付かない)から逆算せず、ここで明示的に伝える。purgedToDiscardCountは今回
+  // stockPurge/stockPurgeSmallで山札から捨て札へ移動した枚数(それ以外はundefined)。
+  lastSabotage?: { id: SabotageActionId; seq: number; affectedCols?: number[]; purgedToDiscardCount?: number }
 }
 
 export type RunPhase = 'title' | 'playing' | 'shop' | 'itemSelect' | 'riteSelect' | 'revelationSelect' | 'oracleSelect' | 'cardSetSelect' | 'continueChoice' | 'allClear' | 'gameOver'
