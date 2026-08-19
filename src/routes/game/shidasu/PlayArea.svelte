@@ -351,6 +351,32 @@
   // 同期的にtrueへ切り替えることで、その隙間を無くす。
   let discardPurgeActive = $state(false)
 
+  // 山札シャッフル演出(揺れアニメーション)用の状態。stockShuffle/dagaz発動時、
+  // 山札ボタンを短時間rotateさせるだけの装飾的な演出であり、データ(枚数・faceUp)
+  // には一切影響しない。stockShuffleActiveは関数先頭で同期的にtrueへ切り替えることで、
+  // 演出中は他の操作(山札引き・秘儀/天啓使用等)をanyAnimationActive経由でブロックする。
+  let stockShuffleRotation = $state(0)
+  let stockShuffleTransitionMs = $state(0)
+  let stockShuffleActive = $state(false)
+
+  function startStockShuffleAnimation() {
+    stockShuffleActive = true
+    const steps = [-8, 8, -5, 5, 0]
+    steps.forEach((deg, i) => {
+      const timer = setTimeout(() => {
+        stockShuffleRotation = deg
+        stockShuffleTransitionMs = 60
+        if (i === steps.length - 1) {
+          const doneTimer = setTimeout(() => {
+            stockShuffleActive = false
+          }, 60)
+          dealTimers.push(doneTimer)
+        }
+      }, i * 60)
+      dealTimers.push(timer)
+    })
+  }
+
   const FLIP_HALF_MS = 100
   let dealingCards = $state<DealingCard[]>([])
   // 着地済み(実表示に切り替え済み)のマス目を"col-row"形式の文字列で追跡する。
@@ -359,7 +385,7 @@
   let dealAnimationActive = $derived(dealingCards.length > 0)
   // いずれかのアニメーション(カードプレイ・得点演出・清算・チェーンリセット・配布)が進行中かどうか。
   // 進行中は操作(カードプレイ・山札引き・秘儀/天啓使用)を無効化する。
-  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0 || flippingCards.length > 0 || discardPurgeActive)
+  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0 || flippingCards.length > 0 || discardPurgeActive || stockShuffleActive)
   let dealTimers: ReturnType<typeof setTimeout>[] = []
   // 初期値をundefinedにしておくことで、マウント直後(ゲーム開始直後の最初のWave)にも
   // 「waveKeyが変化した」と判定され配布アニメーションが発火する。他のprevious系変数
@@ -419,6 +445,16 @@
     } else if ((current.id === 'stockPurge' || current.id === 'stockPurgeSmall') && current.purgedToDiscardCount) {
       startStockPurgeAnimation(current.purgedToDiscardCount)
     }
+  })
+
+  // 山札シャッフル演出(stockShuffle/dagaz)のトリガー検知。lastSabotageとは別の
+  // 発動経路(useRite)からも更新されるため、専用のseq追跡変数で検知する。
+  let previousStockShuffleSeq = wave.lastStockShuffle?.seq ?? 0
+  $effect.pre(() => {
+    const current = wave.lastStockShuffle
+    if (!current || current.seq === previousStockShuffleSeq) return
+    previousStockShuffleSeq = current.seq
+    startStockShuffleAnimation()
   })
 
   // chainResetAnimationが実行されていない間は、捨て札常設UIの表示を
@@ -1238,7 +1274,7 @@
       disabled={wave.stock.length === 0 || !allowDraw || anyAnimationActive}
       data-drop-stock
       bind:this={stockButtonEl}
-      style="aspect-ratio: 2 / 3; {wave.stock.length > 0 ? CARD_BACK_STYLE : ''}"
+      style="aspect-ratio: 2 / 3; transform: rotate({stockShuffleRotation}deg); transition-duration:{stockShuffleTransitionMs}ms; {wave.stock.length > 0 ? CARD_BACK_STYLE : ''}"
       class="w-16 shrink-0 rounded-lg border-2 flex flex-col items-center justify-center font-black active:scale-95 transition-transform {dropTarget === 'stockTop' ? 'ring-4 ring-sky-400' : ''} {wave.stock.length > 0 ? 'border-indigo-500/50 text-amber-50' : 'bg-emerald-900 border-emerald-800 text-emerald-700'}"
     >
       <div class="text-xs">山札</div>
