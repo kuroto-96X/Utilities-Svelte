@@ -39,7 +39,7 @@
     canTargetColumn = () => true,
     onTargetColumn,
     chainAreaExtra,
-    onScoreRevealDone, waveKey, onCleanupDone, onSealFlashChange, onConfiscateFadingChange,
+    onScoreRevealDone, waveKey, onCleanupDone, onSealFlashChange, onConfiscateFadingChange, onPressPulseChange,
     onScorePartHighlight,
   }: {
     wave: WaveState
@@ -69,6 +69,7 @@
     onCleanupDone?: () => void
     onSealFlashChange?: (target: SealFlashTarget | null) => void
     onConfiscateFadingChange?: (target: ConfiscatedTarget | null) => void
+    onPressPulseChange?: (target: PressPulseTarget | null) => void
     onScorePartHighlight?: (itemId: ItemId | null) => void
   } = $props()
 
@@ -425,6 +426,31 @@
     dealTimers.push(timer)
   }
 
+  // 妨害行動「強制発動系」(riteForceActivate・revelationOracleForceActivate)発動時、および
+  // 秘儀・天啓・神託の通常クリック発動時に共通適用する自動プレス+パルス演出用。
+  // lastSabotage.forceActivatedTargetと同じ型をそのまま再利用する。+page.svelte側からも
+  // 同じ型をimportして使うため、exportする。
+  export type PressPulseTarget = Exclude<WaveState['lastSabotage'], undefined>['forceActivatedTarget']
+
+  let pressPulseTarget = $state<PressPulseTarget | null>(null)
+  let pressPulseActive = $state(false)
+
+  // pressPulseActiveは関数の先頭で同期的にtrueへ切り替える(CLAUDE.mdの「移動アニメーション
+  // 実装時の注意」・sealFlashActive/confiscateFadingActiveと同じ原則)。ただしこのstate自体は
+  // anyAnimationActiveには含めない(通常クリック発動は効果が同期的に即座へ適用されるため、
+  // パルス演出=装飾の完了を待ってから次の操作を許可する必要が無い)。
+  function startPressPulseAnimation(target: NonNullable<PressPulseTarget>) {
+    pressPulseActive = true
+    pressPulseTarget = target
+    onPressPulseChange?.(target)
+    const timer = setTimeout(() => {
+      pressPulseActive = false
+      pressPulseTarget = null
+      onPressPulseChange?.(null)
+    }, 500)
+    dealTimers.push(timer)
+  }
+
   function startStockShuffleAnimation() {
     stockShuffleActive = true
     const steps = [-8, 8, -5, 5, 0]
@@ -517,6 +543,10 @@
     } else if (current.id === 'talismanConfiscate' || current.id === 'riteConfiscate' || current.id === 'revelationOracleConfiscate' || current.id === 'relicConfiscate') {
       if (current.confiscatedTarget) {
         startConfiscateFadeAnimation(current.confiscatedTarget)
+      }
+    } else if (current.id === 'riteForceActivate' || current.id === 'revelationOracleForceActivate') {
+      if (current.forceActivatedTarget) {
+        startPressPulseAnimation(current.forceActivatedTarget)
       }
     }
   })
