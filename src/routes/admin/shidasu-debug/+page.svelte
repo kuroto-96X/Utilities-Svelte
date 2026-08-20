@@ -17,7 +17,7 @@
   import CardPalette from './CardPalette.svelte'
   import CardFace from '../../game/shidasu/CardFace.svelte'
   import PlayArea from '../../game/shidasu/PlayArea.svelte'
-  import type { SealFlashTarget } from '../../game/shidasu/PlayArea.svelte'
+  import type { SealFlashTarget, ConfiscatedTarget } from '../../game/shidasu/PlayArea.svelte'
   import RoleStatusPanel from '../../game/shidasu/RoleStatusPanel.svelte'
 
   const params = loadParams()
@@ -44,6 +44,8 @@
   // PlayArea側で発動検知したsealFlashTarget(封印系妨害行動のフラッシュ演出対象)を
   // 受け取って保持する。本編(+page.svelte)と同じ仕組み。
   let sealFlashTarget = $state<SealFlashTarget | null>(null)
+
+  let confiscateFadingTarget = $state<ConfiscatedTarget | null>(null)
   // RoleStatusPanel表示用: 現在の封印状態(役封印/天啓封印)から、役の実効レベルへの補正情報を導出する。
   let sealedRoleEffect = $derived(resolveSealedRoleEffect(wave.activeSeal))
   let flashingRoles = $derived.by((): RoleName[] => {
@@ -296,13 +298,16 @@
 </script>
 
 {#snippet itemBadges()}
+  {@const talismanFading = confiscateFadingTarget?.kind === 'talisman' ? confiscateFadingTarget : undefined}
+  {@const displayedItemIds = [...new Set(talismanFading ? [...items.slice(0, Math.min(talismanFading.idx, items.length)), talismanFading.id, ...items.slice(Math.min(talismanFading.idx, items.length))] : items)]}
   <div class="flex-1 flex flex-wrap gap-1 justify-end">
-    {#each [...new Set(items)] as id (id)}
+    {#each displayedItemIds as id (id)}
       {@const n = items.filter(x => x === id).length}
       {@const talismanSealed = wave.activeSeal?.kind === 'talisman' && wave.activeSeal.id === id}
       {@const talismanFlashing = sealFlashTarget?.kind === 'talisman' && sealFlashTarget.id === id}
+      {@const talismanConfiscateFading = talismanFading?.id === id && n === 0}
       <span
-        class="text-xs rounded px-1.5 py-0.5 {highlightedItemId === id ? 'ring-2 ring-yellow-400' : ''} {talismanFlashing ? 'shidasu-seal-flash' : ''} {talismanSealed ? 'border' : 'bg-emerald-900 text-yellow-200/90 border border-yellow-600/40'}"
+        class="text-xs rounded px-1.5 py-0.5 {highlightedItemId === id ? 'ring-2 ring-yellow-400' : ''} {talismanConfiscateFading ? 'shidasu-confiscate-fade' : ''} {talismanFlashing ? 'shidasu-seal-flash' : ''} {talismanSealed ? 'border' : 'bg-emerald-900 text-yellow-200/90 border border-yellow-600/40'}"
         style={talismanSealed ? 'background:#1c1917; color:#78350f; border-color: rgba(217,119,6,0.5); background-image: repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(217,119,6,0.35) 5px,rgba(217,119,6,0.35) 6px);' : ''}
         title={talismanSealed ? '護符封印: 次の妨害発動まで効果が無効' : itemDesc(id, params)}
       >
@@ -352,6 +357,7 @@
           onTargetColumn={handleTargetDebugColumn}
           onScorePartHighlight={id => (highlightedItemId = id)}
           onSealFlashChange={(target) => { sealFlashTarget = target }}
+          onConfiscateFadingChange={(target) => { confiscateFadingTarget = target }}
         />
         <RoleStatusPanel {params} oracleLevels={oracleLevels} {sealedRoleEffect} {flashingRoles} />
         <div class="mt-4 flex-1 min-h-0 overflow-y-auto">
