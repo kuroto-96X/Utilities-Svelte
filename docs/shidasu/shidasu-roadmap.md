@@ -18,7 +18,7 @@
 4. **コードのリファクタリング**
    過去10回にわたるリファクタセッション(詳細は「完了済み(履歴)」を参照)で手をつけていない範囲を対象に、shidasuソース全体を改めて調査し、安全に共通化できる候補3件(shop.tsの価格関数統一・riteEffects.tsの再配布ループ共通化・revelationEffects.tsのtargetColガード共通化)を洗い出し済み(2026-08-18)。詳細は`docs/shidasu/shidasu-refactor-candidates.md`を参照。3件とも実装完了(詳細は「完了済み(履歴)」参照)。今後さらに追加候補が見つかれば同様の調査を継続する。
 5. **妨害行動の裏向き演出**
-   「総戻し」「一列戻し」「捨て札埋没」「護符並び替え」の裏向き挙動(データ・表示)は実装完了(2026-08-18)。続けて「総戻し」「一列戻し」の裏向き化・表向き化(革霧)に伴うアニメーション(山札への収束演出・裏向き配布演出・一番上のフリップ演出)、および「大量放出」「少量放出」の山札→捨て札裏向き移動+フリップ/据え置き演出も実装完了(2026-08-18/2026-08-19、詳細は「完了済み(履歴)」を参照)。「捨て札埋没」は場札への配布を伴わないため演出は対象外のまま。
+   「総戻し」「一列戻し」「捨て札埋没」「護符並び替え」の裏向き挙動(データ・表示)は実装完了(2026-08-18)。続けて「総戻し」「一列戻し」の裏向き化・表向き化(革霧)に伴うアニメーション(山札への収束演出・裏向き配布演出・一番上のフリップ演出)、および「大量放出」「少量放出」の山札→捨て札裏向き移動+フリップ/据え置き演出も実装完了(2026-08-18/2026-08-19、詳細は「完了済み(履歴)」を参照)。「捨て札埋没」は場札への配布を伴わないため演出は対象外のまま。さらに「山札攪拌」(妨害行動)・「ᛞ」(秘儀dagaz)発動時、山札は個別カード表示を持たないため、山札ボタンが短く左右に揺れる装飾的な演出を実装完了(2026-08-20、詳細は「完了済み(履歴)」を参照)。
 
 ## 完了済み(履歴)
 
@@ -33,6 +33,7 @@
 - **護符の並べ替えUI**: ショップ画面から所持護符をドラッグ&ドロップ(PC・スマホ両対応)で並べ替えられるようにした。並べ替え結果はプレイ中の常設バッジ表示にも反映される。`docs/superpowers/specs/2026-07-31-shidasu-item-reorder-design.md`。
 - **護符100個の実装完了**: `docs/shidasu/done/shidasu-gofu-candidates.md`記載の護符候補100個すべてを実装済み。誓約・契り・紅蓮・漆黒(色/スート拡張解釈を含む)は`docs/superpowers/specs/2026-08-02-shidasu-color-suit-lock-and-enablers-design.md`、白銀・果断・星霜は`docs/superpowers/specs/2026-08-03-shidasu-remaining-talismans-silver-audacity-frost-design.md`を参照。
 - **得点内訳パーツの対象カードハイライト**: 得点内訳アニメーションで、同スート・同色・階段・フラッシュ・ロイヤル・同ランク・コンプリートランのパーツが中央表示されている間、対象カードを黄色枠で強調表示するようにした。`docs/superpowers/specs/2026-08-06-shidasu-score-part-card-highlight-design.md`。
+- **山札シャッフル演出(揺れアニメーション)**: 「山札攪拌」(妨害行動)・「ᛞ」(秘儀dagaz)発動時、山札ボタンが短く左右に揺れる演出を実装した。`WaveState.lastStockShuffle`のseq変化を`triggerSabotage`/`useRite`が更新し、`PlayArea.svelte`が既存の`lastSabotage`検知と同じ`$effect.pre`パターンで検知する。`docs/superpowers/specs/2026-08-20-shidasu-stock-shuffle-animation-design.md`。
 - **得点内訳パーツの対象護符ハイライト**: 得点内訳アニメーションで、護符効果由来のパーツ(gained・clearBonus両チャンネル)が中央表示されている間、対応する護符バッジを黄色枠で強調表示するようにした。水鏡のエコー分は水鏡自身をハイライトする。`docs/superpowers/specs/2026-08-06-shidasu-score-part-item-highlight-design.md`。
 - **役の再検討(完了)**: 難易度別(簡単・中・難しい)の新規役・パターン候補12個を洗い出し(`docs/shidasu/done/shidasu-role-candidates.md`)、うち新規役「ペア」(チェーン全体で同ランク組が2組以上成立で組数×50点加算)と新規パターン「交互」(チェーン内の実カードが4枚以上赤黒交互で80点加算、同スート・同色・階段に並ぶ第4のパターン)の2個を採用・実装した。`docs/superpowers/specs/2026-08-06-shidasu-pair-alternating-roles-design.md`。あわせて神託(oracle)のモチーフを「八卦」(8種固定)から「六十四卦」(将来の拡張余地あり)に変更し、ペア・交互を含む10役全ての卦名を再割り当て、`ORACLE_POOL`にも追加した。`docs/superpowers/specs/2026-08-06-shidasu-oracle-hexagrams-design.md`。残り10個の役・パターン候補は不採用。
 - **全消しボーナスのgained計算統合**: 全消しボーナスを、コンボ倍率を通さない別枠(`lastBonusGains`)加算から、そのプレイの獲得点(gained)計算の内訳に統合した。コンボ倍率・献身・勤勉・加護・星霜・残響・慢心などの乗算、および星の得点ロックの影響も受けるようになった。`lastBonusGains`(`BonusGain`型)は不要になったため完全削除した。`docs/superpowers/specs/2026-08-06-shidasu-clear-bonus-gained-integration-design.md`。
