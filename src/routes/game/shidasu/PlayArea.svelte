@@ -1391,10 +1391,13 @@
   {/if}
 </div>
 
-{#if rites.length > 0}
+{#if rites.length > 0 || (confiscateFadingTarget?.kind === 'rite')}
+  {@const riteFading = confiscateFadingTarget?.kind === 'rite' ? confiscateFadingTarget : undefined}
+  {@const displayedRites = withFadingId(rites, riteFading?.id, riteFading?.idx ?? 0)}
   <div class="px-4 pb-4 flex items-center gap-2">
-    {#each rites as riteId, i (i)}
-      {@const usable = canUseRite(params, wave, riteId) && !anyAnimationActive && !disableRites}
+    {#each displayedRites as riteId, i (i)}
+      {@const fading = riteFading !== undefined && i === riteFading.idx}
+      {@const usable = !fading && canUseRite(params, wave, riteId) && !anyAnimationActive && !disableRites}
       {@const flashing = sealFlashTarget?.kind === 'rite' && sealFlashTarget.id === riteId}
       <button
         type="button"
@@ -1402,7 +1405,7 @@
         disabled={!usable}
         title={riteDesc(riteId, params)}
         style="font-family: 'ShidasuRunic', sans-serif;"
-        class="w-10 h-10 rounded-lg border-2 flex items-center justify-center text-xl font-black transition-transform active:scale-95 {flashing ? 'shidasu-seal-flash' : ''} {usable ? 'bg-fuchsia-900 border-fuchsia-500 text-fuchsia-100 hover:bg-fuchsia-800' : 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'}"
+        class="w-10 h-10 rounded-lg border-2 flex items-center justify-center text-xl font-black transition-transform active:scale-95 {fading ? 'shidasu-confiscate-fade' : ''} {flashing ? 'shidasu-seal-flash' : ''} {usable ? 'bg-fuchsia-900 border-fuchsia-500 text-fuchsia-100 hover:bg-fuchsia-800' : 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'}"
       >{params.rites[riteId].name}</button>
     {/each}
   </div>
