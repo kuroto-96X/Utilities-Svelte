@@ -118,6 +118,7 @@
     const run = { ...createInitialRun(), items, wave }
     const next = triggerSabotage(params, run, id, Math.random)
     if (next.wave) wave = next.wave
+    items = next.items
     lastSnapshot = null
   }
 
