@@ -1,0 +1,15 @@
+/* 妨害行動「封印系」発動時、対象UI要素(護符バッジ・秘儀/天啓ボタン・役ステータス行・
+   コンボ表示)に適用するフラッシュ+シェイク演出。クラス名・keyframes名とも
+   shidasu-接頭辞を付け、他ページ(Solitaire等)のグローバルCSSとの衝突を避ける。 */
+@keyframes shidasu-seal-flash {
+  0% { transform: translateX(0); filter: brightness(1); }
+  15% { transform: translateX(-4px); filter: brightness(2.2); }
+  30% { transform: translateX(4px); }
+  45% { transform: translateX(-3px); }
+  60% { transform: translateX(3px); }
+  100% { transform: translateX(0); filter: brightness(1); }
+}
+
+.shidasu-seal-flash {
+  animation: shidasu-seal-flash 0.5s ease-out;
+}

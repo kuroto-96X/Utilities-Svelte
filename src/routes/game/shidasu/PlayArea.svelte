@@ -13,6 +13,7 @@
   import CardFace from './CardFace.svelte'
   import SuitCountPanel from './SuitCountPanel.svelte'
   import { CARD_BACK_STYLE } from './cardBackStyle'
+  import './sabotageAnimations.css'
 
   let {
     wave, params, modifier, target, items, onPlayCard, onDraw, dropTarget = null, headerExtra, extraFooter,
