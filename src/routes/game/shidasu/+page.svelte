@@ -655,10 +655,10 @@
       <div class="flex flex-wrap gap-1 justify-end">
         {#each displayedRelics as relic, i (i)}
           {@const fading = relicFading !== undefined && i === relicFadingPos}
-          {@const relicShaking = numericPopupTarget?.kind === 'tsukumoka' && numericPopupTarget.relicId === relic.id}
+          {@const relicShaking = numericPopupTarget?.kind === 'tsukumoka' && numericPopupTarget.relicId === relic.id ? numericPopupTarget : undefined}
           <span class="relative text-xs bg-amber-900 text-amber-200/90 border border-amber-600/40 rounded px-1.5 py-0.5 {fading ? 'shidasu-confiscate-fade' : ''} {relicShaking ? 'shidasu-numeric-shake' : ''}" title={relic.tsukumoka ? relicTsukumokaDesc(relic.id, params) : relicDesc(relic.id, params)}>
             {relicName(relic.id, params)}{relic.tsukumoka ? ' ★' : ''}
-            {#if relicShaking && numericPopupTarget?.kind === 'tsukumoka'}<span class="shidasu-numeric-popup">{numericChangePopupText(numericPopupTarget)}</span>{/if}
+            {#if relicShaking}<span class="shidasu-numeric-popup">{numericChangePopupText(relicShaking)}</span>{/if}
           </span>
         {/each}
       </div>
