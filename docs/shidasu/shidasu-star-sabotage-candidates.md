@@ -112,21 +112,19 @@ Shidasuロードマップ項目3「星の妨害行動の検討」で洗い出し
 
 方針として、妨害行動32個すべてに専用アニメーションを設定したい。現状の実装状況と今後の方針は以下の通り。
 
-### 実装済み(14個)
+### 実装済み(18個)
 
 `PlayArea.svelte`の`lastSabotage`検知(`$effect.pre`)、および`lastStockShuffle`検知が対応する:
 
 - **stockPurge**(大量放出)・**stockPurgeSmall**(少量放出): 山札→捨て札の裏向き移動+フリップ/据え置き演出(2026-08-19)
 - **tableauFullReturn**(総戻し)・**columnReturn**(一列戻し): 場札→山札への収束+裏向き配布+一番上のフリップ演出(2026-08-18)
 - **stockShuffle**(山札攪拌): 山札ボタンの揺れ演出(2026-08-20)。秘儀「ᛞ」(dagaz、山札シャッフル系)にも同じ演出を共用している
-- **talismanSeal**(護符封印)・**riteSeal**(秘儀封印)・**revelationOracleSeal**(天啓・神託封印)・**roleSeal**(役封印)・**comboCap**(コンボ頭打ち): グループA「封印系」(下記参照)、対象UI要素のフラッシュ+シェイク演出と、封印中の常設表示(護符バッジの斜めストライプ、コンボの現在値/上限値分数表示)を実装(2026-08-20)。詳細は`docs/superpowers/specs/2026-08-20-shidasu-sabotage-seal-animation-design.md`を参照。
+- **talismanSeal**(護符封印)・**riteSeal**(秘儀封印)・**revelationOracleSeal**(天啓・神託封印)・**roleSeal**(役封印)・**comboCap**(コンボ頭打ち): グループA「封印系」、対象UI要素のフラッシュ+シェイク演出と、封印中の常設表示(護符バッジの斜めストライプ、コンボの現在値/上限値分数表示)を実装(2026-08-20)。詳細は`docs/superpowers/specs/2026-08-20-shidasu-sabotage-seal-animation-design.md`を参照。
+- **talismanConfiscate**(護符没収)・**riteConfiscate**(秘儀没収)・**revelationOracleConfiscate**(天啓・神託没収)・**relicConfiscate**(レリック没収): グループB「没収系」、対象UI要素(護符/天啓/神託/レリックバッジ、秘儀ボタン)が一瞬光ってから下に落ちながら暗くフェードアウトして消える演出を実装(2026-08-20)。`SabotageResult.confiscatedTarget`で没収対象(kind/id/idx)を明示的に伝え、実データ削除後もアニメーション完了までUI側で対象を一時保持する設計。詳細は`docs/superpowers/specs/2026-08-20-shidasu-sabotage-confiscate-animation-design.md`を参照。
 
-### 未実装(18個)・今後の方針
+### 未実装(14個)・今後の方針
 
-残り18個を、演出パターンが共通する4グループに分類した。各グループの演出コンセプトはビジュアルコンパニオンでモックアップを見せながら決定済み(2026-08-20)。実装(design doc作成・実装)はグループ単位で別セッションに分けて進める想定。
-
-**グループB: 没収系(6個)** — talismanConfiscate・riteConfiscate・revelationOracleConfiscate・relicConfiscate
-対象UI要素が完全に消える瞬間、一瞬光ってから下に落ちながら暗くフェードアウトする「崩れ落ちる」演出。グループAの「無効化されて残る」と違い、こちらは「消えて無くなる」ことを表現する。
+残り14個を、演出パターンが共通する3グループに分類した。各グループの演出コンセプトはビジュアルコンパニオンでモックアップを見せながら決定済み(2026-08-20)。実装(design doc作成・実装)はグループ単位で別セッションに分けて進める想定。
 
 **グループC: 強制発動系(2個)+通常発動との共通化** — riteForceActivate・revelationOracleForceActivate
 対象ボタンが自動でクリックされたように、一瞬縮んでから戻り強く光る「自動プレス+パルス」演出。この演出は強制発動時だけでなく、プレイヤー自身が秘儀/天啓ボタンをクリックして通常発動する場合にも共通適用する方針(現状の`active:scale-95`だけの見た目を、パルス付きに統一する)。
