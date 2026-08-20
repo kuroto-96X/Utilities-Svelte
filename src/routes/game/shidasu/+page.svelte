@@ -605,10 +605,11 @@
         {/each}
       </div>
     {/if}
-    {#if run.oracles.length > 0 || confiscateFadingTarget?.kind === 'revelationOrOracle' && confiscateFadingTarget.ref.kind === 'oracle'}
+    {#if run.oracles.length > 0 || confiscateFadingTarget?.kind === 'revelationOrOracle' && confiscateFadingTarget.ref.kind === 'oracle' || pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'oracle' && !run.oracles.includes(pressPulseTarget.ref.id)}
       {@const revelationOrOracleFading = confiscateFadingTarget?.kind === 'revelationOrOracle' ? confiscateFadingTarget : undefined}
       {@const oracleFading = revelationOrOracleFading?.ref.kind === 'oracle' ? { idx: revelationOrOracleFading.idx, id: revelationOrOracleFading.ref.id } : undefined}
-      {@const displayedOracles = withFadingId(run.oracles, oracleFading?.id, oracleFading?.idx ?? 0)}
+      {@const oraclePulseFading = pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'oracle' && !run.oracles.includes(pressPulseTarget.ref.id) ? pressPulseTarget.ref.id : undefined}
+      {@const displayedOracles = withFadingId(withFadingId(run.oracles, oracleFading?.id, oracleFading?.idx ?? 0), oraclePulseFading, run.oracles.length)}
       <div class="flex flex-wrap gap-1 justify-end">
         {#each displayedOracles as roleName, i (i)}
           {@const fading = oracleFading !== undefined && i === oracleFading.idx}

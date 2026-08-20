@@ -1425,9 +1425,10 @@
   {/if}
 </div>
 
-{#if rites.length > 0 || (confiscateFadingTarget?.kind === 'rite')}
+{#if rites.length > 0 || (confiscateFadingTarget?.kind === 'rite') || (pressPulseTarget?.kind === 'rite' && !rites.includes(pressPulseTarget.id))}
   {@const riteFading = confiscateFadingTarget?.kind === 'rite' ? confiscateFadingTarget : undefined}
-  {@const displayedRites = withFadingId(rites, riteFading?.id, riteFading?.idx ?? 0)}
+  {@const ritePulseFading = pressPulseTarget?.kind === 'rite' && !rites.includes(pressPulseTarget.id) ? pressPulseTarget : undefined}
+  {@const displayedRites = withFadingId(withFadingId(rites, riteFading?.id, riteFading?.idx ?? 0), ritePulseFading?.id, rites.length)}
   <div class="px-4 pb-4 flex items-center gap-2">
     {#each displayedRites as riteId, i (i)}
       {@const fading = riteFading !== undefined && i === riteFading.idx}
@@ -1446,9 +1447,11 @@
   </div>
 {/if}
 
-{#if revelations.length > 0}
+{#if revelations.length > 0 || (pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'revelation' && !revelations.includes(pressPulseTarget.ref.id))}
+  {@const revelationPulseFading = pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'revelation' && !revelations.includes(pressPulseTarget.ref.id) ? pressPulseTarget.ref.id : undefined}
+  {@const displayedRevelations = withFadingId(revelations, revelationPulseFading, revelations.length)}
   <div class="px-4 pb-4 flex items-center gap-2">
-    {#each revelations as revelationId, i (i)}
+    {#each displayedRevelations as revelationId, i (i)}
       {@const usable = canUseRevelation(params, wave, revelationId, relics) && !anyAnimationActive}
       {@const flashing = sealFlashTarget?.kind === 'revelationOrOracle' && sealFlashTarget.ref.kind === 'revelation' && sealFlashTarget.ref.id === revelationId}
       {@const pulsing = pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'revelation' && pressPulseTarget.ref.id === revelationId}

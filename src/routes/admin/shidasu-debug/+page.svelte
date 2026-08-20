@@ -23,6 +23,7 @@
   import CardFace from '../../game/shidasu/CardFace.svelte'
   import PlayArea from '../../game/shidasu/PlayArea.svelte'
   import type { SealFlashTarget, ConfiscatedTarget, PressPulseTarget } from '../../game/shidasu/PlayArea.svelte'
+  import { withFadingId } from '../../game/shidasu/PlayArea.svelte'
   import RoleStatusPanel from '../../game/shidasu/RoleStatusPanel.svelte'
 
   const params = loadParams()
@@ -419,9 +420,11 @@
         </span>
       {/each}
     </div>
-    {#if oracles.length > 0}
+    {#if oracles.length > 0 || (pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'oracle' && !oracles.includes(pressPulseTarget.ref.id))}
+      {@const oraclePulseFading = pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'oracle' && !oracles.includes(pressPulseTarget.ref.id) ? pressPulseTarget.ref.id : undefined}
+      {@const displayedOracles = withFadingId(oracles, oraclePulseFading, oracles.length)}
       <div class="flex flex-wrap gap-1 justify-end">
-        {#each oracles as roleName (roleName)}
+        {#each displayedOracles as roleName, i (i)}
           {@const oraclePulsing = pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'oracle' && pressPulseTarget.ref.id === roleName}
           <span class="text-xs bg-purple-900 text-purple-200/90 border border-purple-600/40 rounded px-1.5 py-0.5 flex items-center gap-1" title={oracleDesc(roleName, params)}>
             {oracleName(roleName, params)}
