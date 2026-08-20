@@ -1,15 +1,20 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { loadParams } from '$lib/game/shidasu/params'
-  import { startWave, playCard, drawStock, forceStockTop, triggerSabotage, createInitialRun, resolveSealedRoleEffect } from '$lib/game/shidasu/engine'
+  import { startWave, playCard, drawStock, forceStockTop, triggerSabotage, createInitialRun, resolveSealedRoleEffect, useRite, useRevelation, useOracle } from '$lib/game/shidasu/engine'
   import { SABOTAGE_POOL } from '$lib/game/shidasu/sabotage'
   import { applyRiteEffect } from '$lib/game/shidasu/riteEffects'
   import { applyRevelationEffect, revelationNeedsTarget } from '$lib/game/shidasu/revelationEffects'
   import RiteExecutePanel from './RiteExecutePanel.svelte'
   import RevelationExecutePanel from './RevelationExecutePanel.svelte'
+  import RiteChecklist from './RiteChecklist.svelte'
+  import RevelationChecklist from './RevelationChecklist.svelte'
+  import OracleChecklist from './OracleChecklist.svelte'
   import RoleStatusEditor from './RoleStatusEditor.svelte'
   import { ITEM_POOL, itemDesc, itemName } from '$lib/game/shidasu/items'
-  import { defaultOracleLevels } from '$lib/game/shidasu/oracles'
+  import { RITE_POOL } from '$lib/game/shidasu/rites'
+  import { REVELATION_POOL } from '$lib/game/shidasu/revelations'
+  import { ORACLE_POOL, oracleDesc, oracleName, defaultOracleLevels } from '$lib/game/shidasu/oracles'
   import { standardDeckComposition } from '$lib/game/shidasu/deck'
   import type { WaveState, Card, ItemId, DeckCard, Suit, Rank, RiteId, RevelationId, RoleName, SabotageActionId } from '$lib/game/shidasu/types'
   import ItemChecklist from './ItemChecklist.svelte'
@@ -17,7 +22,7 @@
   import CardPalette from './CardPalette.svelte'
   import CardFace from '../../game/shidasu/CardFace.svelte'
   import PlayArea from '../../game/shidasu/PlayArea.svelte'
-  import type { SealFlashTarget, ConfiscatedTarget } from '../../game/shidasu/PlayArea.svelte'
+  import type { SealFlashTarget, ConfiscatedTarget, PressPulseTarget } from '../../game/shidasu/PlayArea.svelte'
   import RoleStatusPanel from '../../game/shidasu/RoleStatusPanel.svelte'
 
   const params = loadParams()
@@ -36,6 +41,11 @@
   }
 
   let items = $state<ItemId[]>(loadSavedItems())
+  // 秘儀・天啓・神託の所持リスト。護符(items)と異なりlocalStorage永続化はせず、
+  // プレイ中に手動でチェックして追加・削除する想定のシンプルなstate。
+  let rites = $state<RiteId[]>([])
+  let revelations = $state<RevelationId[]>([])
+  let oracles = $state<RoleName[]>([])
   let highlightedItemId = $state<ItemId | null>(null)
   let deckComposition = $state<DeckCard[]>(standardDeckComposition())
   let oracleLevels = $state<Record<RoleName, number>>(defaultOracleLevels())
@@ -46,6 +56,11 @@
   let sealFlashTarget = $state<SealFlashTarget | null>(null)
 
   let confiscateFadingTarget = $state<ConfiscatedTarget | null>(null)
+  // 神託「使」ボタン用の押下パルス演出対象。本編(+page.svelte)のhandleUseOracleと同じ仕組みで、
+  // ローカルでセットし500ms後に自動でnullへ戻す。PlayArea側(秘儀・天啓ボタン)のonPressPulseChangeも
+  // 同じ変数で受けて共有する(本編と同様)。
+  let pressPulseTarget = $state<PressPulseTarget | null>(null)
+  let pressPulseTimer: ReturnType<typeof setTimeout> | null = null
   // RoleStatusPanel表示用: 現在の封印状態(役封印/天啓封印)から、役の実効レベルへの補正情報を導出する。
   let sealedRoleEffect = $derived(resolveSealedRoleEffect(wave.activeSeal))
   let flashingRoles = $derived.by((): RoleName[] => {
@@ -136,6 +151,42 @@
     lastSnapshot = null
   }
 
+  function handleToggleRite(id: RiteId, checked: boolean) {
+    if (checked) {
+      if (!rites.includes(id)) rites = [...rites, id]
+    } else {
+      rites = rites.filter(x => x !== id)
+    }
+  }
+
+  function handleSetAllRites(checked: boolean) {
+    rites = checked ? [...RITE_POOL] : []
+  }
+
+  function handleToggleRevelation(id: RevelationId, checked: boolean) {
+    if (checked) {
+      if (!revelations.includes(id)) revelations = [...revelations, id]
+    } else {
+      revelations = revelations.filter(x => x !== id)
+    }
+  }
+
+  function handleSetAllRevelations(checked: boolean) {
+    revelations = checked ? [...REVELATION_POOL] : []
+  }
+
+  function handleToggleOracle(id: RoleName, checked: boolean) {
+    if (checked) {
+      if (!oracles.includes(id)) oracles = [...oracles, id]
+    } else {
+      oracles = oracles.filter(x => x !== id)
+    }
+  }
+
+  function handleSetAllOracles(checked: boolean) {
+    oracles = checked ? [...ORACLE_POOL] : []
+  }
+
   function handleForceDraw(suit: Suit, rank: Rank, wild: boolean) {
     wave = forceStockTop(wave, suit, rank, wild)
     const result = drawStock(params, wave, items, TARGET, deckComposition, 'none')
@@ -210,6 +261,10 @@
   }
 
   let pendingDebugRevelation = $state<RevelationId | null>(null)
+  // 所持天啓チェックリスト経由(useRevelation、所持数を消費する正規発動)で列選択待ちになった
+  // 天啓ID。RevelationExecutePanel経由(所持数無視の直接効果適用、pendingDebugRevelation)とは
+  // 発動方法が異なるため別変数で管理し、列選択確定時にどちらの経路で確定するか区別する。
+  let pendingUseRevelation = $state<RevelationId | null>(null)
 
   function handleExecuteRevelation(revelationId: RevelationId) {
     if (revelationNeedsTarget(revelationId)) {
@@ -223,6 +278,16 @@
   }
 
   function handleTargetDebugColumn(colIndex: number) {
+    if (pendingUseRevelation) {
+      lastSnapshot = wave
+      const run = { ...createInitialRun(), phase: 'playing' as const, items, rites, revelations, oracles, oracleLevels, wave, deckComposition }
+      const next = useRevelation(params, run, pendingUseRevelation, colIndex, Math.random)
+      wave = next.wave ?? wave
+      deckComposition = next.deckComposition
+      revelations = next.revelations
+      pendingUseRevelation = null
+      return
+    }
     if (!pendingDebugRevelation) return
     lastSnapshot = wave
     const result = applyRevelationEffect(params, wave, deckComposition, pendingDebugRevelation, colIndex, Math.random)
@@ -232,13 +297,50 @@
   }
 
   function canTargetDebugColumn(colIndex: number): boolean {
-    if (!pendingDebugRevelation) return false
-    if (pendingDebugRevelation === 'aya') return true
+    const pending = pendingUseRevelation ?? pendingDebugRevelation
+    if (!pending) return false
+    if (pending === 'aya') return true
     return wave.tableau[colIndex].length > 0
   }
 
   function handleCancelDebugRevelationTarget() {
     pendingDebugRevelation = null
+    pendingUseRevelation = null
+  }
+
+  function handleUseRite(riteId: RiteId) {
+    lastSnapshot = wave
+    const run = { ...createInitialRun(), phase: 'playing' as const, items, rites, revelations, oracles, oracleLevels, wave, deckComposition }
+    const next = useRite(params, run, riteId, Math.random)
+    wave = next.wave ?? wave
+    rites = next.rites
+  }
+
+  function handleUseRevelationClick(revelationId: RevelationId) {
+    if (revelationNeedsTarget(revelationId)) {
+      pendingUseRevelation = revelationId
+      return
+    }
+    lastSnapshot = wave
+    const run = { ...createInitialRun(), phase: 'playing' as const, items, rites, revelations, oracles, oracleLevels, wave, deckComposition }
+    const next = useRevelation(params, run, revelationId, null, Math.random)
+    wave = next.wave ?? wave
+    deckComposition = next.deckComposition
+    revelations = next.revelations
+  }
+
+  function handleUseOracle(roleName: RoleName) {
+    if (pressPulseTimer) clearTimeout(pressPulseTimer)
+    pressPulseTarget = { kind: 'revelationOrOracle', ref: { kind: 'oracle', id: roleName } }
+    pressPulseTimer = setTimeout(() => {
+      pressPulseTimer = null
+      pressPulseTarget = null
+    }, 500)
+    const run = { ...createInitialRun(), phase: 'playing' as const, items, rites, revelations, oracles, oracleLevels, wave }
+    const next = useOracle(params, run, roleName)
+    wave = next.wave ?? wave
+    oracles = next.oracles
+    oracleLevels = next.oracleLevels
   }
 
   function stairifyTableau() {
@@ -301,20 +403,33 @@
 {#snippet itemBadges()}
   {@const talismanFading = confiscateFadingTarget?.kind === 'talisman' ? confiscateFadingTarget : undefined}
   {@const displayedItemIds = [...new Set(talismanFading ? [...items.slice(0, Math.min(talismanFading.idx, items.length)), talismanFading.id, ...items.slice(Math.min(talismanFading.idx, items.length))] : items)]}
-  <div class="flex-1 flex flex-wrap gap-1 justify-end">
-    {#each displayedItemIds as id (id)}
-      {@const n = items.filter(x => x === id).length}
-      {@const talismanSealed = wave.activeSeal?.kind === 'talisman' && wave.activeSeal.id === id}
-      {@const talismanFlashing = sealFlashTarget?.kind === 'talisman' && sealFlashTarget.id === id}
-      {@const talismanConfiscateFading = talismanFading?.id === id && n === 0}
-      <span
-        class="text-xs rounded px-1.5 py-0.5 {highlightedItemId === id ? 'ring-2 ring-yellow-400' : ''} {talismanConfiscateFading ? 'shidasu-confiscate-fade' : ''} {talismanFlashing ? 'shidasu-seal-flash' : ''} {talismanSealed ? 'border' : 'bg-emerald-900 text-yellow-200/90 border border-yellow-600/40'}"
-        style={talismanSealed ? 'background:#1c1917; color:#78350f; border-color: rgba(217,119,6,0.5); background-image: repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(217,119,6,0.35) 5px,rgba(217,119,6,0.35) 6px);' : ''}
-        title={talismanSealed ? '護符封印: 次の妨害発動まで効果が無効' : itemDesc(id, params)}
-      >
-        {itemName(id, params)}{n > 1 ? `×${n}` : ''}
-      </span>
-    {/each}
+  <div class="flex-1 flex flex-col gap-1 items-end">
+    <div class="flex flex-wrap gap-1 justify-end">
+      {#each displayedItemIds as id (id)}
+        {@const n = items.filter(x => x === id).length}
+        {@const talismanSealed = wave.activeSeal?.kind === 'talisman' && wave.activeSeal.id === id}
+        {@const talismanFlashing = sealFlashTarget?.kind === 'talisman' && sealFlashTarget.id === id}
+        {@const talismanConfiscateFading = talismanFading?.id === id && n === 0}
+        <span
+          class="text-xs rounded px-1.5 py-0.5 {highlightedItemId === id ? 'ring-2 ring-yellow-400' : ''} {talismanConfiscateFading ? 'shidasu-confiscate-fade' : ''} {talismanFlashing ? 'shidasu-seal-flash' : ''} {talismanSealed ? 'border' : 'bg-emerald-900 text-yellow-200/90 border border-yellow-600/40'}"
+          style={talismanSealed ? 'background:#1c1917; color:#78350f; border-color: rgba(217,119,6,0.5); background-image: repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(217,119,6,0.35) 5px,rgba(217,119,6,0.35) 6px);' : ''}
+          title={talismanSealed ? '護符封印: 次の妨害発動まで効果が無効' : itemDesc(id, params)}
+        >
+          {itemName(id, params)}{n > 1 ? `×${n}` : ''}
+        </span>
+      {/each}
+    </div>
+    {#if oracles.length > 0}
+      <div class="flex flex-wrap gap-1 justify-end">
+        {#each oracles as roleName (roleName)}
+          {@const oraclePulsing = pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'oracle' && pressPulseTarget.ref.id === roleName}
+          <span class="text-xs bg-purple-900 text-purple-200/90 border border-purple-600/40 rounded px-1.5 py-0.5 flex items-center gap-1" title={oracleDesc(roleName, params)}>
+            {oracleName(roleName, params)}
+            <button onclick={() => handleUseOracle(roleName)} class="text-purple-300/70 underline {oraclePulsing ? 'shidasu-press-pulse' : ''}">使</button>
+          </span>
+        {/each}
+      </div>
+    {/if}
   </div>
 {/snippet}
 
@@ -353,19 +468,27 @@
           {wave} {params} modifier={'none'} target={TARGET} {items} onPlayCard={handlePlayCard} onDraw={handleDraw} {dropTarget}
           waveKey={`wave-${waveGeneration}`}
           extraFooter={itemBadges}
-          columnTargetMode={pendingDebugRevelation !== null}
+          {rites} onUseRite={handleUseRite}
+          {revelations} onUseRevelationClick={handleUseRevelationClick}
+          columnTargetMode={pendingDebugRevelation !== null || pendingUseRevelation !== null}
           canTargetColumn={canTargetDebugColumn}
           onTargetColumn={handleTargetDebugColumn}
           onScorePartHighlight={id => (highlightedItemId = id)}
           onSealFlashChange={(target) => { sealFlashTarget = target }}
           onConfiscateFadingChange={(target) => { confiscateFadingTarget = target }}
+          onPressPulseChange={(target) => { pressPulseTarget = target }}
         />
         <RoleStatusPanel {params} oracleLevels={oracleLevels} {sealedRoleEffect} {flashingRoles} />
         <div class="mt-4 flex-1 min-h-0 overflow-y-auto">
           <DebugStatePanel {wave} {items} onForceDraw={handleForceDraw} />
         </div>
       </div>
-      <ItemChecklist {items} onToggle={handleToggleItem} onSetAll={handleSetAllItems} />
+      <div class="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+        <ItemChecklist {items} onToggle={handleToggleItem} onSetAll={handleSetAllItems} />
+        <RiteChecklist {rites} onToggle={handleToggleRite} onSetAll={handleSetAllRites} />
+        <RevelationChecklist {revelations} onToggle={handleToggleRevelation} onSetAll={handleSetAllRevelations} />
+        <OracleChecklist {oracles} onToggle={handleToggleOracle} onSetAll={handleSetAllOracles} />
+      </div>
       <div class="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
         <RiteExecutePanel onExecute={handleExecuteRite} />
         <RevelationExecutePanel

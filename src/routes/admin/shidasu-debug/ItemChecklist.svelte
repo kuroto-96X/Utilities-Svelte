@@ -13,7 +13,7 @@
   const params = loadParams()
 </script>
 
-<div class="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+<div class="space-y-3">
   <div class="sticky top-0 bg-slate-50 space-y-1">
     <h2 class="text-sm font-bold text-slate-700">護符({items.length}/92)</h2>
     <div class="flex gap-2">
