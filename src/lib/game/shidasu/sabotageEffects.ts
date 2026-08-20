@@ -44,6 +44,12 @@ export interface SabotageResult {
     | { kind: 'rite'; id: RiteId; idx: number }
     | { kind: 'revelationOrOracle'; ref: HeldRevelationOrOracleRef; idx: number }
     | { kind: 'relic'; id: RelicId; idx: number }
+  // 今回「強制発動系」(riteForceActivate/revelationOracleForceActivate)で即座に使用された対象。
+  // 通常のプレイヤークリックと同じ処理(useRite/useRevelation/useOracle)を経由するため、活性化した
+  // 対象自体を保持する仕組みが無い。ここで明示的に伝える。
+  forceActivatedTarget?:
+    | { kind: 'rite'; id: RiteId }
+    | { kind: 'revelationOrOracle'; ref: HeldRevelationOrOracleRef }
 }
 
 function applyStockPurge({ wave }: SabotageContext): SabotageResult {
