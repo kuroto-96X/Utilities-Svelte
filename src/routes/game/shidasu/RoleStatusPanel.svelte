@@ -4,10 +4,11 @@
   import type { SealedRoleEffect } from '$lib/game/shidasu/engine'
   import { ROLE_LIST, roleBasePoint } from '$lib/game/shidasu/roles'
 
-  let { params, oracleLevels, sealedRoleEffect = { zeroRoles: [], oracleBaselineRole: null } }: {
+  let { params, oracleLevels, sealedRoleEffect = { zeroRoles: [], oracleBaselineRole: null }, flashingRoles = [] }: {
     params: ShidasuParams
     oracleLevels: Record<RoleName, number>
     sealedRoleEffect?: SealedRoleEffect
+    flashingRoles?: RoleName[]
   } = $props()
 
   // 妨害「役封印」「天啓封印(対象がoracleの場合)」中は、run.oracleLevelsそのものは
@@ -29,7 +30,8 @@
       {@const level = effectiveLevel(role.name, storedLevel)}
       {@const score = roleBasePoint(params, role.name) * level}
       {@const sealed = level !== storedLevel}
-      <div class="flex items-center justify-between text-xs gap-2">
+      {@const flashing = flashingRoles.includes(role.name)}
+      <div class="flex items-center justify-between text-xs gap-2 {flashing ? 'shidasu-seal-flash' : ''}">
         <div class="flex items-center gap-1.5 min-w-0">
           <span class="font-black text-amber-50 shrink-0">{role.label}</span>
           <span class="text-emerald-300/60 truncate">{role.desc}</span>

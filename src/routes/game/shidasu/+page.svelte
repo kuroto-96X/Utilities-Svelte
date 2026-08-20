@@ -111,6 +111,12 @@
   // 受け取って保持する。itemBadges(護符バッジ)・RoleStatusPanel(役ステータス)は
   // PlayAreaの外側にあるため、コールバックprops経由で値を受け渡す。
   let sealFlashTarget = $state<SealFlashTarget | null>(null)
+
+  let flashingRoles = $derived.by((): RoleName[] => {
+    if (sealFlashTarget?.kind === 'role') return sealFlashTarget.names
+    if (sealFlashTarget?.kind === 'revelationOrOracle' && sealFlashTarget.ref.kind === 'oracle') return [sealFlashTarget.ref.id]
+    return []
+  })
   let currentModifier = $derived(stageModifierFor(params, run))
 
   // 現在Waveの星(制限ルール)の情報を返す。stageStarsが未確定(title等)の場合は空表示。
@@ -700,7 +706,7 @@
     chainAreaExtra={pendingRevelationTarget ? revelationTargetPrompt : undefined}
     onScorePartHighlight={id => (highlightedItemId = id)}
   />
-  <RoleStatusPanel {params} oracleLevels={run.oracleLevels} {sealedRoleEffect} />
+  <RoleStatusPanel {params} oracleLevels={run.oracleLevels} {sealedRoleEffect} {flashingRoles} />
 {/if}
 
 {#if revelationPreviewWave}
