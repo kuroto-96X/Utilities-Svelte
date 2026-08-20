@@ -107,7 +107,8 @@ function applyRevelationOracleSeal({ run, rand }: SabotageContext): SabotageResu
 function applyRelicConfiscate({ run, rand }: SabotageContext): SabotageResult {
   if (run.relics.length === 0) return {}
   const idx = Math.floor(rand() * run.relics.length)
-  return { run: { relics: [...run.relics.slice(0, idx), ...run.relics.slice(idx + 1)] } }
+  const id = run.relics[idx].id
+  return { run: { relics: [...run.relics.slice(0, idx), ...run.relics.slice(idx + 1)] }, confiscatedTarget: { kind: 'relic', id, idx } }
 }
 
 function applyTableauCardToDiscard({ wave, rand }: SabotageContext): SabotageResult {
@@ -187,13 +188,15 @@ function applyComboReduce({ wave }: SabotageContext): SabotageResult {
 function applyTalismanConfiscate({ run, rand }: SabotageContext): SabotageResult {
   if (run.items.length === 0) return {}
   const idx = Math.floor(rand() * run.items.length)
-  return { run: { items: [...run.items.slice(0, idx), ...run.items.slice(idx + 1)] } }
+  const id = run.items[idx]
+  return { run: { items: [...run.items.slice(0, idx), ...run.items.slice(idx + 1)] }, confiscatedTarget: { kind: 'talisman', id, idx } }
 }
 
 function applyRiteConfiscate({ run, rand }: SabotageContext): SabotageResult {
   if (run.rites.length === 0) return {}
   const idx = Math.floor(rand() * run.rites.length)
-  return { run: { rites: [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)] } }
+  const id = run.rites[idx]
+  return { run: { rites: [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)] }, confiscatedTarget: { kind: 'rite', id, idx } }
 }
 
 function applyChainShuffle({ wave, rand }: SabotageContext): SabotageResult {
@@ -237,12 +240,18 @@ function applyRevelationOracleConfiscate({ run, rand }: SabotageContext): Sabota
   const ref = pool[Math.floor(rand() * pool.length)]
   if (ref.kind === 'revelation') {
     const idx = run.revelations.indexOf(ref.id)
-    return { run: { revelations: [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)] } }
+    return {
+      run: { revelations: [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)] },
+      confiscatedTarget: { kind: 'revelationOrOracle', ref, idx },
+    }
   }
   // 神託を没収してもoracleLevelsは変更しない: run.oraclesに温存中の神託はまだuseOracleで
   // 消費していないためoracleLevelsに未反映であり、没収してもそこに減らすべき実績が無い
   const idx = run.oracles.indexOf(ref.id)
-  return { run: { oracles: [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)] } }
+  return {
+    run: { oracles: [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)] },
+    confiscatedTarget: { kind: 'revelationOrOracle', ref, idx },
+  }
 }
 
 // useRevelation/useOracleが返す完全なRunStateをそのままrunへ渡す(applyRiteForceActivateと同じ理由:

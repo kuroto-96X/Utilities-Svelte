@@ -5112,6 +5112,48 @@ describe('triggerSabotage', () => {
     expect(next.items).toEqual(['grace'])
   })
 
+  it('talismanConfiscate: lastSabotage.confiscatedTargetに没収した護符のid・idxを設定する', () => {
+    const run = runWithWave({ items: ['bridge', 'grace'] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'talismanConfiscate', () => 0)
+    expect(next.wave!.lastSabotage?.confiscatedTarget).toEqual({ kind: 'talisman', id: 'bridge', idx: 0 })
+  })
+
+  it('talismanConfiscate: 所持護符が0件ならconfiscatedTargetは設定されない', () => {
+    const run = runWithWave({ items: [] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'talismanConfiscate', () => 0)
+    expect(next.wave!.lastSabotage?.confiscatedTarget).toBeUndefined()
+  })
+
+  it('riteConfiscate: lastSabotage.confiscatedTargetに没収した秘儀のid・idxを設定する', () => {
+    const run = runWithWave({ rites: ['gebo', 'fehu'] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteConfiscate', () => 0)
+    expect(next.wave!.lastSabotage?.confiscatedTarget).toEqual({ kind: 'rite', id: 'gebo', idx: 0 })
+  })
+
+  it('relicConfiscate: lastSabotage.confiscatedTargetに没収したレリックのid・idxを設定する', () => {
+    const run = runWithWave({ relics: [{ id: 'manekiNeko', tsukumoka: false }, { id: 'juzu', tsukumoka: false }] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'relicConfiscate', () => 0)
+    expect(next.wave!.lastSabotage?.confiscatedTarget).toEqual({ kind: 'relic', id: 'manekiNeko', idx: 0 })
+  })
+
+  it('revelationOracleConfiscate: 天啓が選ばれた場合、confiscatedTargetにref.kind=revelationとidxを設定する', () => {
+    const run = runWithWave({ revelations: ['kaku'], oracles: ['pair'] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleConfiscate', () => 0)
+    expect(next.wave!.lastSabotage?.confiscatedTarget).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'revelation', id: 'kaku' }, idx: 0 })
+  })
+
+  it('revelationOracleConfiscate: 神託が選ばれた場合、confiscatedTargetにref.kind=oracleとidxを設定する', () => {
+    const run = runWithWave({ revelations: [], oracles: ['pair'] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleConfiscate', () => 0)
+    expect(next.wave!.lastSabotage?.confiscatedTarget).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'oracle', id: 'pair' }, idx: 0 })
+  })
+
+  it('revelationOracleConfiscate: 天啓・神託とも0件ならconfiscatedTargetは設定されない', () => {
+    const run = runWithWave({ revelations: [], oracles: [] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleConfiscate', () => 0)
+    expect(next.wave!.lastSabotage?.confiscatedTarget).toBeUndefined()
+  })
+
   it('riteConfiscate: 所持秘儀からランダムに1つ選び効果無しで消費する', () => {
     const run = runWithWave({ rites: ['gebo', 'fehu'] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteConfiscate', () => 0)
