@@ -22,8 +22,8 @@
   import CardPalette from './CardPalette.svelte'
   import CardFace from '../../game/shidasu/CardFace.svelte'
   import PlayArea from '../../game/shidasu/PlayArea.svelte'
-  import type { SealFlashTarget, ConfiscatedTarget, PressPulseTarget } from '../../game/shidasu/PlayArea.svelte'
-  import { withFadingId } from '../../game/shidasu/PlayArea.svelte'
+  import type { SealFlashTarget, ConfiscatedTarget, PressPulseTarget, NumericChangeTarget } from '../../game/shidasu/PlayArea.svelte'
+  import { withFadingId, numericChangePopupText } from '../../game/shidasu/PlayArea.svelte'
   import RoleStatusPanel from '../../game/shidasu/RoleStatusPanel.svelte'
 
   const params = loadParams()
@@ -62,11 +62,24 @@
   // 同じ変数で受けて共有する(本編と同様)。
   let pressPulseTarget = $state<PressPulseTarget | null>(null)
   let pressPulseTimer: ReturnType<typeof setTimeout> | null = null
+
+  let numericPopupTarget = $state<NumericChangeTarget | null>(null)
   // RoleStatusPanel表示用: 現在の封印状態(役封印/天啓封印)から、役の実効レベルへの補正情報を導出する。
   let sealedRoleEffect = $derived(resolveSealedRoleEffect(wave.activeSeal))
   let flashingRoles = $derived.by((): RoleName[] => {
     if (sealFlashTarget?.kind === 'role') return sealFlashTarget.names
     if (sealFlashTarget?.kind === 'revelationOrOracle' && sealFlashTarget.ref.kind === 'oracle') return [sealFlashTarget.ref.id]
+    return []
+  })
+
+  let shakingRoles = $derived.by((): { name: RoleName; text: string }[] => {
+    const popup = numericPopupTarget
+    if (popup?.kind === 'roleLevel') {
+      return popup.names.map(name => ({ name, text: numericChangePopupText(popup, name) }))
+    }
+    if (popup?.kind === 'roleBias') {
+      return [...popup.buffed, ...popup.nerfed].map(name => ({ name, text: numericChangePopupText(popup, name) }))
+    }
     return []
   })
   // PlayAreaのwaveKey propに渡す世代カウンタ。本編(+page.svelte)のrun.waveGenerationと
@@ -480,8 +493,9 @@
           onSealFlashChange={(target) => { sealFlashTarget = target }}
           onConfiscateFadingChange={(target) => { confiscateFadingTarget = target }}
           onPressPulseChange={(target) => { pressPulseTarget = target }}
+          onNumericPopupChange={(target) => { numericPopupTarget = target }}
         />
-        <RoleStatusPanel {params} oracleLevels={oracleLevels} {sealedRoleEffect} {flashingRoles} />
+        <RoleStatusPanel {params} oracleLevels={oracleLevels} {sealedRoleEffect} {flashingRoles} {shakingRoles} />
         <div class="mt-4 flex-1 min-h-0 overflow-y-auto">
           <DebugStatePanel {wave} {items} onForceDraw={handleForceDraw} />
         </div>
