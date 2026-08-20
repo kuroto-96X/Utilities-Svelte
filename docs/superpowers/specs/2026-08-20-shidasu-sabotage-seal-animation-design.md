@@ -29,6 +29,8 @@
 
 対象護符のバッジに、既存の`talismanHidden`(護符並び替え)で使っている斜めストライプ背景をそのまま適用する。名前は隠さず表示したまま、背景だけ「無効化中」の見た目に切り替える。
 
+対象は`itemBadges`スニペット(プレイ中の常設バッジ表示)のみとし、ショップ画面の所持護符一覧(`+page.svelte`874行目付近、`talismanHidden`のみ既存対応済み)は対象外とする。封印は`playing`フェーズ中のみ発動するため、ショップ画面表示中に`activeSeal`がtalisman封印になっている状態は実質発生しない。
+
 `+page.svelte`の`itemBadges`スニペット(540-554行目)で、`talismanHidden`判定の隣に`talismanSealed`判定を追加する:
 
 ```svelte
