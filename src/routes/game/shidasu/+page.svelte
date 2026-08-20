@@ -198,18 +198,6 @@
     return resultRun.wave
   }
 
-  // 天啓プレビュー表示中、所持秘儀を使用した際に呼ぶ。run.waveを一時的にプレビューへ
-  // すり替えてuseRiteを適用し、結果のwaveをプレビューへ反映する(秘儀は即時適用でコラム
-  // 選択が無いため、片付けアニメーションは発火させない)。本番runにはwave以外の変更
-  // (秘儀の所持数減少)のみ反映する。revelationPreviewWaveがnullの間は何もしない。
-  function handleUseRiteInPreview(riteId: RiteId) {
-    if (!revelationPreviewWave) return
-    const previewResultWave = applyToRevelationPreview((runForPreview) => useRite(params, runForPreview, riteId))
-    if (previewResultWave) {
-      revelationPreviewWave = previewResultWave
-    }
-  }
-
   function handleDraw() {
     if (run.phase !== 'playing' || run.wave?.status !== 'playing') return
     run = applyDrawStock(params, run)
@@ -726,7 +714,7 @@
         onCleanupDone={handleRevelationPreviewCleanupDone}
         waveKey={revelationPreviewWaveKey}
         headerExtra={stageRow}
-        rites={run.rites} onUseRite={handleUseRiteInPreview}
+        rites={run.rites} disableRites={true}
         revelations={run.revelations} onUseRevelationClick={handleUseRevelationClick}
         relics={run.relics}
         columnTargetMode={true}

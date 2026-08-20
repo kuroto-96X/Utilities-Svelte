@@ -16,7 +16,7 @@
 
   let {
     wave, params, modifier, target, items, onPlayCard, onDraw, dropTarget = null, headerExtra, extraFooter,
-    rites = [], onUseRite,
+    rites = [], onUseRite, disableRites = false,
     revelations = [], onUseRevelationClick,
     relics = [],
     showScoreAndCombo = true,
@@ -40,6 +40,7 @@
     extraFooter?: Snippet
     rites?: RiteId[]
     onUseRite?: (riteId: RiteId) => void
+    disableRites?: boolean
     revelations?: RevelationId[]
     onUseRevelationClick?: (revelationId: RevelationId) => void
     relics?: { id: RelicId; tsukumoka: boolean }[]
@@ -1322,7 +1323,7 @@
 {#if rites.length > 0}
   <div class="px-4 pb-4 flex items-center gap-2">
     {#each rites as riteId, i (i)}
-      {@const usable = canUseRite(params, wave, riteId) && !anyAnimationActive}
+      {@const usable = canUseRite(params, wave, riteId) && !anyAnimationActive && !disableRites}
       <button
         type="button"
         onclick={() => onUseRite?.(riteId)}
