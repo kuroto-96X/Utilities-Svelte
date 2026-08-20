@@ -26,7 +26,7 @@
     canTargetColumn = () => true,
     onTargetColumn,
     chainAreaExtra,
-    onScoreRevealDone, waveKey, onCleanupDone, onSealFlashChange,
+    onScoreRevealDone, waveKey, onCleanupDone, onSealFlashChange, onConfiscateFadingChange,
     onScorePartHighlight,
   }: {
     wave: WaveState
@@ -55,6 +55,7 @@
     waveKey?: string
     onCleanupDone?: () => void
     onSealFlashChange?: (target: SealFlashTarget | null) => void
+    onConfiscateFadingChange?: (target: ConfiscatedTarget | null) => void
     onScorePartHighlight?: (itemId: ItemId | null) => void
   } = $props()
 
@@ -386,6 +387,40 @@
     dealTimers.push(timer)
   }
 
+  // 妨害行動「没収系」(talismanConfiscate・riteConfiscate・revelationOracleConfiscate・
+  // relicConfiscate)発動時の崩れ落ちるフェード演出用。lastSabotage.confiscatedTargetと
+  // 同じ型をそのまま再利用する。+page.svelte側からも同じ型をimportして使うため、exportする。
+  export type ConfiscatedTarget = Exclude<WaveState['lastSabotage'], undefined>['confiscatedTarget']
+
+  let confiscateFadingTarget = $state<ConfiscatedTarget | null>(null)
+  let confiscateFadingActive = $state(false)
+
+  // confiscateFadingActiveは関数の先頭で同期的にtrueへ切り替える(CLAUDE.mdの「移動アニメーション
+  // 実装時の注意」・discardPurgeActive/sealFlashActiveと同じ原則)。実データ(run.items等)は
+  // triggerSabotage実行と同時に削除済みのため、confiscateFadingTargetは「削除される直前の対象」
+  // を一時的に保持し、各バッジ描画箇所がこれを見て「本来のリスト+フェード中要素」を補完する。
+  // 500ms後に演出を終了しconfiscateFadingTargetをnullへ戻すと、補完されていた要素も自然に消える。
+  function startConfiscateFadeAnimation(target: NonNullable<ConfiscatedTarget>) {
+    confiscateFadingActive = true
+    confiscateFadingTarget = target
+    onConfiscateFadingChange?.(target)
+    const timer = setTimeout(() => {
+      confiscateFadingActive = false
+      confiscateFadingTarget = null
+      onConfiscateFadingChange?.(null)
+    }, 500)
+    dealTimers.push(timer)
+  }
+
+  // list(本来のリスト、既に削除済み)にfadingId(フェード中の要素のid)を補完した配列を返す。
+  // fadingId未指定の場合はlistをそのまま返す。挿入位置はidx(没収前の元の位置)。
+  // +page.svelte・デバッグ画面(shidasu-debug)からもimportして使うため、exportする。
+  export function withFadingId<T>(list: T[], fadingId: T | undefined, idx: number): T[] {
+    if (fadingId === undefined) return list
+    const pos = Math.min(idx, list.length)
+    return [...list.slice(0, pos), fadingId, ...list.slice(pos)]
+  }
+
   function startStockShuffleAnimation() {
     stockShuffleActive = true
     const steps = [-8, 8, -5, 5, 0]
@@ -412,7 +447,7 @@
   let dealAnimationActive = $derived(dealingCards.length > 0)
   // いずれかのアニメーション(カードプレイ・得点演出・清算・チェーンリセット・配布)が進行中かどうか。
   // 進行中は操作(カードプレイ・山札引き・秘儀/天啓使用)を無効化する。
-  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0 || flippingCards.length > 0 || discardPurgeActive || stockShuffleActive || sealFlashActive)
+  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0 || flippingCards.length > 0 || discardPurgeActive || stockShuffleActive || sealFlashActive || confiscateFadingActive)
   let dealTimers: ReturnType<typeof setTimeout>[] = []
   // 初期値をundefinedにしておくことで、マウント直後(ゲーム開始直後の最初のWave)にも
   // 「waveKeyが変化した」と判定され配布アニメーションが発火する。他のprevious系変数
@@ -474,6 +509,10 @@
     } else if (current.id === 'talismanSeal' || current.id === 'riteSeal' || current.id === 'revelationOracleSeal' || current.id === 'roleSeal' || current.id === 'comboCap') {
       if (wave.activeSeal && wave.activeSeal.kind !== 'talismanHidden' && wave.activeSeal.kind !== 'roleBias') {
         startSealFlashAnimation(wave.activeSeal)
+      }
+    } else if (current.id === 'talismanConfiscate' || current.id === 'riteConfiscate' || current.id === 'revelationOracleConfiscate' || current.id === 'relicConfiscate') {
+      if (current.confiscatedTarget) {
+        startConfiscateFadeAnimation(current.confiscatedTarget)
       }
     }
   })

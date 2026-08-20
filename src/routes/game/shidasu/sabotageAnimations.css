@@ -13,3 +13,18 @@
 .shidasu-seal-flash {
   animation: shidasu-seal-flash 0.5s ease-out;
 }
+
+/* 妨害行動「没収系」発動時、対象UI要素(護符バッジ・秘儀ボタン・天啓/神託バッジ・
+   レリックバッジ)が完全に消える瞬間の演出。一瞬光ってから、下に落ちながら暗く
+   フェードアウトする。forwardsを指定し、アニメーション終了後もopacity:0の状態を
+   維持する(500ms後にconfiscateFadingTargetがnullになりDOMから除去されるまでの
+   一瞬のちらつきを防ぐ)。 */
+@keyframes shidasu-confiscate-fade {
+  0% { transform: translateY(0); opacity: 1; filter: brightness(1); }
+  30% { transform: translateY(-6px); filter: brightness(2); }
+  100% { transform: translateY(20px); opacity: 0; filter: brightness(0.5); }
+}
+
+.shidasu-confiscate-fade {
+  animation: shidasu-confiscate-fade 0.5s ease-in forwards;
+}
