@@ -2,7 +2,7 @@
   import type { Snippet } from 'svelte'
   import { onDestroy, tick } from 'svelte'
   import { getPlayableColumns, isPlayable, remainingCount } from '$lib/game/shidasu/engine'
-  import type { WaveState, StageModifier, ItemId, RiteId, RevelationId, RelicId, Card, PlayCardResult, ScoreGain } from '$lib/game/shidasu/types'
+  import type { WaveState, StageModifier, ItemId, RiteId, RevelationId, RelicId, Card, PlayCardResult, ScoreGain, RoleName } from '$lib/game/shidasu/types'
   import type { ShidasuParams } from '$lib/game/shidasu/params'
   import { canUseRite } from '$lib/game/shidasu/riteEffects'
   import { riteDesc } from '$lib/game/shidasu/rites'
@@ -26,7 +26,7 @@
     canTargetColumn = () => true,
     onTargetColumn,
     chainAreaExtra,
-    onScoreRevealDone, waveKey, onCleanupDone,
+    onScoreRevealDone, waveKey, onCleanupDone, onSealFlashChange,
     onScorePartHighlight,
   }: {
     wave: WaveState
@@ -54,6 +54,7 @@
     onScoreRevealDone?: () => void
     waveKey?: string
     onCleanupDone?: () => void
+    onSealFlashChange?: (target: SealFlashTarget | null) => void
     onScorePartHighlight?: (itemId: ItemId | null) => void
   } = $props()
 
@@ -361,6 +362,30 @@
   let stockShuffleTransitionMs = $state(0)
   let stockShuffleActive = $state(false)
 
+  // 妨害行動「封印系」(talismanSeal・riteSeal・revelationOracleSeal・roleSeal・comboCap)
+  // 発動時のフラッシュ+シェイク演出用。wave.activeSealのうち、今回の対象5種類
+  // (talismanHidden・roleBiasは対象外)。activeSeal自体の型をそのまま再利用し、
+  // 型の重複定義を避ける。+page.svelte側からも同じ型をimportして使うため、exportする。
+  export type SealFlashTarget = Exclude<WaveState['activeSeal'], { kind: 'talismanHidden' } | { kind: 'roleBias'; buffed: RoleName[]; nerfed: RoleName[]; multiplier: number } | null>
+
+  let sealFlashTarget = $state<SealFlashTarget | null>(null)
+  let sealFlashActive = $state(false)
+
+  // sealFlashActiveは関数の先頭で同期的にtrueへ切り替える(CLAUDE.mdの「移動アニメーション
+  // 実装時の注意」・discardPurgeActive/stockShuffleActiveと同じ原則)。500ms後に演出を終了し、
+  // sealFlashTargetをnullへ戻す(対象要素は以後、常設表示側の判定に切り替わる)。
+  function startSealFlashAnimation(target: SealFlashTarget) {
+    sealFlashActive = true
+    sealFlashTarget = target
+    onSealFlashChange?.(target)
+    const timer = setTimeout(() => {
+      sealFlashActive = false
+      sealFlashTarget = null
+      onSealFlashChange?.(null)
+    }, 500)
+    dealTimers.push(timer)
+  }
+
   function startStockShuffleAnimation() {
     stockShuffleActive = true
     const steps = [-8, 8, -5, 5, 0]
@@ -387,7 +412,7 @@
   let dealAnimationActive = $derived(dealingCards.length > 0)
   // いずれかのアニメーション(カードプレイ・得点演出・清算・チェーンリセット・配布)が進行中かどうか。
   // 進行中は操作(カードプレイ・山札引き・秘儀/天啓使用)を無効化する。
-  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0 || flippingCards.length > 0 || discardPurgeActive || stockShuffleActive)
+  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0 || flippingCards.length > 0 || discardPurgeActive || stockShuffleActive || sealFlashActive)
   let dealTimers: ReturnType<typeof setTimeout>[] = []
   // 初期値をundefinedにしておくことで、マウント直後(ゲーム開始直後の最初のWave)にも
   // 「waveKeyが変化した」と判定され配布アニメーションが発火する。他のprevious系変数
@@ -446,6 +471,10 @@
       startSabotageRedistributeAnimation(current.affectedCols)
     } else if ((current.id === 'stockPurge' || current.id === 'stockPurgeSmall') && current.purgedToDiscardCount) {
       startStockPurgeAnimation(current.purgedToDiscardCount)
+    } else if (current.id === 'talismanSeal' || current.id === 'riteSeal' || current.id === 'revelationOracleSeal' || current.id === 'roleSeal' || current.id === 'comboCap') {
+      if (wave.activeSeal && wave.activeSeal.kind !== 'talismanHidden' && wave.activeSeal.kind !== 'roleBias') {
+        startSealFlashAnimation(wave.activeSeal)
+      }
     }
   })
 
