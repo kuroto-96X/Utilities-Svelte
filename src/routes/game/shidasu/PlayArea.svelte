@@ -1318,6 +1318,7 @@
   {#if showScoreAndCombo}
     {@const comboCapMax = wave.activeSeal?.kind === 'comboCap' ? wave.activeSeal.max : null}
     {@const comboCapFlashing = sealFlashTarget?.kind === 'comboCap'}
+    {@const comboNumericPopup = numericPopupTarget?.kind === 'combo' ? numericPopupTarget : undefined}
     <div class="mt-2 flex items-end justify-between">
       <div>
         <div class="text-xs text-emerald-300/70 tracking-widest">SCORE / TARGET</div>
@@ -1331,8 +1332,9 @@
       </div>
       <div class="text-right transition-transform origin-bottom-right {comboScale[displayComboTier]}">
         <div class="text-xs text-emerald-300/70 tracking-widest">COMBO</div>
-        <div class="text-3xl font-black italic tabular-nums leading-none {comboCapFlashing ? 'shidasu-seal-flash' : ''} {comboCapMax !== null ? 'text-rose-400' : comboColor[displayComboTier]}">
+        <div class="relative text-3xl font-black italic tabular-nums leading-none {comboCapFlashing ? 'shidasu-seal-flash' : ''} {comboNumericPopup ? 'shidasu-numeric-shake' : ''} {comboCapMax !== null ? 'text-rose-400' : comboColor[displayComboTier]}">
           {wave.combo}{#if wave.baseComboCount > 0}<span class="text-lg not-italic ml-1 text-emerald-300/80">+{wave.baseComboCount}</span>{/if}{#if comboCapMax !== null}<span class="text-lg not-italic ml-1 text-rose-300">/{comboCapMax}</span>{/if}
+          {#if comboNumericPopup}<span class="shidasu-numeric-popup">{numericChangePopupText(comboNumericPopup)}</span>{/if}
         </div>
       </div>
     </div>
