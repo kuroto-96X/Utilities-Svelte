@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/sabotageEffects.ts
-import type { SabotageActionId, WaveState, RunState, Card, HeldRevelationOrOracleRef, RiteId, RevelationId, RelicId, RoleName } from './types'
+import type { SabotageActionId, WaveState, RunState, Card, HeldRevelationOrOracleRef, RiteId, RevelationId, RelicId, RoleName, ItemId } from './types'
 import type { ShidasuParams } from './params'
 import { shuffleInPlace, rollOffer } from './deck'
 import { ORACLE_POOL } from './oracles'
@@ -35,6 +35,15 @@ export interface SabotageResult {
   // 今回「大量放出」「少量放出」で山札から捨て札へ移動した枚数。裏向き移動アニメーション
   // (PlayArea.svelte)が対象枚数を特定するために使う。stockPurge/stockPurgeSmall以外は未設定でよい。
   purgedToDiscardCount?: number
+  // 今回「没収系」(talismanConfiscate/riteConfiscate/revelationOracleConfiscate/relicConfiscate)で
+  // 完全に失われた対象。没収系は実データ(run.items等)を即座に削除するだけで、activeSealのような
+  // 「現在の対象」を保持する仕組みを持たないため、ここで明示的に伝える。idxは配列内の位置
+  // (同名の護符・秘儀・レリックを複数所持している場合の一意特定に必要)。
+  confiscatedTarget?:
+    | { kind: 'talisman'; id: ItemId; idx: number }
+    | { kind: 'rite'; id: RiteId; idx: number }
+    | { kind: 'revelationOrOracle'; ref: HeldRevelationOrOracleRef; idx: number }
+    | { kind: 'relic'; id: RelicId; idx: number }
 }
 
 function applyStockPurge({ wave }: SabotageContext): SabotageResult {
