@@ -112,7 +112,7 @@ Shidasuロードマップ項目3「星の妨害行動の検討」で洗い出し
 
 方針として、妨害行動32個すべてに専用アニメーションを設定したい。現状の実装状況と今後の方針は以下の通り。
 
-### 実装済み(20個)
+### 実装済み(27個)
 
 `PlayArea.svelte`の`lastSabotage`検知(`$effect.pre`)、および`lastStockShuffle`検知が対応する:
 
@@ -122,10 +122,13 @@ Shidasuロードマップ項目3「星の妨害行動の検討」で洗い出し
 - **talismanSeal**(護符封印)・**riteSeal**(秘儀封印)・**revelationOracleSeal**(天啓・神託封印)・**roleSeal**(役封印)・**comboCap**(コンボ頭打ち): グループA「封印系」、対象UI要素のフラッシュ+シェイク演出と、封印中の常設表示(護符バッジの斜めストライプ、コンボの現在値/上限値分数表示)を実装(2026-08-20)。詳細は`docs/superpowers/specs/2026-08-20-shidasu-sabotage-seal-animation-design.md`を参照。
 - **talismanConfiscate**(護符没収)・**riteConfiscate**(秘儀没収)・**revelationOracleConfiscate**(天啓・神託没収)・**relicConfiscate**(レリック没収): グループB「没収系」、対象UI要素(護符/天啓/神託/レリックバッジ、秘儀ボタン)が一瞬光ってから下に落ちながら暗くフェードアウトして消える演出を実装(2026-08-20)。`SabotageResult.confiscatedTarget`で没収対象(kind/id/idx)を明示的に伝え、実データ削除後もアニメーション完了までUI側で対象を一時保持する設計。詳細は`docs/superpowers/specs/2026-08-20-shidasu-sabotage-confiscate-animation-design.md`を参照。
 - **riteForceActivate**(秘儀強制発動)・**revelationOracleForceActivate**(天啓・神託強制発動): グループC「強制発動系」、対象ボタン(秘儀ボタン・天啓ボタン・神託「使」ボタン)が自動でクリックされたように一瞬縮んでから戻り強く光る「自動プレス+パルス」演出を実装(2026-08-20)。プレイヤー自身の通常クリック発動(秘儀・天啓・神託共通)にも同じ演出を適用した。秘儀・天啓・神託は使用と同時に所持リストから消費されて消えるため、`confiscatedTarget`と同様の「一時保持+`withFadingId`で末尾補完」の仕組みが必要だった(design doc・実装プラン作成時には見落としており、目視確認で発覚して追加対応した)。詳細は`docs/superpowers/specs/2026-08-20-shidasu-sabotage-force-activate-animation-design.md`を参照。
+- **comboBreather**(強制小休止)・**comboReduce**(コンボ削減)・**currencyConfiscate**(通貨没収)・**currencyDrain**(通貨強制消費)・**roleLevelDecay**(役減衰)・**roleBias**(役偏重)・**tsukumokaRelease**(付喪化解除): グループE「数値変化系」、対象UI要素(コンボ表示・通貨表示・役ステータス行・レリックバッジ)が短くシェイクすると同時に、変化内容を示す赤いテキスト(マイナス数字・倍率・状態名)が右上にポップして浮かび上がりながら消える演出を実装(2026-08-20)。`SabotageResult.numericChangeTarget`で変化対象と実際の変化量(上限クランプ後)を明示的に伝える設計。`rewardReduce`(報酬減少)は対応する常設表示が存在しないためスコープ外とした。詳細は`docs/superpowers/specs/2026-08-20-shidasu-sabotage-numeric-change-animation-design.md`を参照。
 
-### 未実装(12個)・今後の方針
+### 未実装(5個)・今後の方針
 
-残り12個を、演出パターンが共通する2グループに分類した。各グループの演出コンセプトはビジュアルコンパニオンでモックアップを見せながら決定済み(2026-08-20)。実装(design doc作成・実装)はグループ単位で別セッションに分けて進める想定。
+残り5個(グループD)を、演出パターンが共通するグループとして分類済み。演出コンセプトはビジュアルコンパニオンでモックアップを見せながら決定済み(2026-08-20)。実装(design doc作成・実装)は別セッションで進める想定。
+
+`rewardReduce`(報酬減少)は、プレイ中の画面に対応する常設表示が存在しないため、演出実装のスコープ外とする(2026-08-20確定)。
 
 **グループD: カード移動系(7個)** — tableauShuffle・chainSettle・chainPartialDiscard・chainShuffle・discardErase・discardBury・tableauCardToDiscard
 既存の「総戻し/一列戻し」「大量放出/少量放出」と同系統(カードが物理的に移動する)だが、対象エリア(場札・チェーン・捨て札・山札)の組み合わせが異なる。既存演出パターンとの対応関係:
@@ -139,6 +142,3 @@ Shidasuロードマップ項目3「星の妨害行動の検討」で洗い出し
 | tableauCardToDiscard(一枚没収) | 場札から1枚→捨て札 | 大量放出/少量放出の1枚版(起点が山札でなく場札) |
 | tableauShuffle(総入れ替え) | 場札を列またぎで再配置(山札は経由しない) | 新規パターンが必要。山札を経由しないため裏向き→フリップの動きは使えない |
 | chainShuffle(入れ替え) | チェーン内の並びをシャッフル(枚数不変) | 新規パターンが必要。山札攪拌の「その場で揺れる」演出を複数カードに拡張する方向で検討 |
-
-**グループE: 数値変化系(8個)** — comboBreather・comboReduce・currencyConfiscate・rewardReduce・currencyDrain・roleLevelDecay・tsukumokaRelease・roleBias
-数値・状態表示(コンボ数・所持星片・役レベルなど)が変化する瞬間、表示が赤く縁取られて揺れると同時に「−3」等のマイナス数字が右上にポップして浮かび上がりながら消える演出。既存の得点パーツ演出のポップ手法を流用できる見込み。
