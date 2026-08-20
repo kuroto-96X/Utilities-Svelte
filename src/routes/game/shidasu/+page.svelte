@@ -576,12 +576,12 @@
       {/each}
     </div>
     {#if run.revelations.length > 0 || confiscateFadingTarget?.kind === 'revelationOrOracle' && confiscateFadingTarget.ref.kind === 'revelation'}
-      {@const revelationFadingIdx = confiscateFadingTarget?.kind === 'revelationOrOracle' && confiscateFadingTarget.ref.kind === 'revelation' ? confiscateFadingTarget.idx : undefined}
-      {@const revelationFadingId = confiscateFadingTarget?.kind === 'revelationOrOracle' && confiscateFadingTarget.ref.kind === 'revelation' ? confiscateFadingTarget.ref.id : undefined}
-      {@const displayedRevelations = withFadingId(run.revelations, revelationFadingId, revelationFadingIdx ?? 0)}
+      {@const revelationOrOracleFading = confiscateFadingTarget?.kind === 'revelationOrOracle' ? confiscateFadingTarget : undefined}
+      {@const revelationFading = revelationOrOracleFading?.ref.kind === 'revelation' ? { idx: revelationOrOracleFading.idx, id: revelationOrOracleFading.ref.id } : undefined}
+      {@const displayedRevelations = withFadingId(run.revelations, revelationFading?.id, revelationFading?.idx ?? 0)}
       <div class="flex flex-wrap gap-1 justify-end">
         {#each displayedRevelations as id, i (i)}
-          {@const fading = revelationFadingIdx !== undefined && i === revelationFadingIdx}
+          {@const fading = revelationFading !== undefined && i === revelationFading.idx}
           <span class="text-xs bg-indigo-900 text-indigo-200/90 border border-indigo-600/40 rounded px-1.5 py-0.5 flex items-center gap-1 {fading ? 'shidasu-confiscate-fade' : ''}" title={revelationDesc(id, params)}>
             {revelationName(id, params)}
             <button onclick={() => handleSellRevelation(id)} class="text-indigo-300/70 underline">売</button>
@@ -590,12 +590,12 @@
       </div>
     {/if}
     {#if run.oracles.length > 0 || confiscateFadingTarget?.kind === 'revelationOrOracle' && confiscateFadingTarget.ref.kind === 'oracle'}
-      {@const oracleFadingIdx = confiscateFadingTarget?.kind === 'revelationOrOracle' && confiscateFadingTarget.ref.kind === 'oracle' ? confiscateFadingTarget.idx : undefined}
-      {@const oracleFadingId = confiscateFadingTarget?.kind === 'revelationOrOracle' && confiscateFadingTarget.ref.kind === 'oracle' ? confiscateFadingTarget.ref.id : undefined}
-      {@const displayedOracles = withFadingId(run.oracles, oracleFadingId, oracleFadingIdx ?? 0)}
+      {@const revelationOrOracleFading = confiscateFadingTarget?.kind === 'revelationOrOracle' ? confiscateFadingTarget : undefined}
+      {@const oracleFading = revelationOrOracleFading?.ref.kind === 'oracle' ? { idx: revelationOrOracleFading.idx, id: revelationOrOracleFading.ref.id } : undefined}
+      {@const displayedOracles = withFadingId(run.oracles, oracleFading?.id, oracleFading?.idx ?? 0)}
       <div class="flex flex-wrap gap-1 justify-end">
         {#each displayedOracles as roleName, i (i)}
-          {@const fading = oracleFadingIdx !== undefined && i === oracleFadingIdx}
+          {@const fading = oracleFading !== undefined && i === oracleFading.idx}
           <span class="text-xs bg-purple-900 text-purple-200/90 border border-purple-600/40 rounded px-1.5 py-0.5 flex items-center gap-1 {fading ? 'shidasu-confiscate-fade' : ''}" title={oracleDesc(roleName, params)}>
             {oracleName(roleName, params)}
             <button onclick={() => handleUseOracle(roleName)} class="text-purple-300/70 underline">使</button>
