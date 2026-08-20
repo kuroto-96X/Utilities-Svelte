@@ -94,8 +94,8 @@ function applyChainSettle({ params, wave, rand }: SabotageContext): SabotageResu
   return { wave: { ...resetComboFields(wave, params, drawn, 'draw'), activeSeal: null, stock } }
 }
 
-function applyComboBreather(_ctx: SabotageContext): SabotageResult {
-  return { wave: { combo: 0 } }
+function applyComboBreather({ wave }: SabotageContext): SabotageResult {
+  return { wave: { combo: 0 }, numericChangeTarget: { kind: 'combo', amount: wave.combo } }
 }
 
 function applyTalismanSeal({ run, rand }: SabotageContext): SabotageResult {
@@ -138,7 +138,8 @@ function applyTableauCardToDiscard({ wave, rand }: SabotageContext): SabotageRes
 }
 
 function applyCurrencyConfiscate({ run }: SabotageContext): SabotageResult {
-  return { run: { currency: Math.max(0, run.currency - 5) } }
+  const next = Math.max(0, run.currency - 5)
+  return { run: { currency: next }, numericChangeTarget: { kind: 'currency', amount: run.currency - next } }
 }
 
 function applyRoleSeal({ rand }: SabotageContext): SabotageResult {
@@ -198,7 +199,8 @@ function applyChainPartialDiscard({ wave }: SabotageContext): SabotageResult {
 }
 
 function applyComboReduce({ wave }: SabotageContext): SabotageResult {
-  return { wave: { combo: Math.max(0, wave.combo - 3) } }
+  const next = Math.max(0, wave.combo - 3)
+  return { wave: { combo: next }, numericChangeTarget: { kind: 'combo', amount: wave.combo - next } }
 }
 
 function applyTalismanConfiscate({ run, rand }: SabotageContext): SabotageResult {
@@ -301,7 +303,7 @@ function applyTsukumokaRelease({ run, rand }: SabotageContext): SabotageResult {
   if (tsukumokaRelics.length === 0) return {}
   const target = tsukumokaRelics[Math.floor(rand() * tsukumokaRelics.length)]
   const relics = run.relics.map(r => (r.id === target.id ? { ...r, tsukumoka: false } : r))
-  return { run: { relics } }
+  return { run: { relics }, numericChangeTarget: { kind: 'tsukumoka', relicId: target.id } }
 }
 
 function applyDiscardErase({ wave, rand }: SabotageContext): SabotageResult {
@@ -329,14 +331,15 @@ function applyRewardReduce({ run }: SabotageContext): SabotageResult {
 
 function applyCurrencyDrain({ run }: SabotageContext): SabotageResult {
   const loss = Math.floor(run.currency * 0.2)
-  return { run: { currency: Math.max(0, run.currency - loss) } }
+  const next = Math.max(0, run.currency - loss)
+  return { run: { currency: next }, numericChangeTarget: { kind: 'currency', amount: run.currency - next } }
 }
 
 function applyRoleLevelDecay({ run, rand }: SabotageContext): SabotageResult {
   const names = rollOffer(ORACLE_POOL, 2, rand)
   const oracleLevels = { ...run.oracleLevels }
   for (const name of names) oracleLevels[name] = Math.max(1, oracleLevels[name] - 1)
-  return { run: { oracleLevels }, wave: { oracleLevels } }
+  return { run: { oracleLevels }, wave: { oracleLevels }, numericChangeTarget: { kind: 'roleLevel', names, amount: 1 } }
 }
 
 function applyRoleBias({ rand }: SabotageContext): SabotageResult {
@@ -345,7 +348,7 @@ function applyRoleBias({ rand }: SabotageContext): SabotageResult {
   const half = Math.floor(shuffled.length / 2)
   const buffed = shuffled.slice(0, half)
   const nerfed = shuffled.slice(half)
-  return { wave: { activeSeal: { kind: 'roleBias', buffed, nerfed, multiplier: 2 } } }
+  return { wave: { activeSeal: { kind: 'roleBias', buffed, nerfed, multiplier: 2 } }, numericChangeTarget: { kind: 'roleBias', buffed, nerfed } }
 }
 
 const SABOTAGE_HANDLERS: Record<SabotageActionId, (ctx: SabotageContext) => SabotageResult> = {

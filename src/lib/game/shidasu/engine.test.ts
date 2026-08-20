@@ -4925,7 +4925,7 @@ describe('triggerSabotage', () => {
     const next1 = triggerSabotage(DEFAULT_PARAMS, run, 'stockPurge', () => 0)
     expect(next1.wave!.lastSabotage).toEqual({ id: 'stockPurge', seq: 1, purgedToDiscardCount: 5 })
     const next2 = triggerSabotage(DEFAULT_PARAMS, next1, 'comboBreather', () => 0)
-    expect(next2.wave!.lastSabotage).toEqual({ id: 'comboBreather', seq: 2 })
+    expect(next2.wave!.lastSabotage).toEqual({ id: 'comboBreather', seq: 2, numericChangeTarget: { kind: 'combo', amount: 0 } })
   })
 
   it('triggerSabotage: columnReturn/tableauFullReturnはlastSabotage.affectedColsに今回対象になった列のみを設定する(過去のトリガーを引きずらない)', () => {
@@ -5520,6 +5520,78 @@ describe('triggerSabotage', () => {
     expect(afterShuffle.wave!.lastStockShuffle).toEqual({ seq: 1 })
     const afterOther = triggerSabotage(DEFAULT_PARAMS, afterShuffle, 'comboBreather', () => 0)
     expect(afterOther.wave!.lastStockShuffle).toEqual({ seq: 1 })
+  })
+
+  it('comboBreather: lastSabotage.numericChangeTargetに実際の減少量(発動前のcombo値)を設定する', () => {
+    const run = runWithWave({}, { combo: 7 })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'comboBreather', () => 0)
+    expect(next.wave!.combo).toBe(0)
+    expect(next.wave!.lastSabotage?.numericChangeTarget).toEqual({ kind: 'combo', amount: 7 })
+  })
+
+  it('comboReduce: lastSabotage.numericChangeTargetに実際の減少量(上限クランプ考慮)を設定する', () => {
+    const run = runWithWave({}, { combo: 5 })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'comboReduce', () => 0)
+    expect(next.wave!.combo).toBe(2)
+    expect(next.wave!.lastSabotage?.numericChangeTarget).toEqual({ kind: 'combo', amount: 3 })
+  })
+
+  it('comboReduce: comboが3未満のとき、実際の減少量は0未満にならずクランプされた値になる', () => {
+    const run = runWithWave({}, { combo: 1 })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'comboReduce', () => 0)
+    expect(next.wave!.combo).toBe(0)
+    expect(next.wave!.lastSabotage?.numericChangeTarget).toEqual({ kind: 'combo', amount: 1 })
+  })
+
+  it('currencyConfiscate: lastSabotage.numericChangeTargetに実際の減少量を設定する', () => {
+    const run = runWithWave({ currency: 10 })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'currencyConfiscate', () => 0)
+    expect(next.currency).toBe(5)
+    expect(next.wave!.lastSabotage?.numericChangeTarget).toEqual({ kind: 'currency', amount: 5 })
+  })
+
+  it('currencyConfiscate: currencyが5未満のとき、実際の減少量は0未満にならずクランプされた値になる', () => {
+    const run = runWithWave({ currency: 3 })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'currencyConfiscate', () => 0)
+    expect(next.currency).toBe(0)
+    expect(next.wave!.lastSabotage?.numericChangeTarget).toEqual({ kind: 'currency', amount: 3 })
+  })
+
+  it('currencyDrain: lastSabotage.numericChangeTargetに実際の減少量(20%切り捨て)を設定する', () => {
+    const run = runWithWave({ currency: 10 })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'currencyDrain', () => 0)
+    expect(next.currency).toBe(8)
+    expect(next.wave!.lastSabotage?.numericChangeTarget).toEqual({ kind: 'currency', amount: 2 })
+  })
+
+  it('roleLevelDecay: lastSabotage.numericChangeTargetに対象2役とamount=1を設定する', () => {
+    const run = runWithWave()
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'roleLevelDecay', () => 0)
+    const changed = next.wave!.lastSabotage?.numericChangeTarget
+    expect(changed?.kind).toBe('roleLevel')
+    expect((changed as { kind: 'roleLevel'; names: RoleName[]; amount: number }).names).toHaveLength(2)
+    expect((changed as { kind: 'roleLevel'; names: RoleName[]; amount: number }).amount).toBe(1)
+  })
+
+  it('roleBias: lastSabotage.numericChangeTargetにbuffed/nerfedの5役ずつを設定する', () => {
+    const run = runWithWave()
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'roleBias', () => 0)
+    const changed = next.wave!.lastSabotage?.numericChangeTarget
+    expect(changed?.kind).toBe('roleBias')
+    expect((changed as { kind: 'roleBias'; buffed: RoleName[]; nerfed: RoleName[] }).buffed).toHaveLength(5)
+    expect((changed as { kind: 'roleBias'; buffed: RoleName[]; nerfed: RoleName[] }).nerfed).toHaveLength(5)
+  })
+
+  it('tsukumokaRelease: lastSabotage.numericChangeTargetに対象レリックのidを設定する', () => {
+    const run = runWithWave({ relics: [{ id: 'kumade', tsukumoka: true }, { id: 'fukuzasa', tsukumoka: false }] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'tsukumokaRelease', () => 0)
+    expect(next.wave!.lastSabotage?.numericChangeTarget).toEqual({ kind: 'tsukumoka', relicId: 'kumade' })
+  })
+
+  it('tsukumokaRelease: 付喪化済みレリックが0件ならnumericChangeTargetは設定されない', () => {
+    const run = runWithWave({ relics: [{ id: 'fukuzasa', tsukumoka: false }] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'tsukumokaRelease', () => 0)
+    expect(next.wave!.lastSabotage?.numericChangeTarget).toBeUndefined()
   })
 
   it('useRite: dagaz使用時にlastStockShuffle.seqが1から始まりインクリメントされる', () => {
