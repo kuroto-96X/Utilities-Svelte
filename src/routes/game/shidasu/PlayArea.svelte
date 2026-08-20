@@ -4,6 +4,16 @@
   // +page.svelte・デバッグ画面(shidasu-debug)からもimportして使うため、moduleスクリプトで
   // exportする(通常のインスタンススクリプト内のexport functionはコンポーネントのプロパティとして
   // コンパイルされ、他ファイルから名前付きimportできないため)。
+  //
+  // 秘儀・天啓・神託のパルス演出(pressPulseTarget)での使い方について: これらは使用と同時に
+  // 所持リストから即座に消費されるため、idxを持たないpressPulseTarget(グループBの
+  // confiscatedTargetと違いidxを持たない型)向けには、常にlist.length(末尾)を渡して補完する。
+  // 既知の制限が2つある: (1) list.includes()で「消費済みか」を呼び出し側が判定しているため、
+  // 同名の秘儀/天啓/神託を複数所持している場合、実際に消費されたインスタンスではなく残っている
+  // 別の同名インスタンスがパルスすることがある(見た目は同じボタンなので実害は小さい)。
+  // (2) 没収フェードとパルスフェードを同時にwithFadingIdへ二重適用する箇所(神託バッジ)では、
+  // 外側呼び出しの挿入位置(list.length)が内側呼び出し後の配列長ではなく元のlist.lengthを
+  // 参照しているため、両方が同時に発生した場合に挿入順序が意図とわずかにズレうる。
   export function withFadingId<T>(list: T[], fadingId: T | undefined, idx: number): T[] {
     if (fadingId === undefined) return list
     const pos = Math.min(idx, list.length)
