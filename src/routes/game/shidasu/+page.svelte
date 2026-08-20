@@ -32,7 +32,7 @@
   import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, PlayCardResult, Star, WaveState, CardSetGenreId, ShopSlotKind, RelicId } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
-  import type { SealFlashTarget, ConfiscatedTarget } from './PlayArea.svelte'
+  import type { SealFlashTarget, ConfiscatedTarget, PressPulseTarget } from './PlayArea.svelte'
   import { withFadingId } from './PlayArea.svelte'
   import RoleStatusPanel from './RoleStatusPanel.svelte'
   import CardFace from './CardFace.svelte'
@@ -117,6 +117,12 @@
   // 受け取って保持する。itemBadges(護符・天啓・神託・レリックバッジ)はPlayAreaの外側に
   // あるため、コールバックprops経由で値を受け渡す。
   let confiscateFadingTarget = $state<ConfiscatedTarget | null>(null)
+
+  // PlayArea側で発動検知したpressPulseTarget(強制発動系妨害行動・秘儀/天啓の通常クリック発動に
+  // 共通のパルス演出対象)を受け取って保持する。神託「使」ボタンはPlayAreaの外側にあるため、
+  // コールバックprops経由で値を受け渡す。神託の通常クリック発動時は、+page.svelte側で
+  // 直接このstateを更新する(handleUseOracle参照)。
+  let pressPulseTarget = $state<PressPulseTarget | null>(null)
 
   let flashingRoles = $derived.by((): RoleName[] => {
     if (sealFlashTarget?.kind === 'role') return sealFlashTarget.names
@@ -338,6 +344,8 @@
   const handleClosePackOracleSelect = bindRunActionNoArg(closePackOracleSelect)
 
   function handleUseOracle(roleName: RoleName) {
+    pressPulseTarget = { kind: 'revelationOrOracle', ref: { kind: 'oracle', id: roleName } }
+    setTimeout(() => { pressPulseTarget = null }, 500)
     run = useOracle(params, run, roleName)
   }
 
@@ -596,9 +604,10 @@
       <div class="flex flex-wrap gap-1 justify-end">
         {#each displayedOracles as roleName, i (i)}
           {@const fading = oracleFading !== undefined && i === oracleFading.idx}
+          {@const oraclePulsing = pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'oracle' && pressPulseTarget.ref.id === roleName}
           <span class="text-xs bg-purple-900 text-purple-200/90 border border-purple-600/40 rounded px-1.5 py-0.5 flex items-center gap-1 {fading ? 'shidasu-confiscate-fade' : ''}" title={oracleDesc(roleName, params)}>
             {oracleName(roleName, params)}
-            <button onclick={() => handleUseOracle(roleName)} class="text-purple-300/70 underline">使</button>
+            <button onclick={() => handleUseOracle(roleName)} class="text-purple-300/70 underline {oraclePulsing ? 'shidasu-press-pulse' : ''}">使</button>
             <button onclick={() => handleSellOracle(roleName)} class="text-purple-300/70 underline">売</button>
           </span>
         {/each}
@@ -719,6 +728,7 @@
     onCleanupDone={handleCleanupDone}
     onSealFlashChange={(target) => { sealFlashTarget = target }}
     onConfiscateFadingChange={(target) => { confiscateFadingTarget = target }}
+    onPressPulseChange={(target) => { pressPulseTarget = target }}
     waveKey={`wave-${run.waveGeneration}`}
     headerExtra={stageRow} extraFooter={itemBadges}
     rites={run.rites} onUseRite={handleUseRite}
