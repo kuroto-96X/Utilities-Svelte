@@ -237,9 +237,12 @@ function applyRevelationOracleConfiscate({ run, rand }: SabotageContext): Sabota
     ...run.oracles.map(id => ({ kind: 'oracle' as const, id })),
   ]
   if (pool.length === 0) return {}
-  const ref = pool[Math.floor(rand() * pool.length)]
+  // poolIdxをそのままidxの算出元にする(indexOfだと同名の天啓・神託を複数所持している場合、
+  // 常に最初の要素の位置を指してしまい、実際に削除される要素の位置とズレるため)。
+  const poolIdx = Math.floor(rand() * pool.length)
+  const ref = pool[poolIdx]
   if (ref.kind === 'revelation') {
-    const idx = run.revelations.indexOf(ref.id)
+    const idx = poolIdx
     return {
       run: { revelations: [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)] },
       confiscatedTarget: { kind: 'revelationOrOracle', ref, idx },
@@ -247,7 +250,7 @@ function applyRevelationOracleConfiscate({ run, rand }: SabotageContext): Sabota
   }
   // 神託を没収してもoracleLevelsは変更しない: run.oraclesに温存中の神託はまだuseOracleで
   // 消費していないためoracleLevelsに未反映であり、没収してもそこに減らすべき実績が無い
-  const idx = run.oracles.indexOf(ref.id)
+  const idx = poolIdx - run.revelations.length
   return {
     run: { oracles: [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)] },
     confiscatedTarget: { kind: 'revelationOrOracle', ref, idx },

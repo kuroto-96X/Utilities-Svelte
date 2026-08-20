@@ -5154,6 +5154,23 @@ describe('triggerSabotage', () => {
     expect(next.wave!.lastSabotage?.confiscatedTarget).toBeUndefined()
   })
 
+  it('revelationOracleConfiscate: 同名天啓を複数所持している場合、poolIdxに応じて正しいidxを設定する(2番目の天啓が選ばれた場合)', () => {
+    const run = runWithWave({ revelations: ['kaku', 'kaku'], oracles: ['pair'] })
+    // pool = [revelation:kaku(idx0), revelation:kaku(idx1), oracle:pair(idx0)]
+    // rand()を1に近い値にしてpoolIdx=1(2番目のkaku)を選ばせる
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleConfiscate', () => 1 / 3)
+    expect(next.wave!.lastSabotage?.confiscatedTarget).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'revelation', id: 'kaku' }, idx: 1 })
+    expect(next.revelations).toEqual(['kaku'])
+  })
+
+  it('revelationOracleConfiscate: 同名神託を複数所持している場合、poolIdxに応じて正しいidxを設定する(2番目の神託が選ばれた場合)', () => {
+    const run = runWithWave({ revelations: [], oracles: ['pair', 'pair'] })
+    // pool = [oracle:pair(idx0), oracle:pair(idx1)]。rand()を後半にしてpoolIdx=1を選ばせる
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleConfiscate', () => 0.9)
+    expect(next.wave!.lastSabotage?.confiscatedTarget).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'oracle', id: 'pair' }, idx: 1 })
+    expect(next.oracles).toEqual(['pair'])
+  })
+
   it('riteConfiscate: 所持秘儀からランダムに1つ選び効果無しで消費する', () => {
     const run = runWithWave({ rites: ['gebo', 'fehu'] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteConfiscate', () => 0)
