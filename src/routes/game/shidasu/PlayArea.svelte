@@ -1433,13 +1433,14 @@
       {@const fading = riteFading !== undefined && i === riteFading.idx}
       {@const usable = !fading && canUseRite(params, wave, riteId) && !anyAnimationActive && !disableRites}
       {@const flashing = sealFlashTarget?.kind === 'rite' && sealFlashTarget.id === riteId}
+      {@const pulsing = pressPulseTarget?.kind === 'rite' && pressPulseTarget.id === riteId}
       <button
         type="button"
-        onclick={() => onUseRite?.(riteId)}
+        onclick={() => { startPressPulseAnimation({ kind: 'rite', id: riteId }); onUseRite?.(riteId) }}
         disabled={!usable}
         title={riteDesc(riteId, params)}
         style="font-family: 'ShidasuRunic', sans-serif;"
-        class="w-10 h-10 rounded-lg border-2 flex items-center justify-center text-xl font-black transition-transform active:scale-95 {fading ? 'shidasu-confiscate-fade' : ''} {flashing ? 'shidasu-seal-flash' : ''} {usable ? 'bg-fuchsia-900 border-fuchsia-500 text-fuchsia-100 hover:bg-fuchsia-800' : 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'}"
+        class="w-10 h-10 rounded-lg border-2 flex items-center justify-center text-xl font-black transition-transform active:scale-95 {fading ? 'shidasu-confiscate-fade' : ''} {flashing ? 'shidasu-seal-flash' : ''} {pulsing ? 'shidasu-press-pulse' : ''} {usable ? 'bg-fuchsia-900 border-fuchsia-500 text-fuchsia-100 hover:bg-fuchsia-800' : 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'}"
       >{params.rites[riteId].name}</button>
     {/each}
   </div>
@@ -1450,12 +1451,13 @@
     {#each revelations as revelationId, i (i)}
       {@const usable = canUseRevelation(params, wave, revelationId, relics) && !anyAnimationActive}
       {@const flashing = sealFlashTarget?.kind === 'revelationOrOracle' && sealFlashTarget.ref.kind === 'revelation' && sealFlashTarget.ref.id === revelationId}
+      {@const pulsing = pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'revelation' && pressPulseTarget.ref.id === revelationId}
       <button
         type="button"
-        onclick={() => onUseRevelationClick?.(revelationId)}
+        onclick={() => { startPressPulseAnimation({ kind: 'revelationOrOracle', ref: { kind: 'revelation', id: revelationId } }); onUseRevelationClick?.(revelationId) }}
         disabled={!usable}
         title={revelationDesc(revelationId, params)}
-        class="w-10 h-10 rounded-lg border-2 flex items-center justify-center text-lg font-black transition-transform active:scale-95 {flashing ? 'shidasu-seal-flash' : ''} {usable ? 'bg-indigo-900 border-indigo-500 text-indigo-100 hover:bg-indigo-800' : 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'}"
+        class="w-10 h-10 rounded-lg border-2 flex items-center justify-center text-lg font-black transition-transform active:scale-95 {flashing ? 'shidasu-seal-flash' : ''} {pulsing ? 'shidasu-press-pulse' : ''} {usable ? 'bg-indigo-900 border-indigo-500 text-indigo-100 hover:bg-indigo-800' : 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'}"
       >{params.revelations[revelationId].name}</button>
     {/each}
   </div>
