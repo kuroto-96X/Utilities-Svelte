@@ -228,7 +228,7 @@ function applyRiteForceActivate({ params, run, wave, rand, useRite }: SabotageCo
   if (usable.length === 0) return {}
   const target = usable[Math.floor(rand() * usable.length)]
   const used = useRite(params, run, target, rand)
-  return { wave: { ...used.wave!, activeSeal: null }, run: used }
+  return { wave: { ...used.wave!, activeSeal: null }, run: used, forceActivatedTarget: { kind: 'rite', id: target } }
 }
 
 function applyTalismanShuffle({ run, rand }: SabotageContext): SabotageResult {
@@ -279,11 +279,11 @@ function applyRevelationOracleForceActivate({ params, run, wave, rand, useRevela
   const ref = pool[Math.floor(rand() * pool.length)]
   if (ref.kind === 'oracle') {
     const used = useOracle(params, run, ref.id)
-    return { wave: { ...used.wave!, activeSeal: null }, run: used }
+    return { wave: { ...used.wave!, activeSeal: null }, run: used, forceActivatedTarget: { kind: 'revelationOrOracle', ref } }
   }
   const targetCol = revelationNeedsTarget(ref.id) ? Math.floor(rand() * wave.tableau.length) : null
   const used = useRevelation(params, run, ref.id, targetCol, rand)
-  return { wave: { ...used.wave!, activeSeal: null }, run: used }
+  return { wave: { ...used.wave!, activeSeal: null }, run: used, forceActivatedTarget: { kind: 'revelationOrOracle', ref } }
 }
 
 function applyTsukumokaRelease({ run, rand }: SabotageContext): SabotageResult {

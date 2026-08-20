@@ -5257,6 +5257,20 @@ describe('triggerSabotage', () => {
     expect(next.wave!.activeSeal).toBeNull()
   })
 
+  it('riteForceActivate: lastSabotage.forceActivatedTargetに強制発動した秘儀のidを設定する', () => {
+    // geboはdealされたばかりのwaveではcanUseRiteを満たさない(discardPileが空のため)。
+    // fehuはstock.length > colsを満たすため使用可能となり、usable=['fehu']からrand()=0で選ばれる。
+    const run = runWithWave({ rites: ['gebo', 'fehu'] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteForceActivate', () => 0)
+    expect(next.wave!.lastSabotage?.forceActivatedTarget).toEqual({ kind: 'rite', id: 'fehu' })
+  })
+
+  it('riteForceActivate: 使用可能な秘儀が0件ならforceActivatedTargetは設定されない', () => {
+    const run = runWithWave({ rites: [] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteForceActivate', () => 0)
+    expect(next.wave!.lastSabotage?.forceActivatedTarget).toBeUndefined()
+  })
+
   it('効果適用後、次の妨害が再抽選される(星がsabotage: allの場合)', () => {
     const star: Star = { id: 'test-star', name: 'テスト星', waveSlot: 3, targetMultiplier: 1, reward: 0, restriction: null, sabotage: { kind: 'all' }, descTemplate: '' }
     const run = runWithWave({ stageStars: [star, star, star] })
@@ -5348,6 +5362,24 @@ describe('triggerSabotage', () => {
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleForceActivate', () => 0)
     expect(next.oracles).toEqual(['pair'])
     expect(next.oracleLevels.pair).toBe(run.oracleLevels.pair)
+  })
+
+  it('revelationOracleForceActivate: 天啓が選ばれた場合、forceActivatedTargetにref.kind=revelationを設定する', () => {
+    const run = runWithWave({ revelations: ['kaku'], oracles: [] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleForceActivate', () => 0)
+    expect(next.wave!.lastSabotage?.forceActivatedTarget).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'revelation', id: 'kaku' } })
+  })
+
+  it('revelationOracleForceActivate: 神託が選ばれた場合、forceActivatedTargetにref.kind=oracleを設定する', () => {
+    const run = runWithWave({ revelations: [], oracles: ['pair'] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleForceActivate', () => 0)
+    expect(next.wave!.lastSabotage?.forceActivatedTarget).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'oracle', id: 'pair' } })
+  })
+
+  it('revelationOracleForceActivate: 天啓・神託とも0件ならforceActivatedTargetは設定されない', () => {
+    const run = runWithWave({ revelations: [], oracles: [] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleForceActivate', () => 0)
+    expect(next.wave!.lastSabotage?.forceActivatedTarget).toBeUndefined()
   })
 
   it('tsukumokaRelease: 付喪化済みレリックがあればランダムに1つ選び未付喪化に戻す', () => {
