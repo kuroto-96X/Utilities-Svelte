@@ -19,6 +19,23 @@
     const pos = Math.min(idx, list.length)
     return [...list.slice(0, pos), fadingId, ...list.slice(pos)]
   }
+
+  // numericChangeTargetのkindに応じて、ポップアップに表示するテキストを算出する。
+  // roleBiasは対象役ごとに強化/減衰いずれかでテキストが変わるため、呼び出し側が
+  // 対象のroleNameを渡して判定する(コンボ・通貨・役レベルは単一の値なのでroleName不要)。
+  // +page.svelte・デバッグ画面からもimportして使うため、moduleスクリプトでexportする
+  // (通常のインスタンススクリプト内のexport functionは他ファイルから名前付きimport
+  // できないため、withFadingIdと同じ理由でこちらに配置する)。
+  export function numericChangePopupText(target: NonNullable<Exclude<WaveState['lastSabotage'], undefined>['numericChangeTarget']>, roleName?: RoleName): string {
+    if (target.kind === 'combo' || target.kind === 'currency') return `−${target.amount}`
+    if (target.kind === 'roleLevel') return `−${target.amount}`
+    if (target.kind === 'roleBias') {
+      if (roleName && target.buffed.includes(roleName)) return '×2'
+      if (roleName && target.nerfed.includes(roleName)) return '×0.5'
+      return ''
+    }
+    return '付喪化解除'
+  }
 </script>
 
 <script lang="ts">
@@ -49,7 +66,7 @@
     canTargetColumn = () => true,
     onTargetColumn,
     chainAreaExtra,
-    onScoreRevealDone, waveKey, onCleanupDone, onSealFlashChange, onConfiscateFadingChange, onPressPulseChange,
+    onScoreRevealDone, waveKey, onCleanupDone, onSealFlashChange, onConfiscateFadingChange, onPressPulseChange, onNumericPopupChange,
     onScorePartHighlight,
   }: {
     wave: WaveState
@@ -80,6 +97,7 @@
     onSealFlashChange?: (target: SealFlashTarget | null) => void
     onConfiscateFadingChange?: (target: ConfiscatedTarget | null) => void
     onPressPulseChange?: (target: PressPulseTarget | null) => void
+    onNumericPopupChange?: (target: NumericChangeTarget | null) => void
     onScorePartHighlight?: (itemId: ItemId | null) => void
   } = $props()
 
@@ -461,6 +479,31 @@
     dealTimers.push(timer)
   }
 
+  // 妨害行動「数値変化系」(comboBreather・comboReduce・currencyConfiscate・currencyDrain・
+  // roleLevelDecay・roleBias・tsukumokaRelease)発動時のシェイク+ポップアップ演出用。
+  // lastSabotage.numericChangeTargetと同じ型をそのまま再利用する。+page.svelte側からも
+  // 同じ型をimportして使うため、exportする。
+  export type NumericChangeTarget = Exclude<WaveState['lastSabotage'], undefined>['numericChangeTarget']
+
+  let numericPopupTarget = $state<NumericChangeTarget | null>(null)
+  let numericPopupActive = $state(false)
+
+  // numericPopupActiveは関数の先頭で同期的にtrueへ切り替える(CLAUDE.mdの「移動アニメーション
+  // 実装時の注意」・sealFlashActive等と同じ原則)。ただしこのstate自体はanyAnimationActiveには
+  // 含めない(効果は同期的に即座へ適用されるため、演出=装飾の完了を待つ必要が無い、
+  // pressPulseActiveと同じ理由)。
+  function startNumericPopupAnimation(target: NonNullable<NumericChangeTarget>) {
+    numericPopupActive = true
+    numericPopupTarget = target
+    onNumericPopupChange?.(target)
+    const timer = setTimeout(() => {
+      numericPopupActive = false
+      numericPopupTarget = null
+      onNumericPopupChange?.(null)
+    }, 500)
+    dealTimers.push(timer)
+  }
+
   function startStockShuffleAnimation() {
     stockShuffleActive = true
     const steps = [-8, 8, -5, 5, 0]
@@ -557,6 +600,10 @@
     } else if (current.id === 'riteForceActivate' || current.id === 'revelationOracleForceActivate') {
       if (current.forceActivatedTarget) {
         startPressPulseAnimation(current.forceActivatedTarget)
+      }
+    } else if (current.id === 'comboBreather' || current.id === 'comboReduce' || current.id === 'currencyConfiscate' || current.id === 'currencyDrain' || current.id === 'roleLevelDecay' || current.id === 'roleBias' || current.id === 'tsukumokaRelease') {
+      if (current.numericChangeTarget) {
+        startNumericPopupAnimation(current.numericChangeTarget)
       }
     }
   })

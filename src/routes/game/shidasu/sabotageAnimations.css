@@ -41,3 +41,36 @@
 .shidasu-press-pulse {
   animation: shidasu-press-pulse 0.5s ease-out;
 }
+
+/* 妨害行動「数値変化系」発動時、対象UI要素(コンボ表示・通貨表示・役ステータス行・
+   レリックバッジ)が変化する瞬間の演出。要素自体が赤く縁取られて短くシェイクすると
+   同時に、変化内容を示すテキスト(マイナス数字・倍率・状態名)が右上にポップして
+   浮かび上がりながら消える。 */
+@keyframes shidasu-numeric-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+.shidasu-numeric-shake {
+  animation: shidasu-numeric-shake 0.4s ease-out;
+}
+
+@keyframes shidasu-numeric-popup {
+  0% { transform: translateY(0) scale(0.8); opacity: 0; }
+  20% { transform: translateY(-8px) scale(1.1); opacity: 1; }
+  100% { transform: translateY(-36px) scale(1); opacity: 0; }
+}
+
+.shidasu-numeric-popup {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  color: #f87171;
+  font-weight: 900;
+  font-size: 18px;
+  pointer-events: none;
+  animation: shidasu-numeric-popup 0.5s ease-out forwards;
+}
