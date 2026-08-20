@@ -50,6 +50,16 @@ export interface SabotageResult {
   forceActivatedTarget?:
     | { kind: 'rite'; id: RiteId }
     | { kind: 'revelationOrOracle'; ref: HeldRevelationOrOracleRef }
+  // 今回「数値変化系」(comboBreather/comboReduce/currencyConfiscate/currencyDrain/
+  // roleLevelDecay/roleBias/tsukumokaRelease)で変化した対象と内容を明示的に伝える。
+  // 上限クランプ(0未満にしないなど)により実際の変化量が固定値と一致しないケースが
+  // あるため、各効果関数が実際の変化量を計算して返す。
+  numericChangeTarget?:
+    | { kind: 'combo'; amount: number }
+    | { kind: 'currency'; amount: number }
+    | { kind: 'roleLevel'; names: RoleName[]; amount: number }
+    | { kind: 'roleBias'; buffed: RoleName[]; nerfed: RoleName[] }
+    | { kind: 'tsukumoka'; relicId: RelicId }
 }
 
 function applyStockPurge({ wave }: SabotageContext): SabotageResult {

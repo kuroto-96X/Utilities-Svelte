@@ -309,7 +309,7 @@ export interface WaveState {
   // Card.faceUpフラグ(過去の別トリガーで裏向きのまま残っているカードとも区別が
   // 付かない)から逆算せず、ここで明示的に伝える。purgedToDiscardCountは今回
   // stockPurge/stockPurgeSmallで山札から捨て札へ移動した枚数(それ以外はundefined)。
-  lastSabotage?: { id: SabotageActionId; seq: number; affectedCols?: number[]; purgedToDiscardCount?: number; confiscatedTarget?: { kind: 'talisman'; id: ItemId; idx: number } | { kind: 'rite'; id: RiteId; idx: number } | { kind: 'revelationOrOracle'; ref: HeldRevelationOrOracleRef; idx: number } | { kind: 'relic'; id: RelicId; idx: number }; forceActivatedTarget?: { kind: 'rite'; id: RiteId } | { kind: 'revelationOrOracle'; ref: HeldRevelationOrOracleRef } }
+  lastSabotage?: { id: SabotageActionId; seq: number; affectedCols?: number[]; purgedToDiscardCount?: number; confiscatedTarget?: { kind: 'talisman'; id: ItemId; idx: number } | { kind: 'rite'; id: RiteId; idx: number } | { kind: 'revelationOrOracle'; ref: HeldRevelationOrOracleRef; idx: number } | { kind: 'relic'; id: RelicId; idx: number }; forceActivatedTarget?: { kind: 'rite'; id: RiteId } | { kind: 'revelationOrOracle'; ref: HeldRevelationOrOracleRef }; numericChangeTarget?: { kind: 'combo'; amount: number } | { kind: 'currency'; amount: number } | { kind: 'roleLevel'; names: RoleName[]; amount: number } | { kind: 'roleBias'; buffed: RoleName[]; nerfed: RoleName[] } | { kind: 'tsukumoka'; relicId: RelicId } }
   // 山札シャッフル演出(揺れアニメーション)のトリガー用。stockShuffle(妨害行動)・
   // dagaz(秘儀)発動時にseqをインクリメントする。PlayArea.svelteがseqの変化を検知して
   // 山札ボタンの揺れ演出を起動する。undefinedは「まだ一度も発動していない」状態。
