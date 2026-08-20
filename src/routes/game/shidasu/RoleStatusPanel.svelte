@@ -4,11 +4,12 @@
   import type { SealedRoleEffect } from '$lib/game/shidasu/engine'
   import { ROLE_LIST, roleBasePoint } from '$lib/game/shidasu/roles'
 
-  let { params, oracleLevels, sealedRoleEffect = { zeroRoles: [], oracleBaselineRole: null }, flashingRoles = [] }: {
+  let { params, oracleLevels, sealedRoleEffect = { zeroRoles: [], oracleBaselineRole: null }, flashingRoles = [], shakingRoles = [] }: {
     params: ShidasuParams
     oracleLevels: Record<RoleName, number>
     sealedRoleEffect?: SealedRoleEffect
     flashingRoles?: RoleName[]
+    shakingRoles?: { name: RoleName; text: string }[]
   } = $props()
 
   // 妨害「役封印」「天啓封印(対象がoracleの場合)」中は、run.oracleLevelsそのものは
@@ -31,7 +32,8 @@
       {@const score = roleBasePoint(params, role.name) * level}
       {@const sealed = level !== storedLevel}
       {@const flashing = flashingRoles.includes(role.name)}
-      <div class="flex items-center justify-between text-xs gap-2 {flashing ? 'shidasu-seal-flash' : ''}">
+      {@const shaking = shakingRoles.find(s => s.name === role.name)}
+      <div class="relative flex items-center justify-between text-xs gap-2 {flashing ? 'shidasu-seal-flash' : ''} {shaking ? 'shidasu-numeric-shake' : ''}">
         <div class="flex items-center gap-1.5 min-w-0">
           <span class="font-black text-amber-50 shrink-0">{role.label}</span>
           <span class="text-emerald-300/60 truncate">{role.desc}</span>
@@ -40,6 +42,7 @@
           <span class="font-bold {sealed ? 'text-rose-400' : 'text-yellow-300'}">Lv.{level}</span>
           <span class="ml-1 {sealed ? 'text-rose-300' : 'text-emerald-100/80'}">{score}点</span>
         </div>
+        {#if shaking}<span class="shidasu-numeric-popup">{shaking.text}</span>{/if}
       </div>
     {/each}
   </div>

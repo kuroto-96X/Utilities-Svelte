@@ -32,8 +32,8 @@
   import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, PlayCardResult, Star, WaveState, CardSetGenreId, ShopSlotKind, RelicId } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
-  import type { SealFlashTarget, ConfiscatedTarget, PressPulseTarget } from './PlayArea.svelte'
-  import { withFadingId } from './PlayArea.svelte'
+  import type { SealFlashTarget, ConfiscatedTarget, PressPulseTarget, NumericChangeTarget } from './PlayArea.svelte'
+  import { withFadingId, numericChangePopupText } from './PlayArea.svelte'
   import RoleStatusPanel from './RoleStatusPanel.svelte'
   import CardFace from './CardFace.svelte'
   import { CARD_SET_GENRE_NAMES } from '$lib/game/shidasu/cardSets'
@@ -128,9 +128,29 @@
   let pressPulseTimer: ReturnType<typeof setTimeout> | null = null
   onDestroy(() => { if (pressPulseTimer) clearTimeout(pressPulseTimer) })
 
+  // PlayArea側で発動検知したnumericPopupTarget(数値変化系妨害行動のシェイク+ポップアップ
+  // 演出対象)を受け取って保持する。通貨表示(stageRow)・RoleStatusPanel・レリックバッジは
+  // PlayAreaの外側にあるため、コールバックprops経由で値を受け渡す。
+  let numericPopupTarget = $state<NumericChangeTarget | null>(null)
+
   let flashingRoles = $derived.by((): RoleName[] => {
     if (sealFlashTarget?.kind === 'role') return sealFlashTarget.names
     if (sealFlashTarget?.kind === 'revelationOrOracle' && sealFlashTarget.ref.kind === 'oracle') return [sealFlashTarget.ref.id]
+    return []
+  })
+
+  // 妨害行動「数値変化系」(roleLevelDecay・roleBias)発動時、RoleStatusPanelの対象役に
+  // シェイク+ポップアップ演出を適用するための算出。役ごとに表示テキストが異なるため
+  // (roleLevelDecayは全対象で「−1」固定、roleBiasは強化/減衰で「×2」/「×0.5」)、
+  // 単純な役名配列ではなく{ name, text }の配列として渡す。
+  let shakingRoles = $derived.by((): { name: RoleName; text: string }[] => {
+    const popup = numericPopupTarget
+    if (popup?.kind === 'roleLevel') {
+      return popup.names.map(name => ({ name, text: numericChangePopupText(popup, name) }))
+    }
+    if (popup?.kind === 'roleBias') {
+      return [...popup.buffed, ...popup.nerfed].map(name => ({ name, text: numericChangePopupText(popup, name) }))
+    }
     return []
   })
   let currentModifier = $derived(stageModifierFor(params, run))
@@ -548,6 +568,7 @@
 </script>
 
 {#snippet stageRow()}
+  {@const currencyNumericPopup = numericPopupTarget?.kind === 'currency' ? numericPopupTarget : undefined}
   <div class="flex items-center justify-between text-xs">
     <span class="flex items-center gap-2">
       <span class="text-emerald-200/90 font-bold">{params.spreads[run.spreadId].name}</span>
@@ -556,7 +577,10 @@
           <span class="w-2 h-2 rounded-full {w < run.waveIndex ? 'bg-yellow-400' : w === run.waveIndex ? 'bg-yellow-400 animate-pulse' : 'bg-emerald-800'}"></span>
         {/each}
       </span>
-      <span class="text-yellow-300 font-bold">{params.currency.symbol}{run.currency}</span>
+      <span class="relative text-yellow-300 font-bold {currencyNumericPopup ? 'shidasu-numeric-shake' : ''}">
+        {params.currency.symbol}{run.currency}
+        {#if currencyNumericPopup}<span class="shidasu-numeric-popup">{numericChangePopupText(currencyNumericPopup)}</span>{/if}
+      </span>
     </span>
     {#if isBossWave(params, run.waveIndex)}
       <span class="flex flex-col items-end">
@@ -631,8 +655,10 @@
       <div class="flex flex-wrap gap-1 justify-end">
         {#each displayedRelics as relic, i (i)}
           {@const fading = relicFading !== undefined && i === relicFadingPos}
-          <span class="text-xs bg-amber-900 text-amber-200/90 border border-amber-600/40 rounded px-1.5 py-0.5 {fading ? 'shidasu-confiscate-fade' : ''}" title={relic.tsukumoka ? relicTsukumokaDesc(relic.id, params) : relicDesc(relic.id, params)}>
+          {@const relicShaking = numericPopupTarget?.kind === 'tsukumoka' && numericPopupTarget.relicId === relic.id}
+          <span class="relative text-xs bg-amber-900 text-amber-200/90 border border-amber-600/40 rounded px-1.5 py-0.5 {fading ? 'shidasu-confiscate-fade' : ''} {relicShaking ? 'shidasu-numeric-shake' : ''}" title={relic.tsukumoka ? relicTsukumokaDesc(relic.id, params) : relicDesc(relic.id, params)}>
             {relicName(relic.id, params)}{relic.tsukumoka ? ' ★' : ''}
+            {#if relicShaking && numericPopupTarget?.kind === 'tsukumoka'}<span class="shidasu-numeric-popup">{numericChangePopupText(numericPopupTarget)}</span>{/if}
           </span>
         {/each}
       </div>
@@ -738,6 +764,7 @@
     onSealFlashChange={(target) => { sealFlashTarget = target }}
     onConfiscateFadingChange={(target) => { confiscateFadingTarget = target }}
     onPressPulseChange={(target) => { pressPulseTarget = target }}
+    onNumericPopupChange={(target) => { numericPopupTarget = target }}
     waveKey={`wave-${run.waveGeneration}`}
     headerExtra={stageRow} extraFooter={itemBadges}
     rites={run.rites} onUseRite={handleUseRite}
@@ -749,7 +776,7 @@
     chainAreaExtra={pendingRevelationTarget ? revelationTargetPrompt : undefined}
     onScorePartHighlight={id => (highlightedItemId = id)}
   />
-  <RoleStatusPanel {params} oracleLevels={run.oracleLevels} {sealedRoleEffect} {flashingRoles} />
+  <RoleStatusPanel {params} oracleLevels={run.oracleLevels} {sealedRoleEffect} {flashingRoles} {shakingRoles} />
 {/if}
 
 {#if revelationPreviewWave}
