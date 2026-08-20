@@ -32,7 +32,8 @@
   import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, PlayCardResult, Star, WaveState, CardSetGenreId, ShopSlotKind, RelicId } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
-  import type { SealFlashTarget } from './PlayArea.svelte'
+  import type { SealFlashTarget, ConfiscatedTarget } from './PlayArea.svelte'
+  import { withFadingId } from './PlayArea.svelte'
   import RoleStatusPanel from './RoleStatusPanel.svelte'
   import CardFace from './CardFace.svelte'
   import { CARD_SET_GENRE_NAMES } from '$lib/game/shidasu/cardSets'
@@ -111,6 +112,11 @@
   // 受け取って保持する。itemBadges(護符バッジ)・RoleStatusPanel(役ステータス)は
   // PlayAreaの外側にあるため、コールバックprops経由で値を受け渡す。
   let sealFlashTarget = $state<SealFlashTarget | null>(null)
+
+  // PlayArea側で発動検知したconfiscateFadingTarget(没収系妨害行動のフェード演出対象)を
+  // 受け取って保持する。itemBadges(護符・天啓・神託・レリックバッジ)はPlayAreaの外側に
+  // あるため、コールバックprops経由で値を受け渡す。
+  let confiscateFadingTarget = $state<ConfiscatedTarget | null>(null)
 
   let flashingRoles = $derived.by((): RoleName[] => {
     if (sealFlashTarget?.kind === 'role') return sealFlashTarget.names
@@ -550,15 +556,18 @@
 {/snippet}
 
 {#snippet itemBadges()}
+  {@const talismanFading = confiscateFadingTarget?.kind === 'talisman' ? confiscateFadingTarget : undefined}
+  {@const displayedItemIds = [...new Set(talismanFading ? [...run.items.slice(0, Math.min(talismanFading.idx, run.items.length)), talismanFading.id, ...run.items.slice(Math.min(talismanFading.idx, run.items.length))] : run.items)]}
   <div class="flex-1 flex flex-col gap-1 items-end">
     <div class="flex flex-wrap gap-1 justify-end">
-      {#each [...new Set(run.items)] as id (id)}
+      {#each displayedItemIds as id (id)}
         {@const n = run.items.filter(x => x === id).length}
         {@const talismanHidden = wave?.activeSeal?.kind === 'talismanHidden'}
         {@const talismanSealed = wave?.activeSeal?.kind === 'talisman' && wave.activeSeal.id === id}
         {@const talismanFlashing = sealFlashTarget?.kind === 'talisman' && sealFlashTarget.id === id}
+        {@const talismanConfiscateFading = talismanFading?.id === id && n === 0}
         <span
-          class="text-xs rounded px-1.5 py-0.5 {highlightedItemId === id ? 'ring-2 ring-yellow-400' : ''} {talismanFlashing ? 'shidasu-seal-flash' : ''} {talismanHidden || talismanSealed ? 'border' : 'bg-emerald-900 text-yellow-200/90 border border-yellow-600/40'}"
+          class="text-xs rounded px-1.5 py-0.5 {highlightedItemId === id ? 'ring-2 ring-yellow-400' : ''} {talismanConfiscateFading ? 'shidasu-confiscate-fade' : ''} {talismanFlashing ? 'shidasu-seal-flash' : ''} {talismanHidden || talismanSealed ? 'border' : 'bg-emerald-900 text-yellow-200/90 border border-yellow-600/40'}"
           style={talismanHidden || talismanSealed ? 'background:#1c1917; color:#78350f; border-color: rgba(217,119,6,0.5); background-image: repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(217,119,6,0.35) 5px,rgba(217,119,6,0.35) 6px);' : ''}
           title={talismanHidden ? '護符並び替え: 次の妨害発動まで内容が見えない' : talismanSealed ? '護符封印: 次の妨害発動まで効果が無効' : itemDesc(id, params)}
         >
@@ -566,20 +575,28 @@
         </span>
       {/each}
     </div>
-    {#if run.revelations.length > 0}
+    {#if run.revelations.length > 0 || confiscateFadingTarget?.kind === 'revelationOrOracle' && confiscateFadingTarget.ref.kind === 'revelation'}
+      {@const revelationFadingIdx = confiscateFadingTarget?.kind === 'revelationOrOracle' && confiscateFadingTarget.ref.kind === 'revelation' ? confiscateFadingTarget.idx : undefined}
+      {@const revelationFadingId = confiscateFadingTarget?.kind === 'revelationOrOracle' && confiscateFadingTarget.ref.kind === 'revelation' ? confiscateFadingTarget.ref.id : undefined}
+      {@const displayedRevelations = withFadingId(run.revelations, revelationFadingId, revelationFadingIdx ?? 0)}
       <div class="flex flex-wrap gap-1 justify-end">
-        {#each run.revelations as id, i (i)}
-          <span class="text-xs bg-indigo-900 text-indigo-200/90 border border-indigo-600/40 rounded px-1.5 py-0.5 flex items-center gap-1" title={revelationDesc(id, params)}>
+        {#each displayedRevelations as id, i (i)}
+          {@const fading = revelationFadingIdx !== undefined && i === revelationFadingIdx}
+          <span class="text-xs bg-indigo-900 text-indigo-200/90 border border-indigo-600/40 rounded px-1.5 py-0.5 flex items-center gap-1 {fading ? 'shidasu-confiscate-fade' : ''}" title={revelationDesc(id, params)}>
             {revelationName(id, params)}
             <button onclick={() => handleSellRevelation(id)} class="text-indigo-300/70 underline">売</button>
           </span>
         {/each}
       </div>
     {/if}
-    {#if run.oracles.length > 0}
+    {#if run.oracles.length > 0 || confiscateFadingTarget?.kind === 'revelationOrOracle' && confiscateFadingTarget.ref.kind === 'oracle'}
+      {@const oracleFadingIdx = confiscateFadingTarget?.kind === 'revelationOrOracle' && confiscateFadingTarget.ref.kind === 'oracle' ? confiscateFadingTarget.idx : undefined}
+      {@const oracleFadingId = confiscateFadingTarget?.kind === 'revelationOrOracle' && confiscateFadingTarget.ref.kind === 'oracle' ? confiscateFadingTarget.ref.id : undefined}
+      {@const displayedOracles = withFadingId(run.oracles, oracleFadingId, oracleFadingIdx ?? 0)}
       <div class="flex flex-wrap gap-1 justify-end">
-        {#each run.oracles as roleName, i (i)}
-          <span class="text-xs bg-purple-900 text-purple-200/90 border border-purple-600/40 rounded px-1.5 py-0.5 flex items-center gap-1" title={oracleDesc(roleName, params)}>
+        {#each displayedOracles as roleName, i (i)}
+          {@const fading = oracleFadingIdx !== undefined && i === oracleFadingIdx}
+          <span class="text-xs bg-purple-900 text-purple-200/90 border border-purple-600/40 rounded px-1.5 py-0.5 flex items-center gap-1 {fading ? 'shidasu-confiscate-fade' : ''}" title={oracleDesc(roleName, params)}>
             {oracleName(roleName, params)}
             <button onclick={() => handleUseOracle(roleName)} class="text-purple-300/70 underline">使</button>
             <button onclick={() => handleSellOracle(roleName)} class="text-purple-300/70 underline">売</button>
@@ -587,10 +604,16 @@
         {/each}
       </div>
     {/if}
-    {#if run.relics.length > 0}
+    {#if run.relics.length > 0 || confiscateFadingTarget?.kind === 'relic'}
+      {@const relicFading = confiscateFadingTarget?.kind === 'relic' ? confiscateFadingTarget : undefined}
+      {@const relicFadingPos = relicFading ? Math.min(relicFading.idx, run.relics.length) : -1}
+      {@const displayedRelics = relicFading
+        ? [...run.relics.slice(0, relicFadingPos), { id: relicFading.id, tsukumoka: false }, ...run.relics.slice(relicFadingPos)]
+        : run.relics}
       <div class="flex flex-wrap gap-1 justify-end">
-        {#each run.relics as relic, i (i)}
-          <span class="text-xs bg-amber-900 text-amber-200/90 border border-amber-600/40 rounded px-1.5 py-0.5" title={relic.tsukumoka ? relicTsukumokaDesc(relic.id, params) : relicDesc(relic.id, params)}>
+        {#each displayedRelics as relic, i (i)}
+          {@const fading = relicFading !== undefined && i === relicFadingPos}
+          <span class="text-xs bg-amber-900 text-amber-200/90 border border-amber-600/40 rounded px-1.5 py-0.5 {fading ? 'shidasu-confiscate-fade' : ''}" title={relic.tsukumoka ? relicTsukumokaDesc(relic.id, params) : relicDesc(relic.id, params)}>
             {relicName(relic.id, params)}{relic.tsukumoka ? ' ★' : ''}
           </span>
         {/each}
@@ -695,6 +718,7 @@
     onScoreRevealDone={handleScoreRevealDone}
     onCleanupDone={handleCleanupDone}
     onSealFlashChange={(target) => { sealFlashTarget = target }}
+    onConfiscateFadingChange={(target) => { confiscateFadingTarget = target }}
     waveKey={`wave-${run.waveGeneration}`}
     headerExtra={stageRow} extraFooter={itemBadges}
     rites={run.rites} onUseRite={handleUseRite}

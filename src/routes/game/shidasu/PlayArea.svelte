@@ -1,3 +1,16 @@
+<script module lang="ts">
+  // list(本来のリスト、既に削除済み)にfadingId(フェード中の要素のid)を補完した配列を返す。
+  // fadingId未指定の場合はlistをそのまま返す。挿入位置はidx(没収前の元の位置)。
+  // +page.svelte・デバッグ画面(shidasu-debug)からもimportして使うため、moduleスクリプトで
+  // exportする(通常のインスタンススクリプト内のexport functionはコンポーネントのプロパティとして
+  // コンパイルされ、他ファイルから名前付きimportできないため)。
+  export function withFadingId<T>(list: T[], fadingId: T | undefined, idx: number): T[] {
+    if (fadingId === undefined) return list
+    const pos = Math.min(idx, list.length)
+    return [...list.slice(0, pos), fadingId, ...list.slice(pos)]
+  }
+</script>
+
 <script lang="ts">
   import type { Snippet } from 'svelte'
   import { onDestroy, tick } from 'svelte'
@@ -410,15 +423,6 @@
       onConfiscateFadingChange?.(null)
     }, 500)
     dealTimers.push(timer)
-  }
-
-  // list(本来のリスト、既に削除済み)にfadingId(フェード中の要素のid)を補完した配列を返す。
-  // fadingId未指定の場合はlistをそのまま返す。挿入位置はidx(没収前の元の位置)。
-  // +page.svelte・デバッグ画面(shidasu-debug)からもimportして使うため、exportする。
-  export function withFadingId<T>(list: T[], fadingId: T | undefined, idx: number): T[] {
-    if (fadingId === undefined) return list
-    const pos = Math.min(idx, list.length)
-    return [...list.slice(0, pos), fadingId, ...list.slice(pos)]
   }
 
   function startStockShuffleAnimation() {
