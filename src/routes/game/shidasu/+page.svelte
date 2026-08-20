@@ -32,6 +32,7 @@
   import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, PlayCardResult, Star, WaveState, CardSetGenreId, ShopSlotKind, RelicId } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
+  import type { SealFlashTarget } from './PlayArea.svelte'
   import RoleStatusPanel from './RoleStatusPanel.svelte'
   import CardFace from './CardFace.svelte'
   import { CARD_SET_GENRE_NAMES } from '$lib/game/shidasu/cardSets'
@@ -105,6 +106,11 @@
   // RoleStatusPanel表示用: 現在の封印状態(役封印/天啓封印)から、役の実効レベルへの
   // 補正情報を導出する。triggerSabotage内部の同名処理と同じロジックをengine.tsから再利用。
   let sealedRoleEffect = $derived(resolveSealedRoleEffect(wave?.activeSeal ?? null))
+
+  // PlayArea側で発動検知したsealFlashTarget(封印系妨害行動のフラッシュ演出対象)を
+  // 受け取って保持する。itemBadges(護符バッジ)・RoleStatusPanel(役ステータス)は
+  // PlayAreaの外側にあるため、コールバックprops経由で値を受け渡す。
+  let sealFlashTarget = $state<SealFlashTarget | null>(null)
   let currentModifier = $derived(stageModifierFor(params, run))
 
   // 現在Waveの星(制限ルール)の情報を返す。stageStarsが未確定(title等)の場合は空表示。
@@ -543,10 +549,12 @@
       {#each [...new Set(run.items)] as id (id)}
         {@const n = run.items.filter(x => x === id).length}
         {@const talismanHidden = wave?.activeSeal?.kind === 'talismanHidden'}
+        {@const talismanSealed = wave?.activeSeal?.kind === 'talisman' && wave.activeSeal.id === id}
+        {@const talismanFlashing = sealFlashTarget?.kind === 'talisman' && sealFlashTarget.id === id}
         <span
-          class="text-xs rounded px-1.5 py-0.5 {highlightedItemId === id ? 'ring-2 ring-yellow-400' : ''} {talismanHidden ? 'border' : 'bg-emerald-900 text-yellow-200/90 border border-yellow-600/40'}"
-          style={talismanHidden ? 'background:#1c1917; color:#78350f; border-color: rgba(217,119,6,0.5); background-image: repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(217,119,6,0.35) 5px,rgba(217,119,6,0.35) 6px);' : ''}
-          title={talismanHidden ? '護符並び替え: 次の妨害発動まで内容が見えない' : itemDesc(id, params)}
+          class="text-xs rounded px-1.5 py-0.5 {highlightedItemId === id ? 'ring-2 ring-yellow-400' : ''} {talismanFlashing ? 'shidasu-seal-flash' : ''} {talismanHidden || talismanSealed ? 'border' : 'bg-emerald-900 text-yellow-200/90 border border-yellow-600/40'}"
+          style={talismanHidden || talismanSealed ? 'background:#1c1917; color:#78350f; border-color: rgba(217,119,6,0.5); background-image: repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(217,119,6,0.35) 5px,rgba(217,119,6,0.35) 6px);' : ''}
+          title={talismanHidden ? '護符並び替え: 次の妨害発動まで内容が見えない' : talismanSealed ? '護符封印: 次の妨害発動まで効果が無効' : itemDesc(id, params)}
         >
           {talismanHidden ? '？？？' : itemName(id, params)}{n > 1 ? `×${n}` : ''}
         </span>
@@ -680,6 +688,7 @@
     onPlayCard={handlePlayCard} onDraw={handleDraw}
     onScoreRevealDone={handleScoreRevealDone}
     onCleanupDone={handleCleanupDone}
+    onSealFlashChange={(target) => { sealFlashTarget = target }}
     waveKey={`wave-${run.waveGeneration}`}
     headerExtra={stageRow} extraFooter={itemBadges}
     rites={run.rites} onUseRite={handleUseRite}
