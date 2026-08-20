@@ -1275,7 +1275,7 @@
       disabled={wave.stock.length === 0 || !allowDraw || anyAnimationActive}
       data-drop-stock
       bind:this={stockButtonEl}
-      style="aspect-ratio: 2 / 3; transform: rotate({stockShuffleRotation}deg); transition-duration:{stockShuffleTransitionMs}ms; {wave.stock.length > 0 ? CARD_BACK_STYLE : ''}"
+      style="aspect-ratio: 2 / 3; transform: rotate({stockShuffleRotation}deg); transition-property: transform; transition-duration:{stockShuffleTransitionMs}ms; {wave.stock.length > 0 ? CARD_BACK_STYLE : ''}"
       class="w-16 shrink-0 rounded-lg border-2 flex flex-col items-center justify-center font-black active:scale-95 transition-transform {dropTarget === 'stockTop' ? 'ring-4 ring-sky-400' : ''} {wave.stock.length > 0 ? 'border-indigo-500/50 text-amber-50' : 'bg-emerald-900 border-emerald-800 text-emerald-700'}"
     >
       <div class="text-xs">山札</div>
