@@ -123,6 +123,10 @@
   // コールバックprops経由で値を受け渡す。神託の通常クリック発動時は、+page.svelte側で
   // 直接このstateを更新する(handleUseOracle参照)。
   let pressPulseTarget = $state<PressPulseTarget | null>(null)
+  // handleUseOracleが積むクリア用タイマー。pendingTimer(ウェーブ終了系タイマー専用、他用途との
+  // 混用禁止)とは別に管理し、コンポーネント破棄時にクリアする。
+  let pressPulseTimer: ReturnType<typeof setTimeout> | null = null
+  onDestroy(() => { if (pressPulseTimer) clearTimeout(pressPulseTimer) })
 
   let flashingRoles = $derived.by((): RoleName[] => {
     if (sealFlashTarget?.kind === 'role') return sealFlashTarget.names
@@ -344,8 +348,12 @@
   const handleClosePackOracleSelect = bindRunActionNoArg(closePackOracleSelect)
 
   function handleUseOracle(roleName: RoleName) {
+    if (pressPulseTimer) clearTimeout(pressPulseTimer)
     pressPulseTarget = { kind: 'revelationOrOracle', ref: { kind: 'oracle', id: roleName } }
-    setTimeout(() => { pressPulseTarget = null }, 500)
+    pressPulseTimer = setTimeout(() => {
+      pressPulseTimer = null
+      pressPulseTarget = null
+    }, 500)
     run = useOracle(params, run, roleName)
   }
 
