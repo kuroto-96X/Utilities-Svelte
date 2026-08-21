@@ -1080,7 +1080,6 @@
     chainAreaHiddenForRedistribute = true
 
     const gatherCards: GatherMoveCardPosition[] = []
-    let representativeCard: Card | null = null
 
     if (areas.kind === 'chainAndDiscard') {
       wave.chain.forEach(card => {
@@ -1088,21 +1087,19 @@
         if (!el) return
         const rect = el.getBoundingClientRect()
         gatherCards.push({ card, left: rect.left + rect.width / 2, top: rect.top + rect.height / 2 })
-        representativeCard = card
       })
       const discardRect = discardPileEl.getBoundingClientRect()
       wave.discardPile.forEach(card => {
         gatherCards.push({ card, left: discardRect.left + discardRect.width / 2, top: discardRect.top + discardRect.height / 2 })
-        representativeCard = representativeCard ?? card
       })
     } else {
       const discardRect = discardPileEl.getBoundingClientRect()
       wave.discardPile.forEach(card => {
         gatherCards.push({ card, left: discardRect.left + discardRect.width / 2, top: discardRect.top + discardRect.height / 2 })
-        representativeCard = representativeCard ?? card
       })
     }
-    if (gatherCards.length === 0 || !representativeCard) return
+    if (gatherCards.length === 0) return
+    const representativeCard = gatherCards[0].card
 
     const gatherTargetRect = areas.kind === 'chainAndDiscard' ? chainAreaEl.getBoundingClientRect() : discardPileEl.getBoundingClientRect()
     const gatherLeft = gatherTargetRect.left + gatherTargetRect.width / 2
