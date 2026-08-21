@@ -5012,6 +5012,31 @@ describe('triggerSabotage', () => {
     expect(next.wave!.discardPile.length).toBe(1)
   })
 
+  it('tableauCardToDiscard: lastSabotage.tableauCardRemovedに取り除かれたカードの位置を設定する', () => {
+    const run = runWithWave()
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'tableauCardToDiscard', () => 0)
+    const removed = next.wave!.lastSabotage?.tableauCardRemoved
+    expect(removed).toBeDefined()
+    expect(typeof removed?.colIndex).toBe('number')
+    expect(typeof removed?.rowIndex).toBe('number')
+    expect(removed?.card).toBeDefined()
+  })
+
+  it('tableauCardToDiscard: 取り除かれたカードが実際にdiscardPileへ追加される', () => {
+    const run = runWithWave()
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'tableauCardToDiscard', () => 0)
+    const removed = next.wave!.lastSabotage?.tableauCardRemoved
+    expect(removed).toBeDefined()
+    const lastDiscard = next.wave!.discardPile[next.wave!.discardPile.length - 1]
+    expect(lastDiscard.id).toBe(removed?.card.id)
+  })
+
+  it('tableauCardToDiscard: 場札が全て空ならtableauCardRemovedは設定されない', () => {
+    const run = runWithWave({}, { tableau: [[], [], [], [], [], [], []] })
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'tableauCardToDiscard', () => 0)
+    expect(next.wave!.lastSabotage?.tableauCardRemoved).toBeUndefined()
+  })
+
   it('currencyConfiscate: 所持通貨を5減らす(0未満にはしない)', () => {
     const run = runWithWave({ currency: 3 })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'currencyConfiscate', () => 0)
@@ -5447,6 +5472,18 @@ describe('triggerSabotage', () => {
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'discardBury', () => 0)
     expect(next.wave!.discardPile.every(c => c.faceUp === false)).toBe(true)
     expect(next.wave!.stock.some(c => c.faceUp === false)).toBe(false)
+  })
+
+  it('discardErase: lastSabotage.redistributedAreasにchainAndDiscardを設定する', () => {
+    const run = runWithWave()
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'discardErase', () => 0)
+    expect(next.wave!.lastSabotage?.redistributedAreas).toEqual({ kind: 'chainAndDiscard' })
+  })
+
+  it('discardBury: lastSabotage.redistributedAreasにstockAndDiscardを設定する', () => {
+    const run = runWithWave()
+    const next = triggerSabotage(DEFAULT_PARAMS, run, 'discardBury', () => 0)
+    expect(next.wave!.lastSabotage?.redistributedAreas).toEqual({ kind: 'stockAndDiscard' })
   })
 
   it('rewardReduce: rewardPenaltyを2加算する(累積)', () => {

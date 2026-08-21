@@ -143,7 +143,7 @@ function applyTableauCardToDiscard({ wave, rand }: SabotageContext): SabotageRes
   const pick = positions[Math.floor(rand() * positions.length)]
   const card = wave.tableau[pick.ci][pick.ri]
   const tableau = wave.tableau.map((col, ci) => (ci === pick.ci ? [...col.slice(0, pick.ri), ...col.slice(pick.ri + 1)] : col))
-  return { wave: { tableau, discardPile: [...wave.discardPile, card] } }
+  return { wave: { tableau, discardPile: [...wave.discardPile, card] }, tableauCardRemoved: { colIndex: pick.ci, rowIndex: pick.ri, card } }
 }
 
 function applyCurrencyConfiscate({ run }: SabotageContext): SabotageResult {
@@ -322,7 +322,7 @@ function applyDiscardErase({ wave, rand }: SabotageContext): SabotageResult {
   const chain = pool.slice(0, chainCount)
   const discardPile = pool.slice(chainCount)
   const chainOrigin = chain.map(() => 'draw' as const)
-  return { wave: { chain, chainOrigin, discardPile, foundation: chain[chain.length - 1] } }
+  return { wave: { chain, chainOrigin, discardPile, foundation: chain[chain.length - 1] }, redistributedAreas: { kind: 'chainAndDiscard' } }
 }
 
 function applyDiscardBury({ wave, rand }: SabotageContext): SabotageResult {
@@ -331,7 +331,7 @@ function applyDiscardBury({ wave, rand }: SabotageContext): SabotageResult {
   shuffleInPlace(pool, rand)
   const discardPile = pool.slice(0, n).map(c => ({ ...c, faceUp: false }))
   const stock = pool.slice(n)
-  return { wave: { stock, discardPile } }
+  return { wave: { stock, discardPile }, redistributedAreas: { kind: 'stockAndDiscard' } }
 }
 
 function applyRewardReduce({ run }: SabotageContext): SabotageResult {
