@@ -570,11 +570,15 @@
     // 検知できないため、先頭からの一致を見る。
     const isExtension = currentChainCards.length === previousChainCards.length + 1
       && previousChainCards.every((card, i) => card.id === currentChainCards[i].id)
+    // 「現在のチェーンに含まれないカード」のみをresetCards(=今回消えたカード)とする。
+    // 修正前は「現在のチェーンの末尾カードidと不一致」で判定していたため、
+    // chainPartialDiscard(先頭のみ除去、残りは維持)発動時に、まだ場に残っている
+    // カードまで誤って「消えた」扱いになる不具合があった。例: previousChainCards=[A,B,C,D]で
+    // 先頭2枚(A,B)が除去されcurrentChainCards=[C,D]になった場合、修正前は
+    // resetCards=[A,B,C]（Cを誤検知）だったが、修正後はresetCards=[A,B]（正しい）になる。
     const resetCards = isExtension
       ? []
-      : currentChainCards.length > 0
-        ? previousChainCards.filter(card => card.id !== currentChainCards[currentChainCards.length - 1].id)
-        : previousChainCards
+      : previousChainCards.filter(card => !currentChainCards.some(c => c.id === card.id))
     previousChainCards = currentChainCards
     if (resetCards.length === 0) return
     startChainResetAnimation(resetCards)
