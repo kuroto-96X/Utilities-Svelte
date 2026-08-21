@@ -56,6 +56,8 @@
   // 受け取って保持する。本編(+page.svelte)と同じ仕組み。
   let sealFlashTarget = $state<SealFlashTarget | null>(null)
 
+  let talismanShuffleFlashActive = $state(false)
+
   let confiscateFadingTarget = $state<ConfiscatedTarget | null>(null)
   // 神託「使」ボタン用の押下パルス演出対象。本編(+page.svelte)のhandleUseOracleと同じ仕組みで、
   // ローカルでセットし500ms後に自動でnullへ戻す。PlayArea側(秘儀・天啓ボタン)のonPressPulseChangeも
@@ -421,15 +423,17 @@
     <div class="flex flex-wrap gap-1 justify-end">
       {#each displayedItemIds as id (id)}
         {@const n = items.filter(x => x === id).length}
+        {@const talismanHidden = wave.activeSeal?.kind === 'talismanHidden'}
         {@const talismanSealed = wave.activeSeal?.kind === 'talisman' && wave.activeSeal.id === id}
         {@const talismanFlashing = sealFlashTarget?.kind === 'talisman' && sealFlashTarget.id === id}
+        {@const talismanShuffleFlashing = talismanShuffleFlashActive && talismanHidden}
         {@const talismanConfiscateFading = talismanFading?.id === id && n === 0}
         <span
-          class="text-xs rounded px-1.5 py-0.5 {highlightedItemId === id ? 'ring-2 ring-yellow-400' : ''} {talismanConfiscateFading ? 'shidasu-confiscate-fade' : ''} {talismanFlashing ? 'shidasu-seal-flash' : ''} {talismanSealed ? 'border' : 'bg-emerald-900 text-yellow-200/90 border border-yellow-600/40'}"
-          style={talismanSealed ? 'background:#1c1917; color:#78350f; border-color: rgba(217,119,6,0.5); background-image: repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(217,119,6,0.35) 5px,rgba(217,119,6,0.35) 6px);' : ''}
-          title={talismanSealed ? '護符封印: 次の妨害発動まで効果が無効' : itemDesc(id, params)}
+          class="text-xs rounded px-1.5 py-0.5 {highlightedItemId === id ? 'ring-2 ring-yellow-400' : ''} {talismanConfiscateFading ? 'shidasu-confiscate-fade' : ''} {talismanFlashing || talismanShuffleFlashing ? 'shidasu-seal-flash' : ''} {talismanHidden || talismanSealed ? 'border' : 'bg-emerald-900 text-yellow-200/90 border border-yellow-600/40'}"
+          style={talismanHidden || talismanSealed ? 'background:#1c1917; color:#78350f; border-color: rgba(217,119,6,0.5); background-image: repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(217,119,6,0.35) 5px,rgba(217,119,6,0.35) 6px);' : ''}
+          title={talismanHidden ? '護符並び替え: 次の妨害発動まで内容が見えない' : talismanSealed ? '護符封印: 次の妨害発動まで効果が無効' : itemDesc(id, params)}
         >
-          {itemName(id, params)}{n > 1 ? `×${n}` : ''}
+          {talismanHidden ? '？？？' : itemName(id, params)}{n > 1 ? `×${n}` : ''}
         </span>
       {/each}
     </div>
@@ -491,6 +495,7 @@
           onTargetColumn={handleTargetDebugColumn}
           onScorePartHighlight={id => (highlightedItemId = id)}
           onSealFlashChange={(target) => { sealFlashTarget = target }}
+          onTalismanShuffleFlashChange={(active) => { talismanShuffleFlashActive = active }}
           onConfiscateFadingChange={(target) => { confiscateFadingTarget = target }}
           onPressPulseChange={(target) => { pressPulseTarget = target }}
           onNumericPopupChange={(target) => { numericPopupTarget = target }}
