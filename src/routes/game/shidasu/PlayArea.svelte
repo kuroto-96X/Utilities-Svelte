@@ -66,7 +66,7 @@
     canTargetColumn = () => true,
     onTargetColumn,
     chainAreaExtra,
-    onScoreRevealDone, waveKey, onCleanupDone, onSealFlashChange, onConfiscateFadingChange, onPressPulseChange, onNumericPopupChange,
+    onScoreRevealDone, waveKey, onCleanupDone, onSealFlashChange, onConfiscateFadingChange, onPressPulseChange, onNumericPopupChange, onTalismanShuffleFlashChange,
     onScorePartHighlight,
   }: {
     wave: WaveState
@@ -98,6 +98,7 @@
     onConfiscateFadingChange?: (target: ConfiscatedTarget | null) => void
     onPressPulseChange?: (target: PressPulseTarget | null) => void
     onNumericPopupChange?: (target: NumericChangeTarget | null) => void
+    onTalismanShuffleFlashChange?: (active: boolean) => void
     onScorePartHighlight?: (itemId: ItemId | null) => void
   } = $props()
 
@@ -450,6 +451,12 @@
   let sealFlashTarget = $state<SealFlashTarget | null>(null)
   let sealFlashActive = $state(false)
 
+  // 妨害行動「talismanShuffle」(護符並び替え)発動時、所持護符バッジ全てが同時に
+  // フラッシュ+シェイクする演出用。対象は常に「全護符」固定のため、sealFlashTarget
+  // のような対象識別情報は持たず、boolean一つのみで表現する。既存の封印系5種
+  // (talismanSeal等)とは別の仕組み(単一対象へのsealFlashTarget)なので独立させている。
+  let talismanShuffleFlashActive = $state(false)
+
   // sealFlashActiveは関数の先頭で同期的にtrueへ切り替える(CLAUDE.mdの「移動アニメーション
   // 実装時の注意」・discardPurgeActive/stockShuffleActiveと同じ原則)。500ms後に演出を終了し、
   // sealFlashTargetをnullへ戻す(対象要素は以後、常設表示側の判定に切り替わる)。
@@ -461,6 +468,19 @@
       sealFlashActive = false
       sealFlashTarget = null
       onSealFlashChange?.(null)
+    }, 500)
+    dealTimers.push(timer)
+  }
+
+  // 妨害行動「talismanShuffle」(護符並び替え)発動時、全護符バッジのフラッシュ+シェイクを
+  // 起動する。startSealFlashAnimationと同じ500ms持続だが、対象を持たないため
+  // 引数無しで呼び出せる。
+  function startTalismanShuffleFlashAnimation() {
+    talismanShuffleFlashActive = true
+    onTalismanShuffleFlashChange?.(true)
+    const timer = setTimeout(() => {
+      talismanShuffleFlashActive = false
+      onTalismanShuffleFlashChange?.(false)
     }, 500)
     dealTimers.push(timer)
   }
@@ -683,6 +703,8 @@
       startTableauShuffleAnimation()
     } else if (current.id === 'chainShuffle') {
       startChainShuffleAnimation()
+    } else if (current.id === 'talismanShuffle') {
+      startTalismanShuffleFlashAnimation()
     }
   })
 
