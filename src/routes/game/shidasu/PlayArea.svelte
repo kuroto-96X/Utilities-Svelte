@@ -347,6 +347,28 @@
   let chainResetAnimation = $state<ChainResetAnimation | null>(null)
   let chainResetTimer: ReturnType<typeof setTimeout> | undefined
 
+  // discardErase・discardBury発動時の「収束→再配布」演出用。ChainResetAnimationと
+  // 同じgather/moveの2フェーズ構成をrunGatherAndMoveAnimationで共有する。
+  let discardRedistributeAnimation = $state<ChainResetAnimation | null>(null)
+  let discardRedistributeTimer: ReturnType<typeof setTimeout> | undefined
+
+  // 収束完了後、1点から複数の終点(自分自身の位置+別エリア)へ順番に飛ばすカードの状態。
+  // destinationで終点を区別する('primary'=集約先と同じエリアへ戻る分、'secondary'=別エリアへ
+  // 移動する分)。
+  interface DiscardRedistributeCard {
+    card: Card
+    left: number
+    top: number
+    transitionMs: number
+    destination: 'primary' | 'secondary'
+  }
+  let discardRedistributeCards = $state<DiscardRedistributeCard[]>([])
+
+  // discardErase・discardBury発動中、チェーンエリアの常設表示(wave.chainを直接
+  // 参照する描画)が再配布完了前の新しい内容を先出ししないようにする同期ガードフラグ
+  // (CLAUDE.md「移動アニメーション実装時の注意」・chainResetAnimationと同じ原則)。
+  let chainAreaHiddenForRedistribute = $state(false)
+
   interface SabotageRedistributeAnimation {
     phase: 'gather' | 'move'
     left: number
@@ -530,7 +552,7 @@
   let dealAnimationActive = $derived(dealingCards.length > 0)
   // いずれかのアニメーション(カードプレイ・得点演出・清算・チェーンリセット・配布)が進行中かどうか。
   // 進行中は操作(カードプレイ・山札引き・秘儀/天啓使用)を無効化する。
-  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0 || flippingCards.length > 0 || discardPurgeActive || stockShuffleActive || sealFlashActive || confiscateFadingActive)
+  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0 || flippingCards.length > 0 || discardPurgeActive || stockShuffleActive || sealFlashActive || confiscateFadingActive || discardRedistributeAnimation !== null || chainAreaHiddenForRedistribute)
   let dealTimers: ReturnType<typeof setTimeout>[] = []
   // 初期値をundefinedにしておくことで、マウント直後(ゲーム開始直後の最初のWave)にも
   // 「waveKeyが変化した」と判定され配布アニメーションが発火する。他のprevious系変数
@@ -612,6 +634,10 @@
     } else if (current.id === 'tableauCardToDiscard') {
       if (current.tableauCardRemoved) {
         startTableauCardToDiscardAnimation(current.tableauCardRemoved)
+      }
+    } else if (current.id === 'discardErase' || current.id === 'discardBury') {
+      if (current.redistributedAreas) {
+        startDiscardRedistributeAnimation(current.redistributedAreas)
       }
     }
   })
@@ -1032,6 +1058,123 @@
       // chainResetAnimationがnullに戻ると同時に、後述のeffectが
       // displayedDiscardTopを最新のwave.discardPileへ自動的に同期する。
       onComplete: () => {},
+    })
+  }
+
+  // 「捨て札消去」(discardErase)・「捨て札埋没」(discardBury)発動時、対象2エリアの
+  // 全カードを1点に集約してから、新しい内容(wave.chain/wave.discardPile/wave.stock)を
+  // 元に再配布するアニメーションを開始する。
+  //
+  // discardErase(kind: 'chainAndDiscard'): 集約先=chainAreaEl中心。収束元は現在の
+  //   wave.discardPile全カード(discardPileElから)+現在のwave.chain全カード
+  //   (chainAreaElの各data-chain-card-idから)。再配布はwave.chainの枚数分を
+  //   chainAreaElへ('primary')、残りをdiscardPileElへ('secondary')。
+  // discardBury(kind: 'stockAndDiscard'): 集約先=discardPileEl中心。収束元は
+  //   wave.discardPile全カード(discardPileElから)。wave.stockは個別カード表示を
+  //   持たないため、収束元としてはstockButtonElの位置を使う(実際に集めるカード表示は
+  //   discardPile分のみ)。再配布はwave.discardPileの枚数分をdiscardPileElへ
+  //   ('primary'、常にfaceUp: falseで着地)、残りはstockButtonEl位置へ移動して消える
+  //   ('secondary'、山札は個別表示が無いため到着後はフェードせず即座に消す)。
+  function startDiscardRedistributeAnimation(areas: { kind: 'chainAndDiscard' } | { kind: 'stockAndDiscard' }) {
+    if (!chainAreaEl || !discardPileEl || !stockButtonEl) return
+    chainAreaHiddenForRedistribute = true
+
+    const gatherCards: GatherMoveCardPosition[] = []
+    let representativeCard: Card | null = null
+
+    if (areas.kind === 'chainAndDiscard') {
+      wave.chain.forEach(card => {
+        const el = chainAreaEl?.querySelector<HTMLElement>(`[data-chain-card-id="${card.id}"]`)
+        if (!el) return
+        const rect = el.getBoundingClientRect()
+        gatherCards.push({ card, left: rect.left + rect.width / 2, top: rect.top + rect.height / 2 })
+        representativeCard = card
+      })
+      const discardRect = discardPileEl.getBoundingClientRect()
+      wave.discardPile.forEach(card => {
+        gatherCards.push({ card, left: discardRect.left + discardRect.width / 2, top: discardRect.top + discardRect.height / 2 })
+        representativeCard = representativeCard ?? card
+      })
+    } else {
+      const discardRect = discardPileEl.getBoundingClientRect()
+      wave.discardPile.forEach(card => {
+        gatherCards.push({ card, left: discardRect.left + discardRect.width / 2, top: discardRect.top + discardRect.height / 2 })
+        representativeCard = representativeCard ?? card
+      })
+    }
+    if (gatherCards.length === 0 || !representativeCard) return
+
+    const gatherTargetRect = areas.kind === 'chainAndDiscard' ? chainAreaEl.getBoundingClientRect() : discardPileEl.getBoundingClientRect()
+    const gatherLeft = gatherTargetRect.left + gatherTargetRect.width / 2
+    const gatherTop = gatherTargetRect.top + gatherTargetRect.height / 2
+
+    discardRedistributeAnimation = {
+      phase: 'gather',
+      left: gatherLeft,
+      top: gatherTop,
+      transitionMs: 0,
+      gatherCards,
+    }
+
+    runGatherAndMoveAnimation({
+      getAnimation: () => discardRedistributeAnimation,
+      setAnimation: next => { discardRedistributeAnimation = next },
+      setTimer: timer => { discardRedistributeTimer = timer },
+      gatherCards,
+      representativeCard,
+      gatherLeft,
+      gatherTop,
+      getMoveTarget: () => ({ left: gatherLeft, top: gatherTop }),
+      gatherMs: CLEANUP_GATHER_MS,
+      moveMs: CLEANUP_MOVE_MS,
+      onComplete: () => startDiscardRedistributeDeal(areas, gatherLeft, gatherTop),
+    })
+  }
+
+  // 収束完了後、集約ポイントから新しい内容(wave.chain/wave.discardPile)へ1枚ずつ
+  // 再配布する。primaryは集約先と同じエリアへ(discardEraseならchainAreaEl、
+  // discardBuryならdiscardPileEl)、secondaryは別エリアへ飛ばす。
+  function startDiscardRedistributeDeal(areas: { kind: 'chainAndDiscard' } | { kind: 'stockAndDiscard' }, fromLeft: number, fromTop: number) {
+    if (!chainAreaEl || !discardPileEl || !stockButtonEl) return
+
+    const primaryCards = areas.kind === 'chainAndDiscard' ? wave.chain : wave.discardPile
+    const secondaryCards = areas.kind === 'chainAndDiscard' ? wave.discardPile : []
+    const primaryRect = areas.kind === 'chainAndDiscard' ? chainAreaEl.getBoundingClientRect() : discardPileEl.getBoundingClientRect()
+    const primaryLeft = primaryRect.left + primaryRect.width / 2
+    const primaryTop = primaryRect.top + primaryRect.height / 2
+    const secondaryRect = areas.kind === 'chainAndDiscard' ? discardPileEl.getBoundingClientRect() : stockButtonEl.getBoundingClientRect()
+    const secondaryLeft = secondaryRect.left + secondaryRect.width / 2
+    const secondaryTop = secondaryRect.top + secondaryRect.height / 2
+
+    const order: { card: Card; destination: 'primary' | 'secondary'; toLeft: number; toTop: number }[] = [
+      ...primaryCards.map(card => ({ card, destination: 'primary' as const, toLeft: primaryLeft, toTop: primaryTop })),
+      ...secondaryCards.map(card => ({ card, destination: 'secondary' as const, toLeft: secondaryLeft, toTop: secondaryTop })),
+    ]
+
+    if (order.length === 0) {
+      chainAreaHiddenForRedistribute = false
+      return
+    }
+
+    order.forEach((entry, index) => {
+      const timer = setTimeout(() => {
+        discardRedistributeCards = [...discardRedistributeCards, { card: entry.card, left: fromLeft, top: fromTop, transitionMs: 0, destination: entry.destination }]
+
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            discardRedistributeCards = discardRedistributeCards.map(d => (d.card.id === entry.card.id ? { ...d, left: entry.toLeft, top: entry.toTop, transitionMs: DEAL_MOVE_MS } : d))
+          })
+        })
+
+        const landTimer = setTimeout(() => {
+          discardRedistributeCards = discardRedistributeCards.filter(d => d.card.id !== entry.card.id)
+          if (index === order.length - 1) {
+            chainAreaHiddenForRedistribute = false
+          }
+        }, DEAL_MOVE_MS)
+        dealTimers.push(landTimer)
+      }, index * DEAL_INTERVAL_MS)
+      dealTimers.push(timer)
     })
   }
 
@@ -1501,7 +1644,7 @@
       <CardFace card={nextCard} covered={false} {items} />
     </div>
   {/if}
-  <div bind:this={chainAreaEl} class="overflow-x-auto min-w-0 {cleanupAnimation?.kind === 'chain' || chainCleanedUp || chainResetAnimation !== null || dealAnimationActive ? 'invisible' : ''}">
+  <div bind:this={chainAreaEl} class="overflow-x-auto min-w-0 {cleanupAnimation?.kind === 'chain' || chainCleanedUp || chainResetAnimation !== null || dealAnimationActive || chainAreaHiddenForRedistribute ? 'invisible' : ''}">
     {#if chainAreaExtra}
       {@render chainAreaExtra()}
     {:else}
@@ -1619,6 +1762,26 @@
     </div>
   {/each}
 {/if}
+
+{#if discardRedistributeAnimation}
+  {#each discardRedistributeAnimation.gatherCards as gatherCard (gatherCard.card.id)}
+    <div
+      class="fixed pointer-events-none z-[100] ease-out"
+      style="left:{gatherCard.left}px; top:{gatherCard.top}px; width:64px; transform: translate(-50%, -50%); transition-property: left, top; transition-duration:{discardRedistributeAnimation.transitionMs}ms;"
+    >
+      <CardFace card={gatherCard.card} covered={false} faceUp={false} {items} />
+    </div>
+  {/each}
+{/if}
+
+{#each discardRedistributeCards as moveCard (moveCard.card.id)}
+  <div
+    class="fixed pointer-events-none z-[100] ease-out"
+    style="left:{moveCard.left}px; top:{moveCard.top}px; width:64px; transform: translate(-50%, -50%); transition-property: left, top; transition-duration:{moveCard.transitionMs}ms;"
+  >
+    <CardFace card={moveCard.card} covered={false} faceUp={false} {items} />
+  </div>
+{/each}
 
 {#if sabotageRedistributeAnimation}
   {#each sabotageRedistributeAnimation.gatherCards as gatherCard, i (i)}
