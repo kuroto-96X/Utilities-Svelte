@@ -427,6 +427,13 @@
   let stockShuffleTransitionMs = $state(0)
   let stockShuffleActive = $state(false)
 
+  // 「総入れ替え」(tableauShuffle)発動時、場札全体が一瞬裏向き表示に切り替わり
+  // シェイクする演出用フラグ。trueの間、場札の各カードはfaceUpを無視して強制的に
+  // 裏向き表示にする(実データのwave.tableauはこの時点で既にシャッフル後の内容に
+  // 更新済みのため、実データを直接参照すると新配置が先出しされてしまう。CLAUDE.mdの
+  // 「移動アニメーション実装時の注意」に基づく同期ガードフラグ)。
+  let tableauShuffleActive = $state(false)
+
   // 妨害行動「封印系」(talismanSeal・riteSeal・revelationOracleSeal・roleSeal・comboCap)
   // 発動時のフラッシュ+シェイク演出用。wave.activeSealのうち、今回の対象5種類
   // (talismanHidden・roleBiasは対象外)。activeSeal自体の型をそのまま再利用し、
@@ -544,6 +551,18 @@
     })
   }
 
+  // 「総入れ替え」(tableauShuffle)発動時、場札全体を一瞬裏向き+シェイク表示にしてから
+  // 新しい配置(実データは既に更新済み)を反映する。startStockShuffleAnimationと同様の
+  // 「回転で揺れる」動きではなく、CSS(shidasu-numeric-shakeの左右シェイク)を場札全体の
+  // ラッパー要素に適用する。
+  function startTableauShuffleAnimation() {
+    tableauShuffleActive = true
+    const timer = setTimeout(() => {
+      tableauShuffleActive = false
+    }, 400)
+    dealTimers.push(timer)
+  }
+
   const FLIP_HALF_MS = 100
   let dealingCards = $state<DealingCard[]>([])
   // 着地済み(実表示に切り替え済み)のマス目を"col-row"形式の文字列で追跡する。
@@ -552,7 +571,7 @@
   let dealAnimationActive = $derived(dealingCards.length > 0)
   // いずれかのアニメーション(カードプレイ・得点演出・清算・チェーンリセット・配布)が進行中かどうか。
   // 進行中は操作(カードプレイ・山札引き・秘儀/天啓使用)を無効化する。
-  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0 || flippingCards.length > 0 || discardPurgeActive || stockShuffleActive || sealFlashActive || confiscateFadingActive || discardRedistributeAnimation !== null || chainAreaHiddenForRedistribute)
+  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0 || flippingCards.length > 0 || discardPurgeActive || stockShuffleActive || sealFlashActive || confiscateFadingActive || discardRedistributeAnimation !== null || chainAreaHiddenForRedistribute || tableauShuffleActive)
   let dealTimers: ReturnType<typeof setTimeout>[] = []
   // 初期値をundefinedにしておくことで、マウント直後(ゲーム開始直後の最初のWave)にも
   // 「waveKeyが変化した」と判定され配布アニメーションが発火する。他のprevious系変数
@@ -639,6 +658,8 @@
       if (current.redistributedAreas) {
         startDiscardRedistributeAnimation(current.redistributedAreas)
       }
+    } else if (current.id === 'tableauShuffle') {
+      startTableauShuffleAnimation()
     }
   })
 
@@ -1558,7 +1579,7 @@
 <SuitCountPanel {wave} />
 
 <div class="px-3 pt-1">
-  <div bind:this={tableauEl} class="grid gap-1" style="grid-template-columns: repeat({params.layout.cols}, minmax(0, 1fr));">
+  <div bind:this={tableauEl} class="grid gap-1 {tableauShuffleActive ? 'shidasu-numeric-shake' : ''}" style="grid-template-columns: repeat({params.layout.cols}, minmax(0, 1fr));">
     {#each wave.tableau as col, ci (ci)}
       <div class="relative" style="min-height: 10.5rem;">
         {#each col as card, ri (card.id)}
@@ -1569,6 +1590,7 @@
           {@const isNotYetDealt = dealAnimationActive && !dealtCells.has(`${ci}-${ri}`)}
           {@const isHiddenForSabotageRedistribute = sabotageAnimatingColumns.has(ci)}
           {@const flippingHere = flippingCards.find(f => f.colIndex === ci && f.rowIndex === ri)}
+          {@const displayFaceUp = !tableauShuffleActive && (card.faceUp !== false || isTop)}
           <div
             class="absolute left-0 right-0 {dropTarget && dropTarget !== 'stockTop' && dropTarget.col === ci && dropTarget.row === ri ? 'ring-4 ring-sky-400 rounded-lg' : ''} {isAnimatingThisCard || isCleaningUpThisColumn || isNotYetDealt || isHiddenForSabotageRedistribute || flippingHere ? 'invisible' : ''}"
             style="top:{ri * 18}px; z-index:{ri};"
@@ -1584,10 +1606,10 @@
                 onclick={() => (columnTargetMode ? (isTargetable && onTargetColumn?.(ci)) : (isCardPlayable && startPlayCardAnimation(ci, ri, card)))}
                 class="block w-full text-left {columnTargetMode ? (isTargetable ? 'ring-2 ring-fuchsia-400 shadow-lg -translate-y-0.5' : '') : (isCardPlayable && !anyAnimationActive ? 'ring-2 ring-yellow-300 shadow-lg -translate-y-0.5' : '')} transition-transform disabled:cursor-not-allowed"
               >
-                <CardFace {card} covered={false} faceUp={card.faceUp !== false || isTop} {items} />
+                <CardFace {card} covered={false} faceUp={displayFaceUp} {items} />
               </button>
             {:else}
-              <CardFace {card} covered={false} faceUp={card.faceUp !== false || isTop} {items} />
+              <CardFace {card} covered={false} faceUp={displayFaceUp} {items} />
             {/if}
           </div>
         {/each}
