@@ -600,24 +600,30 @@
   </div>
 {/snippet}
 
-{#snippet itemBadges()}
+{#snippet itemBadges(anyAnimationActive: boolean)}
   {@const talismanFading = confiscateFadingTarget?.kind === 'talisman' ? confiscateFadingTarget : undefined}
-  {@const displayedItemIds = [...new Set(talismanFading ? [...run.items.slice(0, Math.min(talismanFading.idx, run.items.length)), talismanFading.id, ...run.items.slice(Math.min(talismanFading.idx, run.items.length))] : run.items)]}
+  {@const displayedItems = withFadingId(run.items, talismanFading?.id, talismanFading?.idx ?? 0)}
   <div class="flex-1 flex flex-col gap-1 items-end">
     <div class="flex flex-wrap gap-1 justify-end">
-      {#each displayedItemIds as id (id)}
-        {@const n = run.items.filter(x => x === id).length}
+      {#each displayedItems as itemId, i (i)}
         {@const talismanHidden = wave?.activeSeal?.kind === 'talismanHidden'}
-        {@const talismanSealed = wave?.activeSeal?.kind === 'talisman' && wave.activeSeal.id === id}
-        {@const talismanFlashing = sealFlashTarget?.kind === 'talisman' && sealFlashTarget.id === id}
+        {@const talismanSealed = wave?.activeSeal?.kind === 'talisman' && wave.activeSeal.id === itemId}
+        {@const talismanFlashing = sealFlashTarget?.kind === 'talisman' && sealFlashTarget.id === itemId}
         {@const talismanShuffleFlashing = talismanShuffleFlashActive && talismanHidden}
-        {@const talismanConfiscateFading = talismanFading?.id === id && n === 0}
+        {@const talismanConfiscateFading = talismanFading !== undefined && i === talismanFading.idx}
         <span
-          class="text-xs rounded px-1.5 py-0.5 {highlightedItemId === id ? 'ring-2 ring-yellow-400' : ''} {talismanConfiscateFading ? 'shidasu-confiscate-fade' : ''} {talismanFlashing || talismanShuffleFlashing ? 'shidasu-seal-flash' : ''} {talismanHidden || talismanSealed ? 'border' : 'bg-emerald-900 text-yellow-200/90 border border-yellow-600/40'}"
+          role="button"
+          tabindex="0"
+          data-item-index={i}
+          onpointerdown={(e) => !anyAnimationActive && !talismanConfiscateFading && handleItemPointerDown(i, e)}
+          onpointermove={handleItemPointerMove}
+          onpointerup={handleItemPointerUp}
+          onpointercancel={handleItemPointerUp}
+          class="text-xs rounded px-1.5 py-0.5 touch-none select-none {anyAnimationActive || talismanConfiscateFading ? '' : 'cursor-grab'} {draggingItemIndex === i ? 'ring-2 ring-teal-400' : ''} {highlightedItemId === itemId ? 'ring-2 ring-yellow-400' : ''} {talismanConfiscateFading ? 'shidasu-confiscate-fade' : ''} {talismanFlashing || talismanShuffleFlashing ? 'shidasu-seal-flash' : ''} {talismanHidden || talismanSealed ? 'border' : 'bg-emerald-900 text-yellow-200/90 border border-yellow-600/40'}"
           style={talismanHidden || talismanSealed ? 'background:#1c1917; color:#78350f; border-color: rgba(217,119,6,0.5); background-image: repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(217,119,6,0.35) 5px,rgba(217,119,6,0.35) 6px);' : ''}
-          title={talismanHidden ? '護符並び替え: 次の妨害発動まで内容が見えない' : talismanSealed ? '護符封印: 次の妨害発動まで効果が無効' : itemDesc(id, params)}
+          title={talismanHidden ? '護符並び替え: 次の妨害発動まで内容が見えない' : talismanSealed ? '護符封印: 次の妨害発動まで効果が無効' : itemDesc(itemId, params)}
         >
-          {talismanHidden ? '？？？' : itemName(id, params)}{n > 1 ? `×${n}` : ''}
+          {talismanHidden ? '？？？' : itemName(itemId, params)}
         </span>
       {/each}
     </div>
