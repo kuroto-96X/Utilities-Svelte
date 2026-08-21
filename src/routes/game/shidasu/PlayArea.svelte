@@ -540,16 +540,20 @@
     dealTimers.push(timer)
   }
 
-  function startStockShuffleAnimation() {
-    stockShuffleActive = true
+  // 「山札攪拌」(stockShuffle妨害行動・dagaz秘儀)・「チェーン入れ替え」(chainShuffle妨害行動)
+  // 発動時、対象要素が短く左右に回転シェイクする軽量演出の共通ロジック。対象ごとに
+  // 別々の$stateを持つため(要素自体が別のDOM位置にあるため単一stateで共用できない)、
+  // setter群を引数で受け取るパラメータ化で重複を避ける。
+  function startShakeAnimation(setActive: (v: boolean) => void, setRotation: (v: number) => void, setTransitionMs: (v: number) => void) {
+    setActive(true)
     const steps = [-8, 8, -5, 5, 0]
     steps.forEach((deg, i) => {
       const timer = setTimeout(() => {
-        stockShuffleRotation = deg
-        stockShuffleTransitionMs = 60
+        setRotation(deg)
+        setTransitionMs(60)
         if (i === steps.length - 1) {
           const doneTimer = setTimeout(() => {
-            stockShuffleActive = false
+            setActive(false)
           }, 60)
           dealTimers.push(doneTimer)
         }
@@ -558,24 +562,14 @@
     })
   }
 
+  function startStockShuffleAnimation() {
+    startShakeAnimation(v => (stockShuffleActive = v), v => (stockShuffleRotation = v), v => (stockShuffleTransitionMs = v))
+  }
+
   // 「チェーン入れ替え」(chainShuffle)発動時、チェーンエリアが短く左右にシェイクする。
-  // startStockShuffleAnimationと全く同じ回転パターンを対象要素だけ変えて適用する。
+  // startStockShuffleAnimationと同じstartShakeAnimationを対象要素だけ変えて適用する。
   function startChainShuffleAnimation() {
-    chainShuffleActive = true
-    const steps = [-8, 8, -5, 5, 0]
-    steps.forEach((deg, i) => {
-      const timer = setTimeout(() => {
-        chainShuffleRotation = deg
-        chainShuffleTransitionMs = 60
-        if (i === steps.length - 1) {
-          const doneTimer = setTimeout(() => {
-            chainShuffleActive = false
-          }, 60)
-          dealTimers.push(doneTimer)
-        }
-      }, i * 60)
-      dealTimers.push(timer)
-    })
+    startShakeAnimation(v => (chainShuffleActive = v), v => (chainShuffleRotation = v), v => (chainShuffleTransitionMs = v))
   }
 
   // 「総入れ替え」(tableauShuffle)発動時、場札全体を一瞬裏向き+シェイク表示にしてから
