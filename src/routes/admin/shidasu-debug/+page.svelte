@@ -56,6 +56,8 @@
   // 受け取って保持する。本編(+page.svelte)と同じ仕組み。
   let sealFlashTarget = $state<SealFlashTarget | null>(null)
 
+  // PlayArea側で発動検知したtalismanShuffleFlashActive(護符並び替え妨害行動の
+  // 全護符バッジ一斉フラッシュ演出フラグ)を受け取って保持する。本編(+page.svelte)と同じ仕組み。
   let talismanShuffleFlashActive = $state(false)
 
   let confiscateFadingTarget = $state<ConfiscatedTarget | null>(null)
