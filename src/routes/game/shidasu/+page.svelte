@@ -113,6 +113,11 @@
   // PlayAreaの外側にあるため、コールバックprops経由で値を受け渡す。
   let sealFlashTarget = $state<SealFlashTarget | null>(null)
 
+  // PlayArea側で発動検知したtalismanShuffleFlashActive(護符並び替え妨害行動の
+  // 全護符バッジ一斉フラッシュ演出フラグ)を受け取って保持する。itemBadgesは
+  // PlayAreaの外側にあるため、コールバックprops経由で値を受け渡す。
+  let talismanShuffleFlashActive = $state(false)
+
   // PlayArea側で発動検知したconfiscateFadingTarget(没収系妨害行動のフェード演出対象)を
   // 受け取って保持する。itemBadges(護符・天啓・神託・レリックバッジ)はPlayAreaの外側に
   // あるため、コールバックprops経由で値を受け渡す。
@@ -605,9 +610,10 @@
         {@const talismanHidden = wave?.activeSeal?.kind === 'talismanHidden'}
         {@const talismanSealed = wave?.activeSeal?.kind === 'talisman' && wave.activeSeal.id === id}
         {@const talismanFlashing = sealFlashTarget?.kind === 'talisman' && sealFlashTarget.id === id}
+        {@const talismanShuffleFlashing = talismanShuffleFlashActive && talismanHidden}
         {@const talismanConfiscateFading = talismanFading?.id === id && n === 0}
         <span
-          class="text-xs rounded px-1.5 py-0.5 {highlightedItemId === id ? 'ring-2 ring-yellow-400' : ''} {talismanConfiscateFading ? 'shidasu-confiscate-fade' : ''} {talismanFlashing ? 'shidasu-seal-flash' : ''} {talismanHidden || talismanSealed ? 'border' : 'bg-emerald-900 text-yellow-200/90 border border-yellow-600/40'}"
+          class="text-xs rounded px-1.5 py-0.5 {highlightedItemId === id ? 'ring-2 ring-yellow-400' : ''} {talismanConfiscateFading ? 'shidasu-confiscate-fade' : ''} {talismanFlashing ? 'shidasu-seal-flash' : ''} {talismanShuffleFlashing ? 'shidasu-seal-flash' : ''} {talismanHidden || talismanSealed ? 'border' : 'bg-emerald-900 text-yellow-200/90 border border-yellow-600/40'}"
           style={talismanHidden || talismanSealed ? 'background:#1c1917; color:#78350f; border-color: rgba(217,119,6,0.5); background-image: repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(217,119,6,0.35) 5px,rgba(217,119,6,0.35) 6px);' : ''}
           title={talismanHidden ? '護符並び替え: 次の妨害発動まで内容が見えない' : talismanSealed ? '護符封印: 次の妨害発動まで効果が無効' : itemDesc(id, params)}
         >
@@ -765,6 +771,7 @@
     onConfiscateFadingChange={(target) => { confiscateFadingTarget = target }}
     onPressPulseChange={(target) => { pressPulseTarget = target }}
     onNumericPopupChange={(target) => { numericPopupTarget = target }}
+    onTalismanShuffleFlashChange={(active) => { talismanShuffleFlashActive = active }}
     waveKey={`wave-${run.waveGeneration}`}
     headerExtra={stageRow} extraFooter={itemBadges}
     rites={run.rites} onUseRite={handleUseRite}
