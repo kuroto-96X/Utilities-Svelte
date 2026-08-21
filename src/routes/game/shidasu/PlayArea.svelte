@@ -78,7 +78,7 @@
     onDraw: () => void
     dropTarget?: { col: number; row: number } | 'stockTop' | null
     headerExtra?: Snippet
-    extraFooter?: Snippet
+    extraFooter?: Snippet<[boolean]>
     rites?: RiteId[]
     onUseRite?: (riteId: RiteId) => void
     disableRites?: boolean
@@ -1728,7 +1728,7 @@
     {/if}
   </div>
   {#if extraFooter}
-    {@render extraFooter()}
+    {@render extraFooter(anyAnimationActive)}
   {/if}
 </div>
 
