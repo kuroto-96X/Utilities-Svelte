@@ -112,7 +112,7 @@ Shidasuロードマップ項目3「星の妨害行動の検討」で洗い出し
 
 方針として、妨害行動32個すべてに専用アニメーションを設定したい。現状の実装状況と今後の方針は以下の通り。
 
-### 実装済み(30個)
+### 実装済み(32個・全完了)
 
 `PlayArea.svelte`の`lastSabotage`検知(`$effect.pre`)、および`lastStockShuffle`検知が対応する:
 
@@ -124,9 +124,6 @@ Shidasuロードマップ項目3「星の妨害行動の検討」で洗い出し
 - **riteForceActivate**(秘儀強制発動)・**revelationOracleForceActivate**(天啓・神託強制発動): グループC「強制発動系」、対象ボタン(秘儀ボタン・天啓ボタン・神託「使」ボタン)が自動でクリックされたように一瞬縮んでから戻り強く光る「自動プレス+パルス」演出を実装(2026-08-20)。プレイヤー自身の通常クリック発動(秘儀・天啓・神託共通)にも同じ演出を適用した。秘儀・天啓・神託は使用と同時に所持リストから消費されて消えるため、`confiscatedTarget`と同様の「一時保持+`withFadingId`で末尾補完」の仕組みが必要だった(design doc・実装プラン作成時には見落としており、目視確認で発覚して追加対応した)。詳細は`docs/superpowers/specs/2026-08-20-shidasu-sabotage-force-activate-animation-design.md`を参照。
 - **comboBreather**(強制小休止)・**comboReduce**(コンボ削減)・**currencyConfiscate**(通貨没収)・**currencyDrain**(通貨強制消費)・**roleLevelDecay**(役減衰)・**roleBias**(役偏重)・**tsukumokaRelease**(付喪化解除): グループE「数値変化系」、対象UI要素(コンボ表示・通貨表示・役ステータス行・レリックバッジ)が短くシェイクすると同時に、変化内容を示す赤いテキスト(マイナス数字・倍率・状態名)が右上にポップして浮かび上がりながら消える演出を実装(2026-08-20)。`SabotageResult.numericChangeTarget`で変化対象と実際の変化量(上限クランプ後)を明示的に伝える設計。`rewardReduce`(報酬減少)は対応する常設表示が存在しないためスコープ外とした。詳細は`docs/superpowers/specs/2026-08-20-shidasu-sabotage-numeric-change-animation-design.md`を参照。
 - **chainSettle**(強制清算)・**chainPartialDiscard**(部分放棄)・**discardErase**(捨て札消去)・**discardBury**(捨て札埋没)・**tableauCardToDiscard**(一枚没収)・**tableauShuffle**(総入れ替え)・**chainShuffle**(入れ替え): グループD「カード移動系」、既存の「総戻し/一列戻し」「大量放出/少量放出」「山札攪拌」と同系統の演出パターンを対象エリアの組み合わせに応じて流用・拡張して実装(2026-08-21)。chainSettle/chainPartialDiscardは既存のチェーンリセット検知(`wave.chain`配列の変化を`$effect.pre`で推測する経路、`lastSabotage`とは独立)をそのまま流用し、chainPartialDiscard発動時に残存カードを誤検知するバグを修正した。discardErase/discardBuryは`SabotageResult.redistributedAreas`、tableauCardToDiscardは`SabotageResult.tableauCardRemoved`を新設し、対象を明示的に伝える設計(グループA〜Eで確立した「明示的シグナル、推測しない」原則を踏襲)。tableauShuffleは場札全体が一瞬裏向き+シェイクしてから新配置に切り替わる演出(`card.faceUp !== false || 新isTop`でフリップ判定)、chainShuffleは山札攪拌と同型のその場シェイク演出(共通ロジックは`startShakeAnimation`に統合)。詳細は`docs/superpowers/specs/2026-08-21-shidasu-sabotage-card-movement-animation-design.md`を参照。
-
-### 未実装(1個)・今後の方針
-
-`talismanShuffle`(護符並び替え)のみ、グループA〜Eのいずれにも含まれず発動演出(フラッシュ・シェイク等)が未実装のまま残っている(2026-08-21判明)。既存の「妨害行動の裏向き演出」(2026-08-18実装済み)により、発動中は護符バッジの表示名が「？？？」に隠れる常設表示の対応は済んでいるが、発動の瞬間を示す演出自体が無い。対応は別セッションで実施する想定。
+- **talismanShuffle**(護符並び替え): グループA(封印系)の設計段階で明示的にスコープ外とされ、常設表示(斜めストライプ・「？？？」表示、2026-08-18実装済み)のみで発動演出が無いまま残っていたのを実装(2026-08-21)。対象が「単一護符」ではなく「全護符バッジ一括」である点が既存の封印系5種と異なるため、対象識別情報を持たない専用のboolean state(`talismanShuffleFlashActive`)で全護符バッジに同時に既存の`shidasu-seal-flash`を適用する設計にした。実装調査で、デバッグ画面(`/admin/shidasu-debug`)には本編にある`talismanHidden`常設表示自体が実装されていない既存ギャップが発覚し、合わせて対応した。これで妨害行動32個全てに発動演出が完了。詳細は`docs/superpowers/specs/2026-08-21-shidasu-sabotage-talisman-shuffle-animation-design.md`を参照。
 
 `rewardReduce`(報酬減少)は、プレイ中の画面に対応する常設表示が存在しないため、演出実装のスコープ外とする(2026-08-20確定)。
