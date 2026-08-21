@@ -434,6 +434,13 @@
   // 「移動アニメーション実装時の注意」に基づく同期ガードフラグ)。
   let tableauShuffleActive = $state(false)
 
+  // 「チェーン入れ替え」(chainShuffle)発動時、チェーンエリア全体がその場でシェイクする
+  // 演出用フラグ。山札攪拌(stockShuffleActive)と同じ「その場で軽く揺れるだけ」の
+  // 軽量パターン。
+  let chainShuffleActive = $state(false)
+  let chainShuffleRotation = $state(0)
+  let chainShuffleTransitionMs = $state(0)
+
   // 妨害行動「封印系」(talismanSeal・riteSeal・revelationOracleSeal・roleSeal・comboCap)
   // 発動時のフラッシュ+シェイク演出用。wave.activeSealのうち、今回の対象5種類
   // (talismanHidden・roleBiasは対象外)。activeSeal自体の型をそのまま再利用し、
@@ -551,6 +558,26 @@
     })
   }
 
+  // 「チェーン入れ替え」(chainShuffle)発動時、チェーンエリアが短く左右にシェイクする。
+  // startStockShuffleAnimationと全く同じ回転パターンを対象要素だけ変えて適用する。
+  function startChainShuffleAnimation() {
+    chainShuffleActive = true
+    const steps = [-8, 8, -5, 5, 0]
+    steps.forEach((deg, i) => {
+      const timer = setTimeout(() => {
+        chainShuffleRotation = deg
+        chainShuffleTransitionMs = 60
+        if (i === steps.length - 1) {
+          const doneTimer = setTimeout(() => {
+            chainShuffleActive = false
+          }, 60)
+          dealTimers.push(doneTimer)
+        }
+      }, i * 60)
+      dealTimers.push(timer)
+    })
+  }
+
   // 「総入れ替え」(tableauShuffle)発動時、場札全体を一瞬裏向き+シェイク表示にしてから
   // 新しい配置(実データは既に更新済み)を反映する。startStockShuffleAnimationと同様の
   // 「回転で揺れる」動きではなく、CSS(shidasu-numeric-shakeの左右シェイク)を場札全体の
@@ -571,7 +598,7 @@
   let dealAnimationActive = $derived(dealingCards.length > 0)
   // いずれかのアニメーション(カードプレイ・得点演出・清算・チェーンリセット・配布)が進行中かどうか。
   // 進行中は操作(カードプレイ・山札引き・秘儀/天啓使用)を無効化する。
-  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0 || flippingCards.length > 0 || discardPurgeActive || stockShuffleActive || sealFlashActive || confiscateFadingActive || discardRedistributeAnimation !== null || chainAreaHiddenForRedistribute || tableauShuffleActive)
+  let anyAnimationActive = $derived(playingAnimation !== null || scoreReveal !== null || cleanupAnimation !== null || chainResetAnimation !== null || dealAnimationActive || sabotageRedistributeAnimation !== null || sabotageAnimatingColumns.size > 0 || flippingCards.length > 0 || discardPurgeActive || stockShuffleActive || sealFlashActive || confiscateFadingActive || discardRedistributeAnimation !== null || chainAreaHiddenForRedistribute || tableauShuffleActive || chainShuffleActive)
   let dealTimers: ReturnType<typeof setTimeout>[] = []
   // 初期値をundefinedにしておくことで、マウント直後(ゲーム開始直後の最初のWave)にも
   // 「waveKeyが変化した」と判定され配布アニメーションが発火する。他のprevious系変数
@@ -660,6 +687,8 @@
       }
     } else if (current.id === 'tableauShuffle') {
       startTableauShuffleAnimation()
+    } else if (current.id === 'chainShuffle') {
+      startChainShuffleAnimation()
     }
   })
 
@@ -1663,7 +1692,7 @@
       <CardFace card={nextCard} covered={false} {items} />
     </div>
   {/if}
-  <div bind:this={chainAreaEl} class="overflow-x-auto min-w-0 {cleanupAnimation?.kind === 'chain' || chainCleanedUp || chainResetAnimation !== null || dealAnimationActive || chainAreaHiddenForRedistribute ? 'invisible' : ''}">
+  <div bind:this={chainAreaEl} class="overflow-x-auto min-w-0 {cleanupAnimation?.kind === 'chain' || chainCleanedUp || chainResetAnimation !== null || dealAnimationActive || chainAreaHiddenForRedistribute ? 'invisible' : ''}" style="transform: rotate({chainShuffleRotation}deg); transition-property: transform; transition-duration:{chainShuffleTransitionMs}ms;">
     {#if chainAreaExtra}
       {@render chainAreaExtra()}
     {:else}
