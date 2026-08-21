@@ -60,6 +60,15 @@ export interface SabotageResult {
     | { kind: 'roleLevel'; names: RoleName[]; amount: number }
     | { kind: 'roleBias'; buffed: RoleName[]; nerfed: RoleName[] }
     | { kind: 'tsukumoka'; relicId: RelicId }
+  // 今回「tableauCardToDiscard(一枚没収)」で場札から取り除かれたカードの位置。
+  // 個別移動アニメーション(PlayArea.svelte)の起点(該当マス目)を特定するために使う。
+  tableauCardRemoved?: { colIndex: number; rowIndex: number; card: Card }
+  // 今回「discardErase(捨て札消去)」「discardBury(捨て札埋没)」で2エリアをまとめて
+  // シャッフル・再分配したことを明示的に伝える。対象エリアの組み合わせによって
+  // 収束元・再配布先が異なるため、kindで区別する。
+  redistributedAreas?:
+    | { kind: 'chainAndDiscard' } // discardErase: 捨て札+チェーン→新チェーン+新捨て札
+    | { kind: 'stockAndDiscard' } // discardBury: 山札+捨て札→新捨て札(裏向き)+新山札
 }
 
 function applyStockPurge({ wave }: SabotageContext): SabotageResult {
