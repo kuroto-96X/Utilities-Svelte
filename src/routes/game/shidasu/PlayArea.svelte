@@ -609,6 +609,10 @@
       if (current.numericChangeTarget) {
         startNumericPopupAnimation(current.numericChangeTarget)
       }
+    } else if (current.id === 'tableauCardToDiscard') {
+      if (current.tableauCardRemoved) {
+        startTableauCardToDiscardAnimation(current.tableauCardRemoved)
+      }
     }
   })
 
@@ -768,6 +772,39 @@
       }, index * DEAL_INTERVAL_MS)
       dealTimers.push(timer)
     })
+  }
+
+  // 「一枚没収」(tableauCardToDiscard)発動時、場札の該当マス目から捨て札へ1枚を
+  // 個別移動させる。startStockPurgeAnimationとほぼ同じ構造だが、起点が山札ボタン固定
+  // ではなく場札の該当マス目である点、および常に1枚のみ(複数枚の時間差処理が不要)な
+  // 点が異なる。場札のカードは常に表向き(faceUp: true)のため、着地後は必ず
+  // フリップ演出(startDiscardFlipReveal)を行う。
+  function startTableauCardToDiscardAnimation(removed: { colIndex: number; rowIndex: number; card: Card }) {
+    if (!tableauEl || !discardPileEl) return
+    const fromEl = tableauEl.querySelector<HTMLElement>(`[data-drop-col="${removed.colIndex}"][data-drop-row="${removed.rowIndex}"]`)
+    if (!fromEl) return
+    discardPurgeActive = true
+    const fromRect = fromEl.getBoundingClientRect()
+    const fromLeft = fromRect.left + fromRect.width / 2
+    const fromTop = fromRect.top + fromRect.height / 2
+    const toRect = discardPileEl.getBoundingClientRect()
+    const toLeft = toRect.left + toRect.width / 2
+    const toTop = toRect.top + toRect.height / 2
+
+    const card = removed.card
+    discardPurgeCards = [...discardPurgeCards, { card, left: fromLeft, top: fromTop, transitionMs: 0 }]
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        discardPurgeCards = discardPurgeCards.map(d => (d.card.id === card.id ? { ...d, left: toLeft, top: toTop, transitionMs: DEAL_MOVE_MS } : d))
+      })
+    })
+
+    const landTimer = setTimeout(() => {
+      discardPurgeCards = discardPurgeCards.filter(d => d.card.id !== card.id)
+      startDiscardFlipReveal(card)
+    }, DEAL_MOVE_MS)
+    dealTimers.push(landTimer)
   }
 
   // 「総戻し」「一列戻し」発動時、対象列のカードを山札の位置へ収束させるアニメーションを
