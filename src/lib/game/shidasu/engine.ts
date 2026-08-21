@@ -1626,12 +1626,19 @@ export function useOracle(params: ShidasuParams, run: RunState, roleName: RoleNa
 
 // 所持護符の並び順をfromIndexからtoIndexへ移動する。加算・倍算型護符の適用順(左から順に適用)を
 // プレイヤーが調整できるようにするためのショップ画面向けの並べ替え操作。
+// 配列内の1要素をfromIndexからtoIndexへ移動した新しい配列を返す(元の配列は変更しない)。
+// プレイ中画面・デバッグ画面の護符バッジドラッグ並べ替えが共通で使う汎用ロジック。
+export function moveArrayItem<T>(arr: T[], fromIndex: number, toIndex: number): T[] {
+  if (fromIndex === toIndex) return arr
+  const next = [...arr]
+  const [moved] = next.splice(fromIndex, 1)
+  next.splice(toIndex, 0, moved)
+  return next
+}
+
 export function reorderItems(run: RunState, fromIndex: number, toIndex: number): RunState {
   if (fromIndex === toIndex) return run
-  const items = [...run.items]
-  const [moved] = items.splice(fromIndex, 1)
-  items.splice(toIndex, 0, moved)
-  return { ...run, items }
+  return { ...run, items: moveArrayItem(run.items, fromIndex, toIndex) }
 }
 
 // 所持配列から1個を売却し、通貨を得る共通処理。playing/shopフェーズでのみ呼べる。

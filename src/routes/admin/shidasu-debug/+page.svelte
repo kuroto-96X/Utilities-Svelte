@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { loadParams } from '$lib/game/shidasu/params'
-  import { startWave, playCard, drawStock, forceStockTop, triggerSabotage, createInitialRun, resolveSealedRoleEffect, useRite, useRevelation, useOracle } from '$lib/game/shidasu/engine'
+  import { startWave, playCard, drawStock, forceStockTop, triggerSabotage, createInitialRun, resolveSealedRoleEffect, useRite, useRevelation, useOracle, moveArrayItem } from '$lib/game/shidasu/engine'
   import { SABOTAGE_POOL } from '$lib/game/shidasu/sabotage'
   import { applyRiteEffect } from '$lib/game/shidasu/riteEffects'
   import { applyRevelationEffect, revelationNeedsTarget } from '$lib/game/shidasu/revelationEffects'
@@ -445,10 +445,7 @@
             if (!el) return
             const targetIndex = Number(el.dataset.itemIndex)
             if (Number.isNaN(targetIndex) || targetIndex === draggingItemIndex) return
-            const arr = [...items]
-            const [moved] = arr.splice(draggingItemIndex, 1)
-            arr.splice(targetIndex, 0, moved)
-            items = arr
+            items = moveArrayItem(items, draggingItemIndex, targetIndex)
             draggingItemIndex = targetIndex
           }}
           onpointerup={() => { draggingItemIndex = null }}
