@@ -15,9 +15,9 @@ export interface SabotageContext {
   // riteForceActivate・revelationOracleForceActivate用。engine.tsに定義されているが、
   // sabotageEffects.tsからengine.tsを直接importすると循環importになるため、
   // 呼び出し元(triggerSabotage)から値として注入する。
-  useRite: (params: ShidasuParams, run: RunState, riteId: RiteId, rand?: () => number) => RunState
+  useRite: (params: ShidasuParams, run: RunState, instanceId: number, riteId: RiteId, rand?: () => number) => RunState
   useRevelation: (
-    params: ShidasuParams, run: RunState, revelationId: RevelationId,
+    params: ShidasuParams, run: RunState, instanceId: number, revelationId: RevelationId,
     targetCol: number | null, rand?: () => number, targetRelicId?: RelicId | null
   ) => RunState
   useOracle: (params: ShidasuParams, run: RunState, roleName: RoleName) => RunState
@@ -48,7 +48,7 @@ export interface SabotageResult {
   // 通常のプレイヤークリックと同じ処理(useRite/useRevelation/useOracle)を経由するため、活性化した
   // 対象自体を保持する仕組みが無い。ここで明示的に伝える。
   forceActivatedTarget?:
-    | { kind: 'rite'; id: RiteId }
+    | { kind: 'rite'; instanceId: number; id: RiteId }
     | { kind: 'revelationOrOracle'; ref: HeldRevelationOrOracleRef }
   // 今回「数値変化系」(comboBreather/comboReduce/currencyConfiscate/currencyDrain/
   // roleLevelDecay/roleBias/tsukumokaRelease)で変化した対象と内容を明示的に伝える。
@@ -110,19 +110,19 @@ function applyComboBreather({ wave }: SabotageContext): SabotageResult {
 function applyTalismanSeal({ run, rand }: SabotageContext): SabotageResult {
   if (run.items.length === 0) return {}
   const target = run.items[Math.floor(rand() * run.items.length)]
-  return { wave: { activeSeal: { kind: 'talisman', id: target } } }
+  return { wave: { activeSeal: { kind: 'talisman', instanceId: target.instanceId, id: target.id } } }
 }
 
 function applyRiteSeal({ run, rand }: SabotageContext): SabotageResult {
   if (run.rites.length === 0) return {}
   const target = run.rites[Math.floor(rand() * run.rites.length)]
-  return { wave: { activeSeal: { kind: 'rite', id: target } } }
+  return { wave: { activeSeal: { kind: 'rite', instanceId: target.instanceId, id: target.id } } }
 }
 
 function applyRevelationOracleSeal({ run, rand }: SabotageContext): SabotageResult {
   const pool: HeldRevelationOrOracleRef[] = [
-    ...run.revelations.map(refId => ({ kind: 'revelation' as const, id: refId })),
-    ...run.oracles.map(refId => ({ kind: 'oracle' as const, id: refId })),
+    ...run.revelations.map(h => ({ kind: 'revelation' as const, instanceId: h.instanceId, id: h.id })),
+    ...run.oracles.map(h => ({ kind: 'oracle' as const, instanceId: h.instanceId, id: h.id })),
   ]
   if (pool.length === 0) return {}
   const ref = pool[Math.floor(rand() * pool.length)]
@@ -215,14 +215,14 @@ function applyComboReduce({ wave }: SabotageContext): SabotageResult {
 function applyTalismanConfiscate({ run, rand }: SabotageContext): SabotageResult {
   if (run.items.length === 0) return {}
   const idx = Math.floor(rand() * run.items.length)
-  const id = run.items[idx]
+  const id = run.items[idx].id
   return { run: { items: [...run.items.slice(0, idx), ...run.items.slice(idx + 1)] }, confiscatedTarget: { kind: 'talisman', id, idx } }
 }
 
 function applyRiteConfiscate({ run, rand }: SabotageContext): SabotageResult {
   if (run.rites.length === 0) return {}
   const idx = Math.floor(rand() * run.rites.length)
-  const id = run.rites[idx]
+  const id = run.rites[idx].id
   return { run: { rites: [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)] }, confiscatedTarget: { kind: 'rite', id, idx } }
 }
 
@@ -245,11 +245,11 @@ function applyComboCap({ wave }: SabotageContext): SabotageResult {
 // runにはused(useRiteが返す完全なRunState)をそのまま渡す。used.waveはtriggerSabotage側の
 // 合成処理で最終的にnextWaveに上書きされるため無害。
 function applyRiteForceActivate({ params, run, wave, rand, useRite }: SabotageContext): SabotageResult {
-  const usable = run.rites.filter(riteId => canUseRite(params, wave, riteId))
+  const usable = run.rites.filter(h => canUseRite(params, wave, h.instanceId, h.id))
   if (usable.length === 0) return {}
   const target = usable[Math.floor(rand() * usable.length)]
-  const used = useRite(params, run, target, rand)
-  return { wave: { ...used.wave!, activeSeal: null }, run: used, forceActivatedTarget: { kind: 'rite', id: target } }
+  const used = useRite(params, run, target.instanceId, target.id, rand)
+  return { wave: { ...used.wave!, activeSeal: null }, run: used, forceActivatedTarget: { kind: 'rite', instanceId: target.instanceId, id: target.id } }
 }
 
 function applyTalismanShuffle({ run, rand }: SabotageContext): SabotageResult {
@@ -260,8 +260,8 @@ function applyTalismanShuffle({ run, rand }: SabotageContext): SabotageResult {
 
 function applyRevelationOracleConfiscate({ run, rand }: SabotageContext): SabotageResult {
   const pool: HeldRevelationOrOracleRef[] = [
-    ...run.revelations.map(id => ({ kind: 'revelation' as const, id })),
-    ...run.oracles.map(id => ({ kind: 'oracle' as const, id })),
+    ...run.revelations.map(h => ({ kind: 'revelation' as const, instanceId: h.instanceId, id: h.id })),
+    ...run.oracles.map(h => ({ kind: 'oracle' as const, instanceId: h.instanceId, id: h.id })),
   ]
   if (pool.length === 0) return {}
   // poolIdxをそのままidxの算出元にする(indexOfだと同名の天啓・神託を複数所持している場合、
@@ -287,14 +287,14 @@ function applyRevelationOracleConfiscate({ run, rand }: SabotageContext): Sabota
 // useRevelation/useOracleが返す完全なRunStateをそのままrunへ渡す(applyRiteForceActivateと同じ理由:
 // grantRevelationReward等が天啓の種類によって動的に返す報酬フィールドを個別に列挙せずに済む)。
 function applyRevelationOracleForceActivate({ params, run, wave, rand, useRevelation, useOracle }: SabotageContext): SabotageResult {
-  const usableRevelations = run.revelations.filter(id => canUseRevelation(params, wave, id, run.relics))
+  const usableRevelations = run.revelations.filter(h => canUseRevelation(params, wave, h.instanceId, h.id, run.relics))
   // useOracleはuseRite/useRevelationと違いwave.statusを見ないため、ここで明示的にガードする。
   // (triggerSabotageはwave.status==='ended'になった直後にも呼ばれうる。天啓側はuseRevelation内部の
   // ガードで自然にno-opになるが、神託側だけ無条件に消費されてしまうと非対称な挙動になるため)
   const usableOracles = wave.status === 'playing' ? run.oracles : []
   const pool: HeldRevelationOrOracleRef[] = [
-    ...usableRevelations.map(id => ({ kind: 'revelation' as const, id })),
-    ...usableOracles.map(id => ({ kind: 'oracle' as const, id })),
+    ...usableRevelations.map(h => ({ kind: 'revelation' as const, instanceId: h.instanceId, id: h.id })),
+    ...usableOracles.map(h => ({ kind: 'oracle' as const, instanceId: h.instanceId, id: h.id })),
   ]
   if (pool.length === 0) return {}
   const ref = pool[Math.floor(rand() * pool.length)]
@@ -303,7 +303,7 @@ function applyRevelationOracleForceActivate({ params, run, wave, rand, useRevela
     return { wave: { ...used.wave!, activeSeal: null }, run: used, forceActivatedTarget: { kind: 'revelationOrOracle', ref } }
   }
   const targetCol = revelationNeedsTarget(ref.id) ? Math.floor(rand() * wave.tableau.length) : null
-  const used = useRevelation(params, run, ref.id, targetCol, rand)
+  const used = useRevelation(params, run, ref.instanceId, ref.id, targetCol, rand)
   return { wave: { ...used.wave!, activeSeal: null }, run: used, forceActivatedTarget: { kind: 'revelationOrOracle', ref } }
 }
 
