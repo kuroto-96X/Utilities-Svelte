@@ -487,7 +487,7 @@ describe('残響・流星の基盤(startWave/resolveWaveEndでの同期)', () =>
 
   test('resolveWaveEndでクリア成功時、wave側のechoX・shootingStarNがrunへ書き戻される', () => {
     const base = beginRun(DEFAULT_PARAMS, 1)
-    const { wave } = startWave(DEFAULT_PARAMS, base.stageIndex, base.waveIndex, base.items, base.deckComposition, 1, base.extraTableauRows, base.oracleLevels)
+    const { wave } = startWave(DEFAULT_PARAMS, base.stageIndex, base.waveIndex, base.items.map(h => h.id), base.deckComposition, 1, base.extraTableauRows, base.oracleLevels)
     const run: RunState = {
       ...base,
       wave: { ...wave, echoX: 3, shootingStarN: 120, score: waveTarget(DEFAULT_PARAMS, 0, 0, base.stageStars), status: 'ended', endReason: 'target' },
@@ -501,28 +501,28 @@ describe('残響・流星の基盤(startWave/resolveWaveEndでの同期)', () =>
 describe('果断・星霜: 秘儀/天啓/神託使用でdiscretionN・frostXが加算される', () => {
   test('秘儀使用後、discretionNが10から20になる(果断所持時)', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, ['discretion'], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: ['discretion'], rites: ['jera'] }
-    const next = useRite(DEFAULT_PARAMS, run, 'jera', createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: [{ instanceId: 1, id: 'discretion' }], rites: [{ instanceId: 2, id: 'jera' }] }
+    const next = useRite(DEFAULT_PARAMS, run, 2, 'jera', createRng(1))
     expect(next.wave!.discretionN).toBe(20)
   })
 
   test('果断を所持していなければdiscretionNは変化しない', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: [], rites: ['jera'] }
-    const next = useRite(DEFAULT_PARAMS, run, 'jera', createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: [], rites: [{ instanceId: 1, id: 'jera' }] }
+    const next = useRite(DEFAULT_PARAMS, run, 1, 'jera', createRng(1))
     expect(next.wave!.discretionN).toBe(10)
   })
 
   test('秘儀使用後、frostXが1から1.01になる(星霜所持時)', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, ['frost'], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: ['frost'], rites: ['jera'] }
-    const next = useRite(DEFAULT_PARAMS, run, 'jera', createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: [{ instanceId: 1, id: 'frost' }], rites: [{ instanceId: 2, id: 'jera' }] }
+    const next = useRite(DEFAULT_PARAMS, run, 2, 'jera', createRng(1))
     expect(next.wave!.frostX).toBeCloseTo(1.01)
   })
 
   test('神託使用後、discretionN・frostXが両方加算される(果断・星霜を両方所持)', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, ['discretion', 'frost'], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: ['discretion', 'frost'], oracles: ['flush'] }
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: [{ instanceId: 1, id: 'discretion' }, { instanceId: 2, id: 'frost' }], oracles: [{ instanceId: 3, id: 'flush' }] }
     const next = useOracle(DEFAULT_PARAMS, run, 'flush')
     expect(next.wave!.discretionN).toBe(20)
     expect(next.wave!.frostX).toBeCloseTo(1.01)
@@ -530,8 +530,8 @@ describe('果断・星霜: 秘儀/天啓/神託使用でdiscretionN・frostXが�
 
   test('天啓使用後、discretionN・frostXが加算される(果断・星霜を所持)', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, ['discretion', 'frost'], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: ['discretion', 'frost'], revelations: ['shin'] }
-    const next = useRevelation(DEFAULT_PARAMS, run, 'shin', null, createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: [{ instanceId: 1, id: 'discretion' }, { instanceId: 2, id: 'frost' }], revelations: [{ instanceId: 3, id: 'shin' }] }
+    const next = useRevelation(DEFAULT_PARAMS, run, 3, 'shin', null, createRng(1))
     expect(next.wave!.discretionN).toBe(20)
     expect(next.wave!.frostX).toBeCloseTo(1.01)
   })
@@ -2459,7 +2459,7 @@ describe('createInitialRun / beginRun', () => {
     const run = createInitialRun()
     expect(run.phase).toBe('title')
     expect(run.wave).toBeNull()
-    expect(run.items).toEqual([])
+    expect(run.items.map(h => h.id)).toEqual([])
     expect(run.pendingNewItem).toBeNull()
   })
 
@@ -2527,7 +2527,7 @@ describe('createInitialRun / beginRun', () => {
 
   test('createInitialRunはショップ用フィールドを初期値で持つ', () => {
     const run = createInitialRun()
-    expect(run.oracles).toEqual([])
+    expect(run.oracles.map(h => h.id)).toEqual([])
     expect(run.shop).toBeNull()
     expect(run.offerPickRemaining).toBe(0)
     expect(run.riteOffer).toEqual([])
@@ -2538,7 +2538,7 @@ describe('createInitialRun / beginRun', () => {
 
   test('beginRunはショップ用フィールドを初期値で持つ', () => {
     const run = beginRun(DEFAULT_PARAMS, 1)
-    expect(run.oracles).toEqual([])
+    expect(run.oracles.map(h => h.id)).toEqual([])
     expect(run.shop).toBeNull()
     expect(run.offerPickRemaining).toBe(0)
     expect(run.riteOffer).toEqual([])
@@ -2624,7 +2624,7 @@ describe('resolveWaveEnd', () => {
   function endedRun(overrides: Partial<RunState>, waveScore: number): RunState {
     const base = beginRun(DEFAULT_PARAMS, 1)
     const run = { ...base, ...overrides }
-    const { wave } = startWave(DEFAULT_PARAMS, run.stageIndex, run.waveIndex, run.items, run.deckComposition, 1, run.extraTableauRows, run.oracleLevels)
+    const { wave } = startWave(DEFAULT_PARAMS, run.stageIndex, run.waveIndex, run.items.map(h => h.id), run.deckComposition, 1, run.extraTableauRows, run.oracleLevels)
     return {
       ...run,
       wave: { ...wave, score: waveScore, status: 'ended', endReason: 'target' },
@@ -2936,7 +2936,7 @@ describe('rerollShop', () => {
   // enterShopはmodule非公開のため、resolveWaveEndを経由してshopが確定したRunStateを用意する
   function shopStateAfterWaveClear(): RunState {
     const begun = beginRun(DEFAULT_PARAMS, 1)
-    const { wave } = startWave(DEFAULT_PARAMS, begun.stageIndex, begun.waveIndex, begun.items, begun.deckComposition, 1, begun.extraTableauRows, begun.oracleLevels)
+    const { wave } = startWave(DEFAULT_PARAMS, begun.stageIndex, begun.waveIndex, begun.items.map(h => h.id), begun.deckComposition, 1, begun.extraTableauRows, begun.oracleLevels)
     const ended: RunState = { ...begun, wave: { ...wave, score: waveTarget(DEFAULT_PARAMS, 0, 0, begun.stageStars), status: 'ended', endReason: 'target' } }
     return resolveWaveEnd(DEFAULT_PARAMS, ended, createRng(5))
   }
@@ -3048,7 +3048,7 @@ describe('pickItem / continueAfterGreatMisfortune / restartRun', () => {
     expect(next.phase).toBe('shop')
     expect(next.stageIndex).toBe(0)
     expect(next.waveIndex).toBe(0)
-    expect(next.items).toEqual([])
+    expect(next.items.map(h => h.id)).toEqual([])
   })
 })
 
@@ -3069,7 +3069,7 @@ describe('buyIndividualItem(バラ売り護符購入)', () => {
     const run = shopRun([{ kind: 'item', id: itemId, sold: false }])
     const price = itemBuyPrice(DEFAULT_PARAMS, run, itemId)
     const result = buyIndividualItem(DEFAULT_PARAMS, run, 0)
-    expect(result.items).toEqual([itemId])
+    expect(result.items.map(h => h.id)).toEqual([itemId])
     expect(result.currency).toBe(999 - price)
     expect(result.shop!.individual[0].sold).toBe(true)
   })
@@ -3077,7 +3077,7 @@ describe('buyIndividualItem(バラ売り護符購入)', () => {
   test('所持上限(maxItems)到達時は購入できない(ブロック、スワップは発生しない)', () => {
     const itemId = ITEM_POOL[0]
     const fullItems = ITEM_POOL.slice(0, DEFAULT_PARAMS.items.maxItems)
-    const run = shopRun([{ kind: 'item', id: itemId, sold: false }], { items: fullItems })
+    const run = shopRun([{ kind: 'item', id: itemId, sold: false }], { items: fullItems.map((id, i) => ({ instanceId: i + 1, id })) })
     const result = buyIndividualItem(DEFAULT_PARAMS, run, 0)
     expect(result).toBe(run)
   })
@@ -3106,11 +3106,11 @@ describe('buyIndividualItem(バラ売り護符購入)', () => {
     const fullItems = ITEM_POOL.slice(0, DEFAULT_PARAMS.items.maxItems)
     const newItemId = ITEM_POOL.find(id => !fullItems.includes(id))!
     const run = shopRun([{ kind: 'item', id: newItemId, sold: false }], {
-      items: fullItems,
+      items: fullItems.map((id, i) => ({ instanceId: i + 1, id })),
       relics: [{ id: 'manekiHoteizo', tsukumoka: false }],
     })
     const result = buyIndividualItem(DEFAULT_PARAMS, run, 0)
-    expect(result.items).toEqual([...fullItems, newItemId])
+    expect(result.items.map(h => h.id)).toEqual([...fullItems, newItemId])
     expect(result.shop!.individual[0].sold).toBe(true)
   })
 })
@@ -3122,14 +3122,14 @@ describe('buyIndividualRite(バラ売り秘儀購入)', () => {
       shop: { individual: [{ kind: 'rite', id: 'jera', sold: false }], packs: [] },
     }
     const result = buyIndividualRite(DEFAULT_PARAMS, run, 0)
-    expect(result.rites).toEqual(['jera'])
+    expect(result.rites.map(h => h.id)).toEqual(['jera'])
     expect(result.currency).toBe(999 - riteBuyPrice(DEFAULT_PARAMS, run))
     expect(result.shop!.individual[0].sold).toBe(true)
   })
 
   test('所持上限3到達時は購入できない', () => {
     const run: RunState = {
-      ...createInitialRun(), phase: 'shop', currency: 999, rites: ['jera', 'uruz', 'ingwaz'],
+      ...createInitialRun(), phase: 'shop', currency: 999, rites: [{ instanceId: 1, id: 'jera' }, { instanceId: 2, id: 'uruz' }, { instanceId: 3, id: 'ingwaz' }],
       shop: { individual: [{ kind: 'rite', id: 'gebo', sold: false }], packs: [] },
     }
     expect(buyIndividualRite(DEFAULT_PARAMS, run, 0)).toBe(run)
@@ -3192,7 +3192,7 @@ describe('buyIndividualRevelationUse(バラ売り天啓・即使う)', () => {
       shop: { individual: [{ kind: 'revelation', id: 'kaku', sold: false }], packs: [] },
     }
     const result = buyIndividualRevelationUse(DEFAULT_PARAMS, run, 0, null)
-    expect(result.revelations).toEqual([])
+    expect(result.revelations.map(h => h.id)).toEqual([])
     expect(result.currency).toBe(999 - revelationBuyPrice(DEFAULT_PARAMS, run))
     expect(result.shop!.individual[0].sold).toBe(true)
   })
@@ -3200,7 +3200,7 @@ describe('buyIndividualRevelationUse(バラ売り天啓・即使う)', () => {
   test('上限とは無関係に(天啓・神託合算枠が満杯でも)購入できる', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
     const run: RunState = {
-      ...createInitialRun(), phase: 'shop', currency: 999, wave, revelations: ['kaku', 'kou'],
+      ...createInitialRun(), phase: 'shop', currency: 999, wave, revelations: [{ instanceId: 1, id: 'kaku' }, { instanceId: 2, id: 'kou' }],
       shop: { individual: [{ kind: 'revelation', id: 'tei', sold: false }], packs: [] },
     }
     const result = buyIndividualRevelationUse(DEFAULT_PARAMS, run, 0, null)
@@ -3215,13 +3215,13 @@ describe('buyIndividualRevelationHold(バラ売り天啓・温存)', () => {
       shop: { individual: [{ kind: 'revelation', id: 'kaku', sold: false }], packs: [] },
     }
     const result = buyIndividualRevelationHold(DEFAULT_PARAMS, run, 0)
-    expect(result.revelations).toEqual(['kaku'])
+    expect(result.revelations.map(h => h.id)).toEqual(['kaku'])
     expect(result.currency).toBe(999 - revelationBuyPrice(DEFAULT_PARAMS, run))
   })
 
   test('天啓・神託合算上限2到達時は購入できない(片方1個ずつで合計2でもブロック)', () => {
     const run: RunState = {
-      ...createInitialRun(), phase: 'shop', currency: 999, revelations: ['kaku'], oracles: ['flush'],
+      ...createInitialRun(), phase: 'shop', currency: 999, revelations: [{ instanceId: 1, id: 'kaku' }], oracles: [{ instanceId: 2, id: 'flush' }],
       shop: { individual: [{ kind: 'revelation', id: 'kou', sold: false }], packs: [] },
     }
     expect(buyIndividualRevelationHold(DEFAULT_PARAMS, run, 0)).toBe(run)
@@ -3232,13 +3232,13 @@ describe('buyIndividualOracleUse / buyIndividualOracleHold(バラ売り神託)',
   test('即使うは役レベルを+1し、run/waveの両方に反映される(上限無関係)', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
     const run: RunState = {
-      ...createInitialRun(), phase: 'shop', currency: 999, wave, revelations: ['kaku'], oracles: ['flush'],
+      ...createInitialRun(), phase: 'shop', currency: 999, wave, revelations: [{ instanceId: 1, id: 'kaku' }], oracles: [{ instanceId: 2, id: 'flush' }],
       shop: { individual: [{ kind: 'oracle', id: 'flush', sold: false }], packs: [] },
     }
     const result = buyIndividualOracleUse(DEFAULT_PARAMS, run, 0)
     expect(result.oracleLevels.flush).toBe(defaultOracleLevels().flush + 1)
     expect(result.wave!.oracleLevels.flush).toBe(defaultOracleLevels().flush + 1)
-    expect(result.oracles).toEqual(['flush'])
+    expect(result.oracles.map(h => h.id)).toEqual(['flush'])
   })
 
   test('温存は所持に追加され、合算上限2到達時はブロックされる', () => {
@@ -3247,10 +3247,10 @@ describe('buyIndividualOracleUse / buyIndividualOracleHold(バラ売り神託)',
       shop: { individual: [{ kind: 'oracle', id: 'flush', sold: false }], packs: [] },
     }
     const result = buyIndividualOracleHold(DEFAULT_PARAMS, run, 0)
-    expect(result.oracles).toEqual(['flush'])
+    expect(result.oracles.map(h => h.id)).toEqual(['flush'])
 
     const fullRun: RunState = {
-      ...createInitialRun(), phase: 'shop', currency: 999, revelations: ['kaku', 'kou'],
+      ...createInitialRun(), phase: 'shop', currency: 999, revelations: [{ instanceId: 1, id: 'kaku' }, { instanceId: 2, id: 'kou' }],
       shop: { individual: [{ kind: 'oracle', id: 'stair', sold: false }], packs: [] },
     }
     expect(buyIndividualOracleHold(DEFAULT_PARAMS, fullRun, 0)).toBe(fullRun)
@@ -3284,7 +3284,7 @@ describe('buyPack / pickPackItem(護符の福袋)', () => {
   })
 
   test('所持上限に達していても福袋は購入できる(上限は中身選択の確定時のみ判定)', () => {
-    const run = shopRunWithItemPack({ items: ITEM_POOL.slice(0, DEFAULT_PARAMS.items.maxItems) })
+    const run = shopRunWithItemPack({ items: ITEM_POOL.slice(0, DEFAULT_PARAMS.items.maxItems).map((id, i) => ({ instanceId: i + 1, id })) })
     const result = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     expect(result.phase).toBe('itemSelect')
   })
@@ -3293,31 +3293,31 @@ describe('buyPack / pickPackItem(護符の福袋)', () => {
     const run = shopRunWithItemPack()
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const picked = pickPackItem(DEFAULT_PARAMS, opened, opened.offer[0])
-    expect(picked.items).toEqual([opened.offer[0]])
+    expect(picked.items.map(h => h.id)).toEqual([opened.offer[0]])
     expect(picked.phase).toBe('shop')
     expect(picked.offerPickRemaining).toBe(0)
   })
 
   test('所持上限到達時にpickPackItemを呼ぶとpendingNewItemにセットされ、確定しない', () => {
     const fullItems = ITEM_POOL.slice(0, DEFAULT_PARAMS.items.maxItems)
-    const run = shopRunWithItemPack({ items: fullItems })
+    const run = shopRunWithItemPack({ items: fullItems.map((id, i) => ({ instanceId: i + 1, id })) })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const newItemId = opened.offer[0]
     const picked = pickPackItem(DEFAULT_PARAMS, opened, newItemId)
     expect(picked.pendingNewItem).toBe(newItemId)
-    expect(picked.items).toEqual(fullItems)
+    expect(picked.items.map(h => h.id)).toEqual(fullItems)
     expect(picked.phase).toBe('itemSelect')
   })
 
   test('confirmPackItemSwapで入れ替えが確定し、offerPickRemainingが減る', () => {
     const fullItems = ITEM_POOL.slice(0, DEFAULT_PARAMS.items.maxItems)
-    const run = shopRunWithItemPack({ items: fullItems })
+    const run = shopRunWithItemPack({ items: fullItems.map((id, i) => ({ instanceId: i + 1, id })) })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const newItemId = opened.offer[0]
     const picked = pickPackItem(DEFAULT_PARAMS, opened, newItemId)
-    const confirmed = confirmPackItemSwap(picked, fullItems[0])
-    expect(confirmed.items).toContain(newItemId)
-    expect(confirmed.items).not.toContain(fullItems[0])
+    const confirmed = confirmPackItemSwap(picked, 1)
+    expect(confirmed.items.map(h => h.id)).toContain(newItemId)
+    expect(confirmed.items.map(h => h.id)).not.toContain(fullItems[0])
     expect(confirmed.items).toHaveLength(fullItems.length)
     expect(confirmed.pendingNewItem).toBeNull()
     expect(confirmed.phase).toBe('shop')
@@ -3325,12 +3325,12 @@ describe('buyPack / pickPackItem(護符の福袋)', () => {
 
   test('cancelPackItemSwapでpendingNewItemがクリアされ、所持は変化しない', () => {
     const fullItems = ITEM_POOL.slice(0, DEFAULT_PARAMS.items.maxItems)
-    const run = shopRunWithItemPack({ items: fullItems })
+    const run = shopRunWithItemPack({ items: fullItems.map((id, i) => ({ instanceId: i + 1, id })) })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const picked = pickPackItem(DEFAULT_PARAMS, opened, opened.offer[0])
     const cancelled = cancelPackItemSwap(picked)
     expect(cancelled.pendingNewItem).toBeNull()
-    expect(cancelled.items).toEqual(fullItems)
+    expect(cancelled.items.map(h => h.id)).toEqual(fullItems)
   })
 
   test('closePackItemSelectで残り選択を放棄してshopへ戻る', () => {
@@ -3381,38 +3381,38 @@ describe('buyPack / pickPackRite(秘儀の福袋)', () => {
     const run = shopRunWithRitePack()
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const picked = pickPackRite(DEFAULT_PARAMS, opened, opened.riteOffer[0])
-    expect(picked.rites).toEqual([opened.riteOffer[0]])
+    expect(picked.rites.map(h => h.id)).toEqual([opened.riteOffer[0]])
     expect(picked.phase).toBe('shop')
   })
 
   test('所持上限3到達時はpendingNewRiteにセットされスワップ待ちになる', () => {
-    const run = shopRunWithRitePack({ rites: ['jera', 'uruz', 'ingwaz'] })
+    const run = shopRunWithRitePack({ rites: [{ instanceId: 1, id: 'jera' }, { instanceId: 2, id: 'uruz' }, { instanceId: 3, id: 'ingwaz' }] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const newRiteId = opened.riteOffer[0]
     const picked = pickPackRite(DEFAULT_PARAMS, opened, newRiteId)
     expect(picked.pendingNewRite).toBe(newRiteId)
-    expect(picked.rites).toEqual(['jera', 'uruz', 'ingwaz'])
+    expect(picked.rites.map(h => h.id)).toEqual(['jera', 'uruz', 'ingwaz'])
   })
 
   test('confirmPackRiteSwapで入れ替えが確定する', () => {
-    const run = shopRunWithRitePack({ rites: ['jera', 'uruz', 'ingwaz'] })
+    const run = shopRunWithRitePack({ rites: [{ instanceId: 1, id: 'jera' }, { instanceId: 2, id: 'uruz' }, { instanceId: 3, id: 'ingwaz' }] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const newRiteId = opened.riteOffer[0]
     const picked = pickPackRite(DEFAULT_PARAMS, opened, newRiteId)
-    const confirmed = confirmPackRiteSwap(picked, 'jera')
-    expect(confirmed.rites).toContain(newRiteId)
-    expect(confirmed.rites).not.toContain('jera')
+    const confirmed = confirmPackRiteSwap(picked, 1)
+    expect(confirmed.rites.map(h => h.id)).toContain(newRiteId)
+    expect(confirmed.rites.map(h => h.id)).not.toContain('jera')
     expect(confirmed.rites).toHaveLength(3)
     expect(confirmed.pendingNewRite).toBeNull()
   })
 
   test('cancelPackRiteSwapでpendingNewRiteがクリアされる', () => {
-    const run = shopRunWithRitePack({ rites: ['jera', 'uruz', 'ingwaz'] })
+    const run = shopRunWithRitePack({ rites: [{ instanceId: 1, id: 'jera' }, { instanceId: 2, id: 'uruz' }, { instanceId: 3, id: 'ingwaz' }] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const picked = pickPackRite(DEFAULT_PARAMS, opened, opened.riteOffer[0])
     const cancelled = cancelPackRiteSwap(picked)
     expect(cancelled.pendingNewRite).toBeNull()
-    expect(cancelled.rites).toEqual(['jera', 'uruz', 'ingwaz'])
+    expect(cancelled.rites.map(h => h.id)).toEqual(['jera', 'uruz', 'ingwaz'])
   })
 
   test('closePackRiteSelectで残り選択を放棄してshopへ戻る', () => {
@@ -3472,7 +3472,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       discardPile: [card(10, '♦', 2), card(11, '♦', 3), card(12, '♦', 4), card(13, '♦', 5)],
     })
     const run: RunState = {
-      phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['resilience'], offer: [],
+      phase: 'playing', stageIndex: 0, waveIndex: 0, nextInstanceId: 2, items: [{ instanceId: 1, id: 'resilience' }], offer: [],
       wave, waveGeneration: 1, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], relics: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
@@ -3504,7 +3504,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       discardPile: [],
     })
     const run: RunState = {
-      phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['resilience'], offer: [],
+      phase: 'playing', stageIndex: 0, waveIndex: 0, nextInstanceId: 2, items: [{ instanceId: 1, id: 'resilience' }], offer: [],
       wave, waveGeneration: 1, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], relics: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
@@ -3530,7 +3530,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       discardPile: [card(10, '♦', 2), card(11, '♦', 3)],
     })
     const run: RunState = {
-      phase: 'playing', stageIndex: 0, waveIndex: 0, items: [], offer: [],
+      phase: 'playing', stageIndex: 0, waveIndex: 0, nextInstanceId: 1, items: [], offer: [],
       wave, waveGeneration: 1, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], relics: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
@@ -3557,7 +3557,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       resilienceUsedThisWave: true,
     })
     const run: RunState = {
-      phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['resilience'], offer: [],
+      phase: 'playing', stageIndex: 0, waveIndex: 0, nextInstanceId: 2, items: [{ instanceId: 1, id: 'resilience' }], offer: [],
       wave, waveGeneration: 1, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], relics: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
@@ -3585,7 +3585,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       discardPile: [card(10, '♦', 2), card(11, '♦', 3), card(12, '♦', 4), card(13, '♦', 5)],
     })
     const run: RunState = {
-      phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['healing', 'resilience'], offer: [],
+      phase: 'playing', stageIndex: 0, waveIndex: 0, nextInstanceId: 3, items: [{ instanceId: 1, id: 'healing' }, { instanceId: 2, id: 'resilience' }], offer: [],
       wave, waveGeneration: 1, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], relics: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
@@ -3612,7 +3612,7 @@ describe('applyStuckCheck (不屈の護符)', () => {
       discardPile: [card(10, '♦', 2), card(11, '♦', 3), card(12, '♦', 4), card(13, '♦', 5)],
     })
     const run: RunState = {
-      phase: 'playing', stageIndex: 0, waveIndex: 0, items: ['healing'], offer: [],
+      phase: 'playing', stageIndex: 0, waveIndex: 0, nextInstanceId: 2, items: [{ instanceId: 1, id: 'healing' }], offer: [],
       wave, waveGeneration: 1, pendingNewItem: null, deckComposition: standardDeckComposition(), rites: [],
       revelations: [], relics: [], revelationOffer: [], extraTableauRows: 0,
       oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool', stageStars: [],
@@ -3634,79 +3634,79 @@ describe('applyStuckCheck (不屈の護符)', () => {
 describe('useRite', () => {
   test('所持している秘儀を使用すると効果が適用され、所持から1個削除される', () => {
     const wave = makeWave({ combo: 2, maxComboThisWave: 2 })
-    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: ['uruz'] }
-    const next = useRite(DEFAULT_PARAMS, run, 'uruz', createRng(1))
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: [{ instanceId: 1, id: 'uruz' }] }
+    const next = useRite(DEFAULT_PARAMS, run, 1, 'uruz', createRng(1))
     expect(next.wave!.combo).toBe(2 + DEFAULT_PARAMS.rites.uruz.n)
-    expect(next.rites).toEqual([])
+    expect(next.rites.map(h => h.id)).toEqual([])
   })
 
   test('使用した秘儀のIDがrecentUsedRiteIdsの先頭に追加される', () => {
     const wave = makeWave({ combo: 2, maxComboThisWave: 2 })
-    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: ['uruz'], recentUsedRiteIds: ['ingwaz'] }
-    const next = useRite(DEFAULT_PARAMS, run, 'uruz', createRng(1))
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: [{ instanceId: 1, id: 'uruz' }], recentUsedRiteIds: ['ingwaz'] }
+    const next = useRite(DEFAULT_PARAMS, run, 1, 'uruz', createRng(1))
     expect(next.recentUsedRiteIds).toEqual(['uruz', 'ingwaz'])
   })
 
   test('recentUsedRiteIdsは3件目以降を切り詰める(最大2件)', () => {
     const wave = makeWave({ combo: 2, maxComboThisWave: 2 })
-    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: ['uruz'], recentUsedRiteIds: ['ingwaz', 'eihwaz'] }
-    const next = useRite(DEFAULT_PARAMS, run, 'uruz', createRng(1))
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: [{ instanceId: 1, id: 'uruz' }], recentUsedRiteIds: ['ingwaz', 'eihwaz'] }
+    const next = useRite(DEFAULT_PARAMS, run, 1, 'uruz', createRng(1))
     expect(next.recentUsedRiteIds).toEqual(['uruz', 'ingwaz'])
   })
 
   test('所持していない秘儀は使用できない(何も起こらない)', () => {
     const wave = makeWave({ combo: 2 })
     const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: [] }
-    const next = useRite(DEFAULT_PARAMS, run, 'uruz', createRng(1))
+    const next = useRite(DEFAULT_PARAMS, run, 1, 'uruz', createRng(1))
     expect(next).toEqual(run)
   })
 
   test('使用条件を満たさない秘儀(捨て札が列数未満のゲボ)は使用できない', () => {
     const wave = makeWave({ tableau: [[card(1, '♣', 5)], [card(2, '♦', 6)]], discardPile: [] })
-    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: ['gebo'] }
-    const next = useRite(DEFAULT_PARAMS, run, 'gebo', createRng(1))
-    expect(next.rites).toEqual(['gebo'])
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: [{ instanceId: 1, id: 'gebo' }] }
+    const next = useRite(DEFAULT_PARAMS, run, 1, 'gebo', createRng(1))
+    expect(next.rites.map(h => h.id)).toEqual(['gebo'])
   })
 
   test('同じ秘儀を複数所持している場合、1個だけ消費される', () => {
     const wave = makeWave({ combo: 2, maxComboThisWave: 2 })
-    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: ['uruz', 'uruz'] }
-    const next = useRite(DEFAULT_PARAMS, run, 'uruz', createRng(1))
-    expect(next.rites).toEqual(['uruz'])
+    const run: RunState = { ...beginRun(DEFAULT_PARAMS, 1), wave, rites: [{ instanceId: 1, id: 'uruz' }, { instanceId: 2, id: 'uruz' }] }
+    const next = useRite(DEFAULT_PARAMS, run, 1, 'uruz', createRng(1))
+    expect(next.rites.map(h => h.id)).toEqual(['uruz'])
   })
 
   test('shopフェーズでも使用できる(SHOP_FLOW_PHASESに含まれるため)', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'shop', wave, rites: ['jera'] }
-    const result = useRite(DEFAULT_PARAMS, run, 'jera', createRng(1))
-    expect(result.rites).toEqual([])
+    const run: RunState = { ...createInitialRun(), phase: 'shop', wave, rites: [{ instanceId: 1, id: 'jera' }] }
+    const result = useRite(DEFAULT_PARAMS, run, 1, 'jera', createRng(1))
+    expect(result.rites.map(h => h.id)).toEqual([])
   })
 
   test('riteSelectフェーズでも使用できる', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'riteSelect', wave, rites: ['jera'] }
-    const result = useRite(DEFAULT_PARAMS, run, 'jera', createRng(1))
-    expect(result.rites).toEqual([])
+    const run: RunState = { ...createInitialRun(), phase: 'riteSelect', wave, rites: [{ instanceId: 1, id: 'jera' }] }
+    const result = useRite(DEFAULT_PARAMS, run, 1, 'jera', createRng(1))
+    expect(result.rites.map(h => h.id)).toEqual([])
   })
 })
 
 describe('reorderItems(所持護符の並べ替え)', () => {
   test('fromIndexの要素をtoIndexへ移動し、残りの要素の相対順序は保たれる', () => {
-    const run: RunState = { ...createInitialRun(), items: ['bridge', 'grace', 'eternity'] }
+    const run: RunState = { ...createInitialRun(), items: [{ instanceId: 1, id: 'bridge' }, { instanceId: 2, id: 'grace' }, { instanceId: 3, id: 'eternity' }] }
     const result = reorderItems(run, 0, 2)
-    expect(result.items).toEqual(['grace', 'eternity', 'bridge'])
+    expect(result.items.map(h => h.id)).toEqual(['grace', 'eternity', 'bridge'])
   })
 
   test('末尾の要素を先頭へ移動できる', () => {
-    const run: RunState = { ...createInitialRun(), items: ['bridge', 'grace', 'eternity'] }
+    const run: RunState = { ...createInitialRun(), items: [{ instanceId: 1, id: 'bridge' }, { instanceId: 2, id: 'grace' }, { instanceId: 3, id: 'eternity' }] }
     const result = reorderItems(run, 2, 0)
-    expect(result.items).toEqual(['eternity', 'bridge', 'grace'])
+    expect(result.items.map(h => h.id)).toEqual(['eternity', 'bridge', 'grace'])
   })
 
   test('fromIndexとtoIndexが同じ場合、itemsの内容は変化しない', () => {
-    const run: RunState = { ...createInitialRun(), items: ['bridge', 'grace'] }
+    const run: RunState = { ...createInitialRun(), items: [{ instanceId: 1, id: 'bridge' }, { instanceId: 2, id: 'grace' }] }
     const result = reorderItems(run, 1, 1)
-    expect(result.items).toEqual(['bridge', 'grace'])
+    expect(result.items.map(h => h.id)).toEqual(['bridge', 'grace'])
   })
 })
 
@@ -3823,44 +3823,44 @@ describe('加護(divineProtection): ロイヤルセット成立ごとにdivinePr
 describe('sellItem / sellRite / sellRevelation / sellOracle(所持品売却)', () => {
   test('sellItemは所持から削除し、売却額分だけ通貨が増える(playing/shopどちらでも可)', () => {
     const itemId = ITEM_POOL.find(id => DEFAULT_PARAMS.talismans[id].rarity === 'U')!
-    const playingRun: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, items: [itemId] }
-    const result = sellItem(DEFAULT_PARAMS, playingRun, itemId)
-    expect(result.items).toEqual([])
+    const playingRun: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, items: [{ instanceId: 1, id: itemId }] }
+    const result = sellItem(DEFAULT_PARAMS, playingRun, 1, itemId)
+    expect(result.items.map(h => h.id)).toEqual([])
     expect(result.currency).toBe(10 + itemSellPrice(DEFAULT_PARAMS, playingRun, itemId))
 
-    const shopRun: RunState = { ...createInitialRun(), phase: 'shop', currency: 10, items: [itemId] }
-    expect(sellItem(DEFAULT_PARAMS, shopRun, itemId).items).toEqual([])
+    const shopRun: RunState = { ...createInitialRun(), phase: 'shop', currency: 10, items: [{ instanceId: 1, id: itemId }] }
+    expect(sellItem(DEFAULT_PARAMS, shopRun, 1, itemId).items.map(h => h.id)).toEqual([])
   })
 
   test('所持していないアイテムは売却できない', () => {
     const run: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, items: [] }
-    expect(sellItem(DEFAULT_PARAMS, run, 'bridge')).toBe(run)
+    expect(sellItem(DEFAULT_PARAMS, run, 1, 'bridge')).toBe(run)
   })
 
   test('sellRiteは所持から削除し通貨が増える', () => {
-    const run: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, rites: ['jera'] }
-    const result = sellRite(DEFAULT_PARAMS, run, 'jera')
-    expect(result.rites).toEqual([])
+    const run: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, rites: [{ instanceId: 1, id: 'jera' }] }
+    const result = sellRite(DEFAULT_PARAMS, run, 1, 'jera')
+    expect(result.rites.map(h => h.id)).toEqual([])
     expect(result.currency).toBe(10 + riteSellPrice(DEFAULT_PARAMS, run))
   })
 
   test('sellRevelationは所持から削除し通貨が増える', () => {
-    const run: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, revelations: ['kaku'] }
-    const result = sellRevelation(DEFAULT_PARAMS, run, 'kaku')
-    expect(result.revelations).toEqual([])
+    const run: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, revelations: [{ instanceId: 1, id: 'kaku' }] }
+    const result = sellRevelation(DEFAULT_PARAMS, run, 1, 'kaku')
+    expect(result.revelations.map(h => h.id)).toEqual([])
     expect(result.currency).toBe(10 + revelationSellPrice(DEFAULT_PARAMS, run))
   })
 
   test('sellOracleは所持から削除し通貨が増える', () => {
-    const run: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, oracles: ['flush'] }
-    const result = sellOracle(DEFAULT_PARAMS, run, 'flush')
-    expect(result.oracles).toEqual([])
+    const run: RunState = { ...createInitialRun(), phase: 'playing', currency: 10, oracles: [{ instanceId: 1, id: 'flush' }] }
+    const result = sellOracle(DEFAULT_PARAMS, run, 1, 'flush')
+    expect(result.oracles.map(h => h.id)).toEqual([])
     expect(result.currency).toBe(10 + oracleSellPrice(DEFAULT_PARAMS, run))
   })
 
   test('playing/shop以外のフェーズでは売却できない', () => {
-    const run: RunState = { ...createInitialRun(), phase: 'itemSelect', currency: 10, items: ['bridge'] }
-    expect(sellItem(DEFAULT_PARAMS, run, 'bridge')).toBe(run)
+    const run: RunState = { ...createInitialRun(), phase: 'itemSelect', currency: 10, items: [{ instanceId: 1, id: 'bridge' }] }
+    expect(sellItem(DEFAULT_PARAMS, run, 1, 'bridge')).toBe(run)
   })
 })
 
@@ -4273,7 +4273,7 @@ describe('天啓の福袋(revelationSelect)', () => {
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const target = opened.revelationOffer.includes('kaku') ? 'kaku' : opened.revelationOffer[0]
     const result = pickPackRevelationUse(DEFAULT_PARAMS, opened, target, null, createRng(2))
-    expect(result.revelations).toEqual([])
+    expect(result.revelations.map(h => h.id)).toEqual([])
     expect(result.phase).toBe('shop')
   })
 
@@ -4281,42 +4281,42 @@ describe('天啓の福袋(revelationSelect)', () => {
     const run = shopRunWithRevelationPack()
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const result = pickPackRevelationHold(DEFAULT_PARAMS, opened, opened.revelationOffer[0])
-    expect(result.revelations).toEqual([opened.revelationOffer[0]])
+    expect(result.revelations.map(h => h.id)).toEqual([opened.revelationOffer[0]])
     expect(result.phase).toBe('shop')
   })
 
   test('温存時、天啓・神託合算上限2到達時はpendingNewRevelationにセットされスワップ待ちになる', () => {
-    const run = shopRunWithRevelationPack({ revelations: ['kaku'], oracles: ['flush'] })
+    const run = shopRunWithRevelationPack({ revelations: [{ instanceId: 1, id: 'kaku' }], oracles: [{ instanceId: 2, id: 'flush' }] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const target = opened.revelationOffer[0]
     const result = pickPackRevelationHold(DEFAULT_PARAMS, opened, target)
     expect(result.pendingNewRevelation).toBe(target)
-    expect(result.revelations).toEqual(['kaku'])
+    expect(result.revelations.map(h => h.id)).toEqual(['kaku'])
   })
 
   test('confirmPackRevelationSwapで所持中の天啓と入れ替えできる', () => {
-    const run = shopRunWithRevelationPack({ revelations: ['kaku'], oracles: ['flush'] })
+    const run = shopRunWithRevelationPack({ revelations: [{ instanceId: 1, id: 'kaku' }], oracles: [{ instanceId: 2, id: 'flush' }] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const target = opened.revelationOffer[0]
     const picked = pickPackRevelationHold(DEFAULT_PARAMS, opened, target)
-    const confirmed = confirmPackRevelationSwap(picked, { kind: 'revelation', id: 'kaku' })
-    expect(confirmed.revelations).toEqual([target])
-    expect(confirmed.oracles).toEqual(['flush'])
+    const confirmed = confirmPackRevelationSwap(picked, { kind: 'revelation', instanceId: 1, id: 'kaku' })
+    expect(confirmed.revelations.map(h => h.id)).toEqual([target])
+    expect(confirmed.oracles.map(h => h.id)).toEqual(['flush'])
     expect(confirmed.pendingNewRevelation).toBeNull()
   })
 
   test('confirmPackRevelationSwapで所持中の神託と入れ替えできる(合算枠のため神託側も対象になる)', () => {
-    const run = shopRunWithRevelationPack({ revelations: ['kaku'], oracles: ['flush'] })
+    const run = shopRunWithRevelationPack({ revelations: [{ instanceId: 1, id: 'kaku' }], oracles: [{ instanceId: 2, id: 'flush' }] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const target = opened.revelationOffer[0]
     const picked = pickPackRevelationHold(DEFAULT_PARAMS, opened, target)
-    const confirmed = confirmPackRevelationSwap(picked, { kind: 'oracle', id: 'flush' })
-    expect(confirmed.revelations).toEqual(['kaku', target])
-    expect(confirmed.oracles).toEqual([])
+    const confirmed = confirmPackRevelationSwap(picked, { kind: 'oracle', instanceId: 2, id: 'flush' })
+    expect(confirmed.revelations.map(h => h.id)).toEqual(['kaku', target])
+    expect(confirmed.oracles.map(h => h.id)).toEqual([])
   })
 
   test('cancelPackRevelationSwapでpendingNewRevelationがクリアされる', () => {
-    const run = shopRunWithRevelationPack({ revelations: ['kaku'], oracles: ['flush'] })
+    const run = shopRunWithRevelationPack({ revelations: [{ instanceId: 1, id: 'kaku' }], oracles: [{ instanceId: 2, id: 'flush' }] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const picked = pickPackRevelationHold(DEFAULT_PARAMS, opened, opened.revelationOffer[0])
     const cancelled = cancelPackRevelationSwap(picked)
@@ -4335,22 +4335,22 @@ describe('天啓の福袋(revelationSelect)', () => {
 describe('useRevelation(所持天啓の使用、playing/shopフロー両対応)', () => {
   test('playingフェーズで使用でき、所持から1個減る', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['kaku'] }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'kaku', null, createRng(1))
-    expect(result.revelations).toEqual([])
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'kaku' }] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'kaku', null, createRng(1))
+    expect(result.revelations.map(h => h.id)).toEqual([])
   })
 
   test('shopフェーズでも使用できる(SHOP_FLOW_PHASESに含まれるため)', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'shop', wave, revelations: ['kaku'] }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'kaku', null, createRng(1))
-    expect(result.revelations).toEqual([])
+    const run: RunState = { ...createInitialRun(), phase: 'shop', wave, revelations: [{ instanceId: 1, id: 'kaku' }] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'kaku', null, createRng(1))
+    expect(result.revelations.map(h => h.id)).toEqual([])
   })
 
   test('使用した天啓のIDがlastUsedRevelationIdに記録される', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['kaku'] }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'kaku', null, createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'kaku' }] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'kaku', null, createRng(1))
     expect(result.lastUsedRevelationId).toBe('kaku')
   })
 })
@@ -4358,35 +4358,35 @@ describe('useRevelation(所持天啓の使用、playing/shopフロー両対応)'
 describe('useRevelation: 昴(subaru・護符獲得)', () => {
   test('護符を1つランダムに獲得し、所持中の護符は選ばれない', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['subaru'], items: ['discretion', 'frost'] }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'subaru', null, createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'subaru' }], items: [{ instanceId: 2, id: 'discretion' }, { instanceId: 3, id: 'frost' }] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'subaru', null, createRng(1))
     expect(result.items).toHaveLength(3)
-    expect(result.items.slice(0, 2)).toEqual(['discretion', 'frost'])
-    expect(result.items[2]).not.toBe('discretion')
-    expect(result.items[2]).not.toBe('frost')
+    expect(result.items.slice(0, 2).map(h => h.id)).toEqual(['discretion', 'frost'])
+    expect(result.items[2].id).not.toBe('discretion')
+    expect(result.items[2].id).not.toBe('frost')
   })
 
   test('護符の所持上限に達していれば何も獲得しない', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
     const fiveItems: ItemId[] = ITEM_POOL.slice(0, DEFAULT_PARAMS.items.maxItems)
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['subaru'], items: fiveItems }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'subaru', null, createRng(1))
-    expect(result.items).toEqual(fiveItems)
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'subaru' }], items: fiveItems.map((id, i) => ({ instanceId: i + 2, id })) }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'subaru', null, createRng(1))
+    expect(result.items.map(h => h.id)).toEqual(fiveItems)
   })
 })
 
 describe('useRevelation: 柳(ryuu・星片倍化)', () => {
   test('所持している星片が倍になる', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['ryuu'], currency: 30 }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'ryuu', null, createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'ryuu' }], currency: 30 }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'ryuu', null, createRng(1))
     expect(result.currency).toBe(60)
   })
 
   test('星片が0の場合は0のまま', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['ryuu'], currency: 0 }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'ryuu', null, createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'ryuu' }], currency: 0 }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'ryuu', null, createRng(1))
     expect(result.currency).toBe(0)
   })
 })
@@ -4394,22 +4394,22 @@ describe('useRevelation: 柳(ryuu・星片倍化)', () => {
 describe('useRevelation: 星(hotori・天啓回帰)', () => {
   test('直前に使用した天啓を1つ獲得する', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['hotori'], lastUsedRevelationId: 'kaku' }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'hotori', null, createRng(1))
-    expect(result.revelations).toEqual(['kaku'])
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'hotori' }], lastUsedRevelationId: 'kaku' }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'hotori', null, createRng(1))
+    expect(result.revelations.map(h => h.id)).toEqual(['kaku'])
   })
 
   test('使用履歴が無ければ何も獲得しない', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['hotori'], lastUsedRevelationId: null }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'hotori', null, createRng(1))
-    expect(result.revelations).toEqual([])
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'hotori' }], lastUsedRevelationId: null }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'hotori', null, createRng(1))
+    expect(result.revelations.map(h => h.id)).toEqual([])
   })
 
   test('hotori自身を使用してもlastUsedRevelationIdは更新されない(履歴に残らない)', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['hotori'], lastUsedRevelationId: 'kaku' }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'hotori', null, createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'hotori' }], lastUsedRevelationId: 'kaku' }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'hotori', null, createRng(1))
     expect(result.lastUsedRevelationId).toBe('kaku')
   })
 
@@ -4418,41 +4418,41 @@ describe('useRevelation: 星(hotori・天啓回帰)', () => {
     // 更新スキップ)が無ければ、1回目の使用でlastUsedRevelationIdが'hotori'になり、
     // 2回目の使用がその'hotori'自身を再取得してしまう(無限に自己複製し続ける)。
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['hotori', 'hotori'], lastUsedRevelationId: 'kaku' }
-    const first = useRevelation(DEFAULT_PARAMS, run, 'hotori', null, createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'hotori' }, { instanceId: 2, id: 'hotori' }], lastUsedRevelationId: 'kaku' }
+    const first = useRevelation(DEFAULT_PARAMS, run, 1, 'hotori', null, createRng(1))
     expect(first.lastUsedRevelationId).toBe('kaku')
-    expect(first.revelations).toEqual(['hotori', 'kaku'])
-    const second = useRevelation(DEFAULT_PARAMS, first, 'hotori', null, createRng(1))
-    expect(second.revelations).toEqual(['kaku', 'kaku'])
+    expect(first.revelations.map(h => h.id)).toEqual(['hotori', 'kaku'])
+    const second = useRevelation(DEFAULT_PARAMS, first, 2, 'hotori', null, createRng(1))
+    expect(second.revelations.map(h => h.id)).toEqual(['kaku', 'kaku'])
   })
 
   test('合算上限2到達時は通常なら獲得できないが、千羽鶴所持時は枠が拡張され獲得できる', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const baseRun: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['hotori'], oracles: ['flush', 'stair'], lastUsedRevelationId: 'kaku' }
-    const blocked = useRevelation(DEFAULT_PARAMS, baseRun, 'hotori', null, createRng(1))
-    expect(blocked.revelations).toEqual([])
+    const baseRun: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'hotori' }], oracles: [{ instanceId: 2, id: 'flush' }, { instanceId: 3, id: 'stair' }], lastUsedRevelationId: 'kaku' }
+    const blocked = useRevelation(DEFAULT_PARAMS, baseRun, 1, 'hotori', null, createRng(1))
+    expect(blocked.revelations.map(h => h.id)).toEqual([])
 
     const runWithRelic: RunState = { ...baseRun, relics: [{ id: 'senbazuru', tsukumoka: false }] }
-    const extended = useRevelation(DEFAULT_PARAMS, runWithRelic, 'hotori', null, createRng(1))
-    expect(extended.revelations).toEqual(['kaku'])
+    const extended = useRevelation(DEFAULT_PARAMS, runWithRelic, 1, 'hotori', null, createRng(1))
+    expect(extended.revelations.map(h => h.id)).toEqual(['kaku'])
   })
 })
 
 describe('useRevelation: 張(chou・神託獲得)', () => {
   test('他に天啓・神託を所持していなければ神託を2つ獲得する', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['chou'] }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'chou', null, createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'chou' }] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'chou', null, createRng(1))
     expect(result.oracles).toHaveLength(2)
-    expect(new Set(result.oracles).size).toBe(2)
+    expect(new Set(result.oracles.map(h => h.id)).size).toBe(2)
   })
 
   test('他に天啓・神託を1つ所持していれば神託を1つだけ獲得する(合算上限2)', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['chou'], oracles: ['flush'] }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'chou', null, createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'chou' }], oracles: [{ instanceId: 2, id: 'flush' }] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'chou', null, createRng(1))
     expect(result.oracles).toHaveLength(2)
-    expect(result.oracles[0]).toBe('flush')
+    expect(result.oracles[0].id).toBe('flush')
   })
 
   test('千羽鶴所持時は合算上限が拡張され、通常なら1つしか獲得できない状況でも2つ獲得できる', () => {
@@ -4461,30 +4461,30 @@ describe('useRevelation: 張(chou・神託獲得)', () => {
       ...createInitialRun(),
       phase: 'playing',
       wave,
-      revelations: ['chou'],
-      oracles: ['flush'],
+      revelations: [{ instanceId: 1, id: 'chou' }],
+      oracles: [{ instanceId: 2, id: 'flush' }],
       relics: [{ id: 'senbazuru', tsukumoka: false }],
     }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'chou', null, createRng(1))
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'chou', null, createRng(1))
     expect(result.oracles).toHaveLength(3)
-    expect(result.oracles[0]).toBe('flush')
+    expect(result.oracles[0].id).toBe('flush')
   })
 })
 
 describe('useRevelation: 翼(yoku・天啓連続獲得)', () => {
   test('他に天啓・神託を所持していなければ天啓を2つ獲得する', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['yoku'] }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'yoku', null, createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'yoku' }] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'yoku', null, createRng(1))
     expect(result.revelations).toHaveLength(2)
   })
 
   test('他に天啓・神託を1つ所持していれば天啓を1つだけ獲得する(合算上限2)', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['yoku'], oracles: ['flush'] }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'yoku', null, createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'yoku' }], oracles: [{ instanceId: 2, id: 'flush' }] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'yoku', null, createRng(1))
     expect(result.revelations).toHaveLength(1)
-    expect(result.oracles).toEqual(['flush'])
+    expect(result.oracles.map(h => h.id)).toEqual(['flush'])
   })
 
   test('千羽鶴所持時は合算上限が拡張され、通常なら1つしか獲得できない状況でも2つ獲得できる', () => {
@@ -4493,30 +4493,30 @@ describe('useRevelation: 翼(yoku・天啓連続獲得)', () => {
       ...createInitialRun(),
       phase: 'playing',
       wave,
-      revelations: ['yoku'],
-      oracles: ['flush'],
+      revelations: [{ instanceId: 1, id: 'yoku' }],
+      oracles: [{ instanceId: 2, id: 'flush' }],
       relics: [{ id: 'senbazuru', tsukumoka: false }],
     }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'yoku', null, createRng(1))
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'yoku', null, createRng(1))
     expect(result.revelations).toHaveLength(2)
-    expect(result.oracles).toEqual(['flush'])
+    expect(result.oracles.map(h => h.id)).toEqual(['flush'])
   })
 })
 
 describe('useRevelation: 軫(mitsu・護符換金)', () => {
   test('所持護符の売値合計が星片に加算される', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['mitsu'], items: ['discretion', 'frost'], currency: 10 }
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'mitsu' }], items: [{ instanceId: 2, id: 'discretion' }, { instanceId: 3, id: 'frost' }], currency: 10 }
     const expectedTotal = itemSellPrice(DEFAULT_PARAMS, run, 'discretion') + itemSellPrice(DEFAULT_PARAMS, run, 'frost')
-    const result = useRevelation(DEFAULT_PARAMS, run, 'mitsu', null, createRng(1))
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'mitsu', null, createRng(1))
     expect(result.currency).toBe(10 + expectedTotal)
-    expect(result.items).toEqual(['discretion', 'frost']) // 護符は消費されない(換金であり売却ではない)
+    expect(result.items.map(h => h.id)).toEqual(['discretion', 'frost']) // 護符は消費されない(換金であり売却ではない)
   })
 
   test('護符を所持していなければ星片は変化しない', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['mitsu'], items: [], currency: 10 }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'mitsu', null, createRng(1))
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'mitsu' }], items: [], currency: 10 }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'mitsu', null, createRng(1))
     expect(result.currency).toBe(10)
   })
 })
@@ -4524,23 +4524,23 @@ describe('useRevelation: 軫(mitsu・護符換金)', () => {
 describe('useRevelation: 参(karasu・秘儀回帰)', () => {
   test('直近に使用した秘儀を最大2つ獲得する', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['karasu'], recentUsedRiteIds: ['uruz', 'ingwaz'] }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'karasu', null, createRng(1))
-    expect(result.rites).toEqual(['uruz', 'ingwaz'])
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'karasu' }], recentUsedRiteIds: ['uruz', 'ingwaz'] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'karasu', null, createRng(1))
+    expect(result.rites.map(h => h.id)).toEqual(['uruz', 'ingwaz'])
   })
 
   test('秘儀の所持上限(3)を超える分は獲得しない', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['karasu'], rites: ['eihwaz', 'jera'], recentUsedRiteIds: ['uruz', 'ingwaz'] }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'karasu', null, createRng(1))
-    expect(result.rites).toEqual(['eihwaz', 'jera', 'uruz'])
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'karasu' }], rites: [{ instanceId: 2, id: 'eihwaz' }, { instanceId: 3, id: 'jera' }], recentUsedRiteIds: ['uruz', 'ingwaz'] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'karasu', null, createRng(1))
+    expect(result.rites.map(h => h.id)).toEqual(['eihwaz', 'jera', 'uruz'])
   })
 
   test('使用履歴が無ければ何も獲得しない', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: ['karasu'], recentUsedRiteIds: [] }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'karasu', null, createRng(1))
-    expect(result.rites).toEqual([])
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, revelations: [{ instanceId: 1, id: 'karasu' }], recentUsedRiteIds: [] }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'karasu', null, createRng(1))
+    expect(result.rites.map(h => h.id)).toEqual([])
   })
 
   test('破魔矢所持時は秘儀の所持上限が拡張され、通常なら上限超過で切り捨てられる分も獲得できる', () => {
@@ -4549,13 +4549,13 @@ describe('useRevelation: 参(karasu・秘儀回帰)', () => {
       ...createInitialRun(),
       phase: 'playing',
       wave,
-      revelations: ['karasu'],
-      rites: ['eihwaz', 'jera'],
+      revelations: [{ instanceId: 1, id: 'karasu' }],
+      rites: [{ instanceId: 2, id: 'eihwaz' }, { instanceId: 3, id: 'jera' }],
       recentUsedRiteIds: ['uruz', 'ingwaz'],
       relics: [{ id: 'hamaya', tsukumoka: false }],
     }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'karasu', null, createRng(1))
-    expect(result.rites).toEqual(['eihwaz', 'jera', 'uruz', 'ingwaz'])
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'karasu', null, createRng(1))
+    expect(result.rites.map(h => h.id)).toEqual(['eihwaz', 'jera', 'uruz', 'ingwaz'])
   })
 })
 
@@ -4566,18 +4566,18 @@ describe('useRevelation: 虚(レリック付喪化)', () => {
       ...createInitialRun(),
       phase: 'playing',
       wave,
-      revelations: ['kyo'],
+      revelations: [{ instanceId: 1, id: 'kyo' }],
       relics: [
         { id: 'manekiNeko', tsukumoka: false },
         { id: 'kumade', tsukumoka: false },
       ],
     }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'kyo', null, createRng(1), 'kumade')
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'kyo', null, createRng(1), 'kumade')
     expect(result.relics).toEqual([
       { id: 'manekiNeko', tsukumoka: false },
       { id: 'kumade', tsukumoka: true },
     ])
-    expect(result.revelations).toEqual([])
+    expect(result.revelations.map(h => h.id)).toEqual([])
   })
 
   test('targetRelicIdが未指定(null)なら何も変化しない', () => {
@@ -4586,13 +4586,13 @@ describe('useRevelation: 虚(レリック付喪化)', () => {
       ...createInitialRun(),
       phase: 'playing',
       wave,
-      revelations: ['kyo'],
+      revelations: [{ instanceId: 1, id: 'kyo' }],
       relics: [{ id: 'manekiNeko', tsukumoka: false }],
     }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'kyo', null, createRng(1), null)
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'kyo', null, createRng(1), null)
     expect(result.relics).toEqual([{ id: 'manekiNeko', tsukumoka: false }])
     // 虚自体は消費される(使用は成立している。対象選択が空振りしただけ)
-    expect(result.revelations).toEqual([])
+    expect(result.revelations.map(h => h.id)).toEqual([])
   })
 
   test('既に付喪化済みのレリックを指定しても何も変化しない', () => {
@@ -4601,13 +4601,13 @@ describe('useRevelation: 虚(レリック付喪化)', () => {
       ...createInitialRun(),
       phase: 'playing',
       wave,
-      revelations: ['kyo'],
+      revelations: [{ instanceId: 1, id: 'kyo' }],
       relics: [
         { id: 'manekiNeko', tsukumoka: true },
         { id: 'kumade', tsukumoka: false },
       ],
     }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'kyo', null, createRng(1), 'manekiNeko')
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'kyo', null, createRng(1), 'manekiNeko')
     expect(result.relics).toEqual([
       { id: 'manekiNeko', tsukumoka: true },
       { id: 'kumade', tsukumoka: false },
@@ -4620,10 +4620,10 @@ describe('useRevelation: 虚(レリック付喪化)', () => {
       ...createInitialRun(),
       phase: 'playing',
       wave,
-      revelations: ['kyo'],
+      revelations: [{ instanceId: 1, id: 'kyo' }],
       relics: [{ id: 'manekiNeko', tsukumoka: false }],
     }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'kyo', null, createRng(1), 'kumade')
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'kyo', null, createRng(1), 'kumade')
     expect(result.relics).toEqual([{ id: 'manekiNeko', tsukumoka: false }])
   })
 })
@@ -4635,14 +4635,14 @@ describe('useRevelation: 鬼(レリックランダム獲得)', () => {
       ...createInitialRun(),
       phase: 'playing',
       wave,
-      revelations: ['oni'],
+      revelations: [{ instanceId: 1, id: 'oni' }],
       relics: [],
     }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'oni', null, createRng(1))
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'oni', null, createRng(1))
     expect(result.relics).toHaveLength(1)
     expect(result.relics[0].tsukumoka).toBe(false)
     expect(RELIC_POOL).toContain(result.relics[0].id)
-    expect(result.revelations).toEqual([])
+    expect(result.revelations.map(h => h.id)).toEqual([])
   })
 
   test('全レリックを所持済みの状態では使用しても何も変化しない', () => {
@@ -4651,13 +4651,13 @@ describe('useRevelation: 鬼(レリックランダム獲得)', () => {
       ...createInitialRun(),
       phase: 'playing',
       wave,
-      revelations: ['oni'],
+      revelations: [{ instanceId: 1, id: 'oni' }],
       relics: RELIC_POOL.map(id => ({ id, tsukumoka: false })),
     }
-    const result = useRevelation(DEFAULT_PARAMS, run, 'oni', null, createRng(1))
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'oni', null, createRng(1))
     expect(result.relics).toEqual(run.relics)
     // canUseRevelationが使用不可を返すため、天啓自体も消費されない
-    expect(result.revelations).toEqual(['oni'])
+    expect(result.revelations.map(h => h.id)).toEqual(['oni'])
   })
 })
 
@@ -4689,7 +4689,7 @@ describe('神託の福袋(oracleSelect)', () => {
     const result = pickPackOracleUse(opened, role)
     expect(result.oracleLevels[role]).toBe(before + 1)
     expect(result.wave!.oracleLevels[role]).toBe(before + 1)
-    expect(result.oracles).toEqual([])
+    expect(result.oracles.map(h => h.id)).toEqual([])
     expect(result.phase).toBe('shop')
   })
 
@@ -4698,11 +4698,11 @@ describe('神託の福袋(oracleSelect)', () => {
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const role = opened.oracleOffer[0]
     const result = pickPackOracleHold(DEFAULT_PARAMS, opened, role)
-    expect(result.oracles).toEqual([role])
+    expect(result.oracles.map(h => h.id)).toEqual([role])
   })
 
   test('温存時、天啓・神託合算上限2到達時はpendingNewOracleにセットされスワップ待ちになる', () => {
-    const run = shopRunWithOraclePack({ revelations: ['kaku'], oracles: ['flush'] })
+    const run = shopRunWithOraclePack({ revelations: [{ instanceId: 1, id: 'kaku' }], oracles: [{ instanceId: 2, id: 'flush' }] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const role = opened.oracleOffer.includes('stair') ? 'stair' : opened.oracleOffer[0]
     const result = pickPackOracleHold(DEFAULT_PARAMS, opened, role)
@@ -4710,29 +4710,29 @@ describe('神託の福袋(oracleSelect)', () => {
   })
 
   test('confirmPackOracleSwapで所持中の天啓と入れ替えできる(合算枠のため天啓側も対象になる)', () => {
-    const run = shopRunWithOraclePack({ revelations: ['kaku'], oracles: ['flush'] })
+    const run = shopRunWithOraclePack({ revelations: [{ instanceId: 1, id: 'kaku' }], oracles: [{ instanceId: 2, id: 'flush' }] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const role = opened.oracleOffer[0]
     const picked = pickPackOracleHold(DEFAULT_PARAMS, opened, role)
-    const confirmed = confirmPackOracleSwap(picked, { kind: 'revelation', id: 'kaku' })
-    expect(confirmed.oracles).toEqual(['flush', role])
-    expect(confirmed.revelations).toEqual([])
+    const confirmed = confirmPackOracleSwap(picked, { kind: 'revelation', instanceId: 1, id: 'kaku' })
+    expect(confirmed.oracles.map(h => h.id)).toEqual(['flush', role])
+    expect(confirmed.revelations.map(h => h.id)).toEqual([])
     expect(confirmed.pendingNewOracle).toBeNull()
   })
 
   test('confirmPackOracleSwapで所持中の神託と入れ替えできる', () => {
-    const run = shopRunWithOraclePack({ revelations: ['kaku'], oracles: ['flush'] })
+    const run = shopRunWithOraclePack({ revelations: [{ instanceId: 1, id: 'kaku' }], oracles: [{ instanceId: 2, id: 'flush' }] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const role = opened.oracleOffer[0]
     const picked = pickPackOracleHold(DEFAULT_PARAMS, opened, role)
-    const confirmed = confirmPackOracleSwap(picked, { kind: 'oracle', id: 'flush' })
-    expect(confirmed.oracles).toEqual([role])
-    expect(confirmed.revelations).toEqual(['kaku'])
+    const confirmed = confirmPackOracleSwap(picked, { kind: 'oracle', instanceId: 2, id: 'flush' })
+    expect(confirmed.oracles.map(h => h.id)).toEqual([role])
+    expect(confirmed.revelations.map(h => h.id)).toEqual(['kaku'])
     expect(confirmed.pendingNewOracle).toBeNull()
   })
 
   test('cancelPackOracleSwapでpendingNewOracleがクリアされる', () => {
-    const run = shopRunWithOraclePack({ revelations: ['kaku'], oracles: ['flush'] })
+    const run = shopRunWithOraclePack({ revelations: [{ instanceId: 1, id: 'kaku' }], oracles: [{ instanceId: 2, id: 'flush' }] })
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const picked = pickPackOracleHold(DEFAULT_PARAMS, opened, opened.oracleOffer[0])
     const cancelled = cancelPackOracleSwap(picked)
@@ -4751,12 +4751,12 @@ describe('神託の福袋(oracleSelect)', () => {
 describe('useOracle(所持神託の消費、playingフェーズ限定)', () => {
   test('playingフェーズで使用でき、役レベルが+1されrun/wave両方に反映される', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, oracles: ['flush'] }
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, oracles: [{ instanceId: 1, id: 'flush' }] }
     const before = run.oracleLevels.flush
     const result = useOracle(DEFAULT_PARAMS, run, 'flush')
     expect(result.oracleLevels.flush).toBe(before + 1)
     expect(result.wave!.oracleLevels.flush).toBe(before + 1)
-    expect(result.oracles).toEqual([])
+    expect(result.oracles.map(h => h.id)).toEqual([])
   })
 
   test('所持していない神託は使用できない', () => {
@@ -4767,7 +4767,7 @@ describe('useOracle(所持神託の消費、playingフェーズ限定)', () => {
 
   test('shopフェーズでは使用できない(spec §6の通りplayingフェーズ限定)', () => {
     const wave = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
-    const run: RunState = { ...createInitialRun(), phase: 'shop', wave, oracles: ['flush'] }
+    const run: RunState = { ...createInitialRun(), phase: 'shop', wave, oracles: [{ instanceId: 1, id: 'flush' }] }
     expect(useOracle(DEFAULT_PARAMS, run, 'flush')).toBe(run)
   })
 })
@@ -4892,7 +4892,7 @@ describe('comboCapのplayCard/drawStockへのクランプ', () => {
 describe('triggerSabotage', () => {
   function runWithWave(overrides: Partial<RunState> = {}, waveOverrides: Partial<WaveState> = {}): RunState {
     const run = createInitialRun()
-    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, run.items, run.deckComposition, 1, 0, defaultOracleLevels())
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, run.items.map(h => h.id), run.deckComposition, 1, 0, defaultOracleLevels())
     return { ...run, phase: 'playing', wave: { ...wave, ...waveOverrides }, ...overrides }
   }
 
@@ -4975,9 +4975,9 @@ describe('triggerSabotage', () => {
   })
 
   it('talismanSeal: 所持護符からランダムに1つ選びactiveSealに設定する', () => {
-    const run = runWithWave({ items: ['bridge', 'grace'] })
+    const run = runWithWave({ items: [{ instanceId: 1, id: 'bridge' }, { instanceId: 2, id: 'grace' }] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'talismanSeal', () => 0)
-    expect(next.wave!.activeSeal).toEqual({ kind: 'talisman', id: 'bridge' })
+    expect(next.wave!.activeSeal).toEqual({ kind: 'talisman', instanceId: 1, id: 'bridge' })
   })
 
   it('talismanSeal: 護符を所持していなければactiveSealはnullのまま', () => {
@@ -4987,15 +4987,15 @@ describe('triggerSabotage', () => {
   })
 
   it('riteSeal: 所持秘儀からランダムに1つ選びactiveSealに設定する', () => {
-    const run = runWithWave({ rites: ['gebo', 'fehu'] })
+    const run = runWithWave({ rites: [{ instanceId: 1, id: 'gebo' }, { instanceId: 2, id: 'fehu' }] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteSeal', () => 0)
-    expect(next.wave!.activeSeal).toEqual({ kind: 'rite', id: 'gebo' })
+    expect(next.wave!.activeSeal).toEqual({ kind: 'rite', instanceId: 1, id: 'gebo' })
   })
 
   it('revelationOracleSeal: 天啓・神託の合算プールからランダムに1つ選ぶ', () => {
-    const run = runWithWave({ revelations: ['kaku'], oracles: [] })
+    const run = runWithWave({ revelations: [{ instanceId: 1, id: 'kaku' }], oracles: [] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleSeal', () => 0)
-    expect(next.wave!.activeSeal).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'revelation', id: 'kaku' } })
+    expect(next.wave!.activeSeal).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'revelation', instanceId: 1, id: 'kaku' } })
   })
 
   it('relicConfiscate: 所持レリックからランダムに1つ選び完全に失う', () => {
@@ -5132,13 +5132,13 @@ describe('triggerSabotage', () => {
   })
 
   it('talismanConfiscate: 所持護符からランダムに1つ選び完全に失う', () => {
-    const run = runWithWave({ items: ['bridge', 'grace'] })
+    const run = runWithWave({ items: [{ instanceId: 1, id: 'bridge' }, { instanceId: 2, id: 'grace' }] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'talismanConfiscate', () => 0)
-    expect(next.items).toEqual(['grace'])
+    expect(next.items.map(h => h.id)).toEqual(['grace'])
   })
 
   it('talismanConfiscate: lastSabotage.confiscatedTargetに没収した護符のid・idxを設定する', () => {
-    const run = runWithWave({ items: ['bridge', 'grace'] })
+    const run = runWithWave({ items: [{ instanceId: 1, id: 'bridge' }, { instanceId: 2, id: 'grace' }] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'talismanConfiscate', () => 0)
     expect(next.wave!.lastSabotage?.confiscatedTarget).toEqual({ kind: 'talisman', id: 'bridge', idx: 0 })
   })
@@ -5150,7 +5150,7 @@ describe('triggerSabotage', () => {
   })
 
   it('riteConfiscate: lastSabotage.confiscatedTargetに没収した秘儀のid・idxを設定する', () => {
-    const run = runWithWave({ rites: ['gebo', 'fehu'] })
+    const run = runWithWave({ rites: [{ instanceId: 1, id: 'gebo' }, { instanceId: 2, id: 'fehu' }] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteConfiscate', () => 0)
     expect(next.wave!.lastSabotage?.confiscatedTarget).toEqual({ kind: 'rite', id: 'gebo', idx: 0 })
   })
@@ -5162,15 +5162,15 @@ describe('triggerSabotage', () => {
   })
 
   it('revelationOracleConfiscate: 天啓が選ばれた場合、confiscatedTargetにref.kind=revelationとidxを設定する', () => {
-    const run = runWithWave({ revelations: ['kaku'], oracles: ['pair'] })
+    const run = runWithWave({ revelations: [{ instanceId: 1, id: 'kaku' }], oracles: [{ instanceId: 2, id: 'pair' }] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleConfiscate', () => 0)
-    expect(next.wave!.lastSabotage?.confiscatedTarget).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'revelation', id: 'kaku' }, idx: 0 })
+    expect(next.wave!.lastSabotage?.confiscatedTarget).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'revelation', instanceId: 1, id: 'kaku' }, idx: 0 })
   })
 
   it('revelationOracleConfiscate: 神託が選ばれた場合、confiscatedTargetにref.kind=oracleとidxを設定する', () => {
-    const run = runWithWave({ revelations: [], oracles: ['pair'] })
+    const run = runWithWave({ revelations: [], oracles: [{ instanceId: 1, id: 'pair' }] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleConfiscate', () => 0)
-    expect(next.wave!.lastSabotage?.confiscatedTarget).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'oracle', id: 'pair' }, idx: 0 })
+    expect(next.wave!.lastSabotage?.confiscatedTarget).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'oracle', instanceId: 1, id: 'pair' }, idx: 0 })
   })
 
   it('revelationOracleConfiscate: 天啓・神託とも0件ならconfiscatedTargetは設定されない', () => {
@@ -5180,26 +5180,26 @@ describe('triggerSabotage', () => {
   })
 
   it('revelationOracleConfiscate: 同名天啓を複数所持している場合、poolIdxに応じて正しいidxを設定する(2番目の天啓が選ばれた場合)', () => {
-    const run = runWithWave({ revelations: ['kaku', 'kaku'], oracles: ['pair'] })
+    const run = runWithWave({ revelations: [{ instanceId: 1, id: 'kaku' }, { instanceId: 2, id: 'kaku' }], oracles: [{ instanceId: 3, id: 'pair' }] })
     // pool = [revelation:kaku(idx0), revelation:kaku(idx1), oracle:pair(idx0)]
     // rand()を1に近い値にしてpoolIdx=1(2番目のkaku)を選ばせる
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleConfiscate', () => 1 / 3)
-    expect(next.wave!.lastSabotage?.confiscatedTarget).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'revelation', id: 'kaku' }, idx: 1 })
-    expect(next.revelations).toEqual(['kaku'])
+    expect(next.wave!.lastSabotage?.confiscatedTarget).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'revelation', instanceId: 2, id: 'kaku' }, idx: 1 })
+    expect(next.revelations.map(h => h.id)).toEqual(['kaku'])
   })
 
   it('revelationOracleConfiscate: 同名神託を複数所持している場合、poolIdxに応じて正しいidxを設定する(2番目の神託が選ばれた場合)', () => {
-    const run = runWithWave({ revelations: [], oracles: ['pair', 'pair'] })
+    const run = runWithWave({ revelations: [], oracles: [{ instanceId: 1, id: 'pair' }, { instanceId: 2, id: 'pair' }] })
     // pool = [oracle:pair(idx0), oracle:pair(idx1)]。rand()を後半にしてpoolIdx=1を選ばせる
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleConfiscate', () => 0.9)
-    expect(next.wave!.lastSabotage?.confiscatedTarget).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'oracle', id: 'pair' }, idx: 1 })
-    expect(next.oracles).toEqual(['pair'])
+    expect(next.wave!.lastSabotage?.confiscatedTarget).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'oracle', instanceId: 2, id: 'pair' }, idx: 1 })
+    expect(next.oracles.map(h => h.id)).toEqual(['pair'])
   })
 
   it('riteConfiscate: 所持秘儀からランダムに1つ選び効果無しで消費する', () => {
-    const run = runWithWave({ rites: ['gebo', 'fehu'] })
+    const run = runWithWave({ rites: [{ instanceId: 1, id: 'gebo' }, { instanceId: 2, id: 'fehu' }] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteConfiscate', () => 0)
-    expect(next.rites).toEqual(['fehu'])
+    expect(next.rites.map(h => h.id)).toEqual(['fehu'])
   })
 
   it('chainShuffle: チェーンがシャッフルされ、新しい末尾が基準カードになる', () => {
@@ -5248,12 +5248,12 @@ describe('triggerSabotage', () => {
   })
 
   it('riteForceActivate: 使用可能な秘儀からランダムに1つ選び即座に発動して消費する(useRiteと同じ結果になる)', () => {
-    const run = runWithWave({ items: ['discretion'], rites: ['raidho'] })
+    const run = runWithWave({ items: [{ instanceId: 1, id: 'discretion' }], rites: [{ instanceId: 2, id: 'raidho' }] })
     // raidhoは場札に非絵札・非ワイルドがあれば常にcanUseRiteを満たす(dealされた標準デッキなら通常存在する)
     const beforeStockIds = run.wave!.stock.map(c => c.id).sort((a, b) => a - b)
     const beforeDiscretionN = run.wave!.discretionN
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteForceActivate', () => 0)
-    expect(next.rites).toEqual([])
+    expect(next.rites.map(h => h.id)).toEqual([])
     // 秘儀の消費だけでなく、raidhoの効果(場札の非絵札・非ワイルドを山札と入れ替える)が
     // 実際にwaveへ適用されたことも確認する(riteConfiscateのようにidだけ消して効果が
     // 適用されないまま、という不具合を検出するため)
@@ -5268,26 +5268,26 @@ describe('triggerSabotage', () => {
   it('riteForceActivate: 使用可能な秘儀が無ければ何も起きない', () => {
     const run = runWithWave({ rites: [] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteForceActivate', () => 0)
-    expect(next.rites).toEqual([])
+    expect(next.rites.map(h => h.id)).toEqual([])
     expect(next.wave!.activeSeal).toBeNull()
   })
 
   it('riteForceActivate: 所持している秘儀が全てcanUseRiteを満たさなければ何も消費されない', () => {
     // geboはdiscardPile.length >= tableau.length(cols)が条件。dealされたばかりのwaveは
     // discardPileが空なので、常に条件を満たさない(canUseRite自体で個別に検証済み)。
-    const run = runWithWave({ rites: ['gebo'] })
+    const run = runWithWave({ rites: [{ instanceId: 1, id: 'gebo' }] })
     expect(run.wave!.discardPile.length).toBe(0)
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteForceActivate', () => 0)
-    expect(next.rites).toEqual(['gebo'])
+    expect(next.rites.map(h => h.id)).toEqual(['gebo'])
     expect(next.wave!.activeSeal).toBeNull()
   })
 
   it('riteForceActivate: lastSabotage.forceActivatedTargetに強制発動した秘儀のidを設定する', () => {
     // geboはdealされたばかりのwaveではcanUseRiteを満たさない(discardPileが空のため)。
     // fehuはstock.length > colsを満たすため使用可能となり、usable=['fehu']からrand()=0で選ばれる。
-    const run = runWithWave({ rites: ['gebo', 'fehu'] })
+    const run = runWithWave({ rites: [{ instanceId: 1, id: 'gebo' }, { instanceId: 2, id: 'fehu' }] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'riteForceActivate', () => 0)
-    expect(next.wave!.lastSabotage?.forceActivatedTarget).toEqual({ kind: 'rite', id: 'fehu' })
+    expect(next.wave!.lastSabotage?.forceActivatedTarget).toEqual({ kind: 'rite', instanceId: 2, id: 'fehu' })
   })
 
   it('riteForceActivate: 使用可能な秘儀が0件ならforceActivatedTargetは設定されない', () => {
@@ -5305,13 +5305,13 @@ describe('triggerSabotage', () => {
   })
 
   it('効果適用後、activeSealは一旦nullにリセットされてから今回の効果が反映される', () => {
-    const run = runWithWave({ items: ['bridge'] }, { activeSeal: { kind: 'rite', id: 'gebo' } })
+    const run = runWithWave({ items: [{ instanceId: 1, id: 'bridge' }] }, { activeSeal: { kind: 'rite', instanceId: 99, id: 'gebo' } })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'talismanSeal', () => 0)
-    expect(next.wave!.activeSeal).toEqual({ kind: 'talisman', id: 'bridge' })
+    expect(next.wave!.activeSeal).toEqual({ kind: 'talisman', instanceId: 1, id: 'bridge' })
   })
 
   it('talismanShuffle: 護符の並び順をシャッフルし、次の妨害発動までtalismanHidden封印にする', () => {
-    const run = runWithWave({ items: ['bridge', 'grace', 'golden'] })
+    const run = runWithWave({ items: [{ instanceId: 1, id: 'bridge' }, { instanceId: 2, id: 'grace' }, { instanceId: 3, id: 'golden' }] })
     let call = 0
     const rand = () => {
       const values = [0, 0.9, 0]
@@ -5319,56 +5319,56 @@ describe('triggerSabotage', () => {
     }
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'talismanShuffle', rand)
     // 3枚とも欠落・重複無く残っていること
-    expect([...next.items].sort()).toEqual(['bridge', 'golden', 'grace'])
+    expect(next.items.map(h => h.id).sort()).toEqual(['bridge', 'golden', 'grace'])
     // 実際に並びが変わっていること(no-op実装を弾くための検証)
-    expect(next.items).not.toEqual(['bridge', 'grace', 'golden'])
+    expect(next.items.map(h => h.id)).not.toEqual(['bridge', 'grace', 'golden'])
     expect(next.wave!.activeSeal).toEqual({ kind: 'talismanHidden' })
   })
 
   it('talismanShuffle: 所持護符が0件でもactiveSealは設定される(シャッフル対象が無いだけ)', () => {
     const run = runWithWave({ items: [] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'talismanShuffle', () => 0)
-    expect(next.items).toEqual([])
+    expect(next.items.map(h => h.id)).toEqual([])
     expect(next.wave!.activeSeal).toEqual({ kind: 'talismanHidden' })
   })
 
   it('revelationOracleConfiscate: 所持天啓・神託からランダムに1つ選び完全に失わせる(天啓が選ばれた場合)', () => {
-    const run = runWithWave({ revelations: ['kaku'], oracles: ['pair'] })
+    const run = runWithWave({ revelations: [{ instanceId: 1, id: 'kaku' }], oracles: [{ instanceId: 2, id: 'pair' }] })
     // rand()=0固定でMath.floor(rand()*pool.length)は常に0番目(天啓kaku)を選ぶ
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleConfiscate', () => 0)
-    expect(next.revelations).toEqual([])
-    expect(next.oracles).toEqual(['pair'])
+    expect(next.revelations.map(h => h.id)).toEqual([])
+    expect(next.oracles.map(h => h.id)).toEqual(['pair'])
   })
 
   it('revelationOracleConfiscate: 神託が選ばれた場合、oracleLevelsは変更しない', () => {
-    const run = runWithWave({ revelations: [], oracles: ['pair'] })
+    const run = runWithWave({ revelations: [], oracles: [{ instanceId: 1, id: 'pair' }] })
     const beforeLevel = run.oracleLevels.pair
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleConfiscate', () => 0)
-    expect(next.oracles).toEqual([])
+    expect(next.oracles.map(h => h.id)).toEqual([])
     expect(next.oracleLevels.pair).toBe(beforeLevel)
   })
 
   it('revelationOracleConfiscate: 天啓・神託とも0件なら何も起きない', () => {
     const run = runWithWave({ revelations: [], oracles: [] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleConfiscate', () => 0)
-    expect(next.revelations).toEqual([])
-    expect(next.oracles).toEqual([])
+    expect(next.revelations.map(h => h.id)).toEqual([])
+    expect(next.oracles.map(h => h.id)).toEqual([])
   })
 
   it('revelationOracleForceActivate: 神託が選ばれた場合、useOracleと同じ結果(oracleLevels加算・oraclesから除外)になる', () => {
-    const run = runWithWave({ revelations: [], oracles: ['pair'] })
+    const run = runWithWave({ revelations: [], oracles: [{ instanceId: 1, id: 'pair' }] })
     const beforeLevel = run.oracleLevels.pair
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleForceActivate', () => 0)
-    expect(next.oracles).toEqual([])
+    expect(next.oracles.map(h => h.id)).toEqual([])
     expect(next.oracleLevels.pair).toBe(beforeLevel + 1)
     expect(next.wave!.oracleLevels.pair).toBe(beforeLevel + 1)
   })
 
   it('revelationOracleForceActivate: 列選択を要する天啓が選ばれた場合、ランダムな列に効果を適用する', () => {
-    const run = runWithWave({ revelations: ['kaku'], oracles: [] })
+    const run = runWithWave({ revelations: [{ instanceId: 1, id: 'kaku' }], oracles: [] })
     const before = run.wave!.tableau.map(col => col.map(c => c.suit))
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleForceActivate', () => 0)
-    expect(next.revelations).toEqual([])
+    expect(next.revelations.map(h => h.id)).toEqual([])
     const after = next.wave!.tableau.map(col => col.map(c => c.suit))
     // kaku(列を♠化)の効果が実際に場札へ適用されていること(idだけ消して効果無し、を弾く)
     expect(after).not.toEqual(before)
@@ -5377,28 +5377,28 @@ describe('triggerSabotage', () => {
   it('revelationOracleForceActivate: 使用可能な天啓も所持神託も無ければ何も起きない', () => {
     const run = runWithWave({ revelations: [], oracles: [] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleForceActivate', () => 0)
-    expect(next.revelations).toEqual([])
-    expect(next.oracles).toEqual([])
+    expect(next.revelations.map(h => h.id)).toEqual([])
+    expect(next.oracles.map(h => h.id)).toEqual([])
     expect(next.wave!.activeSeal).toBeNull()
   })
 
   it('revelationOracleForceActivate: waveがplaying中でなければ神託は対象プールに含めない(useOracleはwave.statusを見ないため)', () => {
-    const run = runWithWave({ revelations: [], oracles: ['pair'] }, { status: 'ended' })
+    const run = runWithWave({ revelations: [], oracles: [{ instanceId: 1, id: 'pair' }] }, { status: 'ended' })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleForceActivate', () => 0)
-    expect(next.oracles).toEqual(['pair'])
+    expect(next.oracles.map(h => h.id)).toEqual(['pair'])
     expect(next.oracleLevels.pair).toBe(run.oracleLevels.pair)
   })
 
   it('revelationOracleForceActivate: 天啓が選ばれた場合、forceActivatedTargetにref.kind=revelationを設定する', () => {
-    const run = runWithWave({ revelations: ['kaku'], oracles: [] })
+    const run = runWithWave({ revelations: [{ instanceId: 1, id: 'kaku' }], oracles: [] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleForceActivate', () => 0)
-    expect(next.wave!.lastSabotage?.forceActivatedTarget).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'revelation', id: 'kaku' } })
+    expect(next.wave!.lastSabotage?.forceActivatedTarget).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'revelation', instanceId: 1, id: 'kaku' } })
   })
 
   it('revelationOracleForceActivate: 神託が選ばれた場合、forceActivatedTargetにref.kind=oracleを設定する', () => {
-    const run = runWithWave({ revelations: [], oracles: ['pair'] })
+    const run = runWithWave({ revelations: [], oracles: [{ instanceId: 1, id: 'pair' }] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'revelationOracleForceActivate', () => 0)
-    expect(next.wave!.lastSabotage?.forceActivatedTarget).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'oracle', id: 'pair' } })
+    expect(next.wave!.lastSabotage?.forceActivatedTarget).toEqual({ kind: 'revelationOrOracle', ref: { kind: 'oracle', instanceId: 1, id: 'pair' } })
   })
 
   it('revelationOracleForceActivate: 天啓・神託とも0件ならforceActivatedTargetは設定されない', () => {
@@ -5632,16 +5632,16 @@ describe('triggerSabotage', () => {
   })
 
   it('useRite: dagaz使用時にlastStockShuffle.seqが1から始まりインクリメントされる', () => {
-    const run: RunState = { ...runWithWave(), rites: ['dagaz'] }
-    const next = useRite(DEFAULT_PARAMS, run, 'dagaz', () => 0)
+    const run: RunState = { ...runWithWave(), rites: [{ instanceId: 1, id: 'dagaz' }] }
+    const next = useRite(DEFAULT_PARAMS, run, 1, 'dagaz', () => 0)
     expect(next.wave!.lastStockShuffle).toEqual({ seq: 1 })
   })
 
   it('useRite: dagaz以外の秘儀使用時はlastStockShuffleの値を維持する', () => {
-    const run: RunState = { ...runWithWave(), rites: ['dagaz', 'jera'] }
-    const afterDagaz = useRite(DEFAULT_PARAMS, run, 'dagaz', () => 0)
+    const run: RunState = { ...runWithWave(), rites: [{ instanceId: 1, id: 'dagaz' }, { instanceId: 2, id: 'jera' }] }
+    const afterDagaz = useRite(DEFAULT_PARAMS, run, 1, 'dagaz', () => 0)
     expect(afterDagaz.wave!.lastStockShuffle).toEqual({ seq: 1 })
-    const afterJera = useRite(DEFAULT_PARAMS, afterDagaz, 'jera', () => 0)
+    const afterJera = useRite(DEFAULT_PARAMS, afterDagaz, 2, 'jera', () => 0)
     expect(afterJera.wave!.lastStockShuffle).toEqual({ seq: 1 })
   })
 })
@@ -5660,7 +5660,7 @@ describe('妨害の発動トリガー統合(applyPlayCard)', () => {
   it('sabotageTurnsRemainingが1の状態でapplyPlayCardすると効果が発動し、次の妨害が再抽選される', () => {
     const star: Star = { id: 'test-star', name: 'テスト星', waveSlot: 3, targetMultiplier: 1, reward: 0, restriction: null, sabotage: { kind: 'all' }, descTemplate: '' }
     let run = createInitialRun()
-    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, run.items, run.deckComposition, 1, 0, defaultOracleLevels())
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, run.items.map(h => h.id), run.deckComposition, 1, 0, defaultOracleLevels())
     run = { ...run, phase: 'playing', stageStars: [star, star, star], wave: { ...forceWildTopOfColumn0(wave), pendingSabotageId: 'comboBreather', sabotageTurnsRemaining: 1, combo: 5 } }
     const playableCol = run.wave!.tableau.findIndex(col => col.length > 0 && isPlayable('none', run.wave!, col[col.length - 1], []))
     expect(playableCol).toBeGreaterThanOrEqual(0)
@@ -5673,7 +5673,7 @@ describe('妨害の発動トリガー統合(applyPlayCard)', () => {
   it('護符封印中は封印された護符の効果が適用されない(effectiveItemsから除外される)', () => {
     let run = createInitialRun()
     const { wave } = startWave(DEFAULT_PARAMS, 0, 0, ['golden'], run.deckComposition, 1, 0, defaultOracleLevels())
-    run = { ...run, phase: 'playing', items: ['golden'], wave: { ...forceWildTopOfColumn0(wave), activeSeal: { kind: 'talisman', id: 'golden' } } }
+    run = { ...run, phase: 'playing', items: [{ instanceId: 1, id: 'golden' }], wave: { ...forceWildTopOfColumn0(wave), activeSeal: { kind: 'talisman', instanceId: 1, id: 'golden' } } }
     const playableCol = run.wave!.tableau.findIndex(col => col.length > 0 && isPlayable('none', run.wave!, col[col.length - 1], []))
     expect(playableCol).toBeGreaterThanOrEqual(0)
     const next = applyPlayCard(DEFAULT_PARAMS, run, playableCol, () => 0.5)
@@ -5683,7 +5683,7 @@ describe('妨害の発動トリガー統合(applyPlayCard)', () => {
 
   it('comboCap: activeSealがcomboCapのとき、playCardでコンボがcapを超えて増加しない', () => {
     let run = createInitialRun()
-    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, run.items, run.deckComposition, 1, 0, defaultOracleLevels())
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, run.items.map(h => h.id), run.deckComposition, 1, 0, defaultOracleLevels())
     run = { ...run, phase: 'playing', wave: { ...forceWildTopOfColumn0(wave), combo: 3, activeSeal: { kind: 'comboCap', max: 3 } } }
     const playableCol = run.wave!.tableau.findIndex(col => col.length > 0 && isPlayable('none', run.wave!, col[col.length - 1], []))
     expect(playableCol).toBeGreaterThanOrEqual(0)
@@ -5725,7 +5725,7 @@ describe('妨害の発動トリガー統合(applyStuckCheck)', () => {
       pendingSabotageId: 'currencyConfiscate',
       sabotageTurnsRemaining: 0,
     })
-    run = { ...run, phase: 'playing', items: ['resilience'], stageStars: [star, star, star], currency: 10, wave }
+    run = { ...run, phase: 'playing', items: [{ instanceId: 1, id: 'resilience' }], stageStars: [star, star, star], currency: 10, wave }
     const next = applyStuckCheck(DEFAULT_PARAMS, run, () => 0.5)
     expect(next.currency).toBe(5)
     expect(next.wave!.pendingSabotageId).not.toBeNull()
