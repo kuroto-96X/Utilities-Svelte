@@ -133,6 +133,11 @@
   let pressPulseTimer: ReturnType<typeof setTimeout> | null = null
   onDestroy(() => { if (pressPulseTimer) clearTimeout(pressPulseTimer) })
 
+  // pressPulseTargetのkind絞り込みは、.some()のコールバック内(アロー関数のクロージャ)には
+  // 伝播しないため、あらかじめプリミティブ値として取り出しておく
+  // (PlayArea.svelteのpulseRiteInstanceId/pulseRevelationInstanceIdと同じ理由・同じパターン)。
+  let oraclePulseInstanceId = $derived(pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'oracle' ? pressPulseTarget.ref.instanceId : undefined)
+
   // PlayArea側で発動検知したnumericPopupTarget(数値変化系妨害行動のシェイク+ポップアップ
   // 演出対象)を受け取って保持する。通貨表示(stageRow)・RoleStatusPanel・レリックバッジは
   // PlayAreaの外側にあるため、コールバックprops経由で値を受け渡す。
@@ -232,8 +237,8 @@
     afterAction()
   }
 
-  function handleUseRite(riteId: RiteId) {
-    run = useRite(params, run, riteId)
+  function handleUseRite(instanceId: number, riteId: RiteId) {
+    run = useRite(params, run, instanceId, riteId)
     if (run.phase === 'playing') afterAction()
   }
 
@@ -372,9 +377,9 @@
   const handleCancelPackOracleSwap = bindRunActionNoArg(cancelPackOracleSwap)
   const handleClosePackOracleSelect = bindRunActionNoArg(closePackOracleSelect)
 
-  function handleUseOracle(roleName: RoleName) {
+  function handleUseOracle(instanceId: number, roleName: RoleName) {
     if (pressPulseTimer) clearTimeout(pressPulseTimer)
-    pressPulseTarget = { kind: 'revelationOrOracle', ref: { kind: 'oracle', id: roleName } }
+    pressPulseTarget = { kind: 'revelationOrOracle', ref: { kind: 'oracle', instanceId, id: roleName } }
     pressPulseTimer = setTimeout(() => {
       pressPulseTimer = null
       pressPulseTarget = null
@@ -411,22 +416,30 @@
     draggingItemIndex = null
   }
 
-  const handleSellItem = bindParamsRunAction(sellItem)
-  const handleSellRite = bindParamsRunAction(sellRite)
-  const handleSellRevelation = bindParamsRunAction(sellRevelation)
-  const handleSellOracle = bindParamsRunAction(sellOracle)
+  function handleSellItem(instanceId: number, itemId: ItemId) {
+    run = sellItem(params, run, instanceId, itemId)
+  }
+  function handleSellRite(instanceId: number, riteId: RiteId) {
+    run = sellRite(params, run, instanceId, riteId)
+  }
+  function handleSellRevelation(instanceId: number, revelationId: RevelationId) {
+    run = sellRevelation(params, run, instanceId, revelationId)
+  }
+  function handleSellOracle(instanceId: number, roleName: RoleName) {
+    run = sellOracle(params, run, instanceId, roleName)
+  }
 
   // sourceが'individual'/'pack'(ショップでの購入・福袋の中身選択)はwaveの進行に関与しないため
   // afterAction()を呼ばない。'held'(保有天啓をプレイ中に使用)のみwave進行に影響するため必要。
   let pendingRevelationTarget = $state<
     | { revelationId: RevelationId; source: 'individual'; slotIndex: number }
     | { revelationId: RevelationId; source: 'pack' }
-    | { revelationId: RevelationId; source: 'held' }
+    | { revelationId: RevelationId; source: 'held'; instanceId: number }
     | null
   >(null)
 
   // 天啓「虚」使用時、付喪化させるレリックを選ぶオーバーレイの表示状態
-  let pendingRelicTargetRevelationId = $state<RevelationId | null>(null)
+  let pendingRelicTarget = $state<{ instanceId: number; revelationId: RevelationId } | null>(null)
 
   // ショップ系フェーズでの天啓ターゲット選択用の使い捨てプレビュー盤面。非nullの間、
   // pendingRevelationTargetのコラム選択はrun.waveではなくこちらを対象に行う。
@@ -468,13 +481,13 @@
     syncRevelationPreviewWithPhase()
   }
 
-  function handleUseRevelationClick(revelationId: RevelationId) {
+  function handleUseRevelationClick(instanceId: number, revelationId: RevelationId) {
     if (revelationId === 'kyo') {
-      pendingRelicTargetRevelationId = 'kyo'
+      pendingRelicTarget = { instanceId, revelationId }
       return
     }
     if (revelationNeedsTarget(revelationId)) {
-      pendingRevelationTarget = { revelationId, source: 'held' }
+      pendingRevelationTarget = { revelationId, source: 'held', instanceId }
       // 既にプレビュー表示中(天啓福袋選択中)なら再生成しない。再生成すると場札が
       // 意図せず再シャッフルされ、ユーザーに見せていた盤面と食い違ってしまう
       // (福袋の「使用」ボタンで踏んだのと同種の問題)。
@@ -487,27 +500,27 @@
       // プレビュー表示中の即時適用天啓(コラム選択不要)は、プレビュー盤面に対して
       // 適用する。片付けアニメーションは発火させない(秘儀の即時使用と同様)。
       const previewResultWave = applyToRevelationPreview((runForPreview) =>
-        useRevelation(params, runForPreview, revelationId, null)
+        useRevelation(params, runForPreview, instanceId, revelationId, null)
       )
       if (previewResultWave) {
         revelationPreviewWave = previewResultWave
       }
       return
     }
-    run = useRevelation(params, run, revelationId, null)
+    run = useRevelation(params, run, instanceId, revelationId, null)
     if (run.phase === 'playing') afterAction()
   }
 
   function handleConfirmRelicTarget(relicId: RelicId) {
-    if (!pendingRelicTargetRevelationId) return
-    const revelationId = pendingRelicTargetRevelationId
-    pendingRelicTargetRevelationId = null
-    run = useRevelation(params, run, revelationId, null, Math.random, relicId)
+    if (!pendingRelicTarget) return
+    const { instanceId, revelationId } = pendingRelicTarget
+    pendingRelicTarget = null
+    run = useRevelation(params, run, instanceId, revelationId, null, Math.random, relicId)
     if (run.phase === 'playing') afterAction()
   }
 
   function handleCancelRelicTarget() {
-    pendingRelicTargetRevelationId = null
+    pendingRelicTarget = null
   }
 
   function handleCancelRevelationTarget() {
@@ -537,7 +550,7 @@
         if (target.source === 'pack') {
           return pickPackRevelationUse(params, runForPreview, target.revelationId, colIndex)
         }
-        return useRevelation(params, runForPreview, target.revelationId, colIndex)
+        return useRevelation(params, runForPreview, target.instanceId, target.revelationId, colIndex)
       })
       if (!previewResultWave) {
         revelationPreviewWave = null
@@ -559,7 +572,7 @@
     } else if (target.source === 'pack') {
       run = pickPackRevelationUse(params, run, target.revelationId, colIndex)
     } else {
-      run = useRevelation(params, run, target.revelationId, colIndex)
+      run = useRevelation(params, run, target.instanceId, target.revelationId, colIndex)
       if (run.phase === 'playing') afterAction()
     }
   }
@@ -601,14 +614,15 @@
 {/snippet}
 
 {#snippet itemBadges(anyAnimationActive: boolean)}
-  {@const talismanFading = confiscateFadingTarget?.kind === 'talisman' ? confiscateFadingTarget : undefined}
-  {@const displayedItems = withFadingId(run.items, talismanFading?.id, talismanFading?.idx ?? 0)}
+  {@const talismanFading = confiscateFadingTarget?.kind === 'talisman' ? { instanceId: -1, id: confiscateFadingTarget.id, idx: confiscateFadingTarget.idx } : undefined}
+  {@const displayedItems = withFadingId(run.items, talismanFading, talismanFading?.idx ?? 0)}
   <div class="flex-1 flex flex-col gap-1 items-end">
     <div class="flex flex-wrap gap-1 justify-end">
-      {#each displayedItems as itemId, i (i)}
+      {#each displayedItems as h, i (i)}
+        {@const itemId = h.id}
         {@const talismanHidden = wave?.activeSeal?.kind === 'talismanHidden'}
-        {@const talismanSealed = wave?.activeSeal?.kind === 'talisman' && wave.activeSeal.id === itemId}
-        {@const talismanFlashing = sealFlashTarget?.kind === 'talisman' && sealFlashTarget.id === itemId}
+        {@const talismanSealed = wave?.activeSeal?.kind === 'talisman' && wave.activeSeal.instanceId === h.instanceId}
+        {@const talismanFlashing = sealFlashTarget?.kind === 'talisman' && sealFlashTarget.instanceId === h.instanceId}
         {@const talismanShuffleFlashing = talismanShuffleFlashActive && talismanHidden}
         {@const talismanConfiscateFading = talismanFading !== undefined && i === talismanFading.idx}
         <span
@@ -629,31 +643,31 @@
     </div>
     {#if run.revelations.length > 0 || confiscateFadingTarget?.kind === 'revelationOrOracle' && confiscateFadingTarget.ref.kind === 'revelation'}
       {@const revelationOrOracleFading = confiscateFadingTarget?.kind === 'revelationOrOracle' ? confiscateFadingTarget : undefined}
-      {@const revelationFading = revelationOrOracleFading?.ref.kind === 'revelation' ? { idx: revelationOrOracleFading.idx, id: revelationOrOracleFading.ref.id } : undefined}
-      {@const displayedRevelations = withFadingId(run.revelations, revelationFading?.id, revelationFading?.idx ?? 0)}
+      {@const revelationFading = revelationOrOracleFading?.ref.kind === 'revelation' ? { idx: revelationOrOracleFading.idx, instanceId: revelationOrOracleFading.ref.instanceId, id: revelationOrOracleFading.ref.id } : undefined}
+      {@const displayedRevelations = withFadingId(run.revelations, revelationFading, revelationFading?.idx ?? 0)}
       <div class="flex flex-wrap gap-1 justify-end">
-        {#each displayedRevelations as id, i (i)}
+        {#each displayedRevelations as h, i (i)}
           {@const fading = revelationFading !== undefined && i === revelationFading.idx}
-          <span class="text-xs bg-indigo-900 text-indigo-200/90 border border-indigo-600/40 rounded px-1.5 py-0.5 flex items-center gap-1 {fading ? 'shidasu-confiscate-fade' : ''}" title={revelationDesc(id, params)}>
-            {revelationName(id, params)}
-            <button onclick={() => handleSellRevelation(id)} class="text-indigo-300/70 underline">売</button>
+          <span class="text-xs bg-indigo-900 text-indigo-200/90 border border-indigo-600/40 rounded px-1.5 py-0.5 flex items-center gap-1 {fading ? 'shidasu-confiscate-fade' : ''}" title={revelationDesc(h.id, params)}>
+            {revelationName(h.id, params)}
+            <button onclick={() => handleSellRevelation(h.instanceId, h.id)} class="text-indigo-300/70 underline">売</button>
           </span>
         {/each}
       </div>
     {/if}
-    {#if run.oracles.length > 0 || confiscateFadingTarget?.kind === 'revelationOrOracle' && confiscateFadingTarget.ref.kind === 'oracle' || pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'oracle' && !run.oracles.includes(pressPulseTarget.ref.id)}
+    {#if run.oracles.length > 0 || confiscateFadingTarget?.kind === 'revelationOrOracle' && confiscateFadingTarget.ref.kind === 'oracle' || pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'oracle' && !run.oracles.some(h => h.instanceId === oraclePulseInstanceId)}
       {@const revelationOrOracleFading = confiscateFadingTarget?.kind === 'revelationOrOracle' ? confiscateFadingTarget : undefined}
-      {@const oracleFading = revelationOrOracleFading?.ref.kind === 'oracle' ? { idx: revelationOrOracleFading.idx, id: revelationOrOracleFading.ref.id } : undefined}
-      {@const oraclePulseFading = pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'oracle' && !run.oracles.includes(pressPulseTarget.ref.id) ? pressPulseTarget.ref.id : undefined}
-      {@const displayedOracles = withFadingId(withFadingId(run.oracles, oracleFading?.id, oracleFading?.idx ?? 0), oraclePulseFading, run.oracles.length)}
+      {@const oracleFading = revelationOrOracleFading?.ref.kind === 'oracle' ? { idx: revelationOrOracleFading.idx, instanceId: revelationOrOracleFading.ref.instanceId, id: revelationOrOracleFading.ref.id } : undefined}
+      {@const oraclePulseFading = pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'oracle' && !run.oracles.some(h => h.instanceId === oraclePulseInstanceId) ? { instanceId: pressPulseTarget.ref.instanceId, id: pressPulseTarget.ref.id } : undefined}
+      {@const displayedOracles = withFadingId(withFadingId(run.oracles, oracleFading, oracleFading?.idx ?? 0), oraclePulseFading, run.oracles.length)}
       <div class="flex flex-wrap gap-1 justify-end">
-        {#each displayedOracles as roleName, i (i)}
+        {#each displayedOracles as h, i (i)}
           {@const fading = oracleFading !== undefined && i === oracleFading.idx}
-          {@const oraclePulsing = pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'oracle' && pressPulseTarget.ref.id === roleName}
-          <span class="text-xs bg-purple-900 text-purple-200/90 border border-purple-600/40 rounded px-1.5 py-0.5 flex items-center gap-1 {fading ? 'shidasu-confiscate-fade' : ''}" title={oracleDesc(roleName, params)}>
-            {oracleName(roleName, params)}
-            <button onclick={() => handleUseOracle(roleName)} class="text-purple-300/70 underline {oraclePulsing ? 'shidasu-press-pulse' : ''}">使</button>
-            <button onclick={() => handleSellOracle(roleName)} class="text-purple-300/70 underline">売</button>
+          {@const oraclePulsing = pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'oracle' && pressPulseTarget.ref.instanceId === h.instanceId}
+          <span class="text-xs bg-purple-900 text-purple-200/90 border border-purple-600/40 rounded px-1.5 py-0.5 flex items-center gap-1 {fading ? 'shidasu-confiscate-fade' : ''}" title={oracleDesc(h.id, params)}>
+            {oracleName(h.id, params)}
+            <button onclick={() => handleUseOracle(h.instanceId, h.id)} class="text-purple-300/70 underline {oraclePulsing ? 'shidasu-press-pulse' : ''}">使</button>
+            <button onclick={() => handleSellOracle(h.instanceId, h.id)} class="text-purple-300/70 underline">売</button>
           </span>
         {/each}
       </div>
@@ -692,11 +706,11 @@
     <div class="text-xs w-full">
       <div class="text-yellow-300 font-black mb-2">天啓・神託は合計2個まで。入れ替える対象を選んでください</div>
       <div class="flex flex-col gap-1.5">
-        {#each run.revelations as id (id)}
-          <button onclick={() => handleConfirmPackRevelationSwap({ kind: 'revelation', id })} class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-lg px-2 py-1.5 text-emerald-100">{revelationName(id, params)}</button>
+        {#each run.revelations as h (h.instanceId)}
+          <button onclick={() => handleConfirmPackRevelationSwap({ kind: 'revelation', instanceId: h.instanceId, id: h.id })} class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-lg px-2 py-1.5 text-emerald-100">{revelationName(h.id, params)}</button>
         {/each}
-        {#each run.oracles as roleName (roleName)}
-          <button onclick={() => handleConfirmPackRevelationSwap({ kind: 'oracle', id: roleName })} class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-lg px-2 py-1.5 text-emerald-100">{oracleName(roleName, params)}</button>
+        {#each run.oracles as h (h.instanceId)}
+          <button onclick={() => handleConfirmPackRevelationSwap({ kind: 'oracle', instanceId: h.instanceId, id: h.id })} class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-lg px-2 py-1.5 text-emerald-100">{oracleName(h.id, params)}</button>
         {/each}
       </div>
       <button onclick={handleCancelPackRevelationSwap} class="mt-2 text-emerald-300/70 underline">キャンセル</button>
@@ -740,7 +754,7 @@
     aria-hidden="true"
     bind:offsetHeight={measuredPlayHeight}
   >
-    <PlayArea wave={measurementWave} {params} modifier={currentModifier} {target} items={run.items} onPlayCard={handlePlayCard} onDraw={handleDraw} headerExtra={stageRow} extraFooter={itemBadges} rites={run.rites} onUseRite={handleUseRite} />
+    <PlayArea wave={measurementWave} {params} modifier={currentModifier} {target} items={run.items.map(h => h.id)} onPlayCard={handlePlayCard} onDraw={handleDraw} headerExtra={stageRow} extraFooter={itemBadges} rites={run.rites} onUseRite={handleUseRite} />
   </div>
   <div class="flex flex-col items-center justify-center gap-6 text-center px-6" style="min-height:{measuredPlayHeight}px;">
     <div>
@@ -769,7 +783,7 @@
 
 {:else if wave}
   <PlayArea
-    {wave} {params} modifier={currentModifier} {target} items={run.items}
+    {wave} {params} modifier={currentModifier} {target} items={run.items.map(h => h.id)}
     onPlayCard={handlePlayCard} onDraw={handleDraw}
     onScoreRevealDone={handleScoreRevealDone}
     onCleanupDone={handleCleanupDone}
@@ -806,7 +820,7 @@
         </div>
       {/if}
       <PlayArea
-        wave={revelationPreviewWave} {params} modifier={currentModifier} target={0} items={run.items}
+        wave={revelationPreviewWave} {params} modifier={currentModifier} target={0} items={run.items.map(h => h.id)}
         onPlayCard={() => {}} onDraw={() => {}}
         showScoreAndCombo={false} allowDraw={false}
         onCleanupDone={handleRevelationPreviewCleanupDone}
@@ -824,7 +838,7 @@
   </div>
 {/if}
 
-{#if pendingRelicTargetRevelationId}
+{#if pendingRelicTarget}
   <div class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-lg p-4 max-w-md w-full space-y-3">
       <p class="text-sm font-bold text-slate-200">付喪化させるレリックを選んでください</p>
@@ -855,7 +869,7 @@
   </div>
 {/if}
 
-{#if run.phase === 'shop' && run.shop && !pendingRevelationTarget && !revelationPreviewWave && !showStageScreen && !pendingRelicTargetRevelationId}
+{#if run.phase === 'shop' && run.shop && !pendingRevelationTarget && !revelationPreviewWave && !showStageScreen && !pendingRelicTarget}
   <div class="fixed inset-0 z-50 bg-emerald-950/90 backdrop-blur-sm flex items-center justify-center p-6">
     <div class="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-4">
       <div class="flex items-center justify-between">
@@ -968,7 +982,8 @@
       <div class="space-y-2">
         <p class="text-xs text-slate-500">所持護符(ドラッグで並べ替え・売却可)</p>
         <div class="flex flex-wrap gap-1">
-          {#each run.items as itemId, i (itemId)}
+          {#each run.items as h, i (h.instanceId)}
+            {@const itemId = h.id}
             {@const talismanHidden = wave?.activeSeal?.kind === 'talismanHidden'}
             <div
               role="button"
@@ -983,7 +998,7 @@
               style={talismanHidden ? 'background:#1c1917; color:#78350f; border-color: rgba(217,119,6,0.5); background-image: repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(217,119,6,0.35) 5px,rgba(217,119,6,0.35) 6px);' : ''}
             >
               <span>{talismanHidden ? '？？？' : itemName(itemId, params)}</span>
-              <button onpointerdown={(e) => e.stopPropagation()} onclick={() => handleSellItem(itemId)} class="{talismanHidden ? '' : 'text-slate-400 hover:text-slate-700'}">売({talismanHidden ? '？' : itemSellPrice(params, run, itemId)})</button>
+              <button onpointerdown={(e) => e.stopPropagation()} onclick={() => handleSellItem(h.instanceId, itemId)} class="{talismanHidden ? '' : 'text-slate-400 hover:text-slate-700'}">売({talismanHidden ? '？' : itemSellPrice(params, run, itemId)})</button>
             </div>
           {/each}
         </div>
@@ -992,16 +1007,16 @@
       <div class="space-y-2">
         <p class="text-xs text-slate-500">その他の所持品(売却可)</p>
         <div class="flex flex-wrap gap-1">
-          {#each run.rites as riteId}
-            <button title={riteDesc(riteId, params)} onclick={() => handleUseRite(riteId)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{riteName(riteId, params)} 使用</button>
-            <button title={riteDesc(riteId, params)} onclick={() => handleSellRite(riteId)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{riteName(riteId, params)} 売({riteSellPrice(params, run)})</button>
+          {#each run.rites as h (h.instanceId)}
+            <button title={riteDesc(h.id, params)} onclick={() => handleUseRite(h.instanceId, h.id)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{riteName(h.id, params)} 使用</button>
+            <button title={riteDesc(h.id, params)} onclick={() => handleSellRite(h.instanceId, h.id)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{riteName(h.id, params)} 売({riteSellPrice(params, run)})</button>
           {/each}
-          {#each run.revelations as revelationId}
-            <button title={revelationDesc(revelationId, params)} onclick={() => handleUseRevelationClick(revelationId)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{revelationName(revelationId, params)} 使用</button>
-            <button title={revelationDesc(revelationId, params)} onclick={() => handleSellRevelation(revelationId)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{revelationName(revelationId, params)} 売({revelationSellPrice(params, run)})</button>
+          {#each run.revelations as h (h.instanceId)}
+            <button title={revelationDesc(h.id, params)} onclick={() => handleUseRevelationClick(h.instanceId, h.id)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{revelationName(h.id, params)} 使用</button>
+            <button title={revelationDesc(h.id, params)} onclick={() => handleSellRevelation(h.instanceId, h.id)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{revelationName(h.id, params)} 売({revelationSellPrice(params, run)})</button>
           {/each}
-          {#each run.oracles as roleName}
-            <button title={oracleDesc(roleName, params)} onclick={() => handleSellOracle(roleName)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{oracleName(roleName, params)} 売({oracleSellPrice(params, run)})</button>
+          {#each run.oracles as h (h.instanceId)}
+            <button title={oracleDesc(h.id, params)} onclick={() => handleSellOracle(h.instanceId, h.id)} class="text-xs text-slate-800 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50">{oracleName(h.id, params)} 売({oracleSellPrice(params, run)})</button>
           {/each}
         </div>
       </div>
@@ -1029,8 +1044,8 @@
       {#if run.pendingNewRite}
         <p class="text-sm text-slate-600">所持枠が満杯です。入れ替える秘儀を選んでください。</p>
         <div class="space-y-1">
-          {#each run.rites as riteId}
-            <button onclick={() => handleConfirmPackRiteSwap(riteId)} class="w-full text-left px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-sm">{riteId}</button>
+          {#each run.rites as h (h.instanceId)}
+            <button onclick={() => handleConfirmPackRiteSwap(h.instanceId)} class="w-full text-left px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-sm">{h.id}</button>
           {/each}
         </div>
         <button onclick={handleCancelPackRiteSwap} class="text-xs text-slate-500 underline">キャンセル</button>
@@ -1091,13 +1106,13 @@
       {:else}
         <div class="text-emerald-100/70 text-sm mb-4">護符は最大{itemMaxCapacity(params, run)}個まで。入れ替える護符を選ぶ</div>
         <div class="flex flex-col gap-3 w-full">
-          {#each run.items as id, i (i)}
+          {#each run.items as h (h.instanceId)}
             <button
-              onclick={() => handleConfirmPackItemSwap(id)}
+              onclick={() => handleConfirmPackItemSwap(h.instanceId)}
               class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
             >
-              <div class="font-black text-yellow-300">{itemName(id, params)}</div>
-              <div class="text-xs text-emerald-100/80 mt-0.5">{itemDesc(id, params)}</div>
+              <div class="font-black text-yellow-300">{itemName(h.id, params)}</div>
+              <div class="text-xs text-emerald-100/80 mt-0.5">{itemDesc(h.id, params)}</div>
             </button>
           {/each}
           <button
@@ -1118,17 +1133,17 @@
       {#if run.pendingNewOracle}
         <div class="text-emerald-100/70 text-sm mb-4">天啓・神託は合計2個まで。入れ替える対象を選ぶ</div>
         <div class="flex flex-col gap-3 w-full">
-          {#each run.revelations as id (id)}
+          {#each run.revelations as h (h.instanceId)}
             <button
-              onclick={() => handleConfirmPackOracleSwap({ kind: 'revelation', id })}
+              onclick={() => handleConfirmPackOracleSwap({ kind: 'revelation', instanceId: h.instanceId, id: h.id })}
               class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
-            >{revelationName(id, params)}</button>
+            >{revelationName(h.id, params)}</button>
           {/each}
-          {#each run.oracles as roleName (roleName)}
+          {#each run.oracles as h (h.instanceId)}
             <button
-              onclick={() => handleConfirmPackOracleSwap({ kind: 'oracle', id: roleName })}
+              onclick={() => handleConfirmPackOracleSwap({ kind: 'oracle', instanceId: h.instanceId, id: h.id })}
               class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
-            >{oracleName(roleName, params)}</button>
+            >{oracleName(h.id, params)}</button>
           {/each}
           <button
             onclick={handleCancelPackOracleSwap}
