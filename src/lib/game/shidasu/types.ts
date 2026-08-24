@@ -293,8 +293,8 @@ export interface WaveState {
   // 発動させる直前に必ずnullへリセットしてから、今回の効果がseal系ならここに設定し直す。
   // 妨害の発動サイクルは常に1つしか同時に走らないため、封印状態も常に最大1件しか存在しない。
   activeSeal:
-    | { kind: 'talisman'; id: ItemId }
-    | { kind: 'rite'; id: RiteId }
+    | { kind: 'talisman'; instanceId: number; id: ItemId }
+    | { kind: 'rite'; instanceId: number; id: RiteId }
     | { kind: 'revelationOrOracle'; ref: HeldRevelationOrOracleRef }
     | { kind: 'role'; names: RoleName[] }
     | { kind: 'comboCap'; max: number }
@@ -309,7 +309,7 @@ export interface WaveState {
   // Card.faceUpフラグ(過去の別トリガーで裏向きのまま残っているカードとも区別が
   // 付かない)から逆算せず、ここで明示的に伝える。purgedToDiscardCountは今回
   // stockPurge/stockPurgeSmallで山札から捨て札へ移動した枚数(それ以外はundefined)。
-  lastSabotage?: { id: SabotageActionId; seq: number; affectedCols?: number[]; purgedToDiscardCount?: number; confiscatedTarget?: { kind: 'talisman'; id: ItemId; idx: number } | { kind: 'rite'; id: RiteId; idx: number } | { kind: 'revelationOrOracle'; ref: HeldRevelationOrOracleRef; idx: number } | { kind: 'relic'; id: RelicId; idx: number }; forceActivatedTarget?: { kind: 'rite'; id: RiteId } | { kind: 'revelationOrOracle'; ref: HeldRevelationOrOracleRef }; numericChangeTarget?: { kind: 'combo'; amount: number } | { kind: 'currency'; amount: number } | { kind: 'roleLevel'; names: RoleName[]; amount: number } | { kind: 'roleBias'; buffed: RoleName[]; nerfed: RoleName[] } | { kind: 'tsukumoka'; relicId: RelicId }; tableauCardRemoved?: { colIndex: number; rowIndex: number; card: Card }; redistributedAreas?: { kind: 'chainAndDiscard' } | { kind: 'stockAndDiscard' } }
+  lastSabotage?: { id: SabotageActionId; seq: number; affectedCols?: number[]; purgedToDiscardCount?: number; confiscatedTarget?: { kind: 'talisman'; id: ItemId; idx: number } | { kind: 'rite'; id: RiteId; idx: number } | { kind: 'revelationOrOracle'; ref: HeldRevelationOrOracleRef; idx: number } | { kind: 'relic'; id: RelicId; idx: number }; forceActivatedTarget?: { kind: 'rite'; instanceId: number; id: RiteId } | { kind: 'revelationOrOracle'; ref: HeldRevelationOrOracleRef }; numericChangeTarget?: { kind: 'combo'; amount: number } | { kind: 'currency'; amount: number } | { kind: 'roleLevel'; names: RoleName[]; amount: number } | { kind: 'roleBias'; buffed: RoleName[]; nerfed: RoleName[] } | { kind: 'tsukumoka'; relicId: RelicId }; tableauCardRemoved?: { colIndex: number; rowIndex: number; card: Card }; redistributedAreas?: { kind: 'chainAndDiscard' } | { kind: 'stockAndDiscard' } }
   // 山札シャッフル演出(揺れアニメーション)のトリガー用。stockShuffle(妨害行動)・
   // dagaz(秘儀)発動時にseqをインクリメントする。PlayArea.svelteがseqの変化を検知して
   // 山札ボタンの揺れ演出を起動する。undefinedは「まだ一度も発動していない」状態。
@@ -387,17 +387,30 @@ export interface ShopState {
   relic?: { id: RelicId; sold: boolean }[]
 }
 
+// 所持中の護符・秘儀・天啓・神託の個体。instanceIdはRunState.nextInstanceIdから払い出される、
+// 4配列(items/rites/revelations/oracles)共通で一意なID。同名(同じid)を複数所持していても
+// instanceIdで個体を区別できる(封印・売却・並べ替え・将来の個体ごとの可変効果のため)。
+export interface HeldItem { instanceId: number; id: ItemId }
+export interface HeldRite { instanceId: number; id: RiteId }
+export interface HeldRevelation { instanceId: number; id: RevelationId }
+export interface HeldOracle { instanceId: number; id: RoleName }
+
 // 福袋の天啓・神託パックで上限到達時にスワップ対象を指定するための判別共用体。
 // 天啓・神託は合算枠(上限2)を共有するため、スワップ対象がどちらの配列に属するかを明示する必要がある。
+// instanceIdは対象個体の一意識別(封印・スワップ対象の個体特定に使う)。idは表示名解決用。
 export type HeldRevelationOrOracleRef =
-  | { kind: 'revelation'; id: RevelationId }
-  | { kind: 'oracle'; id: RoleName }
+  | { kind: 'revelation'; instanceId: number; id: RevelationId }
+  | { kind: 'oracle'; instanceId: number; id: RoleName }
 
 export interface RunState {
   phase: RunPhase
   stageIndex: number
   waveIndex: number
-  items: ItemId[]
+  items: HeldItem[]
+  // items/rites/revelations/oracles共通で一意なinstanceIdを払い出すカウンター。
+  // 新規インスタンスを配列に追加するたび(購入・福袋確定・スワップ確定・天啓報酬付与)にこの値を
+  // 払い出し、+1する。createInitialRunで1から開始する。
+  nextInstanceId: number
   offer: ItemId[]
   wave: WaveState | null
   // waveが実際に新規生成(startWave)されるたびに1ずつ増える。stageIndex/waveIndexは
@@ -408,9 +421,9 @@ export interface RunState {
   // ラン全体で持続するデッキの構成(永劫・豊穣・静寂によって書き換えられる)
   deckComposition: DeckCard[]
   // 所持中の秘儀(最大3、同じ種類を複数所持できる)。ウェーブを跨いで持続する(護符と同様)
-  rites: RiteId[]
+  rites: HeldRite[]
   // 所持中の天啓(最大2、同じ種類を複数所持できる)。ウェーブを跨いで持続する(秘儀と同様)
-  revelations: RevelationId[]
+  revelations: HeldRevelation[]
   // 所持中のレリック。同じidを複数所持することはできない(重複不可)。所持数に上限は無い。
   // tsukumokaは個体ごとの付喪化(進化)状態。trueになると効果がtsukumokaDescの内容に上方修正される
   // (付喪化させる手段=天啓は未実装のため、現状は常にfalseのまま)
@@ -446,7 +459,7 @@ export interface RunState {
   echoX: number
   shootingStarN: number
   // 温存中の神託(合算上限2をrevelationsと共有)。同じ役を複数所持できる
-  oracles: RoleName[]
+  oracles: HeldOracle[]
   // 現在のショップの商品構成。'shop'フェーズおよびそこから派生する福袋中身選択フェーズの間のみ非null
   shop: ShopState | null
   // 福袋購入後、あと何個選べば中身選択画面が終了するか(0ならその画面にいない)
