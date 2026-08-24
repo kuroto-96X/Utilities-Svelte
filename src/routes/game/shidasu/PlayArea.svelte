@@ -42,7 +42,7 @@
   import type { Snippet } from 'svelte'
   import { onDestroy, tick } from 'svelte'
   import { getPlayableColumns, isPlayable, remainingCount } from '$lib/game/shidasu/engine'
-  import type { WaveState, StageModifier, ItemId, RiteId, RevelationId, RelicId, Card, PlayCardResult, ScoreGain, RoleName } from '$lib/game/shidasu/types'
+  import type { WaveState, StageModifier, ItemId, RiteId, RevelationId, HeldRite, HeldRevelation, RelicId, Card, PlayCardResult, ScoreGain, RoleName } from '$lib/game/shidasu/types'
   import type { ShidasuParams } from '$lib/game/shidasu/params'
   import { canUseRite } from '$lib/game/shidasu/riteEffects'
   import { riteDesc } from '$lib/game/shidasu/rites'
@@ -79,11 +79,11 @@
     dropTarget?: { col: number; row: number } | 'stockTop' | null
     headerExtra?: Snippet
     extraFooter?: Snippet<[boolean]>
-    rites?: RiteId[]
-    onUseRite?: (riteId: RiteId) => void
+    rites?: HeldRite[]
+    onUseRite?: (instanceId: number, riteId: RiteId) => void
     disableRites?: boolean
-    revelations?: RevelationId[]
-    onUseRevelationClick?: (revelationId: RevelationId) => void
+    revelations?: HeldRevelation[]
+    onUseRevelationClick?: (instanceId: number, revelationId: RevelationId) => void
     relics?: { id: RelicId; tsukumoka: boolean }[]
     showScoreAndCombo?: boolean
     allowDraw?: boolean
@@ -1546,6 +1546,12 @@
   })
   let chainEntries = $derived(wave.chain.map((c, i) => ({ card: c, origin: wave.chainOrigin[i] })))
   let chainRows = $derived(chunk(chainEntries, params.ui.chainCardsPerRow))
+  // 秘儀・天啓バッジのパルスフェード判定で使うinstanceId(プリミティブ値)を先に取り出しておく。
+  // pressPulseTargetをアロー関数内(Array.some等)で直接絞り込み参照すると、TypeScriptが
+  // クロージャ越しの型の絞り込みを保持できずコンパイルエラーになるため、ここで一度
+  // プリミティブへ変換してからクロージャに渡す。
+  let pulseRiteInstanceId = $derived(pressPulseTarget?.kind === 'rite' ? pressPulseTarget.instanceId : undefined)
+  let pulseRevelationInstanceId = $derived(pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'revelation' ? pressPulseTarget.ref.instanceId : undefined)
   let progressBarLightPercent = $derived.by(() => {
     const finalScore = scoreReveal ? displayedScore + scoreReveal.totalGain : displayedScore
     return Math.min(100, (finalScore / target) * 100)
@@ -1732,43 +1738,43 @@
   {/if}
 </div>
 
-{#if rites.length > 0 || (confiscateFadingTarget?.kind === 'rite') || (pressPulseTarget?.kind === 'rite' && !rites.includes(pressPulseTarget.id))}
-  {@const riteFading = confiscateFadingTarget?.kind === 'rite' ? confiscateFadingTarget : undefined}
-  {@const ritePulseFading = pressPulseTarget?.kind === 'rite' && !rites.includes(pressPulseTarget.id) ? pressPulseTarget : undefined}
-  {@const displayedRites = withFadingId(withFadingId(rites, riteFading?.id, riteFading?.idx ?? 0), ritePulseFading?.id, rites.length)}
+{#if rites.length > 0 || (confiscateFadingTarget?.kind === 'rite') || (pressPulseTarget?.kind === 'rite' && !rites.some(h => h.instanceId === pulseRiteInstanceId))}
+  {@const riteFading = confiscateFadingTarget?.kind === 'rite' ? { instanceId: -1, id: confiscateFadingTarget.id, idx: confiscateFadingTarget.idx } : undefined}
+  {@const ritePulseFading = pressPulseTarget?.kind === 'rite' && !rites.some(h => h.instanceId === pulseRiteInstanceId) ? { instanceId: pressPulseTarget.instanceId, id: pressPulseTarget.id } : undefined}
+  {@const displayedRites = withFadingId(withFadingId(rites, riteFading, riteFading?.idx ?? 0), ritePulseFading, rites.length)}
   <div class="px-4 pb-4 flex items-center gap-2">
-    {#each displayedRites as riteId, i (i)}
+    {#each displayedRites as h, i (i)}
       {@const fading = riteFading !== undefined && i === riteFading.idx}
-      {@const usable = !fading && canUseRite(params, wave, riteId) && !anyAnimationActive && !disableRites}
-      {@const flashing = sealFlashTarget?.kind === 'rite' && sealFlashTarget.id === riteId}
-      {@const pulsing = pressPulseTarget?.kind === 'rite' && pressPulseTarget.id === riteId}
+      {@const usable = !fading && canUseRite(params, wave, h.instanceId, h.id) && !anyAnimationActive && !disableRites}
+      {@const flashing = sealFlashTarget?.kind === 'rite' && sealFlashTarget.instanceId === h.instanceId}
+      {@const pulsing = pressPulseTarget?.kind === 'rite' && pressPulseTarget.instanceId === h.instanceId}
       <button
         type="button"
-        onclick={() => { startPressPulseAnimation({ kind: 'rite', id: riteId }); onUseRite?.(riteId) }}
+        onclick={() => { startPressPulseAnimation({ kind: 'rite', instanceId: h.instanceId, id: h.id }); onUseRite?.(h.instanceId, h.id) }}
         disabled={!usable}
-        title={riteDesc(riteId, params)}
+        title={riteDesc(h.id, params)}
         style="font-family: 'ShidasuRunic', sans-serif;"
         class="w-10 h-10 rounded-lg border-2 flex items-center justify-center text-xl font-black transition-transform active:scale-95 {fading ? 'shidasu-confiscate-fade' : ''} {flashing ? 'shidasu-seal-flash' : ''} {pulsing ? 'shidasu-press-pulse' : ''} {usable ? 'bg-fuchsia-900 border-fuchsia-500 text-fuchsia-100 hover:bg-fuchsia-800' : 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'}"
-      >{params.rites[riteId].name}</button>
+      >{params.rites[h.id].name}</button>
     {/each}
   </div>
 {/if}
 
-{#if revelations.length > 0 || (pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'revelation' && !revelations.includes(pressPulseTarget.ref.id))}
-  {@const revelationPulseFading = pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'revelation' && !revelations.includes(pressPulseTarget.ref.id) ? pressPulseTarget.ref.id : undefined}
+{#if revelations.length > 0 || (pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'revelation' && !revelations.some(h => h.instanceId === pulseRevelationInstanceId))}
+  {@const revelationPulseFading = pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'revelation' && !revelations.some(h => h.instanceId === pulseRevelationInstanceId) ? { instanceId: pressPulseTarget.ref.instanceId, id: pressPulseTarget.ref.id } : undefined}
   {@const displayedRevelations = withFadingId(revelations, revelationPulseFading, revelations.length)}
   <div class="px-4 pb-4 flex items-center gap-2">
-    {#each displayedRevelations as revelationId, i (i)}
-      {@const usable = canUseRevelation(params, wave, revelationId, relics) && !anyAnimationActive}
-      {@const flashing = sealFlashTarget?.kind === 'revelationOrOracle' && sealFlashTarget.ref.kind === 'revelation' && sealFlashTarget.ref.id === revelationId}
-      {@const pulsing = pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'revelation' && pressPulseTarget.ref.id === revelationId}
+    {#each displayedRevelations as h, i (i)}
+      {@const usable = canUseRevelation(params, wave, h.instanceId, h.id, relics) && !anyAnimationActive}
+      {@const flashing = sealFlashTarget?.kind === 'revelationOrOracle' && sealFlashTarget.ref.kind === 'revelation' && sealFlashTarget.ref.instanceId === h.instanceId}
+      {@const pulsing = pressPulseTarget?.kind === 'revelationOrOracle' && pressPulseTarget.ref.kind === 'revelation' && pressPulseTarget.ref.instanceId === h.instanceId}
       <button
         type="button"
-        onclick={() => { startPressPulseAnimation({ kind: 'revelationOrOracle', ref: { kind: 'revelation', id: revelationId } }); onUseRevelationClick?.(revelationId) }}
+        onclick={() => { startPressPulseAnimation({ kind: 'revelationOrOracle', ref: { kind: 'revelation', instanceId: h.instanceId, id: h.id } }); onUseRevelationClick?.(h.instanceId, h.id) }}
         disabled={!usable}
-        title={revelationDesc(revelationId, params)}
+        title={revelationDesc(h.id, params)}
         class="w-10 h-10 rounded-lg border-2 flex items-center justify-center text-lg font-black transition-transform active:scale-95 {flashing ? 'shidasu-seal-flash' : ''} {pulsing ? 'shidasu-press-pulse' : ''} {usable ? 'bg-indigo-900 border-indigo-500 text-indigo-100 hover:bg-indigo-800' : 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'}"
-      >{params.revelations[revelationId].name}</button>
+      >{params.revelations[h.id].name}</button>
     {/each}
   </div>
 {/if}
