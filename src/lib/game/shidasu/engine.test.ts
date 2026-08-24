@@ -5731,3 +5731,38 @@ describe('妨害の発動トリガー統合(applyStuckCheck)', () => {
     expect(next.wave!.pendingSabotageId).not.toBeNull()
   })
 })
+
+describe('nextInstanceId', () => {
+  it('護符を連続で購入すると、instanceIdが重複せずインクリメントされる', () => {
+    let run: RunState = {
+      ...createInitialRun(),
+      phase: 'shop',
+      currency: 100000,
+      shop: {
+        individual: [
+          { kind: 'item', id: 'discretion', sold: false },
+          { kind: 'item', id: 'frost', sold: false },
+        ],
+        packs: [],
+      },
+    }
+    run = buyIndividualItem(DEFAULT_PARAMS, run, 0)
+    run = buyIndividualItem(DEFAULT_PARAMS, run, 1)
+    expect(run.items).toHaveLength(2)
+    expect(run.items[0].instanceId).not.toBe(run.items[1].instanceId)
+    expect(run.nextInstanceId).toBe(run.items[1].instanceId + 1)
+  })
+
+  it('護符を売却しても、残りの護符のinstanceIdは変化しない', () => {
+    const run: RunState = {
+      ...createInitialRun(),
+      phase: 'playing',
+      items: [
+        { instanceId: 5, id: 'discretion' },
+        { instanceId: 8, id: 'frost' },
+      ],
+    }
+    const next = sellItem(DEFAULT_PARAMS, run, 5, 'discretion')
+    expect(next.items).toEqual([{ instanceId: 8, id: 'frost' }])
+  })
+})
