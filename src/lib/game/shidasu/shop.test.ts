@@ -31,10 +31,12 @@ describe('rollShop', () => {
   })
 
   test('バラ売りitem枠は所持中の護符を候補から除外する', () => {
-    const run = { ...createInitialRun(), items: ITEM_POOL.slice(0, ITEM_POOL.length - 1) as typeof ITEM_POOL }
+    const items = ITEM_POOL.slice(0, ITEM_POOL.length - 1).map((id, i) => ({ instanceId: i + 1, id }))
+    const run = { ...createInitialRun(), items }
     const shop = rollShop(DEFAULT_PARAMS, run, createRng(1))
     const itemSlots = shop.individual.filter(s => s.kind === 'item')
-    itemSlots.forEach(s => expect(run.items).not.toContain(s.id))
+    const heldIds = run.items.map(h => h.id)
+    itemSlots.forEach(s => expect(heldIds).not.toContain(s.id))
   })
 
   test('バラ売りitem枠は同一ショップ内で重複しない', () => {

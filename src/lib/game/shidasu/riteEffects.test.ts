@@ -98,14 +98,14 @@ describe('riteEffects', () => {
     const wave = baseWave({
       tableau: [[card(1, '♠', 11), card(2, '♦', 5, true)]],
     })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'raidho')).toBe(false)
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'raidho')).toBe(false)
   })
 
   test('ライドー: 非絵札があれば使用可', () => {
     const wave = baseWave({
       tableau: [[card(1, '♠', 11), card(3, '♣', 5)]],
     })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'raidho')).toBe(true)
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'raidho')).toBe(true)
   })
 
   test('ウンヨー: 場札を捨て札に合流→シャッフル→各列の元の枚数を維持して配り直す(山札は不変)', () => {
@@ -143,12 +143,12 @@ describe('riteEffects', () => {
 
   test('オセラ: 山札が空なら使用不可', () => {
     const wave = baseWave({ tableau: [[card(1, '♠', 5)]], stock: [] })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'othala')).toBe(false)
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'othala')).toBe(false)
   })
 
   test('オセラ: 山札があれば使用可', () => {
     const wave = baseWave({ tableau: [[card(1, '♠', 5)]], stock: [card(10, '♥', 1)] })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'othala')).toBe(true)
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'othala')).toBe(true)
   })
 
   test('ペルスロ: 各列をdealtRowsまで山札から補充する', () => {
@@ -157,7 +157,7 @@ describe('riteEffects', () => {
       tableau: [[card(1, '♠', 5)], [card(2, '♦', 5), card(3, '♣', 5)]],
       stock: [card(10, '♥', 1), card(11, '♥', 2), card(12, '♥', 3)],
     })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'perthro')).toBe(true)
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'perthro')).toBe(true)
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'perthro', createRng(1))
     expect(next.tableau[0]).toHaveLength(3)
     expect(next.tableau[1]).toHaveLength(3)
@@ -169,7 +169,7 @@ describe('riteEffects', () => {
       dealtRows: 1,
       tableau: [[card(1, '♠', 5)], [card(2, '♦', 5)]],
     })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'perthro')).toBe(false)
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'perthro')).toBe(false)
   })
 
   test('ペルスロ: 不足している列があっても山札が空なら使用不可', () => {
@@ -178,7 +178,7 @@ describe('riteEffects', () => {
       tableau: [[card(1, '♠', 5)], [card(2, '♦', 5)]],
       stock: [],
     })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'perthro')).toBe(false)
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'perthro')).toBe(false)
   })
 
   test('ティワズ: 場札の全列が反転する', () => {
@@ -196,7 +196,7 @@ describe('riteEffects', () => {
       tableau: [[], [card(1, '♠', 5)]],
       stock: [card(10, '♥', 1), card(11, '♥', 2)],
     })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'laguz')).toBe(true)
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'laguz')).toBe(true)
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'laguz', createRng(1))
     expect(next.tableau[0]).toHaveLength(2)
     expect(next.tableau[1]).toEqual(wave.tableau[1])
@@ -207,7 +207,7 @@ describe('riteEffects', () => {
     const wave = baseWave({
       tableau: [[card(1, '♠', 5)], [card(2, '♦', 5)]],
     })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'laguz')).toBe(false)
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'laguz')).toBe(false)
   })
 
   test('ラグズ: 0枚の列があっても山札が空なら使用不可', () => {
@@ -215,7 +215,7 @@ describe('riteEffects', () => {
       tableau: [[], [card(1, '♠', 5)]],
       stock: [],
     })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'laguz')).toBe(false)
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'laguz')).toBe(false)
   })
 
   test('アンスズ: チェーンを捨て札に送り、山札から1枚引いて新チェーンにする(コンボは不変)', () => {
@@ -247,12 +247,12 @@ describe('riteEffects', () => {
 
   test('アンスズ: 山札が空なら使用不可', () => {
     const wave = baseWave({ chain: [card(1, '♠', 5)], stock: [] })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'ansuz')).toBe(false)
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'ansuz')).toBe(false)
   })
 
   test('アンスズ: 山札があれば使用可', () => {
     const wave = baseWave({ chain: [card(1, '♠', 5)], stock: [card(10, '♥', 1)] })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'ansuz')).toBe(true)
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'ansuz')).toBe(true)
   })
 
   test('アンスズ: roleFiredThisChainがリセットされる', () => {
@@ -314,7 +314,7 @@ describe('riteEffects', () => {
 
   test('ゲボ: 捨て札が列数未満なら使用不可', () => {
     const wave = baseWave({ tableau: [[card(1, '♠', 5)], [card(2, '♦', 5)]], discardPile: [card(10, '♣', 1)] })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'gebo')).toBe(false)
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'gebo')).toBe(false)
   })
 
   test('ゲボ: 捨て札から各列に1枚ずつ配置される', () => {
@@ -322,7 +322,7 @@ describe('riteEffects', () => {
       tableau: [[card(1, '♠', 5)], [card(2, '♦', 5)]],
       discardPile: [card(10, '♣', 1), card(11, '♣', 2), card(12, '♣', 3)],
     })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'gebo')).toBe(true)
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'gebo')).toBe(true)
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'gebo', createRng(1))
     expect(next.tableau[0]).toHaveLength(2)
     expect(next.tableau[1]).toHaveLength(2)
@@ -331,7 +331,7 @@ describe('riteEffects', () => {
 
   test('フェフ: 山札の残りが列数以下なら使用不可', () => {
     const wave = baseWave({ tableau: [[card(1, '♠', 5)], [card(2, '♦', 5)]], stock: [card(20, '♣', 1), card(21, '♣', 2)] })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'fehu')).toBe(false)
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'fehu')).toBe(false)
   })
 
   test('フェフ: 山札の上から各列に1枚ずつ配置される', () => {
@@ -339,7 +339,7 @@ describe('riteEffects', () => {
       tableau: [[card(1, '♠', 5)], [card(2, '♦', 5)]],
       stock: [card(20, '♣', 1), card(21, '♣', 2), card(22, '♣', 3)],
     })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'fehu')).toBe(true)
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'fehu')).toBe(true)
     const next = applyRiteEffect(DEFAULT_PARAMS, wave, 'fehu', createRng(1))
     expect(next.tableau[0]).toHaveLength(2)
     expect(next.tableau[1]).toHaveLength(2)
@@ -426,19 +426,30 @@ describe('riteEffects', () => {
 })
 
 describe('canUseRite: 封印中の秘儀は使用不可', () => {
-  test('activeSealがriteでidが一致する場合、他の条件を満たしていてもfalse', () => {
+  test('activeSealがriteでinstanceIdが一致する場合、他の条件を満たしていてもfalse', () => {
     const wave = baseWave({
       stock: [card(10, '♥', 1)],
-      activeSeal: { kind: 'rite', id: 'ansuz' },
+      activeSeal: { kind: 'rite', id: 'ansuz', instanceId: 1 },
     })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'ansuz')).toBe(false)
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'ansuz')).toBe(false)
   })
 
   test('activeSealが異なる秘儀(id不一致)なら通常通り判定する', () => {
     const wave = baseWave({
       stock: [card(10, '♥', 1)],
-      activeSeal: { kind: 'rite', id: 'othala' },
+      activeSeal: { kind: 'rite', id: 'othala', instanceId: 2 },
     })
-    expect(canUseRite(DEFAULT_PARAMS, wave, 'ansuz')).toBe(true)
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'ansuz')).toBe(true)
+  })
+
+  test('同じ秘儀ID(ansuz)を複数個体持っていても、封印されているのは対象のinstanceIdだけで、別のinstanceIdの個体は使える', () => {
+    const wave = baseWave({
+      stock: [card(10, '♥', 1)],
+      activeSeal: { kind: 'rite', id: 'ansuz', instanceId: 2 },
+    })
+    // instanceId: 2の個体(ansuz)は封印されている
+    expect(canUseRite(DEFAULT_PARAMS, wave, 2, 'ansuz')).toBe(false)
+    // 同じansuzでもinstanceId: 1の別個体は封印の影響を受けない
+    expect(canUseRite(DEFAULT_PARAMS, wave, 1, 'ansuz')).toBe(true)
   })
 })

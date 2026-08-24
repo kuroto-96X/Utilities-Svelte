@@ -409,12 +409,12 @@ describe('canUseRevelation: 虚(レリック付喪化)', () => {
   const wave = baseWave({ tableau: [[card(1, '♠', 1)]] })
 
   test('所持レリックが0件なら使用不可', () => {
-    expect(canUseRevelation(DEFAULT_PARAMS, wave, 'kyo', [])).toBe(false)
+    expect(canUseRevelation(DEFAULT_PARAMS, wave, 1, 'kyo', [])).toBe(false)
   })
 
   test('所持レリックが全て付喪化済みなら使用不可', () => {
     const relics = [{ id: 'manekiNeko' as const, tsukumoka: true }]
-    expect(canUseRevelation(DEFAULT_PARAMS, wave, 'kyo', relics)).toBe(false)
+    expect(canUseRevelation(DEFAULT_PARAMS, wave, 1, 'kyo', relics)).toBe(false)
   })
 
   test('未付喪化の所持レリックが1件以上あれば使用可', () => {
@@ -422,11 +422,11 @@ describe('canUseRevelation: 虚(レリック付喪化)', () => {
       { id: 'manekiNeko' as const, tsukumoka: true },
       { id: 'kumade' as const, tsukumoka: false },
     ]
-    expect(canUseRevelation(DEFAULT_PARAMS, wave, 'kyo', relics)).toBe(true)
+    expect(canUseRevelation(DEFAULT_PARAMS, wave, 1, 'kyo', relics)).toBe(true)
   })
 
   test('虚以外の天啓は、レリックの所持状況に関わらず使用可', () => {
-    expect(canUseRevelation(DEFAULT_PARAMS, wave, 'kaku', [])).toBe(true)
+    expect(canUseRevelation(DEFAULT_PARAMS, wave, 1, 'kaku', [])).toBe(true)
   })
 })
 
@@ -435,41 +435,52 @@ describe('canUseRevelation: 鬼(レリックランダム獲得)', () => {
 
   test('全レリックを所持済みなら使用不可', () => {
     const relics = RELIC_POOL.map(id => ({ id, tsukumoka: false }))
-    expect(canUseRevelation(DEFAULT_PARAMS, wave, 'oni', relics)).toBe(false)
+    expect(canUseRevelation(DEFAULT_PARAMS, wave, 1, 'oni', relics)).toBe(false)
   })
 
   test('未所持のレリックが1つ以上あれば使用可', () => {
     const relics = [{ id: 'manekiNeko' as const, tsukumoka: false }]
-    expect(canUseRevelation(DEFAULT_PARAMS, wave, 'oni', relics)).toBe(true)
+    expect(canUseRevelation(DEFAULT_PARAMS, wave, 1, 'oni', relics)).toBe(true)
   })
 
   test('レリックを1つも所持していなければ使用可', () => {
-    expect(canUseRevelation(DEFAULT_PARAMS, wave, 'oni', [])).toBe(true)
+    expect(canUseRevelation(DEFAULT_PARAMS, wave, 1, 'oni', [])).toBe(true)
   })
 })
 
 describe('canUseRevelation: 封印中の天啓・神託は使用不可', () => {
-  test('activeSealがrevelationOrOracleでrevelationのidが一致する場合、false', () => {
+  test('activeSealがrevelationOrOracleでrevelationのinstanceIdが一致する場合、false', () => {
     const sealedWave = baseWave({
       tableau: [[card(1, '♠', 1)]],
-      activeSeal: { kind: 'revelationOrOracle', ref: { kind: 'revelation', id: 'kaku' } },
+      activeSeal: { kind: 'revelationOrOracle', ref: { kind: 'revelation', instanceId: 1, id: 'kaku' } },
     })
-    expect(canUseRevelation(DEFAULT_PARAMS, sealedWave, 'kaku', [])).toBe(false)
+    expect(canUseRevelation(DEFAULT_PARAMS, sealedWave, 1, 'kaku', [])).toBe(false)
   })
 
   test('封印対象と異なるidなら通常通り判定する', () => {
     const sealedWave = baseWave({
       tableau: [[card(1, '♠', 1)]],
-      activeSeal: { kind: 'revelationOrOracle', ref: { kind: 'revelation', id: 'kaku' } },
+      activeSeal: { kind: 'revelationOrOracle', ref: { kind: 'revelation', instanceId: 1, id: 'kaku' } },
     })
-    expect(canUseRevelation(DEFAULT_PARAMS, sealedWave, 'kou', [])).toBe(true)
+    expect(canUseRevelation(DEFAULT_PARAMS, sealedWave, 2, 'kou', [])).toBe(true)
   })
 
   test('activeSealがoracle向けの封印なら、同idのrevelationには影響しない', () => {
     const sealedWave = baseWave({
       tableau: [[card(1, '♠', 1)]],
-      activeSeal: { kind: 'revelationOrOracle', ref: { kind: 'oracle', id: 'flush' } },
+      activeSeal: { kind: 'revelationOrOracle', ref: { kind: 'oracle', instanceId: 1, id: 'flush' } },
     })
-    expect(canUseRevelation(DEFAULT_PARAMS, sealedWave, 'kaku', [])).toBe(true)
+    expect(canUseRevelation(DEFAULT_PARAMS, sealedWave, 1, 'kaku', [])).toBe(true)
+  })
+
+  test('同じ天啓ID(kaku)を複数個体持っていても、封印されているのは対象のinstanceIdだけで、別のinstanceIdの個体は使える', () => {
+    const sealedWave = baseWave({
+      tableau: [[card(1, '♠', 1)]],
+      activeSeal: { kind: 'revelationOrOracle', ref: { kind: 'revelation', instanceId: 2, id: 'kaku' } },
+    })
+    // instanceId: 2の個体(kaku)は封印されている
+    expect(canUseRevelation(DEFAULT_PARAMS, sealedWave, 2, 'kaku', [])).toBe(false)
+    // 同じkakuでもinstanceId: 1の別個体は封印の影響を受けない
+    expect(canUseRevelation(DEFAULT_PARAMS, sealedWave, 1, 'kaku', [])).toBe(true)
   })
 })
