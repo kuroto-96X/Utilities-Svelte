@@ -1,5 +1,5 @@
 // src/lib/game/shidasu/engine.ts
-import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, Star, StarRestriction, CardSetGenreId, RelicId, StarSabotage, SabotageActionId, ShopState } from './types'
+import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, HeldItem, HeldRite, HeldRevelation, HeldOracle, Star, StarRestriction, CardSetGenreId, RelicId, StarSabotage, SabotageActionId, ShopState } from './types'
 import type { ShidasuParams } from './params'
 import { createRng, shuffle, shuffleInPlace, standardDeckComposition, addCardsToDeckComposition, rollOffer } from './deck'
 import { rollSabotage } from './sabotage'
@@ -971,7 +971,7 @@ export function markStuck(wave: WaveState): WaveState {
 
 export function createInitialRun(): RunState {
   return {
-    phase: 'title', stageIndex: 0, waveIndex: 0, items: [], offer: [], wave: null, waveGeneration: 0, pendingNewItem: null,
+    phase: 'title', stageIndex: 0, waveIndex: 0, items: [], nextInstanceId: 1, offer: [], wave: null, waveGeneration: 0, pendingNewItem: null,
     deckComposition: standardDeckComposition(), rites: [], revelations: [], relics: [], revelationOffer: [], extraTableauRows: 0,
     oracleLevels: defaultOracleLevels(), oracleOffer: [], spreadId: 'fool',
     stageStars: [], currency: 0,
@@ -1037,17 +1037,19 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
 // 果断・星霜: 天啓・神託・秘儀のいずれかを使用するたび、waveのdiscretionN/frostXへ永続的に加算する。
 function applyDiscretionFrostBonus(params: ShidasuParams, run: RunState, wave: WaveState): WaveState {
   let next = wave
-  if (run.items.includes('discretion')) next = { ...next, discretionN: next.discretionN + params.talismans.discretion.n }
-  if (run.items.includes('frost')) next = { ...next, frostX: next.frostX + params.talismans.frost.x }
+  if (run.items.some(h => h.id === 'discretion')) next = { ...next, discretionN: next.discretionN + params.talismans.discretion.n }
+  if (run.items.some(h => h.id === 'frost')) next = { ...next, frostX: next.frostX + params.talismans.frost.x }
   return next
 }
 
 // 秘儀を1つ使用する。効果を適用し、所持からその秘儀を1個削除する。
 // 使用条件(canUseRite)を満たさない場合、または所持していない場合は何もしない。
-export function useRite(params: ShidasuParams, run: RunState, riteId: RiteId, rand: () => number = Math.random): RunState {
+// instanceIdは対象の個体(封印精度・重複所持時の対象特定に使う)。呼び出し元(UI)は
+// クリックされたバッジのinstanceIdをそのまま渡す。
+export function useRite(params: ShidasuParams, run: RunState, instanceId: number, riteId: RiteId, rand: () => number = Math.random): RunState {
   if ((run.phase !== 'playing' && !SHOP_FLOW_PHASES.includes(run.phase)) || !run.wave || run.wave.status !== 'playing') return run
-  if (!canUseRite(params, run.wave, riteId)) return run
-  const idx = run.rites.indexOf(riteId)
+  if (!canUseRite(params, run.wave, instanceId, riteId)) return run
+  const idx = run.rites.findIndex(h => h.instanceId === instanceId)
   if (idx === -1) return run
   let wave = applyRiteEffect(params, run.wave, riteId, rand)
   wave = applyDiscretionFrostBonus(params, run, wave)
@@ -1088,7 +1090,7 @@ function enterShop(params: ShidasuParams, run: RunState, _seed: number | undefin
 // ダミー値(0, 0)を渡す。生成したWaveStateは本番run.waveとは無関係な一時オブジェクトであり、
 // 呼び出し元(+page.svelte)がローカルstateとして保持・破棄する。
 export function startRevelationPreview(params: ShidasuParams, run: RunState, seed?: number): WaveState {
-  const { wave } = startWave(params, 0, 0, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX, run.echoX, run.shootingStarN)
+  const { wave } = startWave(params, 0, 0, run.items.map(h => h.id), run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX, run.echoX, run.shootingStarN)
   return wave
 }
 
@@ -1097,16 +1099,17 @@ export function startRevelationPreview(params: ShidasuParams, run: RunState, see
 export function finishShop(params: ShidasuParams, run: RunState, seed?: number): RunState {
   if (run.phase !== 'shop') return run
   const star = run.stageStars[run.waveIndex]
-  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, run.items, run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX, run.echoX, run.shootingStarN, star?.sabotage ?? { kind: 'none' })
+  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, run.items.map(h => h.id), run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX, run.echoX, run.shootingStarN, star?.sabotage ?? { kind: 'none' })
   return { ...run, phase: 'playing', wave, waveGeneration: run.waveGeneration + 1, deckComposition, shop: null }
 }
 
-// wave.activeSealがtalisman封印の場合、そのIDをitemsから除外した実効リストを返す。
+// wave.activeSealがtalisman封印の場合、その個体(instanceId)をitemsから除外した実効リストを
+// ItemId[]で返す(playCard/drawStock等の下流関数は引き続きItemId[]のみを扱う境界)。
 // playCard/drawStockへ渡すitemsをこれに差し替えることで、所持表示(run.items)自体は
-// 変更せずに効果だけを無視させる。
-function resolveEffectiveItems(items: ItemId[], activeSeal: WaveState['activeSeal']): ItemId[] {
-  if (activeSeal?.kind === 'talisman') return items.filter(id => id !== activeSeal.id)
-  return items
+// 変更せずに効果だけを無視させる。同名護符を複数所持していても、封印された個体1つだけを除外する。
+function resolveEffectiveItems(items: HeldItem[], activeSeal: WaveState['activeSeal']): ItemId[] {
+  const effective = activeSeal?.kind === 'talisman' ? items.filter(h => h.instanceId !== activeSeal.instanceId) : items
+  return effective.map(h => h.id)
 }
 
 // wave.activeSealから、playCard/drawStockに渡すsealedRoleEffectを導出する。
@@ -1207,20 +1210,22 @@ export function rerollShop(params: ShidasuParams, run: RunState, rand: () => num
 // 呼び出し元は既にフェーズ・shop存在・枠のkind一致を確認済みの前提(このヘルパーはその後の
 // 容量判定〜確定処理だけを担当する)。フィールドの動的キーアクセスのため戻り値をRunStateに
 // キャストしている(福袋pick系・売却系リファクタのresolvePackOfferPick/sellFromArrayと同じ理由・同じパターン)。
-function buyIndividualHold<T>(
+// 新規インスタンスにはrun.nextInstanceIdを払い出し、+1する。
+function buyIndividualHold<TId>(
   run: RunState,
   shop: ShopState,
   slotIndex: number,
   arrayField: 'items' | 'rites' | 'revelations' | 'oracles',
-  arr: T[],
-  value: T,
+  arr: { instanceId: number; id: TId }[],
+  value: TId,
   atCapacity: boolean,
   price: number
 ): RunState {
   if (atCapacity) return run
   if (run.currency < price) return run
   const individual = shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
-  return { ...run, currency: run.currency - price, [arrayField]: [...arr, value], shop: { ...shop, individual } } as RunState
+  const held = { instanceId: run.nextInstanceId, id: value }
+  return { ...run, currency: run.currency - price, [arrayField]: [...arr, held], nextInstanceId: run.nextInstanceId + 1, shop: { ...shop, individual } } as RunState
 }
 
 // バラ売り護符購入。所持上限(maxItems、招き布袋像所持時は拡張)到達時・通貨不足時・売り切れ時は何もしない(スワップは発生しない)。
@@ -1268,7 +1273,7 @@ export function buyIndividualRevelationUse(params: ShidasuParams, run: RunState,
   const slot = run.shop.individual[slotIndex]
   if (!slot || slot.sold || slot.kind !== 'revelation') return run
   const revelationId = slot.id as RevelationId
-  if (!canUseRevelation(params, run.wave, revelationId, run.relics)) return run
+  if (!canUseRevelation(params, run.wave, null, revelationId, run.relics)) return run
   const price = revelationBuyPrice(params, run)
   if (run.currency < price) return run
   const { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
@@ -1318,7 +1323,7 @@ export function buyPack(params: ShidasuParams, run: RunState, slotIndex: number,
   if (run.currency < slot.price) return run
   const packs = run.shop.packs.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
   const base: RunState = { ...run, currency: run.currency - slot.price, shop: { ...run.shop, packs }, offerPickRemaining: slot.pickCount }
-  if (slot.packKind === 'item') return { ...base, phase: 'itemSelect', offer: rollItemOffer(run.items, rand, slot.offerCount) }
+  if (slot.packKind === 'item') return { ...base, phase: 'itemSelect', offer: rollItemOffer(run.items.map(h => h.id), rand, slot.offerCount) }
   if (slot.packKind === 'rite') return { ...base, phase: 'riteSelect', riteOffer: rollRiteOffer(rand, slot.offerCount) }
   if (slot.packKind === 'revelation') return { ...base, phase: 'revelationSelect', revelationOffer: rollRevelationOffer(rand, slot.offerCount) }
   if (slot.packKind === 'oracle') return { ...base, phase: 'oracleSelect', oracleOffer: rollOracleOffer(rand, slot.offerCount) }
@@ -1364,16 +1369,18 @@ export function pickPackItem(params: ShidasuParams, run: RunState, itemId: ItemI
   if (run.items.length >= itemMaxCapacity(params, run)) {
     return { ...run, pendingNewItem: itemId }
   }
-  return resolvePackOfferPick({ ...run, items: [...run.items, itemId] }, 'offer', 'pendingNewItem', run.offer, id => id === itemId)
+  const held = { instanceId: run.nextInstanceId, id: itemId }
+  return resolvePackOfferPick({ ...run, items: [...run.items, held], nextInstanceId: run.nextInstanceId + 1 }, 'offer', 'pendingNewItem', run.offer, id => id === itemId)
 }
 
-// スワップ待ち中に既存の護符と入れ替えて確定する。
-export function confirmPackItemSwap(run: RunState, oldItemId: ItemId): RunState {
+// スワップ待ち中に既存の護符と入れ替えて確定する。oldInstanceIdは入れ替え対象の個体。
+export function confirmPackItemSwap(run: RunState, oldInstanceId: number): RunState {
   if (run.phase !== 'itemSelect' || run.pendingNewItem === null) return run
-  const idx = run.items.indexOf(oldItemId)
+  const idx = run.items.findIndex(h => h.instanceId === oldInstanceId)
   const remaining = idx === -1 ? [...run.items] : [...run.items.slice(0, idx), ...run.items.slice(idx + 1)]
   const newItemId = run.pendingNewItem
-  return resolvePackOfferPick({ ...run, items: [...remaining, newItemId] }, 'offer', 'pendingNewItem', run.offer, id => id === newItemId)
+  const held = { instanceId: run.nextInstanceId, id: newItemId }
+  return resolvePackOfferPick({ ...run, items: [...remaining, held], nextInstanceId: run.nextInstanceId + 1 }, 'offer', 'pendingNewItem', run.offer, id => id === newItemId)
 }
 
 export function cancelPackItemSwap(run: RunState): RunState {
@@ -1393,15 +1400,18 @@ export function pickPackRite(params: ShidasuParams, run: RunState, riteId: RiteI
   if (run.rites.length >= riteMaxCapacity(params, run)) {
     return { ...run, pendingNewRite: riteId }
   }
-  return resolvePackOfferPick({ ...run, rites: [...run.rites, riteId] }, 'riteOffer', 'pendingNewRite', run.riteOffer, id => id === riteId)
+  const held = { instanceId: run.nextInstanceId, id: riteId }
+  return resolvePackOfferPick({ ...run, rites: [...run.rites, held], nextInstanceId: run.nextInstanceId + 1 }, 'riteOffer', 'pendingNewRite', run.riteOffer, id => id === riteId)
 }
 
-export function confirmPackRiteSwap(run: RunState, oldRiteId: RiteId): RunState {
+// oldInstanceIdは入れ替え対象の個体。
+export function confirmPackRiteSwap(run: RunState, oldInstanceId: number): RunState {
   if (run.phase !== 'riteSelect' || run.pendingNewRite === null) return run
-  const idx = run.rites.indexOf(oldRiteId)
+  const idx = run.rites.findIndex(h => h.instanceId === oldInstanceId)
   const remaining = idx === -1 ? [...run.rites] : [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)]
   const newRiteId = run.pendingNewRite
-  return resolvePackOfferPick({ ...run, rites: [...remaining, newRiteId] }, 'riteOffer', 'pendingNewRite', run.riteOffer, id => id === newRiteId)
+  const held = { instanceId: run.nextInstanceId, id: newRiteId }
+  return resolvePackOfferPick({ ...run, rites: [...remaining, held], nextInstanceId: run.nextInstanceId + 1 }, 'riteOffer', 'pendingNewRite', run.riteOffer, id => id === newRiteId)
 }
 
 export function cancelPackRiteSwap(run: RunState): RunState {
@@ -1417,7 +1427,7 @@ export function closePackRiteSelect(run: RunState): RunState {
 // 天啓の福袋(revelationSelect)から1つ選び、その場で使用する(所持には加わらない、上限とは無関係)。
 export function pickPackRevelationUse(params: ShidasuParams, run: RunState, revelationId: RevelationId, targetCol: number | null, rand: () => number = Math.random): RunState {
   if (run.phase !== 'revelationSelect' || !run.wave || !run.revelationOffer.includes(revelationId)) return run
-  if (!canUseRevelation(params, run.wave, revelationId, run.relics)) return run
+  if (!canUseRevelation(params, run.wave, null, revelationId, run.relics)) return run
   const { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
   const extraTableauRows = run.extraTableauRows
   return resolvePackOfferPick({ ...run, wave, deckComposition, extraTableauRows }, 'revelationOffer', 'pendingNewRevelation', run.revelationOffer, id => id === revelationId)
@@ -1429,21 +1439,24 @@ export function pickPackRevelationHold(params: ShidasuParams, run: RunState, rev
   if (run.revelations.length + run.oracles.length >= revelationOracleMaxCapacity(params, run)) {
     return { ...run, pendingNewRevelation: revelationId }
   }
-  return resolvePackOfferPick({ ...run, revelations: [...run.revelations, revelationId] }, 'revelationOffer', 'pendingNewRevelation', run.revelationOffer, id => id === revelationId)
+  const held = { instanceId: run.nextInstanceId, id: revelationId }
+  return resolvePackOfferPick({ ...run, revelations: [...run.revelations, held], nextInstanceId: run.nextInstanceId + 1 }, 'revelationOffer', 'pendingNewRevelation', run.revelationOffer, id => id === revelationId)
 }
 
 // スワップ待ち中、targetで指定した所持中の天啓または神託と入れ替えて確定する。
+// targetはHeldRevelationOrOracleRef(instanceId込み)なので、対象個体をinstanceId一致で検索する。
 export function confirmPackRevelationSwap(run: RunState, target: HeldRevelationOrOracleRef): RunState {
   if (run.phase !== 'revelationSelect' || run.pendingNewRevelation === null) return run
   const newId = run.pendingNewRevelation
+  const held = { instanceId: run.nextInstanceId, id: newId }
   if (target.kind === 'revelation') {
-    const idx = run.revelations.indexOf(target.id)
+    const idx = run.revelations.findIndex(h => h.instanceId === target.instanceId)
     const remaining = idx === -1 ? run.revelations : [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
-    return resolvePackOfferPick({ ...run, revelations: [...remaining, newId] }, 'revelationOffer', 'pendingNewRevelation', run.revelationOffer, id => id === newId)
+    return resolvePackOfferPick({ ...run, revelations: [...remaining, held], nextInstanceId: run.nextInstanceId + 1 }, 'revelationOffer', 'pendingNewRevelation', run.revelationOffer, id => id === newId)
   }
-  const idx = run.oracles.indexOf(target.id)
+  const idx = run.oracles.findIndex(h => h.instanceId === target.instanceId)
   const oracles = idx === -1 ? run.oracles : [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)]
-  return resolvePackOfferPick({ ...run, oracles, revelations: [...run.revelations, newId] }, 'revelationOffer', 'pendingNewRevelation', run.revelationOffer, id => id === newId)
+  return resolvePackOfferPick({ ...run, oracles, revelations: [...run.revelations, held], nextInstanceId: run.nextInstanceId + 1 }, 'revelationOffer', 'pendingNewRevelation', run.revelationOffer, id => id === newId)
 }
 
 export function cancelPackRevelationSwap(run: RunState): RunState {
@@ -1482,10 +1495,11 @@ function grantRevelationReward(
     }
     case 'subaru': {
       if (runAfterRemoval.items.length >= itemMaxCapacity(params, runAfterRemoval)) return {}
-      const available = ITEM_POOL.filter(id => !runAfterRemoval.items.includes(id))
+      const available = ITEM_POOL.filter(id => !runAfterRemoval.items.some(h => h.id === id))
       if (available.length === 0) return {}
       const picked = available[Math.floor(rand() * available.length)]
-      return { items: [...runAfterRemoval.items, picked] }
+      const held = { instanceId: runAfterRemoval.nextInstanceId, id: picked }
+      return { items: [...runAfterRemoval.items, held], nextInstanceId: runAfterRemoval.nextInstanceId + 1 }
     }
     case 'oni': {
       const ownedIds = new Set(runAfterRemoval.relics.map(r => r.id))
@@ -1500,27 +1514,37 @@ function grantRevelationReward(
       const target = runAfterRemoval.lastUsedRevelationId
       if (target === null) return {}
       if (sharedRevelationSlotsRemaining(params, runAfterRemoval) <= 0) return {}
-      return { revelations: [...runAfterRemoval.revelations, target] }
+      const held = { instanceId: runAfterRemoval.nextInstanceId, id: target }
+      return { revelations: [...runAfterRemoval.revelations, held], nextInstanceId: runAfterRemoval.nextInstanceId + 1 }
     }
     case 'chou': {
       const slotsLeft = sharedRevelationSlotsRemaining(params, runAfterRemoval)
       if (slotsLeft === 0) return {}
-      return { oracles: [...runAfterRemoval.oracles, ...rollOffer(ORACLE_POOL, slotsLeft, rand)] }
+      const picked = rollOffer(ORACLE_POOL, slotsLeft, rand)
+      let nextId = runAfterRemoval.nextInstanceId
+      const held = picked.map(id => ({ instanceId: nextId++, id }))
+      return { oracles: [...runAfterRemoval.oracles, ...held], nextInstanceId: nextId }
     }
     case 'yoku': {
       const slotsLeft = sharedRevelationSlotsRemaining(params, runAfterRemoval)
       if (slotsLeft === 0) return {}
-      return { revelations: [...runAfterRemoval.revelations, ...rollOffer(REVELATION_POOL, slotsLeft, rand)] }
+      const picked = rollOffer(REVELATION_POOL, slotsLeft, rand)
+      let nextId = runAfterRemoval.nextInstanceId
+      const held = picked.map(id => ({ instanceId: nextId++, id }))
+      return { revelations: [...runAfterRemoval.revelations, ...held], nextInstanceId: nextId }
     }
     case 'mitsu': {
-      const total = runAfterRemoval.items.reduce((sum, id) => sum + itemSellPrice(params, runAfterRemoval, id), 0)
+      const total = runAfterRemoval.items.reduce((sum, h) => sum + itemSellPrice(params, runAfterRemoval, h.id), 0)
       return { currency: runAfterRemoval.currency + total }
     }
     case 'karasu': {
       // 秘儀の所持枠は基本上限3(破魔矢所持時は拡張)で、天啓・神託の合算枠(sharedRevelationSlotsRemaining)とは独立している。
       const slotsLeft = Math.max(0, riteMaxCapacity(params, runAfterRemoval) - runAfterRemoval.rites.length)
       if (slotsLeft === 0) return {}
-      return { rites: [...runAfterRemoval.rites, ...runAfterRemoval.recentUsedRiteIds.slice(0, slotsLeft)] }
+      const picked = runAfterRemoval.recentUsedRiteIds.slice(0, slotsLeft)
+      let nextId = runAfterRemoval.nextInstanceId
+      const held = picked.map(id => ({ instanceId: nextId++, id }))
+      return { rites: [...runAfterRemoval.rites, ...held], nextInstanceId: nextId }
     }
     default:
       return {}
@@ -1528,19 +1552,22 @@ function grantRevelationReward(
 }
 
 // 所持中の天啓を1つ使用する(消費される)。プレイ中・天啓選択画面のどちらでも動作し、
-// フェーズは変えない(秘儀のuseRiteと同じ位置づけ)。
+// フェーズは変えない(秘儀のuseRiteと同じ位置づけ)。instanceIdは対象の個体
+// (封印精度・重複所持時の対象特定に使う)。呼び出し元(UI)はクリックされたバッジの
+// instanceIdをそのまま渡す。
 export function useRevelation(
   params: ShidasuParams,
   run: RunState,
+  instanceId: number,
   revelationId: RevelationId,
   targetCol: number | null,
   rand: () => number = Math.random,
   targetRelicId: RelicId | null = null
 ): RunState {
   if ((run.phase !== 'playing' && !SHOP_FLOW_PHASES.includes(run.phase)) || !run.wave || run.wave.status !== 'playing') return run
-  const idx = run.revelations.indexOf(revelationId)
+  const idx = run.revelations.findIndex(h => h.instanceId === instanceId)
   if (idx === -1) return run
-  if (!canUseRevelation(params, run.wave, revelationId, run.relics)) return run
+  if (!canUseRevelation(params, run.wave, instanceId, revelationId, run.relics)) return run
   let { wave, deckComposition } = applyRevelationEffect(params, run.wave, run.deckComposition, revelationId, targetCol, rand)
   wave = applyDiscretionFrostBonus(params, run, wave)
   const extraTableauRows = run.extraTableauRows
@@ -1567,21 +1594,23 @@ export function pickPackOracleHold(params: ShidasuParams, run: RunState, roleNam
   if (run.revelations.length + run.oracles.length >= revelationOracleMaxCapacity(params, run)) {
     return { ...run, pendingNewOracle: roleName }
   }
-  return resolvePackOfferPick({ ...run, oracles: [...run.oracles, roleName] }, 'oracleOffer', 'pendingNewOracle', run.oracleOffer, role => role === roleName)
+  const held = { instanceId: run.nextInstanceId, id: roleName }
+  return resolvePackOfferPick({ ...run, oracles: [...run.oracles, held], nextInstanceId: run.nextInstanceId + 1 }, 'oracleOffer', 'pendingNewOracle', run.oracleOffer, role => role === roleName)
 }
 
 // スワップ待ち中、targetで指定した所持中の天啓または神託と入れ替えて確定する。
 export function confirmPackOracleSwap(run: RunState, target: HeldRevelationOrOracleRef): RunState {
   if (run.phase !== 'oracleSelect' || run.pendingNewOracle === null) return run
   const newRole = run.pendingNewOracle
+  const held = { instanceId: run.nextInstanceId, id: newRole }
   if (target.kind === 'oracle') {
-    const idx = run.oracles.indexOf(target.id)
+    const idx = run.oracles.findIndex(h => h.instanceId === target.instanceId)
     const remaining = idx === -1 ? run.oracles : [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)]
-    return resolvePackOfferPick({ ...run, oracles: [...remaining, newRole] }, 'oracleOffer', 'pendingNewOracle', run.oracleOffer, role => role === newRole)
+    return resolvePackOfferPick({ ...run, oracles: [...remaining, held], nextInstanceId: run.nextInstanceId + 1 }, 'oracleOffer', 'pendingNewOracle', run.oracleOffer, role => role === newRole)
   }
-  const idx = run.revelations.indexOf(target.id)
+  const idx = run.revelations.findIndex(h => h.instanceId === target.instanceId)
   const revelations = idx === -1 ? run.revelations : [...run.revelations.slice(0, idx), ...run.revelations.slice(idx + 1)]
-  return resolvePackOfferPick({ ...run, revelations, oracles: [...run.oracles, newRole] }, 'oracleOffer', 'pendingNewOracle', run.oracleOffer, role => role === newRole)
+  return resolvePackOfferPick({ ...run, revelations, oracles: [...run.oracles, held], nextInstanceId: run.nextInstanceId + 1 }, 'oracleOffer', 'pendingNewOracle', run.oracleOffer, role => role === newRole)
 }
 
 export function cancelPackOracleSwap(run: RunState): RunState {
@@ -1612,10 +1641,12 @@ export function closePackCardSetSelect(run: RunState): RunState {
 }
 
 // 所持中の神託を1つ消費する。playingフェーズでのみ呼べる(ショップ内フェーズでは呼べない)。
-// run/wave両方のoracleLevelsを同期する。盤面への直接効果は無い。
+// run/wave両方のoracleLevelsを同期する。盤面への直接効果は無い。神託はoracleLevelsという
+// 役名単位の集計値に効果が還元されるため(封印もoracleBaselineRoleという役名ベース)、
+// 個体を指定する必要が無く、シグネチャは従来通りroleNameのまま(同名の先頭1個を消費する)。
 export function useOracle(params: ShidasuParams, run: RunState, roleName: RoleName): RunState {
   if (run.phase !== 'playing') return run
-  const idx = run.oracles.indexOf(roleName)
+  const idx = run.oracles.findIndex(h => h.id === roleName)
   if (idx === -1) return run
   const oracles = [...run.oracles.slice(0, idx), ...run.oracles.slice(idx + 1)]
   const oracleLevels = { ...run.oracleLevels, [roleName]: run.oracleLevels[roleName] + 1 }
@@ -1644,33 +1675,34 @@ export function reorderItems(run: RunState, fromIndex: number, toIndex: number):
 // 所持配列から1個を売却し、通貨を得る共通処理。playing/shopフェーズでのみ呼べる。
 // フィールドの動的キーアクセスのため戻り値をRunStateにキャストしている(呼び出し元は
 // 決まった4パターンに限定されるため、型安全性は既存テストで担保する。福袋pick系リファクタの
-// resolvePackOfferPickと同じ理由・同じパターン)。
-function sellFromArray<T>(run: RunState, arrayField: 'items' | 'rites' | 'revelations' | 'oracles', arr: T[], id: T, price: number): RunState {
+// resolvePackOfferPickと同じ理由・同じパターン)。instanceIdで対象個体を一意に特定する。
+function sellFromArray<T>(run: RunState, arrayField: 'items' | 'rites' | 'revelations' | 'oracles', arr: { instanceId: number; id: T }[], instanceId: number, price: number): RunState {
   if (run.phase !== 'playing' && run.phase !== 'shop') return run
-  const idx = arr.indexOf(id)
+  const idx = arr.findIndex(h => h.instanceId === instanceId)
   if (idx === -1) return run
   const newArr = [...arr.slice(0, idx), ...arr.slice(idx + 1)]
   return { ...run, [arrayField]: newArr, currency: run.currency + price } as RunState
 }
 
-// 所持中の護符を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
-export function sellItem(params: ShidasuParams, run: RunState, itemId: ItemId): RunState {
-  return sellFromArray(run, 'items', run.items, itemId, itemSellPrice(params, run, itemId))
+// 所持中の護符を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。instanceIdで対象個体を特定し、
+// itemIdは価格計算(itemSellPrice)に使う。
+export function sellItem(params: ShidasuParams, run: RunState, instanceId: number, itemId: ItemId): RunState {
+  return sellFromArray(run, 'items', run.items, instanceId, itemSellPrice(params, run, itemId))
 }
 
 // 所持中の秘儀を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
-export function sellRite(params: ShidasuParams, run: RunState, riteId: RiteId): RunState {
-  return sellFromArray(run, 'rites', run.rites, riteId, riteSellPrice(params, run))
+export function sellRite(params: ShidasuParams, run: RunState, instanceId: number, riteId: RiteId): RunState {
+  return sellFromArray(run, 'rites', run.rites, instanceId, riteSellPrice(params, run))
 }
 
 // 所持中の天啓を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
-export function sellRevelation(params: ShidasuParams, run: RunState, revelationId: RevelationId): RunState {
-  return sellFromArray(run, 'revelations', run.revelations, revelationId, revelationSellPrice(params, run))
+export function sellRevelation(params: ShidasuParams, run: RunState, instanceId: number, revelationId: RevelationId): RunState {
+  return sellFromArray(run, 'revelations', run.revelations, instanceId, revelationSellPrice(params, run))
 }
 
 // 所持中の神託を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
-export function sellOracle(params: ShidasuParams, run: RunState, roleName: RoleName): RunState {
-  return sellFromArray(run, 'oracles', run.oracles, roleName, oracleSellPrice(params, run))
+export function sellOracle(params: ShidasuParams, run: RunState, instanceId: number, roleName: RoleName): RunState {
+  return sellFromArray(run, 'oracles', run.oracles, instanceId, oracleSellPrice(params, run))
 }
 
 // 大凶クリア後の続行確認画面('continueChoice'フェーズ)で「続ける」を選んだ場合。
@@ -1736,11 +1768,11 @@ export function applyStuckCheck(params: ShidasuParams, run: RunState, rand: () =
   if (run.phase !== 'playing' || !run.wave) return run
   const modifier = stageModifierFor(params, run)
   const wave = run.wave
-  if (!isStuck(modifier, wave, run.rites)) return run
+  if (!isStuck(modifier, wave, run.rites.map(h => h.id))) return run
 
   let resetWave = resetComboFields(wave, params)
 
-  for (const id of run.items) {
+  for (const { id } of run.items) {
     if (id === 'healing') {
       resetWave = resolveHealingRestoration(resetWave, wave.sweptColumnsThisCombo, rand)
     } else if (id === 'resilience' && resetWave.discardPile.length > 0 && !resetWave.resilienceUsedThisWave) {
