@@ -202,17 +202,20 @@ function wildifyRandomTableauCards(wave: WaveState, deckComposition: DeckCard[],
 }
 
 // 天啓が現在の盤面状態で使用可能か判定する。wave.activeSealが自分自身(revelationOrOracle・
-// revelation・id一致)を封印中なら他の条件に関わらず常に使用不可。それ以外では、虚(レリック付喪化)は
+// revelation・instanceId一致)を封印中なら他の条件に関わらず常に使用不可。それ以外では、虚(レリック付喪化)は
 // 未付喪化の所持レリックが1つ以上あるか、鬼(レリックランダム獲得)は未所持のレリックが1つ以上あるかを
-// 判定する(さらにそれ以外は常に使用可)。
+// 判定する(さらにそれ以外は常に使用可)。instanceIdは対象の個体。所持前に即使用する経路
+// (buyIndividualRevelationUse・pickPackRevelationUse)では所持個体が存在しないため、instanceIdにnullを渡す
+// (この場合、封印チェックは常にfalse=ブロックしない扱いになる。未所持のものは封印対象になり得ないため正しい)。
 export function canUseRevelation(
   _params: ShidasuParams,
   wave: WaveState,
+  instanceId: number | null,
   revelationId: RevelationId,
   relics: { id: RelicId; tsukumoka: boolean }[] = []
 ): boolean {
-  // 妨害「封印系」により対象天啓が封印中の場合は、他の条件を満たしていても使用不可にする
-  if (wave.activeSeal?.kind === 'revelationOrOracle' && wave.activeSeal.ref.kind === 'revelation' && wave.activeSeal.ref.id === revelationId) return false
+  // 妨害「封印系」により対象天啓(の個体)が封印中の場合は、他の条件を満たしていても使用不可にする
+  if (instanceId !== null && wave.activeSeal?.kind === 'revelationOrOracle' && wave.activeSeal.ref.kind === 'revelation' && wave.activeSeal.ref.instanceId === instanceId) return false
   if (revelationId === 'kyo') {
     return relics.some(r => !r.tsukumoka)
   }
