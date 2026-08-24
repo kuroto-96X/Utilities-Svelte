@@ -23,7 +23,7 @@ function poolFor(kind: ShopSlotKind): readonly string[] {
 function rollIndividualSlot(run: RunState, usedItemIds: Set<ItemId>, rand: () => number): ShopIndividualSlot {
   const kind = SHOP_SLOT_KINDS[Math.floor(rand() * SHOP_SLOT_KINDS.length)]
   if (kind === 'item') {
-    const available = ITEM_POOL.filter(id => !run.items.includes(id) && !usedItemIds.has(id))
+    const available = ITEM_POOL.filter(id => !run.items.some(h => h.id === id) && !usedItemIds.has(id))
     const pool = available.length > 0 ? available : ITEM_POOL
     const id = pool[Math.floor(rand() * pool.length)]
     usedItemIds.add(id)
