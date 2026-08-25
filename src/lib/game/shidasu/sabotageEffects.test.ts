@@ -14,9 +14,9 @@ describe('applySabotageEffect', () => {
     // 例外なく完走する(全件のディスパッチ経路が揃っているかを見るだけのテストで十分)。
     const run = createInitialRun()
     const { wave } = startWave(DEFAULT_PARAMS, 0, 0, run.items.map(h => h.id), run.deckComposition, 1, 0, defaultOracleLevels())
-    for (const action of SABOTAGE_POOL) {
+    for (const id of SABOTAGE_POOL) {
       expect(() =>
-        applySabotageEffect(action.id, { params: DEFAULT_PARAMS, run, wave, rand: () => 0, useRite, useRevelation, useOracle })
+        applySabotageEffect(id, { params: DEFAULT_PARAMS, run, wave, rand: () => 0, useRite, useRevelation, useOracle })
       ).not.toThrow()
     }
   })
