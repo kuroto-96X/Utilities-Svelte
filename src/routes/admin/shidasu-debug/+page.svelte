@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
   import { loadParams } from '$lib/game/shidasu/params'
   import { startWave, playCard, drawStock, forceStockTop, triggerSabotage, createInitialRun, resolveSealedRoleEffect, useRite, useRevelation, useOracle, moveArrayItem } from '$lib/game/shidasu/engine'
-  import { SABOTAGE_POOL } from '$lib/game/shidasu/sabotage'
+  import { SABOTAGE_POOL, sabotageActionName } from '$lib/game/shidasu/sabotage'
   import { applyRiteEffect } from '$lib/game/shidasu/riteEffects'
   import { applyRevelationEffect, revelationNeedsTarget } from '$lib/game/shidasu/revelationEffects'
   import RiteExecutePanel from './RiteExecutePanel.svelte'
@@ -508,12 +508,12 @@
         <div class="p-2 border rounded space-y-1">
           <p class="text-xs text-slate-500">星の妨害行動を直接発動(デバッグ用)</p>
           <div class="flex flex-wrap gap-1">
-            {#each SABOTAGE_POOL as def (def.id)}
+            {#each SABOTAGE_POOL as id (id)}
               <button
                 type="button"
-                onclick={() => handleTriggerSabotage(def.id)}
+                onclick={() => handleTriggerSabotage(id)}
                 class="text-xs px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-100"
-              >{def.name}</button>
+              >{sabotageActionName(id, params)}</button>
             {/each}
           </div>
         </div>

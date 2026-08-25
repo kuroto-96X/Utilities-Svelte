@@ -37,7 +37,7 @@
   import RoleStatusPanel from './RoleStatusPanel.svelte'
   import CardFace from './CardFace.svelte'
   import { CARD_SET_GENRE_NAMES } from '$lib/game/shidasu/cardSets'
-  import { SABOTAGE_POOL } from '$lib/game/shidasu/sabotage'
+  import { sabotageActionName } from '$lib/game/shidasu/sabotage'
 
   const params = loadParams()
 
@@ -57,9 +57,7 @@
   // 次に発動する妨害の名前+残りターン数を1行で返す。妨害が無い(pendingSabotageIdがnull)場合は空文字。
   function sabotageDetail(wave: WaveState | null): string {
     if (!wave || !wave.pendingSabotageId) return ''
-    const action = SABOTAGE_POOL.find(a => a.id === wave.pendingSabotageId)
-    if (!action) return ''
-    return `次の妨害: ${action.name}(あと${wave.sabotageTurnsRemaining}ターン)`
+    return `次の妨害: ${sabotageActionName(wave.pendingSabotageId, params)}(あと${wave.sabotageTurnsRemaining}ターン)`
   }
 
   // バラ売り枠の種類表示用ラベル(カードセットは福袋限定のためバラ売りには出現しない)
