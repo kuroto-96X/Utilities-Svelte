@@ -223,7 +223,7 @@ export function startWave(
     ehwazActiveThisWave: false,
     nextPlayScoreMultiplier: 1,
     oracleLevels,
-    ...rollSabotage(sabotage, rand),
+    ...rollSabotage(params, sabotage, rand),
     activeSeal: null,
   }
 
@@ -1146,7 +1146,7 @@ export function triggerSabotage(params: ShidasuParams, run: RunState, id: Sabota
   const nextRun: RunState = { ...run, ...result.run, wave: nextWave }
 
   const star = nextRun.stageStars[nextRun.waveIndex]
-  const rolled = rollSabotage(star?.sabotage ?? { kind: 'none' }, rand)
+  const rolled = rollSabotage(params, star?.sabotage ?? { kind: 'none' }, rand)
   return {
     ...nextRun,
     wave: {
