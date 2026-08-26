@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, test, expect } from 'vitest'
 import { ITEM_GROUPS } from './itemGroups'
 import { ITEM_POOL } from './items'
 
@@ -20,6 +20,15 @@ describe('ITEM_GROUPS', () => {
 
   it('方向性1の24護符がITEM_POOL・ITEM_GROUPSの両方に含まれる', () => {
     const ids = ['exchange', 'koban', 'senryo', 'manryo', 'harvest', 'settlement', 'hiddenTreasure', 'greatestTreasure', 'heirloom', 'treasury', 'boom', 'abundantFunds', 'savings', 'bigCatch', 'grains', 'liveliness', 'prosperity', 'heavenlyBlessing', 'mizuho', 'bountifulYear', 'profit', 'bounty', 'perk', 'nestEgg']
+    const groupedIds = ITEM_GROUPS.flatMap(g => g.ids)
+    for (const id of ids) {
+      expect(ITEM_POOL).toContain(id)
+      expect(groupedIds).toContain(id)
+    }
+  })
+
+  test('方向性2の8護符がITEM_POOL・ITEM_GROUPSの両方に含まれる', () => {
+    const ids = ['dividend', 'prizeMoney', 'windfall', 'celebration', 'refund', 'bonus', 'commendation', 'favor']
     const groupedIds = ITEM_GROUPS.flatMap(g => g.ids)
     for (const id of ids) {
       expect(ITEM_POOL).toContain(id)

@@ -170,13 +170,13 @@ export const ITEM_ACTUAL_EFFECTS: Record<ItemId, string> = {
   perk: 'そのプレイでroleFiredにpairが含まれるとき、この護符自身のsellBonusにnを加算する',
   nestEgg: '他の護符が売却されるたび、この護符自身のsellBonusにnを加算する(自分自身が売却対象の場合は加算しない)',
 
-  // グループ24: 星片獲得(方向性2、未実装・params定義のみ。Task 3以降で効果実装予定)
-  dividend: '(未実装)星の妨害行動(triggerSabotage)が発動するたび、星片(currency)にnを加算する',
-  prizeMoney: '(未実装)プレイしたカードのランクがrandomTarget(ウェーブ開始時にinstanceIdごと再抽選)と一致するとき、星片にnを加算する',
-  windfall: '(未実装)J・Q・Kのいずれかをプレイしたとき、p%の確率で星片にnを加算する',
-  celebration: '(未実装)そのプレイでroleFiredにrandomTarget(ウェーブ開始時にinstanceIdごと再抽選)が含まれるとき、星片にnを加算する',
-  refund: '(未実装)ウェーブ終了時、所持している護符・秘儀・天啓・神託すべて(refund自身を含む)のsellBonusにnを加算する',
-  bonus: '(未実装)ウェーブ終了時、無条件で星片にnを加算する',
-  commendation: '(未実装)ウェーブ終了時、deckComposition内のランクlの現存カード枚数×nを星片に加算する',
-  favor: '(未実装)ウェーブ終了時、所持するfavorインスタンスごとにrewardBonusの現在値を星片に加算する。ステージクリア(isBossWave)時はrewardBonusにaを加算して蓄積する',
+  // グループ24: 星片獲得(方向性2)
+  dividend: '星の妨害行動(triggerSabotage)が発動するたび、星片(currency)にnを加算する',
+  prizeMoney: 'プレイしたカードのランクがrandomTarget(ウェーブ開始時にinstanceIdごと再抽選)と一致するとき、星片にnを加算する',
+  windfall: 'J・Q・Kのいずれかをプレイしたとき、p%の確率で星片にnを加算する',
+  celebration: 'そのプレイでroleFiredにrandomTarget(ウェーブ開始時にinstanceIdごと再抽選)が含まれるとき、星片にnを加算する',
+  refund: 'ウェーブ終了時、所持している護符・秘儀・天啓・神託すべて(refund自身を含む)のsellBonusにnを加算する',
+  bonus: 'ウェーブ終了時、無条件で星片にnを加算する',
+  commendation: 'ウェーブ終了時、deckComposition内のランクlの現存カード枚数×nを星片に加算する',
+  favor: 'ウェーブ終了時、所持するfavorインスタンスごとにrewardBonusの現在値を星片に加算する。ステージクリア(isBossWave)時はrewardBonusにaを加算して蓄積する',
 }
