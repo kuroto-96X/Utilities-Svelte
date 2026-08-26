@@ -5767,3 +5767,46 @@ describe('nextInstanceId', () => {
     expect(next.items).toEqual([{ instanceId: 8, id: 'frost' }])
   })
 })
+
+describe('方向性1護符: プレイ中トリガー', () => {
+  // isPlayableの制約(foundationとのランク差1)を満たすため、startWaveのランダム山札ではなく
+  // makeWaveで手動構築したwave(既存のplayCardテスト群と同じ手法)を使う。
+  test('秘宝所持中に♠のAをプレイするとsellBonusが加算される', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 2),
+      tableau: [[card(1, '♠', 1)], [card(2, '♦', 2)]],
+    })
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: [{ instanceId: 1, id: 'hiddenTreasure' }], nextInstanceId: 2 }
+    const result = applyPlayCard(DEFAULT_PARAMS, run, 0, createRng(1))
+    const held = result.items.find(h => h.instanceId === 1)
+    expect(held?.sellBonus).toBe(DEFAULT_PARAMS.talismans.hiddenTreasure.n)
+  })
+
+  test('小判を2枚所持している場合、両方のinstanceIdにsellBonusが加算される', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+      combo: DEFAULT_PARAMS.talismans.koban.c - 1,
+    })
+    const run: RunState = {
+      ...createInitialRun(),
+      phase: 'playing',
+      wave,
+      items: [{ instanceId: 1, id: 'koban' }, { instanceId: 2, id: 'koban' }],
+      nextInstanceId: 3,
+    }
+    const result = applyPlayCard(DEFAULT_PARAMS, run, 0, createRng(1))
+    expect(result.items[0].sellBonus).toBe(DEFAULT_PARAMS.talismans.koban.n)
+    expect(result.items[1].sellBonus).toBe(DEFAULT_PARAMS.talismans.koban.n)
+  })
+
+  test('sellBonusは永続的に加算され続ける(上限なし)', () => {
+    const wave = makeWave({
+      foundation: card(0, '♠', 2),
+      tableau: [[card(1, '♠', 1)], [card(2, '♦', 2)]],
+    })
+    const run: RunState = { ...createInitialRun(), phase: 'playing', wave, items: [{ instanceId: 1, id: 'hiddenTreasure', sellBonus: 20 }], nextInstanceId: 2 }
+    const result = applyPlayCard(DEFAULT_PARAMS, run, 0, createRng(1))
+    expect(result.items[0].sellBonus).toBe(20 + DEFAULT_PARAMS.talismans.hiddenTreasure.n)
+  })
+})

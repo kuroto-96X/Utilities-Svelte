@@ -17,6 +17,7 @@ import { rollShop, itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, rev
 import { itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity, relicWaveEndBonus, relicRerollCostStep, relicFirstRerollFree, RELIC_POOL } from './relics'
 import { resetComboFields } from './waveReset'
 import { applySabotageEffect } from './sabotageEffects'
+import { resolvePlayTriggeredRewardTalismans, type RewardTalismanTriggerResult, type PlayTriggerContext } from './rewardTalismanEffects'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
 
@@ -348,16 +349,17 @@ export function playCard(
   rowIndex?: number,
   sealedRoleEffect: SealedRoleEffect = { zeroRoles: [], oracleBaselineRole: null },
   comboCap: number | null = null
-): { wave: WaveState; deckComposition: DeckCard[] } {
-  if (wave.status !== 'playing') return { wave, deckComposition }
+): { wave: WaveState; deckComposition: DeckCard[]; rewardTalismanTrigger: RewardTalismanTriggerResult } {
+  const noTrigger: RewardTalismanTriggerResult = { triggeredIds: [], amounts: {} }
+  if (wave.status !== 'playing') return { wave, deckComposition, rewardTalismanTrigger: noTrigger }
   const col = wave.tableau[colIndex]
-  if (!col || col.length === 0) return { wave, deckComposition }
+  if (!col || col.length === 0) return { wave, deckComposition, rewardTalismanTrigger: noTrigger }
   const row = rowIndex ?? col.length - 1
   // アルギズ非発動中は一番上以外の行を指定しても無視する(不正なプレイを防ぐガード)
-  if (row !== col.length - 1 && !wave.playFromAnywhereActiveThisWave) return { wave, deckComposition }
+  if (row !== col.length - 1 && !wave.playFromAnywhereActiveThisWave) return { wave, deckComposition, rewardTalismanTrigger: noTrigger }
   const card = col[row]
-  if (!card) return { wave, deckComposition }
-  if (!isPlayable(modifier, wave, card, items)) return { wave, deckComposition }
+  if (!card) return { wave, deckComposition, rewardTalismanTrigger: noTrigger }
+  if (!isPlayable(modifier, wave, card, items)) return { wave, deckComposition, rewardTalismanTrigger: noTrigger }
 
   // 黄金: 通常のコンボ加算処理そのものを+1ではなく+2にする(他の護符には無干渉)
   // イサ(凍結)発動中は加算自体を行わない。コンボ頭打ち(妨害)発動中はcomboCapで上限クランプする
@@ -528,6 +530,19 @@ export function playCard(
   const itemResult = applyItemEffects('gained', base, items, itemEffectCtx, params)
   parts.push(...itemResult.parts)
 
+  const rewardTalismanCtx: PlayTriggerContext = {
+    card,
+    chain: chainIncludingThis,
+    comboBefore: wave.combo,
+    comboAfter: newCombo,
+    remainingTableauCountBefore: remainingCount(wave.tableau),
+    remainingTableauCountAfter: remaining,
+    roleFired,
+    sweepQualifies,
+    sameColumnStreak: newSameColumnStreak,
+  }
+  const rewardTalismanTrigger = resolvePlayTriggeredRewardTalismans(params, items, rewardTalismanCtx)
+
   const discretionAdd = items.includes('discretion') ? wave.discretionN : 0
   if (discretionAdd !== 0) parts.push(addPart('果断', discretionAdd))
   const shootingStarGainedAdd = items.includes('shootingStar') ? wave.shootingStarN : 0
@@ -617,6 +632,7 @@ export function playCard(
     pendingRoleEcho: newPendingRoleEcho,
     roleEchoUsedThisCombo: newRoleEchoUsedThisCombo,
     sameRankEchoUsedThisCombo: newSameRankEchoUsedThisCombo,
+    playCountThisWave: wave.playCountThisWave + 1,
     sweptColumnsThisCombo: newSweptColumnsThisCombo,
     sowiloBoostedRole: wave.sowiloBoostedRole ?? sowiloCommittedThisPlay,
     sabotageTurnsRemaining: wave.pendingSabotageId ? Math.max(0, wave.sabotageTurnsRemaining - 1) : wave.sabotageTurnsRemaining,
@@ -625,7 +641,7 @@ export function playCard(
 
   // gained確定時点(全消しボーナス込み)で目標達成なら即座に終了する。
   if (targetReachedOnGained) {
-    return { wave: { ...next, status: 'ended', endReason: 'target' }, deckComposition }
+    return { wave: { ...next, status: 'ended', endReason: 'target' }, deckComposition, rewardTalismanTrigger }
   }
 
   if (isFullClear) {
@@ -664,19 +680,20 @@ export function playCard(
 
     if (remainingCount(resetWave.tableau) > 0) {
       if (resetWave.stock.length > 0) {
-        return drawStock(params, resetWave, items, target, deckComposition, modifier, rand, scoreLock, sealedRoleEffect, comboCap)
+        const drawResult = drawStock(params, resetWave, items, target, deckComposition, modifier, rand, scoreLock, sealedRoleEffect, comboCap)
+        return { ...drawResult, rewardTalismanTrigger }
       }
-      return { wave: resetWave, deckComposition }
+      return { wave: resetWave, deckComposition, rewardTalismanTrigger }
     }
 
-    return { wave: { ...resetWave, status: 'ended', endReason: 'fullClear' }, deckComposition }
+    return { wave: { ...resetWave, status: 'ended', endReason: 'fullClear' }, deckComposition, rewardTalismanTrigger }
   }
 
   if (newScore >= target) {
-    return { wave: { ...next, status: 'ended', endReason: 'target' }, deckComposition }
+    return { wave: { ...next, status: 'ended', endReason: 'target' }, deckComposition, rewardTalismanTrigger }
   }
 
-  return { wave: next, deckComposition }
+  return { wave: next, deckComposition, rewardTalismanTrigger }
 }
 
 export function drawStock(
@@ -1750,8 +1767,20 @@ export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: nu
   if (run.phase !== 'playing' || !run.wave) return run
   const modifier = stageModifierFor(params, run)
   const { target, scoreLock, effectiveItems, sealedRoleEffect, comboCap } = resolvePlayContext(params, run, run.wave)
-  const { wave, deckComposition } = playCard(params, run.wave, modifier, effectiveItems, target, colIndex, run.deckComposition, rand, scoreLock, rowIndex, sealedRoleEffect, comboCap)
-  return resolveActionSabotage(params, { ...run, wave, deckComposition }, wave, rand)
+  const { wave, deckComposition, rewardTalismanTrigger } = playCard(params, run.wave, modifier, effectiveItems, target, colIndex, run.deckComposition, rand, scoreLock, rowIndex, sealedRoleEffect, comboCap)
+  const items = applyRewardTalismanTrigger(run.items, rewardTalismanTrigger)
+  return resolveActionSabotage(params, { ...run, wave, deckComposition, items }, wave, rand)
+}
+
+// トリガーが成立した護符idについて、所持する全個体のsellBonusへ加算する(同名複数所持時は全個体に適用)。
+// Task 4の契約により、triggeredIdsに含まれるidは必ずamountsにも確定値を持つ(0扱いへのフォールバック不要)。
+function applyRewardTalismanTrigger(items: HeldItem[], trigger: RewardTalismanTriggerResult): HeldItem[] {
+  if (trigger.triggeredIds.length === 0) return items
+  return items.map(h => {
+    const amount = trigger.amounts[h.id]
+    if (amount === undefined) return h
+    return { ...h, sellBonus: (h.sellBonus ?? 0) + amount }
+  })
 }
 
 export function applyDrawStock(params: ShidasuParams, run: RunState, rand: () => number = Math.random): RunState {
