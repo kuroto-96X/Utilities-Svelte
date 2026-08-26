@@ -1710,10 +1710,16 @@ function sellFromArray<T>(run: RunState, arrayField: 'items' | 'rites' | 'revela
 }
 
 // 所持中の護符を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。instanceIdで対象個体を特定し、
-// itemIdは価格計算(itemSellPrice)に使う。
+// itemIdは価格計算(itemSellPrice)に使う。儲蓄(nestEgg): 売却された護符自身以外に儲蓄を所持していれば、
+// その全個体のsellBonusにnを加算する(売却対象自身が儲蓄であっても、他の儲蓄インスタンスには加算する)。
 export function sellItem(params: ShidasuParams, run: RunState, instanceId: number, itemId: ItemId): RunState {
   const held = run.items.find(h => h.instanceId === instanceId)
-  return sellFromArray(run, 'items', run.items, instanceId, itemSellPrice(params, run, itemId, held?.sellBonus ?? 0))
+  const sold = sellFromArray(run, 'items', run.items, instanceId, itemSellPrice(params, run, itemId, held?.sellBonus ?? 0))
+  if (sold === run) return sold
+  const items = (sold as RunState).items.map(h =>
+    h.id === 'nestEgg' ? { ...h, sellBonus: (h.sellBonus ?? 0) + params.talismans.nestEgg.n } : h
+  )
+  return { ...sold, items } as RunState
 }
 
 // 所持中の秘儀を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。

@@ -5810,3 +5810,42 @@ describe('方向性1護符: プレイ中トリガー', () => {
     expect(result.items[0].sellBonus).toBe(20 + DEFAULT_PARAMS.talismans.hiddenTreasure.n)
   })
 })
+
+describe('儲蓄(nestEgg)', () => {
+  test('他の護符を売却すると儲蓄のsellBonusが加算される', () => {
+    const run = {
+      ...createInitialRun(),
+      phase: 'playing' as const,
+      items: [{ instanceId: 1, id: 'nestEgg' as const }, { instanceId: 2, id: 'bridge' as const }],
+      nextInstanceId: 3,
+    }
+    const result = sellItem(DEFAULT_PARAMS, run, 2, 'bridge')
+    const nestEgg = result.items.find(h => h.instanceId === 1)
+    expect(nestEgg?.sellBonus).toBe(DEFAULT_PARAMS.talismans.nestEgg.n)
+  })
+
+  test('儲蓄自身を売却しても他の儲蓄インスタンスは加算されるが、売却された自分自身は配列から消える', () => {
+    const run = {
+      ...createInitialRun(),
+      phase: 'playing' as const,
+      items: [{ instanceId: 1, id: 'nestEgg' as const }, { instanceId: 2, id: 'nestEgg' as const }],
+      nextInstanceId: 3,
+    }
+    const result = sellItem(DEFAULT_PARAMS, run, 1, 'nestEgg')
+    expect(result.items.find(h => h.instanceId === 1)).toBeUndefined()
+    const remaining = result.items.find(h => h.instanceId === 2)
+    expect(remaining?.sellBonus).toBe(DEFAULT_PARAMS.talismans.nestEgg.n)
+  })
+
+  test('儲蓄を複数所持していれば売却のたび全個体に加算される', () => {
+    const run = {
+      ...createInitialRun(),
+      phase: 'playing' as const,
+      items: [{ instanceId: 1, id: 'nestEgg' as const }, { instanceId: 2, id: 'nestEgg' as const }, { instanceId: 3, id: 'bridge' as const }],
+      nextInstanceId: 4,
+    }
+    const result = sellItem(DEFAULT_PARAMS, run, 3, 'bridge')
+    expect(result.items.find(h => h.instanceId === 1)?.sellBonus).toBe(DEFAULT_PARAMS.talismans.nestEgg.n)
+    expect(result.items.find(h => h.instanceId === 2)?.sellBonus).toBe(DEFAULT_PARAMS.talismans.nestEgg.n)
+  })
+})
