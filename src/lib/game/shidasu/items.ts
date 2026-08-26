@@ -50,12 +50,13 @@ export function itemName(id: ItemId, params: ShidasuParams): string {
   return params.talismans[id].name
 }
 
-export function itemDesc(id: ItemId, params: ShidasuParams): string {
+export function itemDesc(id: ItemId, params: ShidasuParams, randomTarget?: number | string): string {
   const entry = params.talismans[id] as unknown as Record<string, unknown> & { desc: string }
-  const context: Record<string, number> = { rows: params.layout.rows }
+  const context: Record<string, number | string> = { rows: params.layout.rows }
   for (const [key, value] of Object.entries(entry)) {
     if (typeof value === 'number') context[key] = value
   }
+  if (randomTarget !== undefined) context.randomTarget = randomTarget
   return entry.desc.replace(/\{(\w+)\}/g, (match, key) => (key in context ? String(context[key]) : match))
 }
 

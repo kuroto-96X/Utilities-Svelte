@@ -19,6 +19,7 @@
     resolveSealedRoleEffect,
   } from '$lib/game/shidasu/engine'
   import { itemDesc, itemName } from '$lib/game/shidasu/items'
+  import { ROLE_LIST } from '$lib/game/shidasu/roles'
   import { riteName, riteDesc } from '$lib/game/shidasu/rites'
   import { relicName, relicDesc, relicTsukumokaDesc, itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity } from '$lib/game/shidasu/relics'
   import { revelationDesc, revelationName } from '$lib/game/shidasu/revelations'
@@ -29,7 +30,7 @@
     itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice,
     oracleBuyPrice, oracleSellPrice, relicBuyPrice,
   } from '$lib/game/shidasu/shop'
-  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, PlayCardResult, Star, WaveState, CardSetGenreId, ShopSlotKind, RelicId } from '$lib/game/shidasu/types'
+  import type { RunState, ItemId, Suit, Rank, RiteId, RevelationId, RoleName, SpreadId, HeldRevelationOrOracleRef, PlayCardResult, Star, WaveState, CardSetGenreId, ShopSlotKind, RelicId, HeldItem } from '$lib/game/shidasu/types'
   import DebugPanel from './DebugPanel.svelte'
   import PlayArea from './PlayArea.svelte'
   import type { SealFlashTarget, ConfiscatedTarget, PressPulseTarget, NumericChangeTarget } from './PlayArea.svelte'
@@ -52,6 +53,18 @@
       if (typeof value === 'number' || typeof value === 'string') context[key] = String(value)
     }
     return star.descTemplate.replace(/\{(\w+)\}/g, (match, key) => (key in context ? context[key] : match))
+  }
+
+  // itemDesc呼び出し用に、HeldItem.randomTarget(Rank | RoleName)をdescテンプレートの{randomTarget}に
+  // 埋め込める形へ変換する。celebrationのrandomTargetはRoleNameなので、そのまま埋め込むと英語の役名
+  // (例: 'flush')が表示されてしまうため、ROLE_LIST(roles.ts)のlabelで日本語に変換する。
+  // prizeMoney等、RankをそのままRoleではない他の護符はrandomTargetがundefinedのまま(itemDesc側で無視される)。
+  function heldItemRandomTargetLabel(held: HeldItem): number | string | undefined {
+    if (held.randomTarget === undefined) return undefined
+    if (held.id === 'celebration') {
+      return ROLE_LIST.find(r => r.name === held.randomTarget)?.label ?? String(held.randomTarget)
+    }
+    return held.randomTarget
   }
 
   // 次に発動する妨害の名前+残りターン数を1行で返す。妨害が無い(pendingSabotageIdがnull)場合は空文字。
@@ -633,7 +646,7 @@
           onpointercancel={handleItemPointerUp}
           class="text-xs rounded px-1.5 py-0.5 touch-none select-none {anyAnimationActive || talismanConfiscateFading ? '' : 'cursor-grab'} {draggingItemIndex === i ? 'ring-2 ring-teal-400' : ''} {highlightedItemId === itemId ? 'ring-2 ring-yellow-400' : ''} {talismanConfiscateFading ? 'shidasu-confiscate-fade' : ''} {talismanFlashing || talismanShuffleFlashing ? 'shidasu-seal-flash' : ''} {talismanHidden || talismanSealed ? 'border' : 'bg-emerald-900 text-yellow-200/90 border border-yellow-600/40'}"
           style={talismanHidden || talismanSealed ? 'background:#1c1917; color:#78350f; border-color: rgba(217,119,6,0.5); background-image: repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(217,119,6,0.35) 5px,rgba(217,119,6,0.35) 6px);' : ''}
-          title={talismanHidden ? '護符並び替え: 次の妨害発動まで内容が見えない' : talismanSealed ? '護符封印: 次の妨害発動まで効果が無効' : itemDesc(itemId, params)}
+          title={talismanHidden ? '護符並び替え: 次の妨害発動まで内容が見えない' : talismanSealed ? '護符封印: 次の妨害発動まで効果が無効' : itemDesc(itemId, params, heldItemRandomTargetLabel(h))}
         >
           {talismanHidden ? '？？？' : itemName(itemId, params)}
         </span>
@@ -987,7 +1000,7 @@
               role="button"
               tabindex="0"
               data-item-index={i}
-              title={talismanHidden ? '護符並び替え: 次の妨害発動まで内容が見えない' : itemDesc(itemId, params)}
+              title={talismanHidden ? '護符並び替え: 次の妨害発動まで内容が見えない' : itemDesc(itemId, params, heldItemRandomTargetLabel(h))}
               onpointerdown={(e) => handleItemPointerDown(i, e)}
               onpointermove={handleItemPointerMove}
               onpointerup={handleItemPointerUp}
@@ -1110,7 +1123,7 @@
               class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
             >
               <div class="font-black text-yellow-300">{itemName(h.id, params)}</div>
-              <div class="text-xs text-emerald-100/80 mt-0.5">{itemDesc(h.id, params)}</div>
+              <div class="text-xs text-emerald-100/80 mt-0.5">{itemDesc(h.id, params, heldItemRandomTargetLabel(h))}</div>
             </button>
           {/each}
           <button

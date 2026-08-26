@@ -12,6 +12,7 @@
   import OracleChecklist from './OracleChecklist.svelte'
   import RoleStatusEditor from './RoleStatusEditor.svelte'
   import { ITEM_POOL, itemDesc, itemName } from '$lib/game/shidasu/items'
+  import { ROLE_LIST } from '$lib/game/shidasu/roles'
   import { RITE_POOL } from '$lib/game/shidasu/rites'
   import { REVELATION_POOL } from '$lib/game/shidasu/revelations'
   import { ORACLE_POOL, oracleDesc, oracleName, defaultOracleLevels } from '$lib/game/shidasu/oracles'
@@ -29,6 +30,17 @@
   const params = loadParams()
   const TARGET = Number.MAX_SAFE_INTEGER
   const ITEMS_STORAGE_KEY = 'shidasu-debug-items'
+
+  // itemDesc呼び出し用に、HeldItem.randomTarget(Rank | RoleName)をdescテンプレートの{randomTarget}に
+  // 埋め込める形へ変換する。celebrationのrandomTargetはRoleNameなので、そのまま埋め込むと英語の役名
+  // (例: 'flush')が表示されてしまうため、ROLE_LIST(roles.ts)のlabelで日本語に変換する。
+  function heldItemRandomTargetLabel(held: HeldItem): number | string | undefined {
+    if (held.randomTarget === undefined) return undefined
+    if (held.id === 'celebration') {
+      return ROLE_LIST.find(r => r.name === held.randomTarget)?.label ?? String(held.randomTarget)
+    }
+    return held.randomTarget
+  }
 
   function loadSavedItems(): ItemId[] {
     try {
@@ -464,7 +476,7 @@
           onpointercancel={() => { draggingItemIndex = null }}
           class="text-xs rounded px-1.5 py-0.5 touch-none select-none {anyAnimationActive || talismanConfiscateFading ? '' : 'cursor-grab'} {draggingItemIndex === i ? 'ring-2 ring-teal-400' : ''} {highlightedItemId === itemId ? 'ring-2 ring-yellow-400' : ''} {talismanConfiscateFading ? 'shidasu-confiscate-fade' : ''} {talismanFlashing || talismanShuffleFlashing ? 'shidasu-seal-flash' : ''} {talismanHidden || talismanSealed ? 'border' : 'bg-emerald-900 text-yellow-200/90 border border-yellow-600/40'}"
           style={talismanHidden || talismanSealed ? 'background:#1c1917; color:#78350f; border-color: rgba(217,119,6,0.5); background-image: repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(217,119,6,0.35) 5px,rgba(217,119,6,0.35) 6px);' : ''}
-          title={talismanHidden ? '護符並び替え: 次の妨害発動まで内容が見えない' : talismanSealed ? '護符封印: 次の妨害発動まで効果が無効' : itemDesc(itemId, params)}
+          title={talismanHidden ? '護符並び替え: 次の妨害発動まで内容が見えない' : talismanSealed ? '護符封印: 次の妨害発動まで効果が無効' : itemDesc(itemId, params, heldItemRandomTargetLabel(h))}
         >
           {talismanHidden ? '？？？' : itemName(itemId, params)}
         </span>

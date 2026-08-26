@@ -87,6 +87,17 @@ describe('ITEM_POOL / itemName / itemDesc', () => {
     expect(itemDesc('purify', params)).toBe(`全消しボーナスに${DEFAULT_PARAMS.talismans.purify.n}点を加算({typo}は置換されない)`)
   })
 
+  test('itemDescはrandomTarget引数が指定されればプレースホルダーを置換する', () => {
+    const desc = itemDesc('prizeMoney', DEFAULT_PARAMS, 7)
+    expect(desc).toContain('7')
+    expect(desc).not.toContain('{randomTarget}')
+  })
+
+  test('itemDescはrandomTarget引数が省略されればプレースホルダーをそのまま残す', () => {
+    const desc = itemDesc('prizeMoney', DEFAULT_PARAMS)
+    expect(desc).toContain('{randomTarget}')
+  })
+
   test('新規追加した18個の護符も名前と説明文を持つ', () => {
     const newIds: ItemId[] = [
       'patience', 'purify', 'temperance',
