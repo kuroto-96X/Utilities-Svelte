@@ -28,4 +28,5 @@ export const ITEM_GROUPS: ItemGroup[] = [
   { label: 'グループ18: 判定ロジック内部干渉', ids: ['dedication', 'diligence', 'divineProtection', 'fortitude', 'waterMirror'] },
   { label: 'グループ19: デメリット付き倍算・色拡張イネーブラー', ids: ['vow', 'pact', 'crimson', 'jetBlack', 'silver'] },
   { label: 'グループ22: 他カテゴリ依存', ids: ['discretion', 'frost'] },
+  { label: 'グループ23: 売値ボーナス(方向性1)', ids: ['exchange', 'koban', 'senryo', 'manryo', 'harvest', 'settlement', 'hiddenTreasure', 'greatestTreasure', 'heirloom', 'treasury', 'boom', 'abundantFunds', 'savings', 'bigCatch', 'grains', 'liveliness', 'prosperity', 'heavenlyBlessing', 'mizuho', 'bountifulYear', 'profit', 'bounty', 'perk', 'nestEgg'] },
 ]

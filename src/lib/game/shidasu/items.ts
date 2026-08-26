@@ -36,6 +36,12 @@ export const ITEM_POOL: ItemId[] = [
   'vow', 'pact', 'crimson', 'jetBlack',
   'silver',
   'discretion', 'frost',
+  'exchange', 'koban', 'senryo', 'manryo',
+  'harvest', 'settlement',
+  'hiddenTreasure', 'greatestTreasure', 'heirloom', 'treasury',
+  'boom', 'abundantFunds', 'savings', 'bigCatch', 'grains',
+  'liveliness', 'prosperity', 'heavenlyBlessing', 'mizuho',
+  'bountifulYear', 'profit', 'bounty', 'perk', 'nestEgg',
 ]
 
 export function itemName(id: ItemId, params: ShidasuParams): string {
