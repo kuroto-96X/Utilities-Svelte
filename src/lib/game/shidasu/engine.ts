@@ -1051,10 +1051,28 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
   const ritesAfterRefund = applyRefund(run.rites)
   const revelationsAfterRefund = applyRefund(run.revelations)
   const oraclesAfterRefund = applyRefund(run.oracles)
+
+  // 報奨: ウェーブクリア時、無条件で星片にnを加算する。
+  const bonusEarned = run.items.some(h => h.id === 'bonus') ? params.talismans.bonus.n : 0
+
+  // 褒賞: ウェーブクリア時、デッキに現存するランクlのカード枚数×nを星片に加算する。
+  const commendationHeld = run.items.some(h => h.id === 'commendation')
+  const commendationEarned = commendationHeld
+    ? run.deckComposition.filter(c => !c.removed && c.rank === params.talismans.commendation.l).length * params.talismans.commendation.n
+    : 0
+
+  // 恩賞: ウェーブクリア時、所持する各favorインスタンスのrewardBonus現在値を星片に加算する。
+  // ステージクリア(このウェーブがステージの最終ウェーブ)の場合、rewardBonusにaを加算して蓄積する。
+  const favorEarned = run.items.filter(h => h.id === 'favor').reduce((sum, h) => sum + (h.rewardBonus ?? params.talismans.favor.n), 0)
+  const isStageClearing = isBossWave(params, run.waveIndex)
+  const itemsAfterFavor = isStageClearing
+    ? itemsAfterRefund.map(h => h.id === 'favor' ? { ...h, rewardBonus: (h.rewardBonus ?? params.talismans.favor.n) + params.talismans.favor.a } : h)
+    : itemsAfterRefund
+
   const runWithCurrency = {
     ...run,
-    currency: run.currency + earned,
-    items: itemsAfterRefund,
+    currency: run.currency + earned + bonusEarned + commendationEarned + favorEarned,
+    items: itemsAfterFavor,
     rites: ritesAfterRefund,
     revelations: revelationsAfterRefund,
     oracles: oraclesAfterRefund,
@@ -1199,8 +1217,13 @@ export function triggerSabotage(params: ShidasuParams, run: RunState, id: Sabota
 
   const star = nextRun.stageStars[nextRun.waveIndex]
   const rolled = rollSabotage(params, star?.sabotage ?? { kind: 'none' }, rand)
+  // 配当: 妨害行動が発動するたび、所持していれば星片にnを加算する。
+  const currencyAfterDividend = nextRun.items.some(h => h.id === 'dividend')
+    ? nextRun.currency + params.talismans.dividend.n
+    : nextRun.currency
   return {
     ...nextRun,
+    currency: currencyAfterDividend,
     wave: {
       ...nextWave,
       pendingSabotageId: rolled.pendingSabotageId,
@@ -1271,12 +1294,13 @@ function buyIndividualHold<TId>(
   arr: { instanceId: number; id: TId }[],
   value: TId,
   atCapacity: boolean,
-  price: number
+  price: number,
+  extra?: Record<string, unknown>
 ): RunState {
   if (atCapacity) return run
   if (run.currency < price) return run
   const individual = shop.individual.map((s, i) => (i === slotIndex ? { ...s, sold: true } : s))
-  const held = { instanceId: run.nextInstanceId, id: value }
+  const held = { instanceId: run.nextInstanceId, id: value, ...extra }
   return { ...run, currency: run.currency - price, [arrayField]: [...arr, held], nextInstanceId: run.nextInstanceId + 1, shop: { ...shop, individual } } as RunState
 }
 
@@ -1286,7 +1310,8 @@ export function buyIndividualItem(params: ShidasuParams, run: RunState, slotInde
   const slot = run.shop.individual[slotIndex]
   if (!slot || slot.sold || slot.kind !== 'item') return run
   const itemId = slot.id as ItemId
-  return buyIndividualHold(run, run.shop, slotIndex, 'items', run.items, itemId, run.items.length >= itemMaxCapacity(params, run), itemBuyPrice(params, run, itemId))
+  const extra = itemId === 'favor' ? { rewardBonus: params.talismans.favor.n } : undefined
+  return buyIndividualHold(run, run.shop, slotIndex, 'items', run.items, itemId, run.items.length >= itemMaxCapacity(params, run), itemBuyPrice(params, run, itemId), extra)
 }
 
 // バラ売り秘儀購入。所持上限(基本3、破魔矢所持時は拡張)到達時・通貨不足時・売り切れ時は何もしない。
@@ -1421,17 +1446,17 @@ export function pickPackItem(params: ShidasuParams, run: RunState, itemId: ItemI
   if (run.items.length >= itemMaxCapacity(params, run)) {
     return { ...run, pendingNewItem: itemId }
   }
-  const held = { instanceId: run.nextInstanceId, id: itemId }
+  const held = { instanceId: run.nextInstanceId, id: itemId, ...(itemId === 'favor' ? { rewardBonus: params.talismans.favor.n } : {}) }
   return resolvePackOfferPick({ ...run, items: [...run.items, held], nextInstanceId: run.nextInstanceId + 1 }, 'offer', 'pendingNewItem', run.offer, id => id === itemId)
 }
 
 // スワップ待ち中に既存の護符と入れ替えて確定する。oldInstanceIdは入れ替え対象の個体。
-export function confirmPackItemSwap(run: RunState, oldInstanceId: number): RunState {
+export function confirmPackItemSwap(params: ShidasuParams, run: RunState, oldInstanceId: number): RunState {
   if (run.phase !== 'itemSelect' || run.pendingNewItem === null) return run
   const idx = run.items.findIndex(h => h.instanceId === oldInstanceId)
   const remaining = idx === -1 ? [...run.items] : [...run.items.slice(0, idx), ...run.items.slice(idx + 1)]
   const newItemId = run.pendingNewItem
-  const held = { instanceId: run.nextInstanceId, id: newItemId }
+  const held = { instanceId: run.nextInstanceId, id: newItemId, ...(newItemId === 'favor' ? { rewardBonus: params.talismans.favor.n } : {}) }
   return resolvePackOfferPick({ ...run, items: [...remaining, held], nextInstanceId: run.nextInstanceId + 1 }, 'offer', 'pendingNewItem', run.offer, id => id === newItemId)
 }
 
@@ -1550,7 +1575,7 @@ function grantRevelationReward(
       const available = ITEM_POOL.filter(id => !runAfterRemoval.items.some(h => h.id === id))
       if (available.length === 0) return {}
       const picked = available[Math.floor(rand() * available.length)]
-      const held = { instanceId: runAfterRemoval.nextInstanceId, id: picked }
+      const held = { instanceId: runAfterRemoval.nextInstanceId, id: picked, ...(picked === 'favor' ? { rewardBonus: params.talismans.favor.n } : {}) }
       return { items: [...runAfterRemoval.items, held], nextInstanceId: runAfterRemoval.nextInstanceId + 1 }
     }
     case 'oni': {

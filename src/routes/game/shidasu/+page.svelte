@@ -332,7 +332,7 @@
   }
 
   const handlePickPackItem = bindParamsRunAction(pickPackItem)
-  const handleConfirmPackItemSwap = bindRunAction(confirmPackItemSwap)
+  const handleConfirmPackItemSwap = bindParamsRunAction(confirmPackItemSwap)
   const handleCancelPackItemSwap = bindRunActionNoArg(cancelPackItemSwap)
   const handleClosePackItemSelect = bindRunActionNoArg(closePackItemSelect)
 

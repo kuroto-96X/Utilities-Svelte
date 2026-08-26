@@ -2816,6 +2816,66 @@ describe('resolveWaveEnd', () => {
       expect(result.items.find(h => h.instanceId === 1)?.sellBonus ?? 0).toBe(0)
     })
   })
+
+  describe('報奨(bonus)', () => {
+    test('ウェーブクリア時、無条件で星片が加算される', () => {
+      const run = endedRun(
+        { items: [{ instanceId: 1, id: 'bonus' }], currency: 0, nextInstanceId: 2 },
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+      )
+      const runWithoutBonus = endedRun(
+        { items: [], currency: 0, nextInstanceId: 2 },
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+      )
+      const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(1))
+      const resultWithoutBonus = resolveWaveEnd(DEFAULT_PARAMS, runWithoutBonus, createRng(1))
+      expect(result.currency - resultWithoutBonus.currency).toBe(DEFAULT_PARAMS.talismans.bonus.n)
+    })
+  })
+
+  describe('褒賞(commendation)', () => {
+    test('ウェーブクリア時、デッキ内の対象ランク枚数×nが星片に加算される', () => {
+      const targetRankCount = beginRun(DEFAULT_PARAMS, 1).deckComposition.filter(c => !c.removed && c.rank === DEFAULT_PARAMS.talismans.commendation.l).length
+      const run = endedRun(
+        { items: [{ instanceId: 1, id: 'commendation' }], currency: 0, nextInstanceId: 2 },
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+      )
+      const runWithoutCommendation = endedRun(
+        { items: [], currency: 0, nextInstanceId: 2 },
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+      )
+      const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(1))
+      const resultWithoutCommendation = resolveWaveEnd(DEFAULT_PARAMS, runWithoutCommendation, createRng(1))
+      expect(result.currency - resultWithoutCommendation.currency).toBe(targetRankCount * DEFAULT_PARAMS.talismans.commendation.n)
+    })
+  })
+
+  describe('恩賞(favor)', () => {
+    test('取得直後の初回ウェーブクリアでは初期値nが星片に加算される', () => {
+      const run = endedRun(
+        { items: [{ instanceId: 1, id: 'favor', rewardBonus: DEFAULT_PARAMS.talismans.favor.n }], currency: 0, nextInstanceId: 2 },
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+      )
+      const runWithoutFavor = endedRun(
+        { items: [], currency: 0, nextInstanceId: 2 },
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+      )
+      const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(1))
+      const resultWithoutFavor = resolveWaveEnd(DEFAULT_PARAMS, runWithoutFavor, createRng(1))
+      expect(result.currency - resultWithoutFavor.currency).toBe(DEFAULT_PARAMS.talismans.favor.n)
+    })
+
+    test('ステージクリア(最終ウェーブ)時、rewardBonusがaずつ増加して蓄積する', () => {
+      const bossWaveIndex = DEFAULT_PARAMS.flow.wavesPerStage - 1
+      const run = endedRun(
+        { waveIndex: bossWaveIndex, items: [{ instanceId: 1, id: 'favor', rewardBonus: DEFAULT_PARAMS.talismans.favor.n }], currency: 0, nextInstanceId: 2 },
+        waveTarget(DEFAULT_PARAMS, 0, bossWaveIndex, beginRun(DEFAULT_PARAMS, 1).stageStars),
+      )
+      const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(1))
+      const favor = result.items.find(h => h.instanceId === 1)
+      expect(favor?.rewardBonus).toBe(DEFAULT_PARAMS.talismans.favor.n + DEFAULT_PARAMS.talismans.favor.a)
+    })
+  })
 })
 
 describe('stageModifierFor / bossScoreLockFor', () => {
@@ -3370,7 +3430,7 @@ describe('buyPack / pickPackItem(護符の福袋)', () => {
     const opened = buyPack(DEFAULT_PARAMS, run, 0, createRng(1))
     const newItemId = opened.offer[0]
     const picked = pickPackItem(DEFAULT_PARAMS, opened, newItemId)
-    const confirmed = confirmPackItemSwap(picked, 1)
+    const confirmed = confirmPackItemSwap(DEFAULT_PARAMS, picked, 1)
     expect(confirmed.items.map(h => h.id)).toContain(newItemId)
     expect(confirmed.items.map(h => h.id)).not.toContain(fullItems[0])
     expect(confirmed.items).toHaveLength(fullItems.length)
@@ -5698,6 +5758,20 @@ describe('triggerSabotage', () => {
     expect(afterDagaz.wave!.lastStockShuffle).toEqual({ seq: 1 })
     const afterJera = useRite(DEFAULT_PARAMS, afterDagaz, 2, 'jera', () => 0)
     expect(afterJera.wave!.lastStockShuffle).toEqual({ seq: 1 })
+  })
+
+  describe('配当(dividend)', () => {
+    test('妨害行動が発動すると星片が加算される', () => {
+      const run = runWithWave({ items: [{ instanceId: 1, id: 'dividend' }], currency: 100 })
+      const result = triggerSabotage(DEFAULT_PARAMS, run, 'stockPurge', createRng(1))
+      expect(result.currency).toBe(100 + DEFAULT_PARAMS.talismans.dividend.n)
+    })
+
+    test('配当を所持していなければ星片は加算されない', () => {
+      const run = runWithWave({ items: [], currency: 100 })
+      const result = triggerSabotage(DEFAULT_PARAMS, run, 'stockPurge', createRng(1))
+      expect(result.currency).toBe(100)
+    })
   })
 })
 
