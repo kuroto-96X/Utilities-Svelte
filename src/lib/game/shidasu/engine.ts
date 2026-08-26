@@ -1716,10 +1716,10 @@ export function sellItem(params: ShidasuParams, run: RunState, instanceId: numbe
   const held = run.items.find(h => h.instanceId === instanceId)
   const sold = sellFromArray(run, 'items', run.items, instanceId, itemSellPrice(params, run, itemId, held?.sellBonus ?? 0))
   if (sold === run) return sold
-  const items = (sold as RunState).items.map(h =>
+  const items = sold.items.map(h =>
     h.id === 'nestEgg' ? { ...h, sellBonus: (h.sellBonus ?? 0) + params.talismans.nestEgg.n } : h
   )
-  return { ...sold, items } as RunState
+  return { ...sold, items }
 }
 
 // 所持中の秘儀を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
