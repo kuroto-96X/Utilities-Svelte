@@ -2762,6 +2762,30 @@ describe('resolveWaveEnd', () => {
     const expectedBonus = Math.floor(((c - b - a) / (c - b)) * DEFAULT_PARAMS.relics.soroban.n)
     expect(next.currency).toBe(run.currency + 20 + expectedBonus)
   })
+
+  describe('決算(settlement)', () => {
+    test('プレイ回数がc以下でWaveクリアするとsellBonusが加算される', () => {
+      const run = endedRun(
+        { items: [{ instanceId: 1, id: 'settlement' }], nextInstanceId: 2 },
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+      )
+      const runWithPlayCount = { ...run, wave: { ...run.wave!, playCountThisWave: DEFAULT_PARAMS.talismans.settlement.c } }
+      const result = resolveWaveEnd(DEFAULT_PARAMS, runWithPlayCount, createRng(1))
+      const settlement = result.items.find(h => h.instanceId === 1)
+      expect(settlement?.sellBonus).toBe(DEFAULT_PARAMS.talismans.settlement.n)
+    })
+
+    test('プレイ回数がcを超えていればsellBonusは加算されない', () => {
+      const run = endedRun(
+        { items: [{ instanceId: 1, id: 'settlement' }], nextInstanceId: 2 },
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+      )
+      const runWithPlayCount = { ...run, wave: { ...run.wave!, playCountThisWave: DEFAULT_PARAMS.talismans.settlement.c + 1 } }
+      const result = resolveWaveEnd(DEFAULT_PARAMS, runWithPlayCount, createRng(1))
+      const settlement = result.items.find(h => h.instanceId === 1)
+      expect(settlement?.sellBonus ?? 0).toBe(0)
+    })
+  })
 })
 
 describe('stageModifierFor / bossScoreLockFor', () => {

@@ -1038,9 +1038,14 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
   const currentStar = run.stageStars[run.waveIndex]
   const baseEarned = Math.max(0, (currentStar?.reward ?? 0) - run.rewardPenalty)
   const earned = baseEarned + relicWaveEndBonus(params, run, wave, baseEarned)
+  const settlementQualifies = wave.playCountThisWave <= params.talismans.settlement.c
+  const items = settlementQualifies
+    ? run.items.map(h => h.id === 'settlement' ? { ...h, sellBonus: (h.sellBonus ?? 0) + params.talismans.settlement.n } : h)
+    : run.items
   const runWithCurrency = {
     ...run,
     currency: run.currency + earned,
+    items,
     dedicationX: wave.dedicationX,
     diligenceX: wave.diligenceX,
     divineProtectionX: wave.divineProtectionX,
