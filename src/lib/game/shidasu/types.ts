@@ -398,10 +398,20 @@ export interface ShopState {
 // 所持中の護符・秘儀・天啓・神託の個体。instanceIdはRunState.nextInstanceIdから払い出される、
 // 4配列(items/rites/revelations/oracles)共通で一意なID。同名(同じid)を複数所持していても
 // instanceIdで個体を区別できる(封印・売却・並べ替え・将来の個体ごとの可変効果のため)。
-export interface HeldItem { instanceId: number; id: ItemId; sellBonus?: number }
-export interface HeldRite { instanceId: number; id: RiteId }
-export interface HeldRevelation { instanceId: number; id: RevelationId }
-export interface HeldOracle { instanceId: number; id: RoleName }
+export interface HeldItem {
+  instanceId: number
+  id: ItemId
+  sellBonus?: number
+  // 賞金(prizeMoney)・祝儀(celebration)用: Wave開始時(finishShop)にinstanceIdごと独立して
+  // 再抽選されるランダム対象。prizeMoneyはRank、celebrationはRoleNameを持つ。他の護符では未使用。
+  randomTarget?: Rank | RoleName
+  // 恩賞(favor)用: Wave終了時に付与するcurrency量の現在値。取得時にparams.talismans.favor.nで
+  // 初期化され、ステージクリアのたびparams.talismans.favor.aずつ増加する。他の護符では未使用。
+  rewardBonus?: number
+}
+export interface HeldRite { instanceId: number; id: RiteId; sellBonus?: number }
+export interface HeldRevelation { instanceId: number; id: RevelationId; sellBonus?: number }
+export interface HeldOracle { instanceId: number; id: RoleName; sellBonus?: number }
 
 // 福袋の天啓・神託パックで上限到達時にスワップ対象を指定するための判別共用体。
 // 天啓・神託は合算枠(上限2)を共有するため、スワップ対象がどちらの配列に属するかを明示する必要がある。
