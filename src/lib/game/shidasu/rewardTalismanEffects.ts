@@ -100,6 +100,8 @@ export function resolvePlayTriggeredRewardTalismans(
         break
       }
       case 'mizuho':
+        // items(紅蓮・漆黒による色拡張)は他の同種護符(liveliness/prosperity)と同様に考慮しない。
+        // 第3引数minLenを渡すため、デフォルト値[]相当を第2引数に明示している。
         if (analyzeAlternatingColor(ctx.chain, [], params.talismans.mizuho.m).held) trigger(id, params.talismans.mizuho.n)
         break
       case 'bountifulYear':

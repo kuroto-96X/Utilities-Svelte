@@ -51,6 +51,42 @@ describe('resolvePlayTriggeredRewardTalismans', () => {
     expect(result.triggeredIds).not.toContain('hiddenTreasure')
   })
 
+  test('至宝: ♥のKをプレイしたときのみtriggeredIdsに含む', () => {
+    const ctx = baseCtx({ card: card('♥', 13) })
+    const result = resolvePlayTriggeredRewardTalismans(DEFAULT_PARAMS, ['greatestTreasure'], ctx)
+    expect(result.triggeredIds).toContain('greatestTreasure')
+  })
+
+  test('至宝: ♥以外のKではtriggeredIdsに含まない', () => {
+    const ctx = baseCtx({ card: card('♠', 13) })
+    const result = resolvePlayTriggeredRewardTalismans(DEFAULT_PARAMS, ['greatestTreasure'], ctx)
+    expect(result.triggeredIds).not.toContain('greatestTreasure')
+  })
+
+  test('家宝: ♦のJをプレイしたときのみtriggeredIdsに含む', () => {
+    const ctx = baseCtx({ card: card('♦', 11) })
+    const result = resolvePlayTriggeredRewardTalismans(DEFAULT_PARAMS, ['heirloom'], ctx)
+    expect(result.triggeredIds).toContain('heirloom')
+  })
+
+  test('家宝: ♦以外のJではtriggeredIdsに含まない', () => {
+    const ctx = baseCtx({ card: card('♣', 11) })
+    const result = resolvePlayTriggeredRewardTalismans(DEFAULT_PARAMS, ['heirloom'], ctx)
+    expect(result.triggeredIds).not.toContain('heirloom')
+  })
+
+  test('宝庫: ♣のQをプレイしたときのみtriggeredIdsに含む', () => {
+    const ctx = baseCtx({ card: card('♣', 12) })
+    const result = resolvePlayTriggeredRewardTalismans(DEFAULT_PARAMS, ['treasury'], ctx)
+    expect(result.triggeredIds).toContain('treasury')
+  })
+
+  test('宝庫: ♣以外のQではtriggeredIdsに含まない', () => {
+    const ctx = baseCtx({ card: card('♥', 12) })
+    const result = resolvePlayTriggeredRewardTalismans(DEFAULT_PARAMS, ['treasury'], ctx)
+    expect(result.triggeredIds).not.toContain('treasury')
+  })
+
   test('好況: roleFiredにflushが含まれるときtriggeredIdsに含む', () => {
     const ctx = baseCtx({ roleFired: [{ name: 'flush', usedWild: false, amount: 10 }] })
     const result = resolvePlayTriggeredRewardTalismans(DEFAULT_PARAMS, ['boom'], ctx)
