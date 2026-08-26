@@ -1607,8 +1607,11 @@ export function useRevelation(
   const reward = grantRevelationReward(params, { ...run, revelations }, revelationId, targetRelicId, rand)
   // 星(hotori)自身の使用は履歴に残さない(自己参照ループを防ぐ。詳細はtypes.tsのlastUsedRevelationIdコメント参照)
   const lastUsedRevelationId = revelationId === 'hotori' ? run.lastUsedRevelationId : revelationId
-  const items = applyExchangeBonus(params, run)
-  return { ...run, wave, deckComposition, revelations, extraTableauRows, lastUsedRevelationId, items, ...reward }
+  // 両替のsellBonus加算は、天啓報酬(reward.items、例: 昴による新規護符付与)を含めた最終的な
+  // items配列に対して適用する必要がある。そのためitemsは...rewardより後に配置し、reward.itemsが
+  // あればそれを、無ければrun.itemsをapplyExchangeBonusの入力にする。
+  const items = applyExchangeBonus(params, { ...run, items: reward.items ?? run.items })
+  return { ...run, wave, deckComposition, revelations, extraTableauRows, lastUsedRevelationId, ...reward, items }
 }
 
 // 神託の福袋(oracleSelect)から1つ選び、その場で使用する(役レベル+1、所持には加わらない、上限とは無関係)。

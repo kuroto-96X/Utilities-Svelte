@@ -5880,4 +5880,25 @@ describe('両替(exchange)', () => {
     const exchange = result.items.find(h => h.instanceId === 1)
     expect(exchange?.sellBonus).toBe(DEFAULT_PARAMS.talismans.exchange.n)
   })
+
+  test('両替所持中に護符を獲得する天啓(昴)を使用しても、両替のsellBonus加算が消失しない', () => {
+    const wave = startWave(DEFAULT_PARAMS, 0, 0, ['exchange'], standardDeckComposition(), 1, 0, defaultOracleLevels()).wave
+    const run: RunState = {
+      ...createInitialRun(),
+      phase: 'playing',
+      wave,
+      revelations: [{ instanceId: 1, id: 'subaru' }],
+      items: [{ instanceId: 2, id: 'exchange' }],
+      nextInstanceId: 3,
+    }
+    const result = useRevelation(DEFAULT_PARAMS, run, 1, 'subaru', null, createRng(1))
+    // 昴によって新規護符が1つ増えている(exchange含め2件)こと
+    expect(result.items).toHaveLength(2)
+    const exchange = result.items.find(h => h.id === 'exchange')
+    // 両替のsellBonus加算(昴による新規護符追加後のitems配列に対しても適用される)が消失していないこと
+    expect(exchange?.sellBonus).toBe(DEFAULT_PARAMS.talismans.exchange.n)
+    // 新規に付与された護符自体もitemsに正しく含まれていること
+    const newItem = result.items.find(h => h.id !== 'exchange')
+    expect(newItem).toBeDefined()
+  })
 })
