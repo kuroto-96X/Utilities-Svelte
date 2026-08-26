@@ -1068,9 +1068,12 @@ function applyDiscretionFrostBonus(params: ShidasuParams, run: RunState, wave: W
 }
 
 // 両替: 秘儀・天啓・神託のいずれかを使用するたび、所持する両替の全インスタンスのsellBonusにnを加算する。
-function applyExchangeBonus(params: ShidasuParams, run: RunState): HeldItem[] {
-  if (!run.items.some(h => h.id === 'exchange')) return run.items
-  return run.items.map(h => h.id === 'exchange' ? { ...h, sellBonus: (h.sellBonus ?? 0) + params.talismans.exchange.n } : h)
+// 呼び出し元で、天啓の報酬付与(grantRevelationReward等)によりitems配列自体が別途更新される場合は、
+// その更新後のitems配列を渡すこと(先にこちらを適用してから報酬側でitemsが上書きされると、
+// このボーナスが消えてしまう。実際にuseRevelationのsubaruケースでこの不具合が発生した実績がある)。
+function applyExchangeBonus(params: ShidasuParams, items: HeldItem[]): HeldItem[] {
+  if (!items.some(h => h.id === 'exchange')) return items
+  return items.map(h => h.id === 'exchange' ? { ...h, sellBonus: (h.sellBonus ?? 0) + params.talismans.exchange.n } : h)
 }
 
 // 秘儀を1つ使用する。効果を適用し、所持からその秘儀を1個削除する。
@@ -1089,7 +1092,7 @@ export function useRite(params: ShidasuParams, run: RunState, instanceId: number
   }
   const rites = [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)]
   const recentUsedRiteIds = [riteId, ...run.recentUsedRiteIds].slice(0, 2)
-  const items = applyExchangeBonus(params, run)
+  const items = applyExchangeBonus(params, run.items)
   return { ...run, wave, rites, recentUsedRiteIds, items }
 }
 
@@ -1610,7 +1613,7 @@ export function useRevelation(
   // 両替のsellBonus加算は、天啓報酬(reward.items、例: 昴による新規護符付与)を含めた最終的な
   // items配列に対して適用する必要がある。そのためitemsは...rewardより後に配置し、reward.itemsが
   // あればそれを、無ければrun.itemsをapplyExchangeBonusの入力にする。
-  const items = applyExchangeBonus(params, { ...run, items: reward.items ?? run.items })
+  const items = applyExchangeBonus(params, reward.items ?? run.items)
   return { ...run, wave, deckComposition, revelations, extraTableauRows, lastUsedRevelationId, ...reward, items }
 }
 
@@ -1688,7 +1691,7 @@ export function useOracle(params: ShidasuParams, run: RunState, roleName: RoleNa
   const oracleLevels = { ...run.oracleLevels, [roleName]: run.oracleLevels[roleName] + 1 }
   let wave = run.wave ? { ...run.wave, oracleLevels } : run.wave
   if (wave) wave = applyDiscretionFrostBonus(params, run, wave)
-  const items = applyExchangeBonus(params, run)
+  const items = applyExchangeBonus(params, run.items)
   return { ...run, oracles, oracleLevels, wave, items }
 }
 
