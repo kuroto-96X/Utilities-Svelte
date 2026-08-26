@@ -1166,11 +1166,30 @@ export function startRevelationPreview(params: ShidasuParams, run: RunState, see
 
 // ショップを終了し、その時点のdeckComposition・extraTableauRows(ショップ滞在中の天啓「即使う」等で
 // 更新されている可能性がある)から実際のウェーブを配り直してプレイ画面へ進む。「次のWaveへ」ボタンから呼ぶ。
+// 賞金・祝儀: ウェーブ開始のたび(finishShop経由)、instanceIdごとに独立してランダム対象を再抽選する。
+// 賞金はRank(1〜13)、祝儀はORACLE_POOL内のRoleNameを対象とする。同名護符を複数所持していても
+// 個体ごとに別々の値になりうる(instanceIdベースの個体管理という設計方針に沿う)。
+function rerollRandomTargets(items: HeldItem[], rand: () => number): HeldItem[] {
+  return items.map(h => {
+    if (h.id === 'prizeMoney') {
+      const rank = (Math.floor(rand() * 13) + 1) as Rank
+      return { ...h, randomTarget: rank }
+    }
+    if (h.id === 'celebration') {
+      const role = ORACLE_POOL[Math.floor(rand() * ORACLE_POOL.length)]
+      return { ...h, randomTarget: role }
+    }
+    return h
+  })
+}
+
 export function finishShop(params: ShidasuParams, run: RunState, seed?: number): RunState {
   if (run.phase !== 'shop') return run
   const star = run.stageStars[run.waveIndex]
-  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, run.items.map(h => h.id), run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX, run.echoX, run.shootingStarN, star?.sabotage ?? { kind: 'none' })
-  return { ...run, phase: 'playing', wave, waveGeneration: run.waveGeneration + 1, deckComposition, shop: null }
+  const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
+  const items = rerollRandomTargets(run.items, rand)
+  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, items.map(h => h.id), run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX, run.echoX, run.shootingStarN, star?.sabotage ?? { kind: 'none' })
+  return { ...run, phase: 'playing', wave, waveGeneration: run.waveGeneration + 1, deckComposition, items, shop: null }
 }
 
 // wave.activeSealがtalisman封印の場合、その個体(instanceId)をitemsから除外した実効リストを

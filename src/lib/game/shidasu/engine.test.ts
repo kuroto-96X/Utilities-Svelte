@@ -73,7 +73,7 @@ import type { Card, WaveState, RunState, ItemId, ShopIndividualSlot, Star, StarR
 import { DEFAULT_PARAMS, type ShidasuParams } from './params'
 import { createRng, standardDeckComposition } from './deck'
 import { card } from './testHelpers'
-import { defaultOracleLevels } from './oracles'
+import { defaultOracleLevels, ORACLE_POOL } from './oracles'
 import { ITEM_POOL } from './items'
 import { RELIC_POOL } from './relics'
 import { itemBuyPrice, riteBuyPrice, revelationBuyPrice, itemSellPrice, riteSellPrice, revelationSellPrice, oracleSellPrice, rollShop, relicBuyPrice } from './shop'
@@ -6028,5 +6028,37 @@ describe('両替(exchange)', () => {
     // 新規に付与された護符自体もitemsに正しく含まれていること
     const newItem = result.items.find(h => h.id !== 'exchange')
     expect(newItem).toBeDefined()
+  })
+})
+
+describe('賞金・祝儀のランダム対象再抽選', () => {
+  test('finishShop実行時、賞金のrandomTargetが1〜13のランクに設定される', () => {
+    // beginRunでphase: 'shop'・stageStars設定済みのRunStateを作り、finishShopの前提条件を満たす
+    let run = beginRun(DEFAULT_PARAMS, 1)
+    run = { ...run, items: [{ instanceId: 1, id: 'prizeMoney' as const }], nextInstanceId: 2 }
+    const result = finishShop(DEFAULT_PARAMS, run, 1)
+    const prizeMoney = result.items.find(h => h.instanceId === 1)
+    expect(typeof prizeMoney?.randomTarget).toBe('number')
+    expect(prizeMoney?.randomTarget).toBeGreaterThanOrEqual(1)
+    expect(prizeMoney?.randomTarget).toBeLessThanOrEqual(13)
+  })
+
+  test('finishShop実行時、祝儀のrandomTargetがORACLE_POOL内の役に設定される', () => {
+    let run = beginRun(DEFAULT_PARAMS, 1)
+    run = { ...run, items: [{ instanceId: 1, id: 'celebration' as const }], nextInstanceId: 2 }
+    const result = finishShop(DEFAULT_PARAMS, run, 1)
+    const celebration = result.items.find(h => h.instanceId === 1)
+    expect(ORACLE_POOL).toContain(celebration?.randomTarget)
+  })
+
+  test('同名を複数所持している場合、instanceIdごとに独立してrandomTargetが決まる(必ずしも同じ値である必要はない)', () => {
+    let run = beginRun(DEFAULT_PARAMS, 1)
+    run = { ...run, items: [{ instanceId: 1, id: 'prizeMoney' as const }, { instanceId: 2, id: 'prizeMoney' as const }], nextInstanceId: 3 }
+    const result = finishShop(DEFAULT_PARAMS, run, 1)
+    const a = result.items.find(h => h.instanceId === 1)
+    const b = result.items.find(h => h.instanceId === 2)
+    expect(typeof a?.randomTarget).toBe('number')
+    expect(typeof b?.randomTarget).toBe('number')
+    // 両方とも有効な値であることのみ検証(偶然同じ値になっても許容)
   })
 })
