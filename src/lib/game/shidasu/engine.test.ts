@@ -3228,6 +3228,13 @@ describe('buyIndividualItem(バラ売り護符購入)', () => {
     expect(result.items.map(h => h.id)).toEqual([...fullItems, newItemId])
     expect(result.shop!.individual[0].sold).toBe(true)
   })
+
+  test('恩賞をショップで購入すると、rewardBonusが初期値nで設定される', () => {
+    const run = shopRun([{ kind: 'item', id: 'favor', sold: false }])
+    const result = buyIndividualItem(DEFAULT_PARAMS, run, 0)
+    const favor = result.items.find(h => h.id === 'favor')
+    expect(favor?.rewardBonus).toBe(DEFAULT_PARAMS.talismans.favor.n)
+  })
 })
 
 describe('buyIndividualRite(バラ売り秘儀購入)', () => {
