@@ -38,9 +38,9 @@ describe('rollItemOffer', () => {
 })
 
 describe('ITEM_POOL / itemName / itemDesc', () => {
-  test('122種類のアイテムが定義されている', () => {
-    expect(ITEM_POOL).toHaveLength(122)
-    expect(new Set(ITEM_POOL).size).toBe(122) // 重複なし
+  test('130種類のアイテムが定義されている', () => {
+    expect(ITEM_POOL).toHaveLength(130)
+    expect(new Set(ITEM_POOL).size).toBe(130) // 重複なし
     ITEM_POOL.forEach(id => expect(itemName(id, DEFAULT_PARAMS)).toBeTruthy())
   })
 
