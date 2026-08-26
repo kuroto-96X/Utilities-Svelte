@@ -1045,18 +1045,12 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
     : run.items
   // 還元: ウェーブ終了時、所持している護符・秘儀・天啓・神託すべて(還元自身を含む)のsellBonusにnを加算する。
   const refundHeld = run.items.some(h => h.id === 'refund')
-  const itemsAfterRefund = refundHeld
-    ? items.map(h => ({ ...h, sellBonus: (h.sellBonus ?? 0) + params.talismans.refund.n }))
-    : items
-  const ritesAfterRefund = refundHeld
-    ? run.rites.map(h => ({ ...h, sellBonus: (h.sellBonus ?? 0) + params.talismans.refund.n }))
-    : run.rites
-  const revelationsAfterRefund = refundHeld
-    ? run.revelations.map(h => ({ ...h, sellBonus: (h.sellBonus ?? 0) + params.talismans.refund.n }))
-    : run.revelations
-  const oraclesAfterRefund = refundHeld
-    ? run.oracles.map(h => ({ ...h, sellBonus: (h.sellBonus ?? 0) + params.talismans.refund.n }))
-    : run.oracles
+  const applyRefund = <T extends { sellBonus?: number }>(arr: T[]): T[] =>
+    refundHeld ? arr.map(h => ({ ...h, sellBonus: (h.sellBonus ?? 0) + params.talismans.refund.n })) : arr
+  const itemsAfterRefund = applyRefund(items)
+  const ritesAfterRefund = applyRefund(run.rites)
+  const revelationsAfterRefund = applyRefund(run.revelations)
+  const oraclesAfterRefund = applyRefund(run.oracles)
   const runWithCurrency = {
     ...run,
     currency: run.currency + earned,
@@ -1592,6 +1586,8 @@ function grantRevelationReward(
       return { revelations: [...runAfterRemoval.revelations, ...held], nextInstanceId: nextId }
     }
     case 'mitsu': {
+      // mitsuは護符(items)限定の仕様のため、還元(refund)が適用するrite/revelation/oracleの
+      // sellBonusはこの合計に含めない(意図的な非対称仕様)。
       const total = runAfterRemoval.items.reduce((sum, h) => sum + itemSellPrice(params, runAfterRemoval, h.id, h.sellBonus ?? 0), 0)
       return { currency: runAfterRemoval.currency + total }
     }
