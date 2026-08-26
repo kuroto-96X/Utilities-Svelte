@@ -546,8 +546,8 @@ describe('果断・星霜: gained計算への反映', () => {
       discretionN: 30,
       comboFrozenThisWave: true, // コンボ倍率をかけず単純加算のみを検証するため固定
     })
-    const withoutDiscretion = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
-    const withDiscretion = playCard(DEFAULT_PARAMS, wave, 'none', ['discretion'], 1000000, 0, standardDeckComposition())
+    const withoutDiscretion = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
+    const withDiscretion = playCard(DEFAULT_PARAMS, wave, 'none', ['discretion'], [], 1000000, 0, standardDeckComposition())
     expect(withDiscretion.wave.score).toBe(withoutDiscretion.wave.score + 30)
   })
 
@@ -558,8 +558,8 @@ describe('果断・星霜: gained計算への反映', () => {
       frostX: 1.5,
       comboFrozenThisWave: true, // コンボ倍率をかけず単純倍算のみを検証するため固定
     })
-    const withoutFrost = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
-    const withFrost = playCard(DEFAULT_PARAMS, wave, 'none', ['frost'], 1000000, 0, standardDeckComposition())
+    const withoutFrost = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
+    const withFrost = playCard(DEFAULT_PARAMS, wave, 'none', ['frost'], [], 1000000, 0, standardDeckComposition())
     expect(withFrost.wave.score).toBe(Math.floor(withoutFrost.wave.score * 1.5))
   })
 
@@ -573,7 +573,7 @@ describe('果断・星霜: gained計算への反映', () => {
       dedicationX: 2,
       comboFrozenThisWave: false,
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['discretion', 'dedication'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['discretion', 'dedication'], [], 1000000, 0, standardDeckComposition())
     expect(next.lastGain).not.toBeNull()
     const totals = runningTotalsFromScoreParts(next.lastGain!.parts)
     expect(Math.floor(totals[totals.length - 1])).toBe(next.lastGain!.points)
@@ -593,7 +593,7 @@ describe('playCard', () => {
 
   test('取れない列を指定した場合は何も変わらない', () => {
     const wave = baseWave()
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 1, standardDeckComposition()) // 列1(2)は取れない
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 1, standardDeckComposition()) // 列1(2)は取れない
     expect(next).toBe(wave)
   })
 
@@ -602,7 +602,7 @@ describe('playCard', () => {
       playFromAnywhereActiveThisWave: true,
       tableau: [[card(1, '♣', 6), card(9, '♠', 1)], [card(2, '♦', 2)]], // idx0=6(取れる) idx1=1(取れない、これが一番上)
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, null, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), Math.random, null, 0)
     expect(next.foundation).toEqual(card(1, '♣', 6))
     expect(next.tableau[0]).toEqual([card(9, '♠', 1)])
   })
@@ -611,14 +611,14 @@ describe('playCard', () => {
     const wave = baseWave({
       tableau: [[card(1, '♣', 6), card(9, '♠', 10)], [card(2, '♦', 2)]], // idx0=6(奥、ランク的には取れる) idx1=10(一番上、ランク差5で取れない)
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, null, 0)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), Math.random, null, 0)
     expect(next).toBe(wave)
   })
 
   test('コンボ1(倍率1+0.1=1.1)で加点される', () => {
     // 列一掃ボーナスが混ざらないよう、played対象の下にダミー札を積んで列が空にならないようにする
     const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.combo).toBe(1)
     expect(next.score).toBe(Math.floor(scoring.basePoint * 1.1))
     expect(next.foundation).toEqual(card(1, '♣', 6))
@@ -628,14 +628,14 @@ describe('playCard', () => {
 
   test('lastGain.partsの先頭に基礎点の内訳が入り、コンボ1(倍率1.1)でもコンボ倍率の内訳が表示される', () => {
     const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.lastGain?.parts[0].text).toBe(`基礎点+${scoring.basePoint}`)
     expect(next.lastGain?.parts.map(p => p.text)).toContain('コンボ倍率×1.1')
   })
 
   test('lastGain.partsから再計算した仮合計は、実際に付与されたlastGain.pointsと一致する(パターン成立あり)', () => {
     const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.lastGain).not.toBeNull()
     expect(finalScoreFromScoreParts(next.lastGain!.parts)).toBe(next.lastGain!.points)
   })
@@ -649,7 +649,7 @@ describe('playCard', () => {
       combo: 3,
     })
     const items: ItemId[] = ['springBreeze', 'courage', 'calm']
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, [], 1000000, 0, standardDeckComposition())
     expect(next.lastGain).not.toBeNull()
     expect(finalScoreFromScoreParts(next.lastGain!.parts)).toBe(next.lastGain!.points)
   })
@@ -680,14 +680,14 @@ describe('playCard', () => {
         [card(10, '♠', 2), card(2, '♦', 9)],
       ],
     })
-    const { wave: afterFirst } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: afterFirst } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     // 2列目のfoundation差分を6→9にするため、一旦foundationを差し替えたウェーブで2枚目を取る
     const wave2 = {
       ...afterFirst,
       foundation: card(1, '♣', 6),
       tableau: [[card(9, '♠', 1)], [card(10, '♠', 2), card(2, '♦', 7)]],
     }
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave2, 'none', [], 1000000, 1, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave2, 'none', [], [], 1000000, 1, standardDeckComposition())
     expect(next.combo).toBe(2)
     // 6→7は階段方向+1・長さ2(既定stairMinLen=5未満でボーナスなし)、スート♣→♦で色も違う→パターンボーナス0
     expect(next.score).toBe(afterFirst.score + Math.floor(scoring.basePoint * 1.2))
@@ -699,7 +699,7 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows, 1],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.columnsEmptiedThisCombo).toBe(1)
     expect(next.score).toBe(Math.floor((scoring.basePoint + scoring.columnSweepBonus * 1) * 1.1))
     expect(next.lastGain?.parts.map(p => p.text)).toContain(`列一掃+${scoring.columnSweepBonus}`)
@@ -710,7 +710,7 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
       comboStreakColumnLengths: [2, 1], // 列0はコンボ開始時点で2枚残っていた(rows=5と一致しないため、全カードを1コンボで消化したことにはならない)
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.columnsEmptiedThisCombo).toBe(0)
     expect(next.lastGain?.parts.some(p => p.text.startsWith('列一掃'))).toBe(false)
   })
@@ -720,7 +720,7 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 9)]],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows - DEFAULT_PARAMS.talismans.grace.m, 1],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['grace'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['grace'], [], 1000000, 0, standardDeckComposition())
     expect(next.columnsEmptiedThisCombo).toBe(1)
     expect(next.lastGain?.parts.map(p => p.text)).toContain(`列一掃+${scoring.columnSweepBonus}`)
   })
@@ -733,7 +733,7 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 7)]],
       comboStreakColumnLengths: [relaxedLen],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, [], 1000000, 0, standardDeckComposition())
     expect(next.lastGain?.parts.some(p => p.text.startsWith('列一掃'))).toBe(true)
   })
 
@@ -744,7 +744,7 @@ describe('playCard', () => {
       columnsEmptiedThisCombo: 1,
       comboStreakColumnLengths: [1, DEFAULT_PARAMS.layout.rows],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 1, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 1, standardDeckComposition())
     expect(next.columnsEmptiedThisCombo).toBe(2)
     expect(next.lastGain?.parts.map(p => p.text)).toContain(`列一掃+${scoring.columnSweepBonus * 2}`)
   })
@@ -755,7 +755,7 @@ describe('playCard', () => {
       stock: [card(9, '♠', 1), card(10, '♠', 2)],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 100000000, 0, standardDeckComposition())
     expect(next.tableau.reduce((n, c) => n + c.length, 0)).toBe(0)
     expect(next.status).toBe('ended')
     expect(next.endReason).toBe('fullClear')
@@ -770,7 +770,7 @@ describe('playCard', () => {
       stock: [card(9, '♠', 1), card(10, '♠', 2)],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 100000000, 0, standardDeckComposition())
     const expectedClearBonus = scoring.clearBonus + 2 * scoring.clearBonusPerStock
     const expectedScore = Math.floor((scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus) * 1.1)
     expect(next.lastGain?.points).toBe(expectedScore)
@@ -787,7 +787,7 @@ describe('playCard', () => {
       shootingStarN: 50,
       chain: [card(20, '♥', 3), card(21, '♦', 4)],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 100000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, [], 100000000, 0, standardDeckComposition())
     expect(next.combo).toBe(DEFAULT_PARAMS.talismans.shootingStar.c)
     expect(next.shootingStarN).toBe(50 + DEFAULT_PARAMS.talismans.shootingStar.n)
     // gainedへの加算はプレイ開始時点のshootingStarN(50)のみが反映され、
@@ -805,7 +805,7 @@ describe('playCard', () => {
       shootingStarN: 50,
       chain: [card(20, '♥', 3), card(21, '♦', 4)],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 100000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, [], 100000000, 0, standardDeckComposition())
     expect(next.combo).toBe(c + 1)
     expect(next.shootingStarN).toBe(50 + DEFAULT_PARAMS.talismans.shootingStar.n)
   })
@@ -819,7 +819,7 @@ describe('playCard', () => {
       shootingStarN: 50,
       chain: [card(20, '♥', 3), card(21, '♦', 4)],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 100000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, [], 100000000, 0, standardDeckComposition())
     expect(next.combo).toBe(c + 1)
     expect(next.shootingStarN).toBe(50)
   })
@@ -831,21 +831,21 @@ describe('playCard', () => {
       shootingStarN: 80,
       comboFrozenThisWave: true,
     })
-    const withoutShootingStar = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
-    const withShootingStar = playCard(DEFAULT_PARAMS, wave, 'none', ['shootingStar'], 1000000, 0, standardDeckComposition())
+    const withoutShootingStar = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
+    const withShootingStar = playCard(DEFAULT_PARAMS, wave, 'none', ['shootingStar'], [], 1000000, 0, standardDeckComposition())
     expect(withShootingStar.wave.score).toBe(withoutShootingStar.wave.score + 80)
   })
 
   test('スコアが目標に達したらendReason=targetでstatus=ended', () => {
     const wave = baseWave()
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 5, 0, standardDeckComposition()) // basePoint(100) >= target(5)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 5, 0, standardDeckComposition()) // basePoint(100) >= target(5)
     expect(next.status).toBe('ended')
     expect(next.endReason).toBe('target')
   })
 
   test('status が playing でない場合は何もしない', () => {
     const wave = baseWave({ status: 'ended', endReason: 'target' })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next).toBe(wave)
   })
 
@@ -862,29 +862,29 @@ describe('playCard', () => {
       ],
     })
     // コンボ1: 倍率1+1*0.25=1.25 → 15*1.25=18.75 → floor=18
-    const { wave: afterFirst } = playCard(oddParams, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: afterFirst } = playCard(oddParams, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     const wave2 = { ...afterFirst, tableau: [[card(9, '♠', 1)], [card(10, '♠', 2), card(2, '♦', 7)]] }
-    const { wave: next } = playCard(oddParams, wave2, 'none', [], 1000000, 1, standardDeckComposition())
+    const { wave: next } = playCard(oddParams, wave2, 'none', [], [], 1000000, 1, standardDeckComposition())
     // コンボ2: 倍率1+2*0.25=1.5 → 15*1.5=22.5 → floor=22
     expect(next.score).toBe(afterFirst.score + 22)
   })
 
   test('カードを取るとlastDrawEffectがクリアされる', () => {
     const wave = baseWave({ lastDrawEffect: 'pattern' })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.lastDrawEffect).toBeNull()
   })
 
   test('プレイするとfirstPlayDoneがtrueになる(ウェーブ開始直後はfalse)', () => {
     const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
     expect(wave.firstPlayDone).toBe(false)
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.firstPlayDone).toBe(true)
   })
 
   test('chainOriginにplayが追記される', () => {
     const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.chainOrigin).toEqual(['play'])
   })
 
@@ -894,7 +894,7 @@ describe('playCard', () => {
       chain: [card(20, '♠', 4), card(0, '♣', 5)],
       tableau: [[card(9, '♠', 1), card(1, '♦', 6)], [card(2, '♥', 2)]],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.lastGain?.parts.some(p => p.text.startsWith('階段'))).toBe(false)
   })
 
@@ -904,7 +904,7 @@ describe('playCard', () => {
       chain: [card(20, '♠', 4), card(0, '♣', 5)],
       tableau: [[card(9, '♠', 1), card(1, '♦', 6)], [card(2, '♥', 2)]],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['bridge'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['bridge'], [], 1000000, 0, standardDeckComposition())
     expect(next.lastGain?.parts.map(p => p.text)).toContain(`階段3 +${scoring.stairBonus}`)
   })
 
@@ -918,7 +918,7 @@ describe('playCard', () => {
       chain: [card(20, '♣', 3), card(21, '♦', 4)],
       tableau: [[card(1, '♥', 5)], [card(2, '♦', 2)]],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, [], 1000000, 0, standardDeckComposition())
     expect(next.lastGain?.parts.some(p => p.text.startsWith('階段'))).toBe(true)
   })
 
@@ -932,7 +932,7 @@ describe('playCard', () => {
       chain: [card(0, '♠', 5)],
       tableau: [[card(1, '♠', 6)], [card(2, '♦', 2)]],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, [], 1000000, 0, standardDeckComposition())
     expect(next.lastGain?.parts.map(p => p.text)).toContain(`同スート+${DEFAULT_PARAMS.scoring.suitBonus}`)
   })
 
@@ -941,7 +941,7 @@ describe('playCard', () => {
       foundation: card(0, '♠', 5),
       tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['springBreeze'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['springBreeze'], [], 1000000, 0, standardDeckComposition())
     expect(next.score).toBe(Math.floor((scoring.basePoint + DEFAULT_PARAMS.talismans.springBreeze.n) * 1.1))
   })
 
@@ -954,7 +954,7 @@ describe('playCard', () => {
       combo: 2,
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, [], 1000000, 0, standardDeckComposition())
     expect(next.combo).toBe(3)
     const multiplier = 1 + 3 * scoring.comboMultiplierStep
     const expectedGained = Math.floor((scoring.basePoint + DEFAULT_PARAMS.talismans.springBreeze.n) * multiplier)
@@ -967,7 +967,7 @@ describe('playCard', () => {
       stock: [card(9, '♠', 1), card(10, '♠', 2)],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['purify'], 100000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['purify'], [], 100000000, 0, standardDeckComposition())
     expect(next.endReason).toBe('fullClear')
     const expectedClearBonus = scoring.clearBonus + 2 * scoring.clearBonusPerStock + DEFAULT_PARAMS.talismans.purify.n
     const expectedScore = Math.floor((scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus) * 1.1)
@@ -982,7 +982,7 @@ describe('playCard', () => {
       stock: [card(9, '♠', 1)],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 100000000, 0, standardDeckComposition())
     expect(next.endReason).toBe('fullClear')
     const expectedClearBonus = scoring.clearBonus + 1 * scoring.clearBonusPerStock
     const multiplier = 1 + 5 * scoring.comboMultiplierStep
@@ -998,7 +998,7 @@ describe('playCard', () => {
       stock: [card(9, '♠', 1)],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0, standardDeckComposition(), Math.random, { kind: 'combo', maxCombo: 2, tierLabel: 'test-tier' })
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 100000000, 0, standardDeckComposition(), Math.random, { kind: 'combo', maxCombo: 2, tierLabel: 'test-tier' })
     expect(next.endReason).toBe('fullClear')
     expect(next.lastGain?.points).toBe(0)
     expect(next.score).toBe(wave.score)
@@ -1008,7 +1008,7 @@ describe('playCard', () => {
     const wave = baseWave({
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]], // ダミー列を残し全消しにならないようにする
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['purify'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['purify'], [], 1000000, 0, standardDeckComposition())
     expect(next.endReason).not.toBe('fullClear')
     expect(next.lastGain?.parts.map(p => p.text)).not.toContain('全消し基礎+' + scoring.clearBonus)
     const multiplier = 1 + 1 * scoring.comboMultiplierStep
@@ -1022,7 +1022,7 @@ describe('playCard', () => {
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
       frostX: 1.5,
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['purify', 'frost'], 100000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['purify', 'frost'], [], 100000000, 0, standardDeckComposition())
     expect(next.endReason).toBe('fullClear')
     const expectedClearBonus = scoring.clearBonus + 2 * scoring.clearBonusPerStock + DEFAULT_PARAMS.talismans.purify.n
     const expectedScore = Math.floor((scoring.basePoint + scoring.columnSweepBonus * 1 + expectedClearBonus) * 1.1 * 1.5)
@@ -1035,15 +1035,15 @@ describe('playCard', () => {
       stock: [card(9, '♠', 1), card(10, '♠', 2)],
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
     })
-    const { wave: order1 } = playCard(DEFAULT_PARAMS, wave, 'none', ['purify', 'temperance'], 100000000, 0, standardDeckComposition())
-    const { wave: order2 } = playCard(DEFAULT_PARAMS, wave, 'none', ['temperance', 'purify'], 100000000, 0, standardDeckComposition())
+    const { wave: order1 } = playCard(DEFAULT_PARAMS, wave, 'none', ['purify', 'temperance'], [], 100000000, 0, standardDeckComposition())
+    const { wave: order2 } = playCard(DEFAULT_PARAMS, wave, 'none', ['temperance', 'purify'], [], 100000000, 0, standardDeckComposition())
     expect(order1.score).not.toBe(order2.score)
   })
 
   test('複数のgained護符も所持順に適用される(conscience→courageとcourage→conscienceで結果が異なる)', () => {
     const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const { wave: order1 } = playCard(DEFAULT_PARAMS, wave, 'none', ['conscience', 'courage'], 1000000, 0, standardDeckComposition())
-    const { wave: order2 } = playCard(DEFAULT_PARAMS, wave, 'none', ['courage', 'conscience'], 1000000, 0, standardDeckComposition())
+    const { wave: order1 } = playCard(DEFAULT_PARAMS, wave, 'none', ['conscience', 'courage'], [], 1000000, 0, standardDeckComposition())
+    const { wave: order2 } = playCard(DEFAULT_PARAMS, wave, 'none', ['courage', 'conscience'], [], 1000000, 0, standardDeckComposition())
     expect(order1.score).not.toBe(order2.score)
     const comboMultiplier = 1 + 1 * scoring.comboMultiplierStep
     expect(order1.score).toBe(Math.floor((scoring.basePoint + DEFAULT_PARAMS.talismans.conscience.n) * (1 + 1 * DEFAULT_PARAMS.talismans.courage.x) * comboMultiplier))
@@ -1055,28 +1055,28 @@ describe('playCard', () => {
     const wave = baseWave({
       tableau: [[card(9, '♠', 7), card(1, '♣', 6)], [card(10, '♠', 2), card(2, '♦', 7)]],
     })
-    const { wave: first } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: first } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(first.sameColumnStreak).toBe(1)
     expect(first.lastPlayedColumn).toBe(0)
-    const { wave: second } = playCard(DEFAULT_PARAMS, first, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: second } = playCard(DEFAULT_PARAMS, first, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(second.sameColumnStreak).toBe(2)
     // 列1: 1回目で列0の6を取ったあと、列1の7が(上書き後の)foundation(6)と隣接するようにする
     const wave2 = baseWave({
       tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(10, '♠', 2), card(11, '♦', 7)]],
     })
-    const { wave: thirdSetup } = playCard(DEFAULT_PARAMS, wave2, 'none', [], 1000000, 0, standardDeckComposition())
-    const { wave: differentColumn } = playCard(DEFAULT_PARAMS, { ...thirdSetup, foundation: card(1, '♣', 6) }, 'none', [], 1000000, 1, standardDeckComposition())
+    const { wave: thirdSetup } = playCard(DEFAULT_PARAMS, wave2, 'none', [], [], 1000000, 0, standardDeckComposition())
+    const { wave: differentColumn } = playCard(DEFAULT_PARAMS, { ...thirdSetup, foundation: card(1, '♣', 6) }, 'none', [], [], 1000000, 1, standardDeckComposition())
     expect(differentColumn.sameColumnStreak).toBe(1)
     expect(differentColumn.lastPlayedColumn).toBe(1)
   })
 
   test('maxComboThisWaveはこれまでの最大コンボ数を保持する', () => {
     const wave = baseWave({ combo: 5, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]], maxComboThisWave: 5 })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.combo).toBe(6)
     expect(next.maxComboThisWave).toBe(6)
     const wave2 = baseWave({ combo: 2, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]], maxComboThisWave: 10 })
-    const { wave: next2 } = playCard(DEFAULT_PARAMS, wave2, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next2 } = playCard(DEFAULT_PARAMS, wave2, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next2.maxComboThisWave).toBe(10) // 既存の最大値の方が大きければ維持
   })
 
@@ -1087,7 +1087,7 @@ describe('playCard', () => {
       totalColumnsEmptiedThisWave: 3,
       columnSweepActiveThisWave: false,
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.totalColumnsEmptiedThisWave).toBe(4)
     expect(next.columnSweepActiveThisWave).toBe(true)
   })
@@ -1099,13 +1099,13 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 13)], [card(2, '♦', 2)]],
       roleFiredThisChain: false,
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.roleFiredThisChain).toBe(true)
   })
 
   test('playCardはrand引数を省略してもデフォルト(Math.random)で動作する(既存呼び出しの後方互換性)', () => {
     const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.combo).toBe(1)
   })
 
@@ -1115,7 +1115,7 @@ describe('playCard', () => {
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows, 1],
       discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3)],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['healing'], 1000000, 0, standardDeckComposition(), createRng(1))
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['healing'], [], 1000000, 0, standardDeckComposition(), createRng(1))
     expect(next.tableau[0]).toHaveLength(0) // まだ復活しない
     expect(next.sweptColumnsThisCombo).toEqual([{ colIndex: 0, startLength: DEFAULT_PARAMS.layout.rows }])
   })
@@ -1172,7 +1172,7 @@ describe('playCard', () => {
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
       discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3)],
     })
-    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], 100000000, 0, standardDeckComposition(), createRng(1))
+    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], [], 100000000, 0, standardDeckComposition(), createRng(1))
     expect(result.wave.status).toBe('playing')
     expect(result.wave.endReason).toBeNull()
     expect(result.wave.regenerationUsedThisWave).toBe(true)
@@ -1187,7 +1187,7 @@ describe('playCard', () => {
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
       discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3)],
     })
-    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], 100000000, 0, standardDeckComposition(), createRng(1))
+    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], [], 100000000, 0, standardDeckComposition(), createRng(1))
     expect(result.wave.status).toBe('ended')
     expect(result.wave.endReason).toBe('fullClear')
     expect(result.wave.regenerationUsedThisWave).toBe(false)
@@ -1203,7 +1203,7 @@ describe('playCard', () => {
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
       discardPile: [],
     })
-    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], 100000000, 0, standardDeckComposition(), createRng(1))
+    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], [], 100000000, 0, standardDeckComposition(), createRng(1))
     expect(result.wave.status).toBe('ended')
     expect(result.wave.endReason).toBe('fullClear')
   })
@@ -1216,7 +1216,7 @@ describe('playCard', () => {
       discardPile: [card(10, '♦', 1)],
       regenerationUsedThisWave: true,
     })
-    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], 100000000, 0, standardDeckComposition(), createRng(1))
+    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], [], 100000000, 0, standardDeckComposition(), createRng(1))
     expect(result.wave.status).toBe('ended')
     expect(result.wave.endReason).toBe('fullClear')
   })
@@ -1228,7 +1228,7 @@ describe('playCard', () => {
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
       discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3)],
     })
-    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['healing', 'regeneration'], 100000000, 0, standardDeckComposition(), createRng(1))
+    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['healing', 'regeneration'], [], 100000000, 0, standardDeckComposition(), createRng(1))
     expect(result.wave.status).toBe('playing')
     expect(result.wave.regenerationUsedThisWave).toBe(false) // 治癒が先に場札を埋めたため再生は不発動
   })
@@ -1240,7 +1240,7 @@ describe('playCard', () => {
       comboStreakColumnLengths: [DEFAULT_PARAMS.layout.rows],
       discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3)],
     })
-    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration', 'healing'], 100000000, 0, standardDeckComposition(), createRng(1))
+    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration', 'healing'], [], 100000000, 0, standardDeckComposition(), createRng(1))
     expect(result.wave.status).toBe('playing')
     expect(result.wave.regenerationUsedThisWave).toBe(true)
   })
@@ -1253,7 +1253,7 @@ describe('playCard', () => {
       discardPile: [card(10, '♦', 1), card(11, '♦', 2), card(12, '♦', 3)],
     })
     const initialCardCount = wave.tableau.reduce((n, c) => n + c.length, 0) + wave.stock.length + wave.discardPile.length
-    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], 100000000, 0, standardDeckComposition(), createRng(1))
+    const result = playCard(DEFAULT_PARAMS, wave, 'none', ['regeneration'], [], 100000000, 0, standardDeckComposition(), createRng(1))
     const allCardIds = [
       ...result.wave.tableau.flat().map(c => c.id),
       ...result.wave.discardPile.map(c => c.id),
@@ -1266,28 +1266,28 @@ describe('playCard', () => {
 
   test('黄金: コンボが+1ではなく+2進む', () => {
     const wave = baseWave({ combo: 3, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['golden'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['golden'], [], 1000000, 0, standardDeckComposition())
     expect(next.combo).toBe(5)
   })
 
   test('黄金を持たなければ通常通りコンボは+1', () => {
     const wave = baseWave({ combo: 3, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.combo).toBe(4)
   })
 
   test('庇護: コンボ数(計算用)がc未満ならcとして計算される', () => {
     const wave = baseWave({ combo: 0, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
     // combo=0でプレイするとnewCombo=1。庇護c=3未満なので一時comboは3として計算される。
-    const { wave: withProtection } = playCard(DEFAULT_PARAMS, wave, 'none', ['protection'], 1000000, 0, standardDeckComposition())
-    const { wave: without } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: withProtection } = playCard(DEFAULT_PARAMS, wave, 'none', ['protection'], [], 1000000, 0, standardDeckComposition())
+    const { wave: without } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(withProtection.score).toBeGreaterThan(without.score)
   })
 
   test('大地: コンボ数(計算用)に常にcが加算される', () => {
     const wave = baseWave({ combo: 5, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const { wave: withEarth } = playCard(DEFAULT_PARAMS, wave, 'none', ['earth'], 1000000, 0, standardDeckComposition())
-    const { wave: without } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: withEarth } = playCard(DEFAULT_PARAMS, wave, 'none', ['earth'], [], 1000000, 0, standardDeckComposition())
+    const { wave: without } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(withEarth.score).toBeGreaterThan(without.score)
     // wave.combo自体(実コンボ)は一時comboの影響を受けない
     expect(withEarth.combo).toBe(without.combo)
@@ -1297,9 +1297,9 @@ describe('playCard', () => {
     // combo=0でプレイ: newCombo=1。大地(c=2)が先に+2して一時combo=3。
     // 庇護(c=3)は「3 < 3」が偽なので不発化(3のまま)。
     const wave = baseWave({ combo: 0, tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const { wave: earthThenProtection } = playCard(DEFAULT_PARAMS, wave, 'none', ['earth', 'protection'], 1000000, 0, standardDeckComposition())
+    const { wave: earthThenProtection } = playCard(DEFAULT_PARAMS, wave, 'none', ['earth', 'protection'], [], 1000000, 0, standardDeckComposition())
     // 庇護→大地の順なら: newCombo=1→庇護でc=3に底上げ→大地で+2して5になる。より高スコアになるはず。
-    const { wave: protectionThenEarth } = playCard(DEFAULT_PARAMS, wave, 'none', ['protection', 'earth'], 1000000, 0, standardDeckComposition())
+    const { wave: protectionThenEarth } = playCard(DEFAULT_PARAMS, wave, 'none', ['protection', 'earth'], [], 1000000, 0, standardDeckComposition())
     expect(protectionThenEarth.score).toBeGreaterThan(earthThenProtection.score)
   })
 
@@ -1311,13 +1311,13 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
       baseComboCount: 0,
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['sanctify'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['sanctify'], [], 1000000, 0, standardDeckComposition())
     expect(next.baseComboCount).toBe(1)
     // 一時comboにも+1が反映されていることを、祝福あり/なしのスコア差で確認する
     // (庇護・大地のテストと同じ手法。baseComboCountの検証だけではeffectiveComboへの
     // 反映漏れを検知できないため)。
-    const { wave: withSanctify } = playCard(DEFAULT_PARAMS, wave, 'none', ['sanctify'], 1000000, 0, standardDeckComposition())
-    const { wave: without } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: withSanctify } = playCard(DEFAULT_PARAMS, wave, 'none', ['sanctify'], [], 1000000, 0, standardDeckComposition())
+    const { wave: without } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(withSanctify.score).toBeGreaterThan(without.score)
   })
 
@@ -1326,7 +1326,7 @@ describe('playCard', () => {
       tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
       baseComboCount: 2,
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['sanctify'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['sanctify'], [], 1000000, 0, standardDeckComposition())
     expect(next.baseComboCount).toBe(2)
   })
 
@@ -1336,8 +1336,8 @@ describe('playCard', () => {
       tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
       baseComboCount: 3,
     })
-    const { wave: withBase } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
-    const { wave: without } = playCard(DEFAULT_PARAMS, { ...wave, baseComboCount: 0 }, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: withBase } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
+    const { wave: without } = playCard(DEFAULT_PARAMS, { ...wave, baseComboCount: 0 }, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(withBase.score).toBeGreaterThan(without.score)
     // baseComboCount自体はプレイ後も変化しない(役成立時の祝福以外では増減しない)
     expect(withBase.baseComboCount).toBe(3)
@@ -1351,8 +1351,8 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
       roleOccurrenceCountThisWave: { flush: 3 },
     })
-    const { wave: withMorningStar } = playCard(DEFAULT_PARAMS, wave, 'none', ['morningStar'], 1000000, 0, standardDeckComposition())
-    const { wave: without } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: withMorningStar } = playCard(DEFAULT_PARAMS, wave, 'none', ['morningStar'], [], 1000000, 0, standardDeckComposition())
+    const { wave: without } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(withMorningStar.score).toBeGreaterThan(without.score)
   })
 
@@ -1363,7 +1363,7 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
       roleOccurrenceCountThisWave: { flush: 1 },
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['morningStar'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['morningStar'], [], 1000000, 0, standardDeckComposition())
     expect(next.roleOccurrenceCountThisWave.flush).toBe(2)
   })
 
@@ -1374,7 +1374,7 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
       roleOccurrenceCountThisWave: { flush: 1 },
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.roleOccurrenceCountThisWave.flush).toBe(2)
   })
 
@@ -1385,8 +1385,8 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
       sowiloActiveThisWave: true,
     })
-    const { wave: withSowilo } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
-    const { wave: without } = playCard(DEFAULT_PARAMS, { ...wave, sowiloActiveThisWave: false }, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: withSowilo } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
+    const { wave: without } = playCard(DEFAULT_PARAMS, { ...wave, sowiloActiveThisWave: false }, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(withSowilo.score).toBeGreaterThan(without.score)
     expect(withSowilo.sowiloBoostedRole).toBe('flush')
   })
@@ -1398,7 +1398,7 @@ describe('playCard', () => {
       sowiloActiveThisWave: true,
       sowiloBoostedRole: 'flush',
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.sowiloBoostedRole).toBe('flush')
   })
 
@@ -1418,7 +1418,7 @@ describe('playCard', () => {
       sowiloActiveThisWave: true,
       sowiloBoostedRole: null,
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.lastGain?.parts.map(p => p.text)).toContain(`コンプリートラン+${scoring.completeRunBonus * DEFAULT_PARAMS.rites.sowilo.x}`)
     expect(next.lastGain?.parts.map(p => p.text)).toContain(`コンプリートラン(同スート)+${scoring.completeRunSuitBonus * DEFAULT_PARAMS.rites.sowilo.x}`)
     expect(next.sowiloBoostedRole).toBe('completeRun')
@@ -1430,7 +1430,7 @@ describe('playCard', () => {
       chain: [card(20, '♥', 3), card(21, '♦', 4), card(22, '♠', 5)],
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], [], 1000000, 0, standardDeckComposition())
     expect(next.pendingRoleEcho).not.toBeNull()
     expect(next.pendingRoleEcho?.name).toBe('flush')
     expect(next.roleEchoUsedThisCombo.flush).toBe(true)
@@ -1441,7 +1441,7 @@ describe('playCard', () => {
       tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
       pendingRoleEcho: { name: 'flush', amount: 999 },
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], [], 1000000, 0, standardDeckComposition())
     expect(next.score).toBeGreaterThanOrEqual(999)
     expect(next.pendingRoleEcho).toBeNull()
   })
@@ -1453,7 +1453,7 @@ describe('playCard', () => {
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
       roleEchoUsedThisCombo: { flush: true },
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], [], 1000000, 0, standardDeckComposition())
     expect(next.pendingRoleEcho).toBeNull()
   })
 
@@ -1465,7 +1465,7 @@ describe('playCard', () => {
       sameRankEchoUsedThisCombo: [1], // 段階1(sameRankCount=1)は既に使用済み
     })
     // 今回のプレイでsameRankCount=2が成立する(段階1とは別枠なので予約可能なはず)
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['mirror'], [], 1000000, 0, standardDeckComposition())
     expect(next.pendingRoleEcho).not.toBeNull()
     expect(next.pendingRoleEcho?.name).toBe('sameRank')
     expect(next.sameRankEchoUsedThisCombo).toContain(2)
@@ -1479,8 +1479,8 @@ describe('playCard', () => {
       tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
       mercyActiveNextCombo: true,
     })
-    const { wave: withMercy } = playCard(DEFAULT_PARAMS, wave, 'none', ['mercy'], 1000000, 0, standardDeckComposition())
-    const { wave: without } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: withMercy } = playCard(DEFAULT_PARAMS, wave, 'none', ['mercy'], [], 1000000, 0, standardDeckComposition())
+    const { wave: without } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(withMercy.score).toBeGreaterThan(without.score)
   })
 
@@ -1492,7 +1492,7 @@ describe('playCard', () => {
       chain: [card(20, '♠', 3), card(21, '♠', 4)],
       tableau: [[card(1, '♠', 6)], [card(2, '♦', 2)]],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, [], 1000000, 0, standardDeckComposition())
     expect(next.lastGain?.parts.map(p => p.text)).toContain(`高潔+${DEFAULT_PARAMS.talismans.nobility.n}`)
   })
 
@@ -1513,7 +1513,7 @@ describe('playCard', () => {
       chain: [card(20, '♥', 3), card(21, '♦', 4)],
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, scoring.basePoint, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, [], scoring.basePoint, 0, standardDeckComposition())
     expect(next.status).toBe('ended')
     expect(next.endReason).toBe('target')
     expect(next.shootingStarN).toBe(50 + DEFAULT_PARAMS.talismans.shootingStar.n)
@@ -1521,7 +1521,7 @@ describe('playCard', () => {
 
   test('イサ: comboFrozenThisWave中はplayCardでもコンボ数が変わらない', () => {
     const wave = baseWave({ combo: 3, comboFrozenThisWave: true })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.combo).toBe(3)
   })
 
@@ -1532,7 +1532,7 @@ describe('playCard', () => {
       mannazActiveThisWave: true,
     })
     const items: ItemId[] = ['bridge']
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, [], 1000000, 0, standardDeckComposition())
     const weight: Record<'C' | 'U' | 'R', number> = { C: 1, U: 2, R: 4 }
     const weightSum = items.reduce((sum, id) => sum + weight[DEFAULT_PARAMS.talismans[id].rarity], 0)
     const mannazFactor = 1 + weightSum * DEFAULT_PARAMS.rites.mannaz.x
@@ -1548,7 +1548,7 @@ describe('playCard', () => {
       mannazActiveThisWave: true,
     })
     const items: ItemId[] = ['bridge']
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', items, [], 1000000, 0, standardDeckComposition())
     const weight: Record<'C' | 'U' | 'R', number> = { C: 1, U: 2, R: 4 }
     const weightSum = items.reduce((sum, id) => sum + weight[DEFAULT_PARAMS.talismans[id].rarity], 0)
     const mannazFactor = 1 + weightSum * DEFAULT_PARAMS.rites.mannaz.x
@@ -1561,7 +1561,7 @@ describe('playCard', () => {
       foundation: card(0, '♠', 5),
       tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['bridge'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['bridge'], [], 1000000, 0, standardDeckComposition())
     expect(next.score).toBe(Math.floor(scoring.basePoint * 1.1))
   })
 
@@ -1570,7 +1570,7 @@ describe('playCard', () => {
       tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]],
       nextPlayScoreMultiplier: 1.5,
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     const comboMultiplier = 1 + 1 * scoring.comboMultiplierStep
     expect(next.score).toBe(Math.floor(scoring.basePoint * comboMultiplier * 1.5))
     expect(next.nextPlayScoreMultiplier).toBe(1)
@@ -1578,7 +1578,7 @@ describe('playCard', () => {
 
   test('スリサズ未発動時(nextPlayScoreMultiplierが既定1)は得点に影響しない', () => {
     const wave = baseWave({ tableau: [[card(9, '♠', 1), card(1, '♣', 6)], [card(2, '♦', 2)]] })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     const comboMultiplier = 1 + 1 * scoring.comboMultiplierStep
     expect(next.score).toBe(Math.floor(scoring.basePoint * comboMultiplier))
   })
@@ -1588,8 +1588,8 @@ describe('playCard', () => {
       stock: [],
       comboFrozenThisWave: true, // コンボ倍率をかけず単純倍算のみを検証するため固定
     })
-    const withoutArrogance = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
-    const withArrogance = playCard(DEFAULT_PARAMS, wave, 'none', ['arrogance'], 1000000, 0, standardDeckComposition())
+    const withoutArrogance = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
+    const withArrogance = playCard(DEFAULT_PARAMS, wave, 'none', ['arrogance'], [], 1000000, 0, standardDeckComposition())
     expect(withArrogance.wave.score).toBe(Math.floor(withoutArrogance.wave.score * DEFAULT_PARAMS.talismans.arrogance.x))
   })
 
@@ -1598,8 +1598,8 @@ describe('playCard', () => {
       stock: [card(9, '♠', 9)],
       comboFrozenThisWave: true,
     })
-    const withoutArrogance = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
-    const withArrogance = playCard(DEFAULT_PARAMS, wave, 'none', ['arrogance'], 1000000, 0, standardDeckComposition())
+    const withoutArrogance = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
+    const withArrogance = playCard(DEFAULT_PARAMS, wave, 'none', ['arrogance'], [], 1000000, 0, standardDeckComposition())
     expect(withArrogance.wave.score).toBe(withoutArrogance.wave.score)
   })
 
@@ -1612,7 +1612,7 @@ describe('playCard', () => {
         tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
         combo: 1, // このプレイでnewCombo=2、baseComboCount=0によりeffectiveCombo=2
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'combo', maxCombo: 2, tierLabel: 'test-tier' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'combo', maxCombo: 2, tierLabel: 'test-tier' })
       expect(next.score).toBe(wave.score)
       expect(next.lastGain?.points).toBe(0)
     })
@@ -1623,7 +1623,7 @@ describe('playCard', () => {
         tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
         combo: 1, // このプレイでnewCombo=2、baseComboCount=0によりeffectiveCombo=2
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'combo', maxCombo: 2, tierLabel: 'test-tier' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'combo', maxCombo: 2, tierLabel: 'test-tier' })
       expect(next.lastGain?.parts).toHaveLength(1)
       expect(next.lastGain?.parts[0]).toEqual({ label: 'test-tier: 獲得点0', kind: 'lock', amount: 0, text: 'test-tier: 獲得点0' })
     })
@@ -1634,7 +1634,7 @@ describe('playCard', () => {
         tableau: [[card(1, '♣', 6)]],
         combo: 2, // このプレイでnewCombo=3、effectiveCombo=3 > maxCombo(2)
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'combo', maxCombo: 2, tierLabel: 'test-tier' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'combo', maxCombo: 2, tierLabel: 'test-tier' })
       expect(next.lastGain?.points).toBeGreaterThan(0)
     })
 
@@ -1645,7 +1645,7 @@ describe('playCard', () => {
         foundation: card(0, '♠', 5),
         tableau: [[card(1, '♠', 6)], [card(2, '♦', 2)]],
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'suit', suit: '♠', tierLabel: 'test-tier' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'suit', suit: '♠', tierLabel: 'test-tier' })
       expect(next.score).toBe(wave.score)
       expect(next.lastGain?.points).toBe(0)
     })
@@ -1655,7 +1655,7 @@ describe('playCard', () => {
         foundation: card(0, '♠', 5),
         tableau: [[card(1, '♥', 6)]],
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'suit', suit: '♠', tierLabel: 'test-tier' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'suit', suit: '♠', tierLabel: 'test-tier' })
       expect(next.lastGain?.points).toBeGreaterThan(0)
     })
 
@@ -1664,7 +1664,7 @@ describe('playCard', () => {
         foundation: card(0, '♠', 5),
         tableau: [[card(1, '★', 0, true)]],
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'suit', suit: '♠', tierLabel: 'test-tier' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'suit', suit: '♠', tierLabel: 'test-tier' })
       expect(next.lastGain?.points).toBeGreaterThan(0)
     })
 
@@ -1673,7 +1673,7 @@ describe('playCard', () => {
         foundation: card(0, '♠', 5),
         tableau: [[card(1, '♣', 6)]],
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
       expect(next.lastGain?.points).toBeGreaterThan(0)
     })
 
@@ -1686,7 +1686,7 @@ describe('playCard', () => {
         tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
         combo: 0, // このプレイでnewCombo=1、baseComboCount=0によりeffectiveCombo=1(奇数)
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, oddWave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'oddCombo', tierLabel: 'test-tier' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, oddWave, 'none', [], [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'oddCombo', tierLabel: 'test-tier' })
       expect(next.score).toBe(oddWave.score)
       expect(next.lastGain?.points).toBe(0)
     })
@@ -1697,7 +1697,7 @@ describe('playCard', () => {
         tableau: [[card(1, '♣', 6)]],
         combo: 1, // このプレイでnewCombo=2、effectiveCombo=2(偶数)
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'oddCombo', tierLabel: 'test-tier' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'oddCombo', tierLabel: 'test-tier' })
       expect(next.lastGain?.points).toBeGreaterThan(0)
     })
 
@@ -1709,7 +1709,7 @@ describe('playCard', () => {
         foundation: card(0, '♠', 12), // Q
         tableau: [[card(1, '♠', 13)], [card(2, '♦', 2)]], // K、ランク差1で取れる、かつ絵札
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'face', tierLabel: 'test-tier' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'face', tierLabel: 'test-tier' })
       expect(next.score).toBe(wave.score)
       expect(next.lastGain?.points).toBe(0)
     })
@@ -1719,7 +1719,7 @@ describe('playCard', () => {
         foundation: card(0, '♠', 5),
         tableau: [[card(1, '♣', 6)]], // 絵札ではない
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'face', tierLabel: 'test-tier' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'face', tierLabel: 'test-tier' })
       expect(next.lastGain?.points).toBeGreaterThan(0)
     })
 
@@ -1728,7 +1728,7 @@ describe('playCard', () => {
         foundation: card(0, '♠', 5),
         tableau: [[card(1, '★', 0, true)]],
       })
-      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'face', tierLabel: 'test-tier' })
+      const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), Math.random, { kind: 'face', tierLabel: 'test-tier' })
       expect(next.lastGain?.points).toBeGreaterThan(0)
     })
   })
@@ -2049,8 +2049,8 @@ describe('drawStock', () => {
       echoX: 2,
       comboFrozenThisWave: true, // コンボ倍率をかけず単純倍算のみを検証するため固定
     })
-    const withoutEcho = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
-    const withEcho = playCard(DEFAULT_PARAMS, wave, 'none', ['echo'], 1000000, 0, standardDeckComposition())
+    const withoutEcho = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
+    const withEcho = playCard(DEFAULT_PARAMS, wave, 'none', ['echo'], [], 1000000, 0, standardDeckComposition())
     expect(withEcho.wave.score).toBe(withoutEcho.wave.score * 2)
   })
 
@@ -2087,8 +2087,8 @@ describe('drawStock', () => {
       echoX: 2,
       shootingStarN: 80,
     })
-    const withoutItems = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
-    const withItems = playCard(DEFAULT_PARAMS, wave, 'none', ['arrogance', 'shootingStar', 'echo'], 1000000, 0, standardDeckComposition())
+    const withoutItems = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
+    const withItems = playCard(DEFAULT_PARAMS, wave, 'none', ['arrogance', 'shootingStar', 'echo'], [], 1000000, 0, standardDeckComposition())
     const expectedGained = Math.floor((withoutItems.wave.score + wave.shootingStarN) * wave.echoX * DEFAULT_PARAMS.talismans.arrogance.x)
     expect(withItems.wave.score).toBe(expectedGained)
   })
@@ -3834,7 +3834,7 @@ describe('献身(dedication): フラッシュ成立ごとにdedicationXが積み
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
       dedicationX: 1,
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['dedication'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['dedication'], [], 1000000, 0, standardDeckComposition())
     expect(next.dedicationX).toBeCloseTo(1 + DEFAULT_PARAMS.talismans.dedication.n)
   })
 
@@ -3845,7 +3845,7 @@ describe('献身(dedication): フラッシュ成立ごとにdedicationXが積み
       tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
       dedicationX: 1,
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.dedicationX).toBe(1)
   })
 
@@ -3856,7 +3856,7 @@ describe('献身(dedication): フラッシュ成立ごとにdedicationXが積み
       tableau: [[card(1, '♠', 6)], [card(2, '♦', 2)]],
       dedicationX: 1,
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['dedication'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['dedication'], [], 1000000, 0, standardDeckComposition())
     expect(next.dedicationX).toBe(1)
   })
 })
@@ -3871,7 +3871,7 @@ describe('勤勉(diligence): 同ランク成立ごとにdiligenceXが積み上�
       tableau: [[card(1, '♦', 7)], [card(2, '♦', 2)]],
       diligenceX: 1,
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['diligence'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['diligence'], [], 1000000, 0, standardDeckComposition())
     expect(next.diligenceX).toBeCloseTo(1 + DEFAULT_PARAMS.talismans.diligence.n)
   })
 
@@ -3882,7 +3882,7 @@ describe('勤勉(diligence): 同ランク成立ごとにdiligenceXが積み上�
       tableau: [[card(1, '♦', 7)], [card(2, '♦', 2)]],
       diligenceX: 1,
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.diligenceX).toBe(1)
   })
 
@@ -3893,7 +3893,7 @@ describe('勤勉(diligence): 同ランク成立ごとにdiligenceXが積み上�
       tableau: [[card(1, '♦', 7)], [card(2, '♦', 2)]],
       diligenceX: 1,
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['diligence'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['diligence'], [], 1000000, 0, standardDeckComposition())
     expect(next.diligenceX).toBe(1)
   })
 })
@@ -3908,7 +3908,7 @@ describe('加護(divineProtection): ロイヤルセット成立ごとにdivinePr
       tableau: [[card(1, '♣', 13)], [card(2, '♦', 2)]],
       divineProtectionX: 1,
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['divineProtection'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['divineProtection'], [], 1000000, 0, standardDeckComposition())
     expect(next.divineProtectionX).toBeCloseTo(1 + DEFAULT_PARAMS.talismans.divineProtection.n)
   })
 
@@ -3919,7 +3919,7 @@ describe('加護(divineProtection): ロイヤルセット成立ごとにdivinePr
       tableau: [[card(1, '♣', 13)], [card(2, '♦', 2)]],
       divineProtectionX: 1,
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.divineProtectionX).toBe(1)
   })
 
@@ -3930,7 +3930,7 @@ describe('加護(divineProtection): ロイヤルセット成立ごとにdivinePr
       tableau: [[card(1, '♦', 7)], [card(2, '♦', 2)]],
       divineProtectionX: 1,
     })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['divineProtection'], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', ['divineProtection'], [], 1000000, 0, standardDeckComposition())
     expect(next.divineProtectionX).toBe(1)
   })
 })
@@ -4045,7 +4045,7 @@ describe('エイワズ(コンボリセット防止)とdrawStock/applyStuckCheck�
     })
     const initialTotal =
       wave.tableau.reduce((n, col) => n + col.length, 0) + wave.stock.length + wave.chain.length + wave.discardPile.length
-    const result = playCard(DEFAULT_PARAMS, wave, 'none', [], 100000000, 0, standardDeckComposition(), createRng(1))
+    const result = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 100000000, 0, standardDeckComposition(), createRng(1))
     const totalCards = (w: WaveState) =>
       w.tableau.reduce((n, col) => n + col.length, 0) + w.stock.length + w.chain.length + w.discardPile.length
     expect(totalCards(result.wave)).toBe(initialTotal)
@@ -4931,19 +4931,19 @@ describe('妨害のターンカウントダウン', () => {
 
   test('playCardで有効なプレイをするとsabotageTurnsRemainingが1減る', () => {
     const wave = waveWithPendingSabotage()
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.sabotageTurnsRemaining).toBe(2)
   })
 
   test('playCardが不正なプレイ(空列)で早期returnした場合はカウントダウンしない', () => {
     const wave = waveWithPendingSabotage()
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 1, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 1, standardDeckComposition())
     expect(next.sabotageTurnsRemaining).toBe(3)
   })
 
   test('pendingSabotageIdがnullならカウントダウンしない(sabotageTurnsRemainingは0のまま)', () => {
     const wave = waveWithPendingSabotage({ pendingSabotageId: null, sabotageTurnsRemaining: 0 })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition())
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition())
     expect(next.sabotageTurnsRemaining).toBe(0)
   })
 })
@@ -4957,8 +4957,8 @@ describe('役封印のoracleLevelへの反映(playCard)', () => {
       chain: [card(20, '♥', 11), card(21, '♦', 12)],
       tableau: [[card(1, '♣', 13)], [card(2, '♦', 2)]],
     })
-    const withoutSeal = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), () => 0.5)
-    const withSeal = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), () => 0.5, null, undefined, { zeroRoles: ['royalSet'], oracleBaselineRole: null })
+    const withoutSeal = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), () => 0.5)
+    const withSeal = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), () => 0.5, null, undefined, { zeroRoles: ['royalSet'], oracleBaselineRole: null })
     expect(withoutSeal.wave.score).toBeGreaterThan(withSeal.wave.score)
   })
 })
@@ -4970,8 +4970,8 @@ describe('役偏重(roleBias)のoracleLevelへの反映(playCard)', () => {
       chain: [card(20, '♥', 11), card(21, '♦', 12)],
       tableau: [[card(1, '♣', 13)], [card(2, '♦', 2)]],
     })
-    const baseline = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), () => 0.5)
-    const buffed = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), () => 0.5, null, undefined, { zeroRoles: [], oracleBaselineRole: null, multipliers: { royalSet: 2 } })
+    const baseline = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), () => 0.5)
+    const buffed = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), () => 0.5, null, undefined, { zeroRoles: [], oracleBaselineRole: null, multipliers: { royalSet: 2 } })
     expect(buffed.wave.score).toBeGreaterThan(baseline.wave.score)
   })
 
@@ -4981,8 +4981,8 @@ describe('役偏重(roleBias)のoracleLevelへの反映(playCard)', () => {
       chain: [card(20, '♥', 11), card(21, '♦', 12)],
       tableau: [[card(1, '♣', 13)], [card(2, '♦', 2)]],
     })
-    const baseline = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), () => 0.5)
-    const nerfed = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), () => 0.5, null, undefined, { zeroRoles: [], oracleBaselineRole: null, multipliers: { royalSet: 0.5 } })
+    const baseline = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), () => 0.5)
+    const nerfed = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), () => 0.5, null, undefined, { zeroRoles: [], oracleBaselineRole: null, multipliers: { royalSet: 0.5 } })
     expect(nerfed.wave.score).toBeLessThan(baseline.wave.score)
   })
 })
@@ -4993,13 +4993,13 @@ describe('comboCapのplayCard/drawStockへのクランプ', () => {
   // そのため他のplayCard単体テスト同様、makeWaveで確実にプレイ可能な組み合わせを明示的に組み立てる。
   it('playCard: comboCapを渡すと、コンボが上限でクランプされる', () => {
     const wave = makeWave({ foundation: card(0, '♠', 5), tableau: [[card(1, '♠', 6)], [card(2, '♦', 2)]], combo: 3 })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), () => 0.5, null, undefined, { zeroRoles: [], oracleBaselineRole: null }, 3)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), () => 0.5, null, undefined, { zeroRoles: [], oracleBaselineRole: null }, 3)
     expect(next.combo).toBeLessThanOrEqual(3)
   })
 
   it('playCard: comboCapがnullなら通常通り増加する', () => {
     const wave = makeWave({ foundation: card(0, '♠', 5), tableau: [[card(1, '♠', 6)], [card(2, '♦', 2)]], combo: 3 })
-    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], 1000000, 0, standardDeckComposition(), () => 0.5)
+    const { wave: next } = playCard(DEFAULT_PARAMS, wave, 'none', [], [], 1000000, 0, standardDeckComposition(), () => 0.5)
     expect(next.combo).toBe(4)
   })
 })
@@ -6060,5 +6060,27 @@ describe('賞金・祝儀のランダム対象再抽選', () => {
     expect(typeof a?.randomTarget).toBe('number')
     expect(typeof b?.randomTarget).toBe('number')
     // 両方とも有効な値であることのみ検証(偶然同じ値になっても許容)
+  })
+})
+
+describe('賞金・僥倖・祝儀: プレイ中currency加算', () => {
+  test('賞金所持中、randomTargetと同じランクをプレイするとcurrencyが加算される', () => {
+    // isPlayableの制約(foundationとのランク差1)を満たすため、makeWaveで手動構築したwave
+    // (方向性1の「プレイ中トリガー」テスト群と同じ手法)を使う。foundationを5にし、
+    // randomTarget=6のカードをプレイして賞金を発火させる。
+    const wave = makeWave({
+      foundation: card(0, '♠', 5),
+      tableau: [[card(1, '♣', 6)], [card(2, '♦', 2)]],
+    })
+    const run: RunState = {
+      ...createInitialRun(),
+      phase: 'playing',
+      wave,
+      items: [{ instanceId: 1, id: 'prizeMoney' as const, randomTarget: 6 as const }],
+      nextInstanceId: 2,
+      currency: 0,
+    }
+    const result = applyPlayCard(DEFAULT_PARAMS, run, 0, createRng(1))
+    expect(result.currency).toBe(DEFAULT_PARAMS.talismans.prizeMoney.n)
   })
 })

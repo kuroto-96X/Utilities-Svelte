@@ -17,7 +17,7 @@ import { rollShop, itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, rev
 import { itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity, relicWaveEndBonus, relicRerollCostStep, relicFirstRerollFree, RELIC_POOL } from './relics'
 import { resetComboFields } from './waveReset'
 import { applySabotageEffect } from './sabotageEffects'
-import { resolvePlayTriggeredRewardTalismans, type RewardTalismanTriggerResult, type PlayTriggerContext } from './rewardTalismanEffects'
+import { resolvePlayTriggeredRewardTalismans, type RewardTalismanTriggerResult, type PlayTriggerContext, resolvePlayTriggeredCurrencyGain, type CurrencyGainTriggerContext } from './rewardTalismanEffects'
 
 const RANK_LABEL: Record<number, string> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }
 
@@ -341,6 +341,7 @@ export function playCard(
   wave: WaveState,
   modifier: StageModifier,
   items: ItemId[],
+  heldItems: HeldItem[],
   target: number,
   colIndex: number,
   deckComposition: DeckCard[],
@@ -349,17 +350,17 @@ export function playCard(
   rowIndex?: number,
   sealedRoleEffect: SealedRoleEffect = { zeroRoles: [], oracleBaselineRole: null },
   comboCap: number | null = null
-): { wave: WaveState; deckComposition: DeckCard[]; rewardTalismanTrigger: RewardTalismanTriggerResult } {
+): { wave: WaveState; deckComposition: DeckCard[]; rewardTalismanTrigger: RewardTalismanTriggerResult; currencyGain: number } {
   const noTrigger: RewardTalismanTriggerResult = { triggeredIds: [], amounts: {} }
-  if (wave.status !== 'playing') return { wave, deckComposition, rewardTalismanTrigger: noTrigger }
+  if (wave.status !== 'playing') return { wave, deckComposition, rewardTalismanTrigger: noTrigger, currencyGain: 0 }
   const col = wave.tableau[colIndex]
-  if (!col || col.length === 0) return { wave, deckComposition, rewardTalismanTrigger: noTrigger }
+  if (!col || col.length === 0) return { wave, deckComposition, rewardTalismanTrigger: noTrigger, currencyGain: 0 }
   const row = rowIndex ?? col.length - 1
   // アルギズ非発動中は一番上以外の行を指定しても無視する(不正なプレイを防ぐガード)
-  if (row !== col.length - 1 && !wave.playFromAnywhereActiveThisWave) return { wave, deckComposition, rewardTalismanTrigger: noTrigger }
+  if (row !== col.length - 1 && !wave.playFromAnywhereActiveThisWave) return { wave, deckComposition, rewardTalismanTrigger: noTrigger, currencyGain: 0 }
   const card = col[row]
-  if (!card) return { wave, deckComposition, rewardTalismanTrigger: noTrigger }
-  if (!isPlayable(modifier, wave, card, items)) return { wave, deckComposition, rewardTalismanTrigger: noTrigger }
+  if (!card) return { wave, deckComposition, rewardTalismanTrigger: noTrigger, currencyGain: 0 }
+  if (!isPlayable(modifier, wave, card, items)) return { wave, deckComposition, rewardTalismanTrigger: noTrigger, currencyGain: 0 }
 
   // 黄金: 通常のコンボ加算処理そのものを+1ではなく+2にする(他の護符には無干渉)
   // イサ(凍結)発動中は加算自体を行わない。コンボ頭打ち(妨害)発動中はcomboCapで上限クランプする
@@ -547,6 +548,9 @@ export function playCard(
   }
   const rewardTalismanTrigger = resolvePlayTriggeredRewardTalismans(params, items, rewardTalismanCtx)
 
+  const currencyGainCtx: CurrencyGainTriggerContext = { card, roleFired }
+  const currencyGainResult = resolvePlayTriggeredCurrencyGain(params, heldItems, currencyGainCtx, rand)
+
   const discretionAdd = items.includes('discretion') ? wave.discretionN : 0
   if (discretionAdd !== 0) parts.push(addPart('果断', discretionAdd))
   const shootingStarGainedAdd = items.includes('shootingStar') ? wave.shootingStarN : 0
@@ -645,7 +649,7 @@ export function playCard(
 
   // gained確定時点(全消しボーナス込み)で目標達成なら即座に終了する。
   if (targetReachedOnGained) {
-    return { wave: { ...next, status: 'ended', endReason: 'target' }, deckComposition, rewardTalismanTrigger }
+    return { wave: { ...next, status: 'ended', endReason: 'target' }, deckComposition, rewardTalismanTrigger, currencyGain: currencyGainResult.totalGain }
   }
 
   if (isFullClear) {
@@ -685,22 +689,23 @@ export function playCard(
     if (remainingCount(resetWave.tableau) > 0) {
       if (resetWave.stock.length > 0) {
         // drawStock(山札からの自動継続処理)はプレイ操作ではないため、新規のプレイ中トリガー護符
-        // (方向性1の14種)の判定対象にはならない。ここでは直前に計算済みのrewardTalismanTriggerを
-        // そのまま引き継ぐだけで、drawStock専用の再判定は行わない。
+        // (方向性1の14種、および方向性2の賞金・僥倖・祝儀)の判定対象にはならない。ここでは直前に
+        // 計算済みのrewardTalismanTrigger・currencyGainをそのまま引き継ぐだけで、drawStock専用の
+        // 再判定は行わない。
         const drawResult = drawStock(params, resetWave, items, target, deckComposition, modifier, rand, scoreLock, sealedRoleEffect, comboCap)
-        return { ...drawResult, rewardTalismanTrigger }
+        return { ...drawResult, rewardTalismanTrigger, currencyGain: currencyGainResult.totalGain }
       }
-      return { wave: resetWave, deckComposition, rewardTalismanTrigger }
+      return { wave: resetWave, deckComposition, rewardTalismanTrigger, currencyGain: currencyGainResult.totalGain }
     }
 
-    return { wave: { ...resetWave, status: 'ended', endReason: 'fullClear' }, deckComposition, rewardTalismanTrigger }
+    return { wave: { ...resetWave, status: 'ended', endReason: 'fullClear' }, deckComposition, rewardTalismanTrigger, currencyGain: currencyGainResult.totalGain }
   }
 
   if (newScore >= target) {
-    return { wave: { ...next, status: 'ended', endReason: 'target' }, deckComposition, rewardTalismanTrigger }
+    return { wave: { ...next, status: 'ended', endReason: 'target' }, deckComposition, rewardTalismanTrigger, currencyGain: currencyGainResult.totalGain }
   }
 
-  return { wave: next, deckComposition, rewardTalismanTrigger }
+  return { wave: next, deckComposition, rewardTalismanTrigger, currencyGain: currencyGainResult.totalGain }
 }
 
 export function drawStock(
@@ -1865,9 +1870,9 @@ export function applyPlayCard(params: ShidasuParams, run: RunState, colIndex: nu
   if (run.phase !== 'playing' || !run.wave) return run
   const modifier = stageModifierFor(params, run)
   const { target, scoreLock, effectiveItems, sealedRoleEffect, comboCap } = resolvePlayContext(params, run, run.wave)
-  const { wave, deckComposition, rewardTalismanTrigger } = playCard(params, run.wave, modifier, effectiveItems, target, colIndex, run.deckComposition, rand, scoreLock, rowIndex, sealedRoleEffect, comboCap)
+  const { wave, deckComposition, rewardTalismanTrigger, currencyGain } = playCard(params, run.wave, modifier, effectiveItems, run.items, target, colIndex, run.deckComposition, rand, scoreLock, rowIndex, sealedRoleEffect, comboCap)
   const items = applyRewardTalismanTrigger(run.items, rewardTalismanTrigger)
-  return resolveActionSabotage(params, { ...run, wave, deckComposition, items }, wave, rand)
+  return resolveActionSabotage(params, { ...run, wave, deckComposition, items, currency: run.currency + currencyGain }, wave, rand)
 }
 
 // トリガーが成立した護符idについて、所持する全個体のsellBonusへ加算する(同名複数所持時は全個体に適用)。

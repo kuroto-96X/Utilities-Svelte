@@ -1,7 +1,7 @@
 // src/lib/game/shidasu/rewardTalismanEffects.ts
-import type { Card, ItemId, RoleName } from './types'
+import type { Card, ItemId, RoleName, HeldItem } from './types'
 import type { ShidasuParams } from './params'
-import { analyzeStair, analyzeSuitColor, analyzeAlternatingColor } from './patterns'
+import { analyzeStair, analyzeSuitColor, analyzeAlternatingColor, isFace } from './patterns'
 
 export interface PlayTriggerContext {
   card: Card
@@ -122,4 +122,35 @@ export function resolvePlayTriggeredRewardTalismans(
   }
 
   return { triggeredIds, amounts }
+}
+
+export interface CurrencyGainTriggerContext {
+  card: Card
+  roleFired: { name: RoleName; usedWild: boolean; amount: number }[]
+}
+
+export interface CurrencyGainTriggerResult {
+  totalGain: number
+}
+
+// プレイ中に即座にcurrency(星片)へ加算される、方向性2の3種(賞金・僥倖・祝儀)を判定する。
+// 賞金・祝儀はHeldItem.randomTarget(ウェーブ開始時にinstanceIdごと再抽選済み)を参照するため、
+// heldはItemId[]ではなくHeldItem[]全体を受け取る。同名複数所持時は個体ごとに独立して判定・加算する。
+export function resolvePlayTriggeredCurrencyGain(
+  params: ShidasuParams,
+  held: HeldItem[],
+  ctx: CurrencyGainTriggerContext,
+  rand: () => number = Math.random
+): CurrencyGainTriggerResult {
+  let totalGain = 0
+  for (const h of held) {
+    if (h.id === 'prizeMoney' && !ctx.card.wild && h.randomTarget === ctx.card.rank) {
+      totalGain += params.talismans.prizeMoney.n
+    } else if (h.id === 'windfall' && isFace(ctx.card)) {
+      if (rand() * 100 < params.talismans.windfall.p) totalGain += params.talismans.windfall.n
+    } else if (h.id === 'celebration' && ctx.roleFired.some(r => r.name === h.randomTarget)) {
+      totalGain += params.talismans.celebration.n
+    }
+  }
+  return { totalGain }
 }

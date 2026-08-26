@@ -142,7 +142,7 @@
   }
 
   function handlePlayCard(colIndex: number, rowIndex: number) {
-    const result = playCard(params, wave, 'none', items.map(h => h.id), TARGET, colIndex, deckComposition, Math.random, null, rowIndex)
+    const result = playCard(params, wave, 'none', items.map(h => h.id), items, TARGET, colIndex, deckComposition, Math.random, null, rowIndex)
     wave = result.wave
     deckComposition = result.deckComposition
     lastSnapshot = null

@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest'
 import { DEFAULT_PARAMS } from './params'
-import { resolvePlayTriggeredRewardTalismans, type PlayTriggerContext } from './rewardTalismanEffects'
+import { resolvePlayTriggeredRewardTalismans, type PlayTriggerContext, resolvePlayTriggeredCurrencyGain, type CurrencyGainTriggerContext } from './rewardTalismanEffects'
 import type { Card } from './types'
 
 const card = (suit: Card['suit'], rank: Card['rank'], wild = false): Card => ({ id: 1, deckId: 1, suit, rank, wild })
@@ -167,5 +167,69 @@ describe('resolvePlayTriggeredRewardTalismans', () => {
     const ctx = baseCtx({ card: card('♠', 1), remainingTableauCountAfter: 0 })
     const result = resolvePlayTriggeredRewardTalismans(DEFAULT_PARAMS, ['hiddenTreasure', 'harvest'], ctx)
     expect(result.triggeredIds).toEqual(expect.arrayContaining(['hiddenTreasure', 'harvest']))
+  })
+})
+
+describe('resolvePlayTriggeredCurrencyGain', () => {
+  function baseCurrencyCtx(overrides: Partial<CurrencyGainTriggerContext> = {}): CurrencyGainTriggerContext {
+    return {
+      card: card('♠', 5),
+      roleFired: [],
+      ...overrides,
+    }
+  }
+
+  test('賞金: プレイしたカードのランクがrandomTargetと一致すればcurrency加算対象になる', () => {
+    const held = [{ instanceId: 1, id: 'prizeMoney' as const, randomTarget: 5 as const }]
+    const ctx = baseCurrencyCtx({ card: card('♠', 5) })
+    const result = resolvePlayTriggeredCurrencyGain(DEFAULT_PARAMS, held, ctx, () => 0.99)
+    expect(result.totalGain).toBe(DEFAULT_PARAMS.talismans.prizeMoney.n)
+  })
+
+  test('賞金: ランクが一致しなければcurrency加算されない', () => {
+    const held = [{ instanceId: 1, id: 'prizeMoney' as const, randomTarget: 5 as const }]
+    const ctx = baseCurrencyCtx({ card: card('♠', 6) })
+    const result = resolvePlayTriggeredCurrencyGain(DEFAULT_PARAMS, held, ctx, () => 0.99)
+    expect(result.totalGain).toBe(0)
+  })
+
+  test('僥倖: J/Q/Kプレイ時、確率roll次第でcurrency加算される', () => {
+    const held = [{ instanceId: 1, id: 'windfall' as const }]
+    const ctx = baseCurrencyCtx({ card: card('♠', 13) })
+    const resultHit = resolvePlayTriggeredCurrencyGain(DEFAULT_PARAMS, held, ctx, () => 0)
+    expect(resultHit.totalGain).toBe(DEFAULT_PARAMS.talismans.windfall.n)
+    const resultMiss = resolvePlayTriggeredCurrencyGain(DEFAULT_PARAMS, held, ctx, () => 0.99)
+    expect(resultMiss.totalGain).toBe(0)
+  })
+
+  test('僥倖: J/Q/K以外では確率判定自体が発生しない', () => {
+    const held = [{ instanceId: 1, id: 'windfall' as const }]
+    const ctx = baseCurrencyCtx({ card: card('♠', 5) })
+    const result = resolvePlayTriggeredCurrencyGain(DEFAULT_PARAMS, held, ctx, () => 0)
+    expect(result.totalGain).toBe(0)
+  })
+
+  test('祝儀: 成立した役がrandomTargetと一致すればcurrency加算対象になる', () => {
+    const held = [{ instanceId: 1, id: 'celebration' as const, randomTarget: 'flush' as const }]
+    const ctx = baseCurrencyCtx({ roleFired: [{ name: 'flush', usedWild: false, amount: 10 }] })
+    const result = resolvePlayTriggeredCurrencyGain(DEFAULT_PARAMS, held, ctx, () => 0.99)
+    expect(result.totalGain).toBe(DEFAULT_PARAMS.talismans.celebration.n)
+  })
+
+  test('祝儀: randomTargetと異なる役が成立してもcurrency加算されない', () => {
+    const held = [{ instanceId: 1, id: 'celebration' as const, randomTarget: 'flush' as const }]
+    const ctx = baseCurrencyCtx({ roleFired: [{ name: 'pair', usedWild: false, amount: 10 }] })
+    const result = resolvePlayTriggeredCurrencyGain(DEFAULT_PARAMS, held, ctx, () => 0.99)
+    expect(result.totalGain).toBe(0)
+  })
+
+  test('複数所持していれば個体ごとに独立して加算が積み上がる', () => {
+    const held = [
+      { instanceId: 1, id: 'prizeMoney' as const, randomTarget: 5 as const },
+      { instanceId: 2, id: 'prizeMoney' as const, randomTarget: 5 as const },
+    ]
+    const ctx = baseCurrencyCtx({ card: card('♠', 5) })
+    const result = resolvePlayTriggeredCurrencyGain(DEFAULT_PARAMS, held, ctx, () => 0.99)
+    expect(result.totalGain).toBe(DEFAULT_PARAMS.talismans.prizeMoney.n * 2)
   })
 })
