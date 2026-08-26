@@ -164,6 +164,21 @@ describe('価格関数', () => {
     expect(oracleSellPrice(DEFAULT_PARAMS, run)).toBe(7)
   })
 
+  test('riteSellPriceはsellBonusを加算する', () => {
+    const run = createInitialRun()
+    expect(riteSellPrice(DEFAULT_PARAMS, run, 5)).toBe(riteSellPrice(DEFAULT_PARAMS, run) + 5)
+  })
+
+  test('revelationSellPriceはsellBonusを加算する', () => {
+    const run = createInitialRun()
+    expect(revelationSellPrice(DEFAULT_PARAMS, run, 5)).toBe(revelationSellPrice(DEFAULT_PARAMS, run) + 5)
+  })
+
+  test('oracleSellPriceはsellBonusを加算する', () => {
+    const run = createInitialRun()
+    expect(oracleSellPrice(DEFAULT_PARAMS, run, 5)).toBe(oracleSellPrice(DEFAULT_PARAMS, run) + 5)
+  })
+
   test('レリックの価格', () => {
     const run = createInitialRun()
     expect(relicBuyPrice(DEFAULT_PARAMS, run, 'manekiNeko')).toBe(25)

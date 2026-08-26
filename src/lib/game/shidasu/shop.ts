@@ -79,24 +79,24 @@ export function riteBuyPrice(params: ShidasuParams, run: RunState): number {
   return categoryPrice(params, run, params.shop.ritePrice, 'buy')
 }
 
-export function riteSellPrice(params: ShidasuParams, run: RunState): number {
-  return categoryPrice(params, run, params.shop.ritePrice, 'sell')
+export function riteSellPrice(params: ShidasuParams, run: RunState, sellBonus: number = 0): number {
+  return categoryPrice(params, run, params.shop.ritePrice, 'sell') + sellBonus
 }
 
 export function revelationBuyPrice(params: ShidasuParams, run: RunState): number {
   return categoryPrice(params, run, params.shop.revelationPrice, 'buy')
 }
 
-export function revelationSellPrice(params: ShidasuParams, run: RunState): number {
-  return categoryPrice(params, run, params.shop.revelationPrice, 'sell')
+export function revelationSellPrice(params: ShidasuParams, run: RunState, sellBonus: number = 0): number {
+  return categoryPrice(params, run, params.shop.revelationPrice, 'sell') + sellBonus
 }
 
 export function oracleBuyPrice(params: ShidasuParams, run: RunState): number {
   return categoryPrice(params, run, params.shop.oraclePrice, 'buy')
 }
 
-export function oracleSellPrice(params: ShidasuParams, run: RunState): number {
-  return categoryPrice(params, run, params.shop.oraclePrice, 'sell')
+export function oracleSellPrice(params: ShidasuParams, run: RunState, sellBonus: number = 0): number {
+  return categoryPrice(params, run, params.shop.oraclePrice, 'sell') + sellBonus
 }
 
 export function relicBuyPrice(params: ShidasuParams, run: RunState, id: RelicId): number {

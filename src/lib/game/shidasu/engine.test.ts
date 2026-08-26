@@ -2786,6 +2786,36 @@ describe('resolveWaveEnd', () => {
       expect(settlement?.sellBonus ?? 0).toBe(0)
     })
   })
+
+  describe('還元(refund)', () => {
+    test('ウェーブクリア時、護符・秘儀・天啓・神託すべてのsellBonusが加算される(還元自身も含む)', () => {
+      const run = endedRun(
+        {
+          items: [{ instanceId: 1, id: 'refund' }, { instanceId: 2, id: 'bridge' }],
+          rites: [{ instanceId: 3, id: 'raidho' }],
+          revelations: [{ instanceId: 4, id: 'kaku' }],
+          oracles: [{ instanceId: 5, id: 'flush' }],
+          nextInstanceId: 6,
+        },
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+      )
+      const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(1))
+      expect(result.items.find(h => h.instanceId === 1)?.sellBonus).toBe(DEFAULT_PARAMS.talismans.refund.n)
+      expect(result.items.find(h => h.instanceId === 2)?.sellBonus).toBe(DEFAULT_PARAMS.talismans.refund.n)
+      expect(result.rites.find(h => h.instanceId === 3)?.sellBonus).toBe(DEFAULT_PARAMS.talismans.refund.n)
+      expect(result.revelations.find(h => h.instanceId === 4)?.sellBonus).toBe(DEFAULT_PARAMS.talismans.refund.n)
+      expect(result.oracles.find(h => h.instanceId === 5)?.sellBonus).toBe(DEFAULT_PARAMS.talismans.refund.n)
+    })
+
+    test('還元を所持していなければsellBonusは加算されない', () => {
+      const run = endedRun(
+        { items: [{ instanceId: 1, id: 'bridge' }], nextInstanceId: 2 },
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+      )
+      const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(1))
+      expect(result.items.find(h => h.instanceId === 1)?.sellBonus ?? 0).toBe(0)
+    })
+  })
 })
 
 describe('stageModifierFor / bossScoreLockFor', () => {

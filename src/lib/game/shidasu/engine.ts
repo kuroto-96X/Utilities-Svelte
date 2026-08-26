@@ -1043,10 +1043,27 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
   const items = settlementQualifies
     ? run.items.map(h => h.id === 'settlement' ? { ...h, sellBonus: (h.sellBonus ?? 0) + params.talismans.settlement.n } : h)
     : run.items
+  // 還元: ウェーブ終了時、所持している護符・秘儀・天啓・神託すべて(還元自身を含む)のsellBonusにnを加算する。
+  const refundHeld = run.items.some(h => h.id === 'refund')
+  const itemsAfterRefund = refundHeld
+    ? items.map(h => ({ ...h, sellBonus: (h.sellBonus ?? 0) + params.talismans.refund.n }))
+    : items
+  const ritesAfterRefund = refundHeld
+    ? run.rites.map(h => ({ ...h, sellBonus: (h.sellBonus ?? 0) + params.talismans.refund.n }))
+    : run.rites
+  const revelationsAfterRefund = refundHeld
+    ? run.revelations.map(h => ({ ...h, sellBonus: (h.sellBonus ?? 0) + params.talismans.refund.n }))
+    : run.revelations
+  const oraclesAfterRefund = refundHeld
+    ? run.oracles.map(h => ({ ...h, sellBonus: (h.sellBonus ?? 0) + params.talismans.refund.n }))
+    : run.oracles
   const runWithCurrency = {
     ...run,
     currency: run.currency + earned,
-    items,
+    items: itemsAfterRefund,
+    rites: ritesAfterRefund,
+    revelations: revelationsAfterRefund,
+    oracles: oraclesAfterRefund,
     dedicationX: wave.dedicationX,
     diligenceX: wave.diligenceX,
     divineProtectionX: wave.divineProtectionX,
@@ -1745,17 +1762,20 @@ export function sellItem(params: ShidasuParams, run: RunState, instanceId: numbe
 
 // 所持中の秘儀を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
 export function sellRite(params: ShidasuParams, run: RunState, instanceId: number, riteId: RiteId): RunState {
-  return sellFromArray(run, 'rites', run.rites, instanceId, riteSellPrice(params, run))
+  const held = run.rites.find(h => h.instanceId === instanceId)
+  return sellFromArray(run, 'rites', run.rites, instanceId, riteSellPrice(params, run, held?.sellBonus ?? 0))
 }
 
 // 所持中の天啓を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
 export function sellRevelation(params: ShidasuParams, run: RunState, instanceId: number, revelationId: RevelationId): RunState {
-  return sellFromArray(run, 'revelations', run.revelations, instanceId, revelationSellPrice(params, run))
+  const held = run.revelations.find(h => h.instanceId === instanceId)
+  return sellFromArray(run, 'revelations', run.revelations, instanceId, revelationSellPrice(params, run, held?.sellBonus ?? 0))
 }
 
 // 所持中の神託を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
 export function sellOracle(params: ShidasuParams, run: RunState, instanceId: number, roleName: RoleName): RunState {
-  return sellFromArray(run, 'oracles', run.oracles, instanceId, oracleSellPrice(params, run))
+  const held = run.oracles.find(h => h.instanceId === instanceId)
+  return sellFromArray(run, 'oracles', run.oracles, instanceId, oracleSellPrice(params, run, held?.sellBonus ?? 0))
 }
 
 // 大凶クリア後の続行確認画面('continueChoice'フェーズ)で「続ける」を選んだ場合。
