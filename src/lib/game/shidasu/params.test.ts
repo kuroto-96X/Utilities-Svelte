@@ -40,6 +40,14 @@ describe('DEFAULT_PARAMS', () => {
     expect(DEFAULT_PARAMS.spreads.fool.initialExtraTableauRows).toBe(0)
     expect(DEFAULT_PARAMS.spreads.moon.initialExtraTableauRows).toBe(-1)
   })
+
+  test('方向性1の24護符がtalismansに定義されている', () => {
+    const ids = ['exchange', 'koban', 'senryo', 'manryo', 'harvest', 'settlement', 'hiddenTreasure', 'greatestTreasure', 'heirloom', 'treasury', 'boom', 'abundantFunds', 'savings', 'bigCatch', 'grains', 'liveliness', 'prosperity', 'heavenlyBlessing', 'mizuho', 'bountifulYear', 'profit', 'bounty', 'perk', 'nestEgg'] as const
+    for (const id of ids) {
+      expect(DEFAULT_PARAMS.talismans[id]).toBeDefined()
+      expect(typeof DEFAULT_PARAMS.talismans[id].name).toBe('string')
+    }
+  })
 })
 
 describe('loadParams', () => {

@@ -170,6 +170,30 @@ export interface ShidasuParams {
     silver: { name: string; x: number; rarity: Rarity; desc: string }
     discretion: { name: string; n: number; rarity: Rarity; desc: string }
     frost: { name: string; x: number; rarity: Rarity; desc: string }
+    exchange: { name: string; n: number; rarity: Rarity; desc: string }
+    koban: { name: string; c: number; n: number; rarity: Rarity; desc: string }
+    senryo: { name: string; c: number; n: number; rarity: Rarity; desc: string }
+    manryo: { name: string; c: number; n: number; rarity: Rarity; desc: string }
+    harvest: { name: string; n: number; rarity: Rarity; desc: string }
+    settlement: { name: string; c: number; n: number; rarity: Rarity; desc: string }
+    hiddenTreasure: { name: string; n: number; rarity: Rarity; desc: string }
+    greatestTreasure: { name: string; n: number; rarity: Rarity; desc: string }
+    heirloom: { name: string; n: number; rarity: Rarity; desc: string }
+    treasury: { name: string; n: number; rarity: Rarity; desc: string }
+    boom: { name: string; n: number; rarity: Rarity; desc: string }
+    abundantFunds: { name: string; m: number; n: number; rarity: Rarity; desc: string }
+    savings: { name: string; n: number; rarity: Rarity; desc: string }
+    bigCatch: { name: string; n: number; rarity: Rarity; desc: string }
+    grains: { name: string; n: number; rarity: Rarity; desc: string }
+    liveliness: { name: string; m: number; n: number; rarity: Rarity; desc: string }
+    prosperity: { name: string; m: number; n: number; rarity: Rarity; desc: string }
+    heavenlyBlessing: { name: string; m: number; n: number; rarity: Rarity; desc: string }
+    mizuho: { name: string; m: number; n: number; rarity: Rarity; desc: string }
+    bountifulYear: { name: string; n: number; rarity: Rarity; desc: string }
+    profit: { name: string; n: number; rarity: Rarity; desc: string }
+    bounty: { name: string; n: number; rarity: Rarity; desc: string }
+    perk: { name: string; n: number; rarity: Rarity; desc: string }
+    nestEgg: { name: string; n: number; rarity: Rarity; desc: string }
   }
   rites: {
     raidho: { name: string; desc: string }
@@ -442,6 +466,30 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     silver: { name: '白銀', x: 1.5, rarity: 'U', desc: '全ての札の色とスートが非表示になるが、x倍算(点数計算やコンボ継続の判定には引き続き色とスートが使われる)' },
     discretion: { name: '果断', n: 10, rarity: 'C', desc: 'n点加算。nは{n}から開始し、この護符を所持してから天啓・神託・秘儀を使用するたびn+={n}される' },
     frost: { name: '星霜', x: 0.01, rarity: 'R', desc: 'x倍算。xは1から開始し、この護符を所持してから天啓・神託・秘儀を使用するたびx+={x}される' },
+    exchange: { name: '両替', n: 2, rarity: 'C', desc: '秘儀・天啓・神託を使用するたび、この護符の売値に{n}を加算する' },
+    koban: { name: '小判', c: 3, n: 1, rarity: 'C', desc: 'コンボ数が{c}に到達した瞬間、この護符の売値に{n}を加算する' },
+    senryo: { name: '千両', c: 6, n: 3, rarity: 'U', desc: 'コンボ数が{c}に到達した瞬間、この護符の売値に{n}を加算する' },
+    manryo: { name: '万両', c: 10, n: 4, rarity: 'R', desc: 'コンボ数が{c}に到達した瞬間、この護符の売値に{n}を加算する' },
+    harvest: { name: '豊作', n: 5, rarity: 'C', desc: '全消しを達成するたび、この護符の売値に{n}を加算する' },
+    settlement: { name: '決算', c: 15, n: 5, rarity: 'U', desc: 'カードプレイ{c}回以下でウェーブをクリアするたび、この護符の売値に{n}を加算する' },
+    hiddenTreasure: { name: '秘宝', n: 5, rarity: 'C', desc: '♠のAをプレイするたび、この護符の売値に{n}を加算する' },
+    greatestTreasure: { name: '至宝', n: 5, rarity: 'C', desc: '♥のKをプレイするたび、この護符の売値に{n}を加算する' },
+    heirloom: { name: '家宝', n: 5, rarity: 'C', desc: '♦のJをプレイするたび、この護符の売値に{n}を加算する' },
+    treasury: { name: '宝庫', n: 5, rarity: 'C', desc: '♣のQをプレイするたび、この護符の売値に{n}を加算する' },
+    boom: { name: '好況', n: 2, rarity: 'C', desc: 'フラッシュが成立するたび、この護符の売値に{n}を加算する' },
+    abundantFunds: { name: '潤沢', m: 10, n: 5, rarity: 'C', desc: '場札の残り枚数が{m}枚以下になった瞬間、この護符の売値に{n}を加算する' },
+    savings: { name: '蓄財', n: 1, rarity: 'C', desc: '同じ列を連続でプレイするたび(2回目以降)、連続回数×{n}を売値に加算する' },
+    bigCatch: { name: '大漁', n: 3, rarity: 'C', desc: '列一掃を達成するたび、この護符の売値に{n}を加算する' },
+    grains: { name: '五穀', n: 2, rarity: 'C', desc: 'ワイルドをプレイするたび、この護符の売値に{n}を加算する' },
+    liveliness: { name: '活況', m: 6, n: 3, rarity: 'C', desc: '同スートが成立し、かつチェーンが{m}枚以上のとき、この護符の売値に{n}を加算する' },
+    prosperity: { name: '盛況', m: 6, n: 3, rarity: 'C', desc: '同色が成立し、かつチェーンが{m}枚以上のとき、この護符の売値に{n}を加算する' },
+    heavenlyBlessing: { name: '天恵', m: 6, n: 4, rarity: 'C', desc: '階段が成立し、かつチェーンが{m}枚以上のとき、この護符の売値に{n}を加算する' },
+    mizuho: { name: '瑞穂', m: 6, n: 4, rarity: 'C', desc: '交互が成立し、かつチェーンが{m}枚以上のとき、この護符の売値に{n}を加算する' },
+    bountifulYear: { name: '豊年', n: 2, rarity: 'C', desc: 'ロイヤルセットが成立するたび、この護符の売値に{n}を加算する' },
+    profit: { name: '利得', n: 2, rarity: 'C', desc: '同ランクが成立するたび、この護符の売値に{n}を加算する' },
+    bounty: { name: '収穫', n: 10, rarity: 'R', desc: 'コンプリートランが成立するたび、この護符の売値に{n}を加算する' },
+    perk: { name: '役得', n: 2, rarity: 'C', desc: 'ペアが成立するたび、この護符の売値に{n}を加算する' },
+    nestEgg: { name: '儲蓄', n: 2, rarity: 'C', desc: '他の護符を売却するたび、この護符の売値に{n}を加算する' },
   },
   rites: {
     raidho: { name: 'ᚱ', desc: '場札の絵札とワイルドはそのままに、非絵札を山札に戻してシャッフルし、元の位置に配り直す' },

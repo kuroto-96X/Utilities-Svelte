@@ -84,6 +84,12 @@ export type ItemId =
   | 'vow' | 'pact' | 'crimson' | 'jetBlack'
   | 'silver'
   | 'discretion' | 'frost'
+  | 'exchange' | 'koban' | 'senryo' | 'manryo'
+  | 'harvest' | 'settlement'
+  | 'hiddenTreasure' | 'greatestTreasure' | 'heirloom' | 'treasury'
+  | 'boom' | 'abundantFunds' | 'savings' | 'bigCatch' | 'grains'
+  | 'liveliness' | 'prosperity' | 'heavenlyBlessing' | 'mizuho'
+  | 'bountifulYear' | 'profit' | 'bounty' | 'perk' | 'nestEgg'
 
 // 秘儀(Rite): プレイ中に能動的に使用する消費アイテム。エルダー・フサルク(北欧ルーン文字)
 // 全24種に効果を実装済み。2026-08-11に一度削除した9種(raidho/wunjo/othala/perthro/tiwaz/laguz/
