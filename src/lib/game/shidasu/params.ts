@@ -194,6 +194,14 @@ export interface ShidasuParams {
     bounty: { name: string; n: number; rarity: Rarity; desc: string }
     perk: { name: string; n: number; rarity: Rarity; desc: string }
     nestEgg: { name: string; n: number; rarity: Rarity; desc: string }
+    dividend: { name: string; n: number; rarity: Rarity; desc: string }
+    prizeMoney: { name: string; n: number; rarity: Rarity; desc: string }
+    windfall: { name: string; p: number; n: number; rarity: Rarity; desc: string }
+    celebration: { name: string; n: number; rarity: Rarity; desc: string }
+    refund: { name: string; n: number; rarity: Rarity; desc: string }
+    bonus: { name: string; n: number; rarity: Rarity; desc: string }
+    commendation: { name: string; l: number; n: number; rarity: Rarity; desc: string }
+    favor: { name: string; n: number; a: number; rarity: Rarity; desc: string }
   }
   rites: {
     raidho: { name: string; desc: string }
@@ -490,6 +498,14 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     bounty: { name: '収穫', n: 10, rarity: 'R', desc: 'コンプリートランが成立するたび、この護符の売値に{n}を加算する' },
     perk: { name: '役得', n: 2, rarity: 'C', desc: 'ペアが成立するたび、この護符の売値に{n}を加算する' },
     nestEgg: { name: '儲蓄', n: 2, rarity: 'C', desc: '他の護符を売却するたび、この護符の売値に{n}を加算する' },
+    dividend: { name: '配当', n: 5, rarity: 'C', desc: '星の妨害行動が発動するたび、星片に{n}を加算する' },
+    prizeMoney: { name: '賞金', n: 2, rarity: 'C', desc: 'ランク{randomTarget}のカードをプレイするたび、星片に{n}を加算する(対象ランクはウェーブごとにランダムに決まる)' },
+    windfall: { name: '僥倖', p: 25, n: 2, rarity: 'U', desc: 'J・Q・Kのいずれかをプレイしたとき、{p}%の確率で星片に{n}を加算する' },
+    celebration: { name: '祝儀', n: 2, rarity: 'C', desc: '役が成立するたび、星片に{n}を加算する(対象の役はウェーブごとにランダムに決まる)' },
+    refund: { name: '還元', n: 1, rarity: 'U', desc: 'ウェーブ終了時、所持している護符・秘儀・天啓・神託すべての売値に{n}を加算する' },
+    bonus: { name: '報奨', n: 3, rarity: 'C', desc: 'ウェーブ終了時、星片に{n}を加算する' },
+    commendation: { name: '褒賞', l: 7, n: 1, rarity: 'U', desc: 'ウェーブ終了時、デッキにあるランク{l}のカード1枚につき星片に{n}を加算する' },
+    favor: { name: '恩賞', n: 2, a: 1, rarity: 'R', desc: 'ウェーブ終了時、星片に加算する(ステージクリアごとに加算量が{a}ずつ増加して蓄積する)' },
   },
   rites: {
     raidho: { name: 'ᚱ', desc: '場札の絵札とワイルドはそのままに、非絵札を山札に戻してシャッフルし、元の位置に配り直す' },

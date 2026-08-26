@@ -48,6 +48,14 @@ describe('DEFAULT_PARAMS', () => {
       expect(typeof DEFAULT_PARAMS.talismans[id].name).toBe('string')
     }
   })
+
+  test('方向性2の8護符がtalismansに定義されている', () => {
+    const ids = ['dividend', 'prizeMoney', 'windfall', 'celebration', 'refund', 'bonus', 'commendation', 'favor'] as const
+    for (const id of ids) {
+      expect(DEFAULT_PARAMS.talismans[id]).toBeDefined()
+      expect(typeof DEFAULT_PARAMS.talismans[id].name).toBe('string')
+    }
+  })
 })
 
 describe('loadParams', () => {

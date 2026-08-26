@@ -169,4 +169,14 @@ export const ITEM_ACTUAL_EFFECTS: Record<ItemId, string> = {
   bounty: 'そのプレイでroleFiredにcompleteRunが含まれるとき、この護符自身のsellBonusにnを加算する',
   perk: 'そのプレイでroleFiredにpairが含まれるとき、この護符自身のsellBonusにnを加算する',
   nestEgg: '他の護符が売却されるたび、この護符自身のsellBonusにnを加算する(自分自身が売却対象の場合は加算しない)',
+
+  // グループ24: 方向性2(未実装、Task 3で置き換え予定)
+  dividend: '(未実装)',
+  prizeMoney: '(未実装)',
+  windfall: '(未実装)',
+  celebration: '(未実装)',
+  refund: '(未実装)',
+  bonus: '(未実装)',
+  commendation: '(未実装)',
+  favor: '(未実装)',
 }
