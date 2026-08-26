@@ -501,7 +501,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     dividend: { name: '配当', n: 5, rarity: 'C', desc: '星の妨害行動が発動するたび、星片に{n}を加算する' },
     prizeMoney: { name: '賞金', n: 2, rarity: 'C', desc: 'ランク{randomTarget}のカードをプレイするたび、星片に{n}を加算する(対象ランクはウェーブごとにランダムに決まる)' },
     windfall: { name: '僥倖', p: 25, n: 2, rarity: 'U', desc: 'J・Q・Kのいずれかをプレイしたとき、{p}%の確率で星片に{n}を加算する' },
-    celebration: { name: '祝儀', n: 2, rarity: 'C', desc: '役が成立するたび、星片に{n}を加算する(対象の役はウェーブごとにランダムに決まる)' },
+    celebration: { name: '祝儀', n: 2, rarity: 'C', desc: '役「{randomTarget}」が成立するたび、星片に{n}を加算する(対象の役はウェーブごとにランダムに決まる)' },
     refund: { name: '還元', n: 1, rarity: 'U', desc: 'ウェーブ終了時、所持している護符・秘儀・天啓・神託すべての売値に{n}を加算する' },
     bonus: { name: '報奨', n: 3, rarity: 'C', desc: 'ウェーブ終了時、星片に{n}を加算する' },
     commendation: { name: '褒賞', l: 7, n: 1, rarity: 'U', desc: 'ウェーブ終了時、デッキにあるランク{l}のカード1枚につき星片に{n}を加算する' },

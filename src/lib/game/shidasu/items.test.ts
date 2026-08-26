@@ -98,6 +98,12 @@ describe('ITEM_POOL / itemName / itemDesc', () => {
     expect(desc).toContain('{randomTarget}')
   })
 
+  test('itemDescはcelebrationのrandomTarget(役名文字列)も正しく置換する', () => {
+    const desc = itemDesc('celebration', DEFAULT_PARAMS, 'フラッシュ')
+    expect(desc).toContain('フラッシュ')
+    expect(desc).not.toContain('{randomTarget}')
+  })
+
   test('新規追加した18個の護符も名前と説明文を持つ', () => {
     const newIds: ItemId[] = [
       'patience', 'purify', 'temperance',
