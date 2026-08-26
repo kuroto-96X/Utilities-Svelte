@@ -341,6 +341,8 @@ export function playCard(
   wave: WaveState,
   modifier: StageModifier,
   items: ItemId[],
+  // 賞金・祝儀(resolvePlayTriggeredCurrencyGain)がHeldItem.randomTarget(instanceIdごとの
+  // ランダム対象)を参照する必要があるため、ItemId[]のみのitemsとは別にHeldItem[]全体を受け取る。
   heldItems: HeldItem[],
   target: number,
   colIndex: number,

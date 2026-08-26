@@ -144,12 +144,18 @@ export function resolvePlayTriggeredCurrencyGain(
 ): CurrencyGainTriggerResult {
   let totalGain = 0
   for (const h of held) {
-    if (h.id === 'prizeMoney' && !ctx.card.wild && h.randomTarget === ctx.card.rank) {
-      totalGain += params.talismans.prizeMoney.n
-    } else if (h.id === 'windfall' && isFace(ctx.card)) {
-      if (rand() * 100 < params.talismans.windfall.p) totalGain += params.talismans.windfall.n
-    } else if (h.id === 'celebration' && ctx.roleFired.some(r => r.name === h.randomTarget)) {
-      totalGain += params.talismans.celebration.n
+    switch (h.id) {
+      case 'prizeMoney':
+        if (!ctx.card.wild && h.randomTarget === ctx.card.rank) totalGain += params.talismans.prizeMoney.n
+        break
+      case 'windfall':
+        if (isFace(ctx.card) && rand() * 100 < params.talismans.windfall.p) totalGain += params.talismans.windfall.n
+        break
+      case 'celebration':
+        if (ctx.roleFired.some(r => r.name === h.randomTarget)) totalGain += params.talismans.celebration.n
+        break
+      default:
+        break
     }
   }
   return { totalGain }
