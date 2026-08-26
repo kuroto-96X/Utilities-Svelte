@@ -1186,9 +1186,13 @@ function rerollRandomTargets(items: HeldItem[], rand: () => number): HeldItem[] 
 export function finishShop(params: ShidasuParams, run: RunState, seed?: number): RunState {
   if (run.phase !== 'shop') return run
   const star = run.stageStars[run.waveIndex]
-  const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
+  const baseSeed = seed ?? Math.floor(Math.random() * 999999) + 1
+  // rerollRandomTargets用の乱数はstartWave内部の乱数(デッキシャッフル等)と意図的に
+  // 系列を分離する(同一seedを共有すると、randomTargetの抽選結果とシャッフル結果が
+  // 数学的に相関してしまい、seed固定テストで意図しない相関が生じるため)。
+  const rand = createRng(baseSeed + 1)
   const items = rerollRandomTargets(run.items, rand)
-  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, items.map(h => h.id), run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX, run.echoX, run.shootingStarN, star?.sabotage ?? { kind: 'none' })
+  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, items.map(h => h.id), run.deckComposition, baseSeed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX, run.echoX, run.shootingStarN, star?.sabotage ?? { kind: 'none' })
   return { ...run, phase: 'playing', wave, waveGeneration: run.waveGeneration + 1, deckComposition, items, shop: null }
 }
 
