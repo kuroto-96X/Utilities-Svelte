@@ -1038,6 +1038,7 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
   const currentStar = run.stageStars[run.waveIndex]
   const baseEarned = Math.max(0, (currentStar?.reward ?? 0) - run.rewardPenalty)
   const earned = baseEarned + relicWaveEndBonus(params, run, wave, baseEarned)
+  // 決算: そのウェーブのプレイ回数がc回以下でクリアした場合、所持する決算の全インスタンスのsellBonusにnを加算する。
   const settlementQualifies = wave.playCountThisWave <= params.talismans.settlement.c
   const items = settlementQualifies
     ? run.items.map(h => h.id === 'settlement' ? { ...h, sellBonus: (h.sellBonus ?? 0) + params.talismans.settlement.n } : h)
