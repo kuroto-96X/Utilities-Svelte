@@ -186,4 +186,23 @@ describe('価格関数', () => {
     const base = itemSellPrice(params, { relics: [] } as unknown as RunState, 'bridge')
     expect(itemSellPrice(params, run, 'bridge')).toBe(Math.round(base * 1.25))
   })
+
+  test('itemSellPriceはsellBonusを乗算後に加算する', () => {
+    const run = createInitialRun()
+    const rarityC = ITEM_POOL.find(id => DEFAULT_PARAMS.talismans[id].rarity === 'C')!
+    expect(itemSellPrice(DEFAULT_PARAMS, run, rarityC, 3)).toBe(4 + 3)
+  })
+
+  test('itemSellPriceはsellBonus未指定なら0扱い', () => {
+    const run = createInitialRun()
+    const rarityC = ITEM_POOL.find(id => DEFAULT_PARAMS.talismans[id].rarity === 'C')!
+    expect(itemSellPrice(DEFAULT_PARAMS, run, rarityC)).toBe(4)
+  })
+
+  test('itemSellPriceはsellBonusにレリック倍率を適用しない', () => {
+    const run = { ...createInitialRun(), relics: [{ id: 'manekiNeko' as const, tsukumoka: false }] }
+    const rarityC = ITEM_POOL.find(id => DEFAULT_PARAMS.talismans[id].rarity === 'C')!
+    const base = itemSellPrice(DEFAULT_PARAMS, run, rarityC)
+    expect(itemSellPrice(DEFAULT_PARAMS, run, rarityC, 10)).toBe(base + 10)
+  })
 })

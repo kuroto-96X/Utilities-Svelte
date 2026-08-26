@@ -115,6 +115,7 @@ function makeWave(overrides: Partial<WaveState> = {}): WaveState {
     endReason: null,
     lastGain: null,
     firstPlayDone: false,
+    playCountThisWave: 0,
     discardPile: [],
     lastPlayedColumn: null,
     sameColumnStreak: 0,

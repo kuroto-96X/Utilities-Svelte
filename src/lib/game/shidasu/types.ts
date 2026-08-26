@@ -202,6 +202,8 @@ export interface WaveState {
   lastDrawEffect: DrawEffect
   status: WaveStatus
   endReason: WaveEndReason
+  // 決算用: このウェーブ中にplayCardが実行された回数(drawStockは含まない)。startWaveで0に初期化する。
+  playCountThisWave: number
   lastGain: ScoreGain | null
   // ウェーブ開始後、一度でも場札をプレイしたか(朝露の護符の判定に使用。山札めくりでは変化しない)
   firstPlayDone: boolean
@@ -390,7 +392,7 @@ export interface ShopState {
 // 所持中の護符・秘儀・天啓・神託の個体。instanceIdはRunState.nextInstanceIdから払い出される、
 // 4配列(items/rites/revelations/oracles)共通で一意なID。同名(同じid)を複数所持していても
 // instanceIdで個体を区別できる(封印・売却・並べ替え・将来の個体ごとの可変効果のため)。
-export interface HeldItem { instanceId: number; id: ItemId }
+export interface HeldItem { instanceId: number; id: ItemId; sellBonus?: number }
 export interface HeldRite { instanceId: number; id: RiteId }
 export interface HeldRevelation { instanceId: number; id: RevelationId }
 export interface HeldOracle { instanceId: number; id: RoleName }

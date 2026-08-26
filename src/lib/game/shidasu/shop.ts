@@ -66,8 +66,8 @@ export function itemBuyPrice(params: ShidasuParams, run: RunState, id: ItemId): 
   return categoryPrice(params, run, params.shop.itemPrice[params.talismans[id].rarity], 'buy')
 }
 
-export function itemSellPrice(params: ShidasuParams, run: RunState, id: ItemId): number {
-  return categoryPrice(params, run, params.shop.itemPrice[params.talismans[id].rarity], 'sell')
+export function itemSellPrice(params: ShidasuParams, run: RunState, id: ItemId, sellBonus: number = 0): number {
+  return categoryPrice(params, run, params.shop.itemPrice[params.talismans[id].rarity], 'sell') + sellBonus
 }
 
 function categoryPrice(params: ShidasuParams, run: RunState, priceConfig: { buy: number; sell: number }, direction: 'buy' | 'sell'): number {

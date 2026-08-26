@@ -27,6 +27,7 @@ function baseWave(overrides: Partial<WaveState> = {}): WaveState {
     endReason: null,
     lastGain: null,
     firstPlayDone: true,
+    playCountThisWave: 0,
     discardPile: [],
     lastPlayedColumn: null,
     sameColumnStreak: 0,

@@ -187,6 +187,7 @@ export function startWave(
     endReason: null as WaveEndReason,
     lastGain: null,
     firstPlayDone: false,
+    playCountThisWave: 0,
     discardPile: [],
     lastPlayedColumn: null,
     sameColumnStreak: 0,
@@ -1534,7 +1535,7 @@ function grantRevelationReward(
       return { revelations: [...runAfterRemoval.revelations, ...held], nextInstanceId: nextId }
     }
     case 'mitsu': {
-      const total = runAfterRemoval.items.reduce((sum, h) => sum + itemSellPrice(params, runAfterRemoval, h.id), 0)
+      const total = runAfterRemoval.items.reduce((sum, h) => sum + itemSellPrice(params, runAfterRemoval, h.id, h.sellBonus ?? 0), 0)
       return { currency: runAfterRemoval.currency + total }
     }
     case 'karasu': {
@@ -1687,7 +1688,8 @@ function sellFromArray<T>(run: RunState, arrayField: 'items' | 'rites' | 'revela
 // 所持中の護符を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。instanceIdで対象個体を特定し、
 // itemIdは価格計算(itemSellPrice)に使う。
 export function sellItem(params: ShidasuParams, run: RunState, instanceId: number, itemId: ItemId): RunState {
-  return sellFromArray(run, 'items', run.items, instanceId, itemSellPrice(params, run, itemId))
+  const held = run.items.find(h => h.instanceId === instanceId)
+  return sellFromArray(run, 'items', run.items, instanceId, itemSellPrice(params, run, itemId, held?.sellBonus ?? 0))
 }
 
 // 所持中の秘儀を1個売却し、通貨を得る。playing/shopフェーズでのみ呼べる。
