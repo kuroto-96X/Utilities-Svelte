@@ -5849,3 +5849,35 @@ describe('儲蓄(nestEgg)', () => {
     expect(result.items.find(h => h.instanceId === 2)?.sellBonus).toBe(DEFAULT_PARAMS.talismans.nestEgg.n)
   })
 })
+
+describe('両替(exchange)', () => {
+  test('秘儀を使用すると両替のsellBonusが加算される', () => {
+    let run = {
+      ...createInitialRun(),
+      phase: 'playing' as const,
+      items: [{ instanceId: 1, id: 'exchange' as const }],
+      rites: [{ instanceId: 2, id: 'raidho' as const }],
+      nextInstanceId: 3,
+    }
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, ['exchange'], run.deckComposition, 1)
+    run = { ...run, wave }
+    const result = useRite(DEFAULT_PARAMS, run, 2, 'raidho', createRng(1))
+    const exchange = result.items.find(h => h.instanceId === 1)
+    expect(exchange?.sellBonus).toBe(DEFAULT_PARAMS.talismans.exchange.n)
+  })
+
+  test('神託を使用すると両替のsellBonusが加算される', () => {
+    let run = {
+      ...createInitialRun(),
+      phase: 'playing' as const,
+      items: [{ instanceId: 1, id: 'exchange' as const }],
+      oracles: [{ instanceId: 2, id: 'flush' as const }],
+      nextInstanceId: 3,
+    }
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, ['exchange'], run.deckComposition, 1)
+    run = { ...run, wave }
+    const result = useOracle(DEFAULT_PARAMS, run, 'flush')
+    const exchange = result.items.find(h => h.instanceId === 1)
+    expect(exchange?.sellBonus).toBe(DEFAULT_PARAMS.talismans.exchange.n)
+  })
+})

@@ -1067,6 +1067,12 @@ function applyDiscretionFrostBonus(params: ShidasuParams, run: RunState, wave: W
   return next
 }
 
+// 両替: 秘儀・天啓・神託のいずれかを使用するたび、所持する両替の全インスタンスのsellBonusにnを加算する。
+function applyExchangeBonus(params: ShidasuParams, run: RunState): HeldItem[] {
+  if (!run.items.some(h => h.id === 'exchange')) return run.items
+  return run.items.map(h => h.id === 'exchange' ? { ...h, sellBonus: (h.sellBonus ?? 0) + params.talismans.exchange.n } : h)
+}
+
 // 秘儀を1つ使用する。効果を適用し、所持からその秘儀を1個削除する。
 // 使用条件(canUseRite)を満たさない場合、または所持していない場合は何もしない。
 // instanceIdは対象の個体(封印精度・重複所持時の対象特定に使う)。呼び出し元(UI)は
@@ -1083,7 +1089,8 @@ export function useRite(params: ShidasuParams, run: RunState, instanceId: number
   }
   const rites = [...run.rites.slice(0, idx), ...run.rites.slice(idx + 1)]
   const recentUsedRiteIds = [riteId, ...run.recentUsedRiteIds].slice(0, 2)
-  return { ...run, wave, rites, recentUsedRiteIds }
+  const items = applyExchangeBonus(params, run)
+  return { ...run, wave, rites, recentUsedRiteIds, items }
 }
 
 // Waveクリア確定後(resolveWaveEnd)・大凶続行後(continueAfterGreatMisfortune)に呼ぶ。
@@ -1600,7 +1607,8 @@ export function useRevelation(
   const reward = grantRevelationReward(params, { ...run, revelations }, revelationId, targetRelicId, rand)
   // 星(hotori)自身の使用は履歴に残さない(自己参照ループを防ぐ。詳細はtypes.tsのlastUsedRevelationIdコメント参照)
   const lastUsedRevelationId = revelationId === 'hotori' ? run.lastUsedRevelationId : revelationId
-  return { ...run, wave, deckComposition, revelations, extraTableauRows, lastUsedRevelationId, ...reward }
+  const items = applyExchangeBonus(params, run)
+  return { ...run, wave, deckComposition, revelations, extraTableauRows, lastUsedRevelationId, items, ...reward }
 }
 
 // 神託の福袋(oracleSelect)から1つ選び、その場で使用する(役レベル+1、所持には加わらない、上限とは無関係)。
@@ -1677,7 +1685,8 @@ export function useOracle(params: ShidasuParams, run: RunState, roleName: RoleNa
   const oracleLevels = { ...run.oracleLevels, [roleName]: run.oracleLevels[roleName] + 1 }
   let wave = run.wave ? { ...run.wave, oracleLevels } : run.wave
   if (wave) wave = applyDiscretionFrostBonus(params, run, wave)
-  return { ...run, oracles, oracleLevels, wave }
+  const items = applyExchangeBonus(params, run)
+  return { ...run, oracles, oracleLevels, wave, items }
 }
 
 // 所持護符の並び順をfromIndexからtoIndexへ移動する。加算・倍算型護符の適用順(左から順に適用)を
