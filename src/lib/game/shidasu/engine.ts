@@ -461,6 +461,10 @@ export function playCard(
   const remainingBeforeRevival = remainingCount(newTableau)
   const remaining = remainingBeforeRevival
 
+  // 潤沢(abundantFunds)のエッジトリガー判定用: このプレイ「前」の場札残数(wave.tableau基準)。
+  // remainingBeforeRevival/remaining(プレイ後の残数、上記)と混同しないよう明示的に切り出す。
+  const remainingBeforeThisPlay = remainingCount(wave.tableau)
+
   const newSameColumnStreak = wave.lastPlayedColumn === colIndex ? wave.sameColumnStreak + 1 : 1
   const newMaxComboThisWave = Math.max(wave.maxComboThisWave, newCombo)
   const newTotalColumnsEmptiedThisWave = wave.totalColumnsEmptiedThisWave + (sweepQualifies ? 1 : 0)
@@ -535,7 +539,7 @@ export function playCard(
     chain: chainIncludingThis,
     comboBefore: wave.combo,
     comboAfter: newCombo,
-    remainingTableauCountBefore: remainingCount(wave.tableau),
+    remainingTableauCountBefore: remainingBeforeThisPlay,
     remainingTableauCountAfter: remaining,
     roleFired,
     sweepQualifies,
@@ -680,6 +684,9 @@ export function playCard(
 
     if (remainingCount(resetWave.tableau) > 0) {
       if (resetWave.stock.length > 0) {
+        // drawStock(山札からの自動継続処理)はプレイ操作ではないため、新規のプレイ中トリガー護符
+        // (方向性1の14種)の判定対象にはならない。ここでは直前に計算済みのrewardTalismanTriggerを
+        // そのまま引き継ぐだけで、drawStock専用の再判定は行わない。
         const drawResult = drawStock(params, resetWave, items, target, deckComposition, modifier, rand, scoreLock, sealedRoleEffect, comboCap)
         return { ...drawResult, rewardTalismanTrigger }
       }
