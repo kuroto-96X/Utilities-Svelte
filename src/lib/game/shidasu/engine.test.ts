@@ -2704,19 +2704,6 @@ describe('resolveWaveEnd', () => {
     expect(next.currency).toBe(run.currency + 20)
   })
 
-  test('数珠所持時、星のrewardに追加報酬が加算される', () => {
-    const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' }
-    const stageStars = [noRewardStar, noRewardStar, rewardStar]
-    const run = endedRun(
-      { waveIndex: 2, stageStars, relics: [{ id: 'juzu', tsukumoka: false }] },
-      waveTarget(DEFAULT_PARAMS, 0, 2, stageStars),
-    )
-    const runWithCombo = { ...run, wave: { ...run.wave!, maxComboThisWave: 10 } }
-    const next = resolveWaveEnd(DEFAULT_PARAMS, runWithCombo, createRng(5))
-    // 星のreward(20) + floor(10/5)*juzu.n(1) = 20 + 2 = 22
-    expect(next.currency).toBe(run.currency + 20 + Math.floor(10 / 5) * DEFAULT_PARAMS.relics.juzu.n)
-  })
-
   test('rewardPenaltyが設定されていれば、星のrewardから減算される(レリックボーナスは減算後の額を基準にしても変わらない)', () => {
     const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' }
     const stageStars = [noRewardStar, noRewardStar, rewardStar]
@@ -2731,36 +2718,6 @@ describe('resolveWaveEnd', () => {
     const run = endedRun({ waveIndex: 2, stageStars, rewardPenalty: 999 }, waveTarget(DEFAULT_PARAMS, 0, 2, stageStars))
     const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
     expect(next.currency).toBe(run.currency)
-  })
-
-  test('千社札所持時、星のrewardに成立役種類数に応じた追加報酬が加算される', () => {
-    const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' }
-    const stageStars = [noRewardStar, noRewardStar, rewardStar]
-    const run = endedRun(
-      { waveIndex: 2, stageStars, relics: [{ id: 'senjafuda', tsukumoka: false }] },
-      waveTarget(DEFAULT_PARAMS, 0, 2, stageStars),
-    )
-    const runWithRoles = { ...run, wave: { ...run.wave!, roleOccurrenceCountThisWave: { flush: 3, pair: 1, stair: 2 } } }
-    const next = resolveWaveEnd(DEFAULT_PARAMS, runWithRoles, createRng(5))
-    // 星のreward(20) + floor(3種類/2)*senjafuda.n(1) = 20 + 1 = 21
-    expect(next.currency).toBe(run.currency + 20 + Math.floor(3 / 2) * DEFAULT_PARAMS.relics.senjafuda.n)
-  })
-
-  test('算盤所持時、星のrewardに山札消費割合に応じた追加報酬が加算される', () => {
-    const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' }
-    const stageStars = [noRewardStar, noRewardStar, rewardStar]
-    const run = endedRun(
-      { waveIndex: 2, stageStars, relics: [{ id: 'soroban', tsukumoka: false }] },
-      waveTarget(DEFAULT_PARAMS, 0, 2, stageStars),
-    )
-    // b = dealtRows × layout.cols、c = deckComposition中の未除外枚数、a = 山札(stock)残り枚数
-    const b = run.wave!.dealtRows * DEFAULT_PARAMS.layout.cols
-    const c = run.deckComposition.filter(card => !card.removed).length
-    const a = 5
-    const runWithStock = { ...run, wave: { ...run.wave!, stock: new Array(a).fill(run.wave!.stock[0] ?? run.deckComposition[0]) } }
-    const next = resolveWaveEnd(DEFAULT_PARAMS, runWithStock, createRng(5))
-    const expectedBonus = Math.floor(((c - b - a) / (c - b)) * DEFAULT_PARAMS.relics.soroban.n)
-    expect(next.currency).toBe(run.currency + 20 + expectedBonus)
   })
 
   describe('決算(settlement)', () => {
@@ -5121,9 +5078,9 @@ describe('triggerSabotage', () => {
   })
 
   it('relicConfiscate: 所持レリックからランダムに1つ選び完全に失う', () => {
-    const run = runWithWave({ relics: [{ id: 'manekiNeko', tsukumoka: false }, { id: 'juzu', tsukumoka: false }] })
+    const run = runWithWave({ relics: [{ id: 'manekiNeko', tsukumoka: false }, { id: 'kumade', tsukumoka: false }] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'relicConfiscate', () => 0)
-    expect(next.relics).toEqual([{ id: 'juzu', tsukumoka: false }])
+    expect(next.relics).toEqual([{ id: 'kumade', tsukumoka: false }])
   })
 
   it('tableauCardToDiscard: 場札から1枚選び捨て札に送る', () => {
@@ -5278,7 +5235,7 @@ describe('triggerSabotage', () => {
   })
 
   it('relicConfiscate: lastSabotage.confiscatedTargetに没収したレリックのid・idxを設定する', () => {
-    const run = runWithWave({ relics: [{ id: 'manekiNeko', tsukumoka: false }, { id: 'juzu', tsukumoka: false }] })
+    const run = runWithWave({ relics: [{ id: 'manekiNeko', tsukumoka: false }, { id: 'kumade', tsukumoka: false }] })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'relicConfiscate', () => 0)
     expect(next.wave!.lastSabotage?.confiscatedTarget).toEqual({ kind: 'relic', id: 'manekiNeko', idx: 0 })
   })

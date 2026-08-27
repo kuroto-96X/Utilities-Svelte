@@ -1458,14 +1458,6 @@
       "price": 25,
       "n": 1
     },
-    "juzu": {
-      "name": "数珠",
-      "desc": "Waveクリア時、そのWaveでの最大コンボ数に応じて追加報酬(floor(最大コンボ数/5)×{n})を得る",
-      "tsukumokaDesc": "Waveクリア時、そのWaveでの最大コンボ数に応じて追加報酬(floor(最大コンボ数/5)×{tsukumokaN})を得る",
-      "price": 20,
-      "n": 1,
-      "tsukumokaN": 2
-    },
     "manekiHoteizo": {
       "name": "招き布袋像",
       "desc": "護符の所持上限を{n}増やす",
@@ -1520,20 +1512,6 @@
       "price": 35,
       "n": 1,
       "tsukumokaN": 1
-    },
-    "senjafuda": {
-      "name": "千社札",
-      "desc": "Waveクリア時、そのWaveで成立した役の種類数に応じて追加報酬(floor(役の種類数/2)×{n})を得る",
-      "tsukumokaDesc": "Waveクリア時、そのWaveで成立した役の種類数に応じて追加報酬(floor(役の種類数/2)×2)を得る(付喪化によりn=2に強化)",
-      "price": 20,
-      "n": 1
-    },
-    "soroban": {
-      "name": "算盤",
-      "desc": "Waveクリア時、山札の消費割合に応じて追加報酬(floor(((c-b-a)/(c-b))×{n})、a=残り山札枚数,b=初期配布枚数,c=デッキ総枚数)を得る",
-      "tsukumokaDesc": "Waveクリア時、山札の消費割合に応じて追加報酬(floor(((c-b-a)/(c-b))×10)、a=残り山札枚数,b=初期配布枚数,c=デッキ総枚数)を得る(付喪化によりn=10に強化)",
-      "price": 20,
-      "n": 5
     }
   },
   "sabotageActions": {

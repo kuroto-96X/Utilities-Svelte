@@ -14,7 +14,7 @@ import { applyRevelationEffect, canUseRevelation } from './revelationEffects'
 import { rollOracleOffer, defaultOracleLevels, ORACLE_POOL } from './oracles'
 import { rollCardSetOffer } from './cardSets'
 import { rollShop, itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice, oracleBuyPrice, oracleSellPrice, relicBuyPrice } from './shop'
-import { itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity, relicWaveEndBonus, relicRerollCostStep, relicFirstRerollFree, RELIC_POOL } from './relics'
+import { itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity, relicRerollCostStep, relicFirstRerollFree, RELIC_POOL } from './relics'
 import { resetComboFields } from './waveReset'
 import { applySabotageEffect } from './sabotageEffects'
 import { resolvePlayTriggeredRewardTalismans, type RewardTalismanTriggerResult, type PlayTriggerContext, resolvePlayTriggeredCurrencyGain, type CurrencyGainTriggerContext } from './rewardTalismanEffects'
@@ -1044,7 +1044,7 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
   // 対応している前提でwaveIndexをそのままインデックスとして使う。
   const currentStar = run.stageStars[run.waveIndex]
   const baseEarned = Math.max(0, (currentStar?.reward ?? 0) - run.rewardPenalty)
-  const earned = baseEarned + relicWaveEndBonus(params, run, wave, baseEarned)
+  const earned = baseEarned
   // 決算: そのウェーブのプレイ回数がc回以下でクリアした場合、所持する決算の全インスタンスのsellBonusにnを加算する。
   const settlementQualifies = wave.playCountThisWave <= params.talismans.settlement.c
   const items = settlementQualifies
