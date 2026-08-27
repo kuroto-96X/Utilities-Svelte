@@ -174,6 +174,15 @@ describe('rollShop', () => {
     expect(oracleIndividualSeen).toBe(true)
     expect(oraclePackSeen).toBe(true)
   })
+
+  test('spreadId=popeのランでは、ショップに神託(oracle)のバラ売り枠・福袋が一切出現しない', () => {
+    const run = { ...createInitialRun(), spreadId: 'pope' as const }
+    for (let seed = 1; seed <= 30; seed++) {
+      const shop = rollShop(DEFAULT_PARAMS, run, createRng(seed))
+      expect(shop.individual.some(s => s.kind === 'oracle')).toBe(false)
+      expect(shop.packs.some(p => p.packKind === 'oracle')).toBe(false)
+    }
+  })
 })
 
 describe('価格関数', () => {

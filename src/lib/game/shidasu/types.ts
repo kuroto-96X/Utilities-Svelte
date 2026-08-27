@@ -22,8 +22,9 @@ export type StarSabotage =
   | { kind: 'some'; ids: SabotageActionId[] }
 
 // スプレッド: ラン開始時にプレイヤーが選ぶ固有ルールセット。大アルカナから命名する。
-// fool(愚者)=特殊ルールなしの基本スプレッド、moon(月)=場札が常に1行少ない状態で始まる
-export type SpreadId = 'fool' | 'moon'
+// fool(愚者)=特殊ルールなしの基本スプレッド、moon(月)=場札が常に1行少ない状態で始まる、
+// pope(教皇)=神託の初期レベルが上がるが、ショップで神託が販売されない
+export type SpreadId = 'fool' | 'moon' | 'pope'
 // スプレッドごとの固有ルール設定。
 export interface SpreadConfig {
   name: string

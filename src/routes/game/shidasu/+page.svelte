@@ -228,7 +228,7 @@
     revelationPreviewWave = null
   }
 
-  const SPREAD_IDS: SpreadId[] = ['fool', 'moon']
+  const SPREAD_IDS: SpreadId[] = ['fool', 'moon', 'pope']
 
   function handleStartWithSpread(spreadId: SpreadId) {
     run = beginRun(params, undefined, spreadId)

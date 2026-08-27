@@ -2511,6 +2511,11 @@ describe('createInitialRun / beginRun', () => {
     Object.values(run.oracleLevels).forEach(level => expect(level).toBe(3))
   })
 
+  test('spreadId=popeでは、oracleLevelsが全役5になる', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1, 'pope')
+    Object.values(run.oracleLevels).forEach(level => expect(level).toBe(5))
+  })
+
   test('waveTargetはflow.stageTargetBase・stageTargetMultiplierとstageStarsの倍率を参照する', () => {
     const custom = {
       ...DEFAULT_PARAMS,

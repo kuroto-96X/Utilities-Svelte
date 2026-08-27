@@ -124,6 +124,15 @@
       "waveTargetMultiplier": 1.5,
       "initialOracleLevel": 1,
       "bannedShopKinds": []
+    },
+    "pope": {
+      "name": "教皇",
+      "desc": "神託の初期レベルが5になるが、ショップで神託が販売されない",
+      "initialExtraTableauRows": 0,
+      "waveTargetBase": 2000,
+      "waveTargetMultiplier": 1.5,
+      "initialOracleLevel": 5,
+      "bannedShopKinds": ["oracle"]
     }
   },
   "items": {
