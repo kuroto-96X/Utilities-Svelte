@@ -626,5 +626,8 @@ export const DEFAULT_PARAMS: ShidasuParams = {
 }
 
 export function loadParams(): ShidasuParams {
+  // ui.comboTierThresholds(タプル型)とJSON側の推論型(number[])が構造的に一致しないため、
+  // 単純な`as ShidasuParams`ではTS2352エラーになる。unknownを経由して型チェックを迂回する
+  // (既存の relics.ts 等でも同様のパターンを使用)。
   return shidasuConfigJson as unknown as ShidasuParams
 }
