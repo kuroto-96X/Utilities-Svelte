@@ -2494,6 +2494,23 @@ describe('createInitialRun / beginRun', () => {
     started.wave!.tableau.forEach(col => expect(col).toHaveLength(DEFAULT_PARAMS.layout.rows - 1))
   })
 
+  test('spreadIdを省略(fool)すると、oracleLevelsは全役1のまま', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    Object.values(run.oracleLevels).forEach(level => expect(level).toBe(1))
+  })
+
+  test('spreadのinitialOracleLevelがoracleLevelsの全役に反映される', () => {
+    const customParams = {
+      ...DEFAULT_PARAMS,
+      spreads: {
+        ...DEFAULT_PARAMS.spreads,
+        fool: { ...DEFAULT_PARAMS.spreads.fool, initialOracleLevel: 3 },
+      },
+    }
+    const run = beginRun(customParams, 1, 'fool')
+    Object.values(run.oracleLevels).forEach(level => expect(level).toBe(3))
+  })
+
   test('waveTargetはflow.stageTargetBase・stageTargetMultiplierとstageStarsの倍率を参照する', () => {
     const custom = {
       ...DEFAULT_PARAMS,

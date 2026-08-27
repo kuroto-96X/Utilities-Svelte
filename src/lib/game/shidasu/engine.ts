@@ -1018,9 +1018,13 @@ export function createInitialRun(): RunState {
 }
 
 export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadId = 'fool'): RunState {
-  const initialExtraTableauRows = params.spreads[spreadId].initialExtraTableauRows
+  const spreadConfig = params.spreads[spreadId]
+  const initialExtraTableauRows = spreadConfig.initialExtraTableauRows
   const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
   const initialStageStars = rollStageStars(params, rand)
+  const oracleLevels = Object.fromEntries(
+    Object.keys(defaultOracleLevels()).map(name => [name, spreadConfig.initialOracleLevel])
+  ) as Record<RoleName, number>
   return {
     ...createInitialRun(),
     phase: 'shop',
@@ -1028,6 +1032,7 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
     spreadId,
     stageStars: initialStageStars,
     currency: params.currency.initialAmount,
+    oracleLevels,
   }
 }
 
