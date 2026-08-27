@@ -118,8 +118,8 @@
     },
     "moon": {
       "name": "月",
-      "desc": "場札は常に1行少ない状態で始まる",
-      "initialExtraTableauRows": -1,
+      "desc": "場札が常に1行多い状態で始まる。Wave開始時に配られる場札の上半分(端数切捨て)の行は裏向きになる。",
+      "initialExtraTableauRows": 1,
       "waveTargetBase": 2000,
       "waveTargetMultiplier": 1.5,
       "initialOracleLevel": 1,

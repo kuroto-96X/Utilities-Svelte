@@ -31,14 +31,14 @@ describe('DEFAULT_PARAMS', () => {
     expect(DEFAULT_PARAMS.scoring.comboMultiplierStep).toBe(0.1)
   })
 
-  test('月の目標スコア基礎値・倍率は愚者と全く同じ(場札が少ない分の難易度上昇を目標スコア側では相殺しない)', () => {
+  test('月の目標スコア基礎値・倍率は愚者と全く同じ', () => {
     expect(DEFAULT_PARAMS.spreads.moon.waveTargetBase).toBe(DEFAULT_PARAMS.spreads.fool.waveTargetBase)
     expect(DEFAULT_PARAMS.spreads.moon.waveTargetMultiplier).toBe(DEFAULT_PARAMS.spreads.fool.waveTargetMultiplier)
   })
 
-  test('月の初期行数オフセットは-1、愚者は0', () => {
+  test('月の初期行数オフセットは1、愚者は0', () => {
     expect(DEFAULT_PARAMS.spreads.fool.initialExtraTableauRows).toBe(0)
-    expect(DEFAULT_PARAMS.spreads.moon.initialExtraTableauRows).toBe(-1)
+    expect(DEFAULT_PARAMS.spreads.moon.initialExtraTableauRows).toBe(1)
   })
 
   test('fool/moonのinitialOracleLevelは1、bannedShopKindsは空配列', () => {
