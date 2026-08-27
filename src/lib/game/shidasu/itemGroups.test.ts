@@ -35,4 +35,13 @@ describe('ITEM_GROUPS', () => {
       expect(groupedIds).toContain(id)
     }
   })
+
+  test('Wave終了時報酬護符3件(活気・瑞祝・市況)がITEM_POOL・ITEM_GROUPSの両方に含まれる', () => {
+    const ids = ['vigor', 'zuishuku', 'marketTrend']
+    const groupedIds = ITEM_GROUPS.flatMap(g => g.ids)
+    for (const id of ids) {
+      expect(ITEM_POOL).toContain(id)
+      expect(groupedIds).toContain(id)
+    }
+  })
 })

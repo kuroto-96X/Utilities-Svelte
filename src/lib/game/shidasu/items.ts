@@ -44,6 +44,7 @@ export const ITEM_POOL: ItemId[] = [
   'bountifulYear', 'profit', 'bounty', 'perk', 'nestEgg',
   'dividend', 'prizeMoney', 'windfall', 'celebration',
   'refund', 'bonus', 'commendation', 'favor',
+  'vigor', 'zuishuku', 'marketTrend',
 ]
 
 export function itemName(id: ItemId, params: ShidasuParams): string {

@@ -30,4 +30,5 @@ export const ITEM_GROUPS: ItemGroup[] = [
   { label: 'グループ22: 他カテゴリ依存', ids: ['discretion', 'frost'] },
   { label: 'グループ23: 売値ボーナス(方向性1)', ids: ['exchange', 'koban', 'senryo', 'manryo', 'harvest', 'settlement', 'hiddenTreasure', 'greatestTreasure', 'heirloom', 'treasury', 'boom', 'abundantFunds', 'savings', 'bigCatch', 'grains', 'liveliness', 'prosperity', 'heavenlyBlessing', 'mizuho', 'bountifulYear', 'profit', 'bounty', 'perk', 'nestEgg'] },
   { label: 'グループ24: 星片獲得(方向性2)', ids: ['dividend', 'prizeMoney', 'windfall', 'celebration', 'refund', 'bonus', 'commendation', 'favor'] },
+  { label: 'グループ25: Wave終了時報酬(レリックから移行)', ids: ['vigor', 'zuishuku', 'marketTrend'] },
 ]
