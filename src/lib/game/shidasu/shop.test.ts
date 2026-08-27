@@ -141,6 +141,39 @@ describe('rollShop', () => {
       expect(pack.offerCount).toBe(catalogEntry.offerCount + 1)
     }
   })
+
+  test('bannedShopKindsにoracleが含まれるスプレッドでは、バラ売り枠・福袋の両方にoracle種別が出現しない', () => {
+    const customParams = {
+      ...DEFAULT_PARAMS,
+      spreads: {
+        ...DEFAULT_PARAMS.spreads,
+        fool: { ...DEFAULT_PARAMS.spreads.fool, bannedShopKinds: ['oracle' as const] },
+      },
+      shop: {
+        ...DEFAULT_PARAMS.shop,
+        packCatalog: DEFAULT_PARAMS.shop.packCatalog, // 既存カタログには神託の福袋(packKind: 'oracle')が含まれる前提
+      },
+    }
+    const run = { ...createInitialRun(), spreadId: 'fool' as const }
+    for (let seed = 1; seed <= 30; seed++) {
+      const shop = rollShop(customParams, run, createRng(seed))
+      expect(shop.individual.some(s => s.kind === 'oracle')).toBe(false)
+      expect(shop.packs.some(p => p.packKind === 'oracle')).toBe(false)
+    }
+  })
+
+  test('bannedShopKindsが空配列のスプレッドでは、従来通りoracle種別が出現しうる', () => {
+    const run = { ...createInitialRun(), spreadId: 'fool' as const }
+    let oracleIndividualSeen = false
+    let oraclePackSeen = false
+    for (let seed = 1; seed <= 30; seed++) {
+      const shop = rollShop(DEFAULT_PARAMS, run, createRng(seed))
+      if (shop.individual.some(s => s.kind === 'oracle')) oracleIndividualSeen = true
+      if (shop.packs.some(p => p.packKind === 'oracle')) oraclePackSeen = true
+    }
+    expect(oracleIndividualSeen).toBe(true)
+    expect(oraclePackSeen).toBe(true)
+  })
 })
 
 describe('価格関数', () => {

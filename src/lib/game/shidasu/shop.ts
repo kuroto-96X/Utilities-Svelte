@@ -20,8 +20,13 @@ function poolFor(kind: ShopSlotKind): readonly string[] {
 // 護符のみ「所持中」「同一ショップ内の他のバラ売り枠」を除外する。秘儀・天啓・神託は重複所持が
 // 許容される仕様のため除外しない。除外後の候補が尽きた場合(87種のプールでは実質起こり得ないが)は
 // プール全体にフォールバックしてクラッシュを避ける。
-function rollIndividualSlot(run: RunState, usedItemIds: Set<ItemId>, rand: () => number): ShopIndividualSlot {
-  const kind = SHOP_SLOT_KINDS[Math.floor(rand() * SHOP_SLOT_KINDS.length)]
+function rollIndividualSlot(params: ShidasuParams, run: RunState, usedItemIds: Set<ItemId>, rand: () => number): ShopIndividualSlot {
+  const bannedShopKinds = params.spreads[run.spreadId].bannedShopKinds
+  // bannedShopKindsで全種別が禁止されるとavailableKindsが空になりクラッシュする。
+  // 現状のスプレッド設計では起こらない(教皇はoracleのみ禁止)が、将来全種別禁止のスプレッドを
+  // 追加する場合はここにフォールバック処理を追加すること。
+  const availableKinds = SHOP_SLOT_KINDS.filter(kind => !bannedShopKinds.includes(kind))
+  const kind = availableKinds[Math.floor(rand() * availableKinds.length)]
   if (kind === 'item') {
     const available = ITEM_POOL.filter(id => !run.items.some(h => h.id === id) && !usedItemIds.has(id))
     const pool = available.length > 0 ? available : ITEM_POOL
@@ -38,7 +43,8 @@ function rollIndividualSlot(run: RunState, usedItemIds: Set<ItemId>, rand: () =>
 // name・priceはこの時点でShopPackSlotにスナップショットとしてコピーする(招き猫所持時は割引後の価格をスナップショットする)。
 // offerCountは縁起小槌所持時のボーナス分を加算してスナップショットする。
 function rollPackSlots(params: ShidasuParams, run: RunState, rand: () => number): ShopPackSlot[] {
-  const entries = [...params.shop.packCatalog]
+  const bannedShopKinds = params.spreads[run.spreadId].bannedShopKinds
+  const entries = params.shop.packCatalog.filter(e => !bannedShopKinds.includes(e.packKind))
   shuffleInPlace(entries, rand)
   const multiplier = relicPriceMultiplier(params, run)
   const offerBonus = packOfferCountBonus(params, run)
@@ -58,7 +64,7 @@ function rollRelicSlots(params: ShidasuParams, run: RunState, rand: () => number
 export function rollShop(params: ShidasuParams, run: RunState, rand: () => number = Math.random): ShopState {
   const usedItemIds = new Set<ItemId>()
   const individualCount = individualSlotCount(params, run)
-  const individual: ShopIndividualSlot[] = Array.from({ length: individualCount }, () => rollIndividualSlot(run, usedItemIds, rand))
+  const individual: ShopIndividualSlot[] = Array.from({ length: individualCount }, () => rollIndividualSlot(params, run, usedItemIds, rand))
   return { individual, packs: rollPackSlots(params, run, rand), relic: rollRelicSlots(params, run, rand) }
 }
 
