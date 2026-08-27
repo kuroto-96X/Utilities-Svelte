@@ -1086,17 +1086,7 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
   const zuishukuEarned = zuishukuHeld ? Math.floor(zuishukuRoleTypeCount / 2) * params.talismans.zuishuku.n : 0
 
   // 市況: ウェーブクリア時、山札消化率に応じて星片にfloor(((c-b-a)/(c-b))×n)を加算する。
-  // a=残り山札枚数, b=場札の初期配布枚数, c=デッキ総枚数(除外カードを除く)。分母が0以下なら0。
-  const marketTrendHeld = run.items.some(h => h.id === 'marketTrend')
-  const marketTrendEarned = (() => {
-    if (!marketTrendHeld) return 0
-    const a = wave.stock.length
-    const b = wave.dealtRows * params.layout.cols
-    const c = run.deckComposition.filter(card => !card.removed).length
-    const denominator = c - b
-    if (denominator <= 0) return 0
-    return Math.floor(((c - b - a) / denominator) * params.talismans.marketTrend.n)
-  })()
+  const marketTrendEarned = computeMarketTrendEarned(params, run, wave)
 
   const runWithCurrency = {
     ...run,
@@ -1121,6 +1111,18 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
     return { ...runWithCurrency, phase: 'continueChoice' }
   }
   return enterShop(params, runWithCurrency, seed, rand)
+}
+
+// 市況: ウェーブクリア時、山札消化率に応じてfloor(((c-b-a)/(c-b))×n)を星片に加算する。
+// a=残り山札枚数, b=場札の初期配布枚数, c=デッキ総枚数(除外カードを除く)。分母が0以下なら0。
+function computeMarketTrendEarned(params: ShidasuParams, run: RunState, wave: WaveState): number {
+  if (!run.items.some(h => h.id === 'marketTrend')) return 0
+  const a = wave.stock.length
+  const b = wave.dealtRows * params.layout.cols
+  const c = run.deckComposition.filter(card => !card.removed).length
+  const denominator = c - b
+  if (denominator <= 0) return 0
+  return Math.floor(((c - b - a) / denominator) * params.talismans.marketTrend.n)
 }
 
 // 果断・星霜: 天啓・神託・秘儀のいずれかを使用するたび、waveのdiscretionN/frostXへ永続的に加算する。
