@@ -11,7 +11,7 @@ import { applyRiteEffect, canUseRite } from './riteEffects'
 import { rollRiteOffer } from './rites'
 import { rollRevelationOffer, REVELATION_POOL } from './revelations'
 import { applyRevelationEffect, canUseRevelation } from './revelationEffects'
-import { rollOracleOffer, defaultOracleLevels, ORACLE_POOL } from './oracles'
+import { rollOracleOffer, defaultOracleLevels, oracleLevelsWithUniformValue, ORACLE_POOL } from './oracles'
 import { rollCardSetOffer } from './cardSets'
 import { rollShop, itemBuyPrice, itemSellPrice, riteBuyPrice, riteSellPrice, revelationBuyPrice, revelationSellPrice, oracleBuyPrice, oracleSellPrice, relicBuyPrice } from './shop'
 import { itemMaxCapacity, riteMaxCapacity, revelationOracleMaxCapacity, relicRerollCostStep, relicFirstRerollFree, RELIC_POOL } from './relics'
@@ -1022,9 +1022,7 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
   const initialExtraTableauRows = spreadConfig.initialExtraTableauRows
   const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
   const initialStageStars = rollStageStars(params, rand)
-  const oracleLevels = Object.fromEntries(
-    Object.keys(defaultOracleLevels()).map(name => [name, spreadConfig.initialOracleLevel])
-  ) as Record<RoleName, number>
+  const oracleLevels = oracleLevelsWithUniformValue(spreadConfig.initialOracleLevel)
   return {
     ...createInitialRun(),
     phase: 'shop',

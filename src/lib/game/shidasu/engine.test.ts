@@ -73,7 +73,7 @@ import type { Card, WaveState, RunState, ItemId, ShopIndividualSlot, Star, StarR
 import { DEFAULT_PARAMS, type ShidasuParams } from './params'
 import { createRng, standardDeckComposition } from './deck'
 import { card } from './testHelpers'
-import { defaultOracleLevels, ORACLE_POOL } from './oracles'
+import { defaultOracleLevels, oracleLevelsWithUniformValue, ORACLE_POOL } from './oracles'
 import { ITEM_POOL } from './items'
 import { RELIC_POOL } from './relics'
 import { itemBuyPrice, riteBuyPrice, revelationBuyPrice, itemSellPrice, riteSellPrice, revelationSellPrice, oracleSellPrice, rollShop, relicBuyPrice } from './shop'
@@ -5668,7 +5668,7 @@ describe('triggerSabotage', () => {
     // 「全役3からスタートし、変化した役はちょうど2つ・それぞれ2になる」ことだけを検証する
     // (shuffleInPlaceの正確な並び替え結果を手計算で決め打ちすると、実装の細部が変わった際に
     // 無関係な失敗を招きやすいため)。
-    const oracleLevels = Object.fromEntries(Object.keys(defaultOracleLevels()).map(name => [name, 3])) as Record<RoleName, number>
+    const oracleLevels = oracleLevelsWithUniformValue(3)
     const run = runWithWave({ oracleLevels })
     const next = triggerSabotage(DEFAULT_PARAMS, run, 'roleLevelDecay', () => 0)
     const changedNames = (Object.keys(oracleLevels) as RoleName[]).filter(name => next.oracleLevels[name] !== oracleLevels[name])

@@ -31,3 +31,8 @@ export function defaultOracleLevels(): Record<RoleName, number> {
     pair: 1, alternating: 1,
   }
 }
+
+// 全役に同じレベルを設定したoracleLevelsを構築する(スプレッドのinitialOracleLevel適用等に使う)。
+export function oracleLevelsWithUniformValue(level: number): Record<RoleName, number> {
+  return ORACLE_POOL.reduce((acc, name) => ({ ...acc, [name]: level }), {} as Record<RoleName, number>)
+}
