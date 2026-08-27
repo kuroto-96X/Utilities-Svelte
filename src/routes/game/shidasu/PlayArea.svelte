@@ -953,7 +953,8 @@
   // 収束アニメーション完了後、対象列のみへカードを裏向きで配り直す。配布順序は
   // 対象列内でrow=0から順に、複数列がある場合は列をまたいでrow単位で揃える
   // (startDealAnimationと同じ考え方)。着地したカードがその列の一番上であれば
-  // フリップ演出(startFlipReveal)を、そうでなければ即座にdealtCellsへ登録する。
+  // dealOneCard内部でフリップ演出(startFlipReveal)が呼ばれ、そうでなければ
+  // 裏向きのままdealtCellsへ登録される。
   function startSabotageDealAnimation(affectedCols: number[]) {
     // 対象列を「未配布」扱いに戻す(isNotYetDealtの判定に使うdealtCellsから除去)。
     dealtCells = new Set([...dealtCells].filter(key => !affectedCols.includes(Number(key.split('-')[0]))))
@@ -981,13 +982,7 @@
     order.forEach((entry, index) => {
       const timer = setTimeout(() => {
         const isTopOfColumn = entry.rowIndex === wave.tableau[entry.colIndex].length - 1
-        dealOneCard(entry, fromLeft, fromTop, false, landedEntry => {
-          if (isTopOfColumn) {
-            startFlipReveal(landedEntry.colIndex, landedEntry.rowIndex, landedEntry.card)
-          } else {
-            dealtCells = new Set([...dealtCells, `${landedEntry.colIndex}-${landedEntry.rowIndex}`])
-          }
-        })
+        dealOneCard(entry, fromLeft, fromTop, isTopOfColumn)
       }, index * DEAL_INTERVAL_MS)
       dealTimers.push(timer)
     })
@@ -1017,22 +1012,21 @@
 
     order.forEach((entry, index) => {
       const timer = setTimeout(() => {
-        dealOneCard(entry, fromLeft, fromTop)
+        dealOneCard(entry, fromLeft, fromTop, entry.card.faceUp !== false)
       }, index * DEAL_INTERVAL_MS)
       dealTimers.push(timer)
     })
   }
 
-  // 1枚のカードを山札の位置からマス目の位置へ移動させ、着地したらdealtCellsに登録して
-  // 実表示へ切り替える。複数枚が時間差で同時並行するため、dealingCardsは配列で管理する。
-  // faceUpは配布中の表示に使う(通常配布は常にtrue、妨害再配布はfalse)。onLandedは
-  // 着地時にdealtCells登録の代わりに独自処理をしたい呼び出し元(妨害再配布)向けのフック。
+  // 1枚のカードを山札の位置からマス目の位置へ、常に裏向きの見た目で移動させる。複数枚が
+  // 時間差で同時並行するため、dealingCardsは配列で管理する。着地時、shouldFlipToFaceUpが
+  // trueならstartFlipRevealで表向きへフリップする演出を開始し、falseなら裏向きのまま
+  // dealtCellsへ登録して確定表示に切り替える(通常配布・妨害系再配布の両方で共通の着地処理)。
   function dealOneCard(
     entry: { card: Card; colIndex: number; rowIndex: number },
     fromLeft: number,
     fromTop: number,
-    faceUp: boolean = true,
-    onLanded?: (entry: { card: Card; colIndex: number; rowIndex: number }) => void
+    shouldFlipToFaceUp: boolean
   ) {
     if (!tableauEl) return
     const targetEl = tableauEl.querySelector<HTMLElement>(`[data-drop-col="${entry.colIndex}"][data-drop-row="${entry.rowIndex}"]`)
@@ -1043,7 +1037,7 @@
 
     dealingCards = [
       ...dealingCards,
-      { card: entry.card, colIndex: entry.colIndex, rowIndex: entry.rowIndex, left: fromLeft, top: fromTop, transitionMs: 0, faceUp },
+      { card: entry.card, colIndex: entry.colIndex, rowIndex: entry.rowIndex, left: fromLeft, top: fromTop, transitionMs: 0, faceUp: false },
     ]
 
     requestAnimationFrame(() => {
@@ -1058,8 +1052,8 @@
 
     const timer = setTimeout(() => {
       dealingCards = dealingCards.filter(d => !(d.colIndex === entry.colIndex && d.rowIndex === entry.rowIndex))
-      if (onLanded) {
-        onLanded(entry)
+      if (shouldFlipToFaceUp) {
+        startFlipReveal(entry.colIndex, entry.rowIndex, entry.card)
       } else {
         dealtCells = new Set([...dealtCells, `${entry.colIndex}-${entry.rowIndex}`])
       }
