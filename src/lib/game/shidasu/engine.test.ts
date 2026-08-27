@@ -385,6 +385,36 @@ describe('startWave', () => {
     expect(wave.ehwazActiveThisWave).toBe(false)
   })
 
+  test('spreadId: moonのとき、各列の先頭Math.floor(rows/2)枚がfaceUp:falseになる(奥側=先頭側が裏向き)', () => {
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 1, defaultOracleLevels(), 1, 1, 1, 10, 1, 1, 50, { kind: 'none' }, 'moon')
+    const rows = DEFAULT_PARAMS.layout.rows + 1
+    const hiddenCount = Math.floor(rows / 2)
+    wave.tableau.forEach(col => {
+      expect(col).toHaveLength(rows)
+      col.forEach((card, i) => {
+        if (i < hiddenCount) {
+          expect(card.faceUp).toBe(false)
+        } else {
+          expect(card.faceUp).not.toBe(false)
+        }
+      })
+    })
+  })
+
+  test('spreadId: moon以外(fool)のとき、全カードのfaceUpは未設定のまま(裏向き配布は適用されない)', () => {
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1, 0, defaultOracleLevels(), 1, 1, 1, 10, 1, 1, 50, { kind: 'none' }, 'fool')
+    wave.tableau.forEach(col => {
+      col.forEach(card => expect(card.faceUp).not.toBe(false))
+    })
+  })
+
+  test('spreadId省略時(デフォルト)は、fool相当で全カードのfaceUpが未設定のまま', () => {
+    const { wave } = startWave(DEFAULT_PARAMS, 0, 0, [], standardDeckComposition(), 1)
+    wave.tableau.forEach(col => {
+      col.forEach(card => expect(card.faceUp).not.toBe(false))
+    })
+  })
+
   test('同じシードなら同じ結果になる(決定的、アイテムを持っていても山札生成自体は変わらない)', () => {
     const a = startWave(DEFAULT_PARAMS, 0, 0, ['bridge'], standardDeckComposition(), 123)
     const b = startWave(DEFAULT_PARAMS, 0, 0, ['bridge'], standardDeckComposition(), 123)
@@ -2486,12 +2516,12 @@ describe('createInitialRun / beginRun', () => {
     started.wave!.tableau.forEach(col => expect(col).toHaveLength(DEFAULT_PARAMS.layout.rows))
   })
 
-  test('spreadId=moonを指定すると、finishShop後の場札は通常より1行少なく配られる', () => {
+  test('spreadId=moonを指定すると、finishShop後の場札は通常より1行多く配られる', () => {
     const run = beginRun(DEFAULT_PARAMS, 1, 'moon')
     const started = finishShop(DEFAULT_PARAMS, run, 1)
     expect(run.spreadId).toBe('moon')
-    expect(run.extraTableauRows).toBe(-1)
-    started.wave!.tableau.forEach(col => expect(col).toHaveLength(DEFAULT_PARAMS.layout.rows - 1))
+    expect(run.extraTableauRows).toBe(1)
+    started.wave!.tableau.forEach(col => expect(col).toHaveLength(DEFAULT_PARAMS.layout.rows + 1))
   })
 
   test('spreadIdを省略(fool)すると、oracleLevelsは全役1のまま', () => {

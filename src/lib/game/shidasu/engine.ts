@@ -136,7 +136,8 @@ export function startWave(
   frostX: number = 1,
   echoX: number = 1,
   shootingStarN: number = 50,
-  sabotage: StarSabotage = { kind: 'none' }
+  sabotage: StarSabotage = { kind: 'none' },
+  spreadId: SpreadId = 'fool'
 ): { wave: WaveState; deckComposition: DeckCard[] } {
   const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
   let idSeq = 0
@@ -158,6 +159,17 @@ export function startWave(
   const tableau: Card[][] = []
   for (let c = 0; c < cols; c++) {
     tableau.push(deck.splice(0, rows))
+  }
+  // 月: 配られた場札のうち奥側(各列の先頭側、操作可能な手前=末尾側とは反対)の
+  // floor(rows/2)枚を裏向きにする。表示側(PlayArea.svelte)のisTop判定は末尾側を
+  // 指すため、この裏向き行が操作可能な一番手前になることはない。
+  if (spreadId === 'moon') {
+    const hiddenCount = Math.floor(rows / 2)
+    for (let c = 0; c < cols; c++) {
+      for (let r = 0; r < hiddenCount; r++) {
+        tableau[c][r] = { ...tableau[c][r], faceUp: false }
+      }
+    }
   }
   const foundation = deck.pop() as Card
   const { effectiveStairMinLen: effectiveStairMinLenAtDeal, effectiveSuitColorMinLen: effectiveSuitColorMinLenAtDeal } = resolveBridgeAdjustedLengths(params, items)
@@ -1194,7 +1206,7 @@ function enterShop(params: ShidasuParams, run: RunState, _seed: number | undefin
 // ダミー値(0, 0)を渡す。生成したWaveStateは本番run.waveとは無関係な一時オブジェクトであり、
 // 呼び出し元(+page.svelte)がローカルstateとして保持・破棄する。
 export function startRevelationPreview(params: ShidasuParams, run: RunState, seed?: number): WaveState {
-  const { wave } = startWave(params, 0, 0, run.items.map(h => h.id), run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX, run.echoX, run.shootingStarN)
+  const { wave } = startWave(params, 0, 0, run.items.map(h => h.id), run.deckComposition, seed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX, run.echoX, run.shootingStarN, { kind: 'none' }, run.spreadId)
   return wave
 }
 
@@ -1226,7 +1238,7 @@ export function finishShop(params: ShidasuParams, run: RunState, seed?: number):
   // 数学的に相関してしまい、seed固定テストで意図しない相関が生じるため)。
   const rand = createRng(baseSeed + 1)
   const items = rerollRandomTargets(run.items, rand)
-  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, items.map(h => h.id), run.deckComposition, baseSeed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX, run.echoX, run.shootingStarN, star?.sabotage ?? { kind: 'none' })
+  const { wave, deckComposition } = startWave(params, run.stageIndex, run.waveIndex, items.map(h => h.id), run.deckComposition, baseSeed, run.extraTableauRows, run.oracleLevels, run.dedicationX, run.diligenceX, run.divineProtectionX, run.discretionN, run.frostX, run.echoX, run.shootingStarN, star?.sabotage ?? { kind: 'none' }, run.spreadId)
   return { ...run, phase: 'playing', wave, waveGeneration: run.waveGeneration + 1, deckComposition, items, shop: null }
 }
 
