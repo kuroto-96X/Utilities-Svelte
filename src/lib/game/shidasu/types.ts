@@ -24,6 +24,19 @@ export type StarSabotage =
 // スプレッド: ラン開始時にプレイヤーが選ぶ固有ルールセット。大アルカナから命名する。
 // fool(愚者)=特殊ルールなしの基本スプレッド、moon(月)=場札が常に1行少ない状態で始まる
 export type SpreadId = 'fool' | 'moon'
+// スプレッドごとの固有ルール設定。
+export interface SpreadConfig {
+  name: string
+  desc: string
+  // ウェーブ開始時の配布行数への初期オフセット(既存)。
+  initialExtraTableauRows: number
+  waveTargetBase: number
+  waveTargetMultiplier: number
+  // 神託(oracle)の初期レベル。ラン開始時、全10役一律にこの値でoracleLevelsを初期化する(既定1)。
+  initialOracleLevel: number
+  // ショップのバラ売り枠・福袋カタログの両方から除外する種別(既定は空配列=制限なし)。
+  bannedShopKinds: ShopSlotKind[]
+}
 // Wave単位の新概念「星」が持つ制限ルール。旧BossKind(noLoop/faceLock/lowCombo/oddCombo/suit/face)を
 // kindで判別するUnion型として引き継ぐ。suitのみ、星が選出されると同時にスートを抽選し確定させる。
 export type StarRestriction =

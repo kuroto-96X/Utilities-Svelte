@@ -1,6 +1,6 @@
 // src/lib/game/shidasu/params.ts
 import shidasuConfigJson from './shidasu.config.json'
-import type { Rarity, PackCatalogEntry, SabotageActionId } from './types'
+import type { Rarity, PackCatalogEntry, SabotageActionId, SpreadId, SpreadConfig } from './types'
 
 export interface ShidasuParams {
   layout: {
@@ -48,10 +48,7 @@ export interface ShidasuParams {
   // スプレッド(ラン開始時に選ぶ固有ルールセット)ごとの設定。目標スコア算出式
   // target(n) = waveTargetBase × waveTargetMultiplier^(n-1) の基礎値・倍率(nは通しウェーブ番号、1始まり)と、
   // ウェーブ開始時の配布行数への初期オフセット(initialExtraTableauRows)をスプレッドごとに持つ。
-  spreads: {
-    fool: { name: string; desc: string; initialExtraTableauRows: number; waveTargetBase: number; waveTargetMultiplier: number }
-    moon: { name: string; desc: string; initialExtraTableauRows: number; waveTargetBase: number; waveTargetMultiplier: number }
-  }
+  spreads: Record<SpreadId, SpreadConfig>
   items: {
     maxItems: number
   }
@@ -341,8 +338,8 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     { id: 'regicide-planet', name: '王侯を打ち滅ぼす惑星', waveSlot: 3, targetMultiplier: 2, reward: 5, restrictionKind: 'face', descTemplate: '絵札(J・Q・K)で無得点', sabotageKind: 'all' },
   ],
   spreads: {
-    fool: { name: '愚者', desc: '特殊ルールなし', initialExtraTableauRows: 0, waveTargetBase: 2000, waveTargetMultiplier: 1.5 },
-    moon: { name: '月', desc: '場札は常に1行少ない状態で始まる', initialExtraTableauRows: -1, waveTargetBase: 2000, waveTargetMultiplier: 1.5 },
+    fool: { name: '愚者', desc: '特殊ルールなし', initialExtraTableauRows: 0, waveTargetBase: 2000, waveTargetMultiplier: 1.5, initialOracleLevel: 1, bannedShopKinds: [] },
+    moon: { name: '月', desc: '場札は常に1行少ない状態で始まる', initialExtraTableauRows: -1, waveTargetBase: 2000, waveTargetMultiplier: 1.5, initialOracleLevel: 1, bannedShopKinds: [] },
   },
   items: {
     maxItems: 5,
@@ -629,5 +626,5 @@ export const DEFAULT_PARAMS: ShidasuParams = {
 }
 
 export function loadParams(): ShidasuParams {
-  return shidasuConfigJson as ShidasuParams
+  return shidasuConfigJson as unknown as ShidasuParams
 }

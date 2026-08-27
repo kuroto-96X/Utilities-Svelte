@@ -112,14 +112,18 @@
       "desc": "特殊ルールなし",
       "initialExtraTableauRows": 0,
       "waveTargetBase": 2000,
-      "waveTargetMultiplier": 1.5
+      "waveTargetMultiplier": 1.5,
+      "initialOracleLevel": 1,
+      "bannedShopKinds": []
     },
     "moon": {
       "name": "月",
       "desc": "場札は常に1行少ない状態で始まる",
       "initialExtraTableauRows": -1,
       "waveTargetBase": 2000,
-      "waveTargetMultiplier": 1.5
+      "waveTargetMultiplier": 1.5,
+      "initialOracleLevel": 1,
+      "bannedShopKinds": []
     }
   },
   "items": {

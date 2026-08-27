@@ -41,6 +41,13 @@ describe('DEFAULT_PARAMS', () => {
     expect(DEFAULT_PARAMS.spreads.moon.initialExtraTableauRows).toBe(-1)
   })
 
+  test('fool/moonのinitialOracleLevelは1、bannedShopKindsは空配列', () => {
+    expect(DEFAULT_PARAMS.spreads.fool.initialOracleLevel).toBe(1)
+    expect(DEFAULT_PARAMS.spreads.fool.bannedShopKinds).toEqual([])
+    expect(DEFAULT_PARAMS.spreads.moon.initialOracleLevel).toBe(1)
+    expect(DEFAULT_PARAMS.spreads.moon.bannedShopKinds).toEqual([])
+  })
+
   test('方向性1の24護符がtalismansに定義されている', () => {
     const ids = ['exchange', 'koban', 'senryo', 'manryo', 'harvest', 'settlement', 'hiddenTreasure', 'greatestTreasure', 'heirloom', 'treasury', 'boom', 'abundantFunds', 'savings', 'bigCatch', 'grains', 'liveliness', 'prosperity', 'heavenlyBlessing', 'mizuho', 'bountifulYear', 'profit', 'bounty', 'perk', 'nestEgg'] as const
     for (const id of ids) {
