@@ -97,5 +97,12 @@
       </div>
       <span class="text-slate-300 group-hover:text-teal-600 transition-colors">→</span>
     </a>
+    <a href="/admin/shidasu-spreads" class="flex items-center gap-3 px-4 py-4 hover:bg-slate-50 transition-colors group">
+      <div class="flex-1">
+        <p class="text-sm font-semibold text-slate-700 group-hover:text-teal-700">星詠みソリティア -Shidasu- スプレッド設定</p>
+        <p class="text-xs text-slate-400 mt-0.5">fool・moon・popeの初期条件・目標スコア・ショップ制限を編集</p>
+      </div>
+      <span class="text-slate-300 group-hover:text-teal-600 transition-colors">→</span>
+    </a>
   </div>
 </div>
