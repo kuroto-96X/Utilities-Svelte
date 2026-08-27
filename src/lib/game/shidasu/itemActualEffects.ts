@@ -179,4 +179,7 @@ export const ITEM_ACTUAL_EFFECTS: Record<ItemId, string> = {
   bonus: 'ウェーブ終了時、無条件で星片にnを加算する',
   commendation: 'ウェーブ終了時、deckComposition内のランクlの現存カード枚数×nを星片に加算する',
   favor: 'ウェーブ終了時、所持するfavorインスタンスごとにrewardBonusの現在値を星片に加算する。ステージクリア(isBossWave)時はrewardBonusにaを加算して蓄積する',
+  vigor: '(未実装)ウェーブ終了時、そのウェーブでの最大コンボ数に応じて星片に加算する',
+  zuishuku: '(未実装)ウェーブ終了時、そのウェーブで成立した役の種類数に応じて星片に加算する',
+  marketTrend: '(未実装)ウェーブ終了時、山札の消費割合に応じて星片に加算する',
 }

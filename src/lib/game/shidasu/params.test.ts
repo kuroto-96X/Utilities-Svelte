@@ -56,6 +56,14 @@ describe('DEFAULT_PARAMS', () => {
       expect(typeof DEFAULT_PARAMS.talismans[id].name).toBe('string')
     }
   })
+
+  test('Wave終了時報酬護符3件(活気・瑞祝・市況)がtalismansに定義されている', () => {
+    const ids = ['vigor', 'zuishuku', 'marketTrend'] as const
+    for (const id of ids) {
+      expect(DEFAULT_PARAMS.talismans[id]).toBeDefined()
+      expect(typeof DEFAULT_PARAMS.talismans[id].name).toBe('string')
+    }
+  })
 })
 
 describe('loadParams', () => {

@@ -202,6 +202,9 @@ export interface ShidasuParams {
     bonus: { name: string; n: number; rarity: Rarity; desc: string }
     commendation: { name: string; l: number; n: number; rarity: Rarity; desc: string }
     favor: { name: string; n: number; a: number; rarity: Rarity; desc: string }
+    vigor: { name: string; n: number; rarity: Rarity; desc: string }
+    zuishuku: { name: string; n: number; rarity: Rarity; desc: string }
+    marketTrend: { name: string; n: number; rarity: Rarity; desc: string }
   }
   rites: {
     raidho: { name: string; desc: string }
@@ -503,6 +506,9 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     bonus: { name: '報奨', n: 3, rarity: 'C', desc: 'ウェーブ終了時、星片に{n}を加算する' },
     commendation: { name: '褒賞', l: 7, n: 1, rarity: 'U', desc: 'ウェーブ終了時、デッキにあるランク{l}のカード1枚につき星片に{n}を加算する' },
     favor: { name: '恩賞', n: 2, a: 1, rarity: 'R', desc: 'ウェーブ終了時、星片に加算する(ステージクリアごとに加算量が{a}ずつ増加して蓄積する)' },
+    vigor: { name: '活気', n: 2, rarity: 'U', desc: 'ウェーブ終了時、そのウェーブでの最大コンボ数に応じて星片に加算する(floor(最大コンボ数/5)×{n})' },
+    zuishuku: { name: '瑞祝', n: 2, rarity: 'U', desc: 'ウェーブ終了時、そのウェーブで成立した役の種類数に応じて星片に加算する(floor(役の種類数/2)×{n})' },
+    marketTrend: { name: '市況', n: 10, rarity: 'U', desc: 'ウェーブ終了時、山札の消費割合に応じて星片に加算する(floor(((c-b-a)/(c-b))×{n})、a=残り山札枚数,b=初期配布枚数,c=デッキ総枚数)' },
   },
   rites: {
     raidho: { name: 'ᚱ', desc: '場札の絵札とワイルドはそのままに、非絵札を山札に戻してシャッフルし、元の位置に配り直す' },
