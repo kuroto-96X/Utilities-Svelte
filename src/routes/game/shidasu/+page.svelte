@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
-  import { loadParams } from '$lib/game/shidasu/params'
+  import { loadParams, SPREAD_IDS } from '$lib/game/shidasu/params'
   import type { ShidasuParams } from '$lib/game/shidasu/params'
   import {
     createInitialRun, beginRun, applyPlayCard, applyDrawStock, applyStuckCheck,
@@ -227,8 +227,6 @@
   function handleRevelationPreviewCleanupDone() {
     revelationPreviewWave = null
   }
-
-  const SPREAD_IDS: SpreadId[] = ['fool', 'moon', 'pope']
 
   function handleStartWithSpread(spreadId: SpreadId) {
     run = beginRun(params, undefined, spreadId)

@@ -626,6 +626,10 @@ export const DEFAULT_PARAMS: ShidasuParams = {
   ui: { comboTierThresholds: [3, 5, 8], chainCardOffsetX: 30, chainCardsPerRow: 10 },
 }
 
+// スプレッドのID一覧。ゲーム側のスプレッド選択画面・admin側の設定ページの両方から参照する
+// 単一の情報源。新規スプレッドを追加する際はここに追記すれば両画面に自動反映される。
+export const SPREAD_IDS: SpreadId[] = ['fool', 'moon', 'pope']
+
 export function loadParams(): ShidasuParams {
   // ui.comboTierThresholds(タプル型)とJSON側の推論型(number[])が構造的に一致しないため、
   // 単純な`as ShidasuParams`ではTS2352エラーになる。unknownを経由して型チェックを迂回する
