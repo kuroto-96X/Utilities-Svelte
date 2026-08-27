@@ -18,7 +18,7 @@ describe('relics', () => {
     )
   })
 
-  test('relicDesc/relicTsukumokaDescは13候補すべてで{...}形式の未解決プレースホルダーを残さない', () => {
+  test('relicDesc/relicTsukumokaDescは10候補すべてで{...}形式の未解決プレースホルダーを残さない', () => {
     for (const id of RELIC_POOL) {
       const desc = relicDesc(id, DEFAULT_PARAMS)
       const tsukumokaDesc = relicTsukumokaDesc(id, DEFAULT_PARAMS)
