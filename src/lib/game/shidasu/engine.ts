@@ -1076,9 +1076,31 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
     ? itemsAfterRefund.map(h => h.id === 'favor' ? { ...h, rewardBonus: (h.rewardBonus ?? params.talismans.favor.n) + params.talismans.favor.a } : h)
     : itemsAfterRefund
 
+  // 活気: ウェーブクリア時、そのウェーブでの最大コンボ数に応じて星片にfloor(maxComboThisWave/5)×nを加算する。
+  const vigorHeld = run.items.some(h => h.id === 'vigor')
+  const vigorEarned = vigorHeld ? Math.floor(wave.maxComboThisWave / 5) * params.talismans.vigor.n : 0
+
+  // 瑞祝: ウェーブクリア時、そのウェーブで成立した役の種類数に応じて星片にfloor(役の種類数/2)×nを加算する。
+  const zuishukuHeld = run.items.some(h => h.id === 'zuishuku')
+  const zuishukuRoleTypeCount = Object.values(wave.roleOccurrenceCountThisWave).filter(count => (count ?? 0) > 0).length
+  const zuishukuEarned = zuishukuHeld ? Math.floor(zuishukuRoleTypeCount / 2) * params.talismans.zuishuku.n : 0
+
+  // 市況: ウェーブクリア時、山札消化率に応じて星片にfloor(((c-b-a)/(c-b))×n)を加算する。
+  // a=残り山札枚数, b=場札の初期配布枚数, c=デッキ総枚数(除外カードを除く)。分母が0以下なら0。
+  const marketTrendHeld = run.items.some(h => h.id === 'marketTrend')
+  const marketTrendEarned = (() => {
+    if (!marketTrendHeld) return 0
+    const a = wave.stock.length
+    const b = wave.dealtRows * params.layout.cols
+    const c = run.deckComposition.filter(card => !card.removed).length
+    const denominator = c - b
+    if (denominator <= 0) return 0
+    return Math.floor(((c - b - a) / denominator) * params.talismans.marketTrend.n)
+  })()
+
   const runWithCurrency = {
     ...run,
-    currency: run.currency + earned + bonusEarned + commendationEarned + favorEarned,
+    currency: run.currency + earned + bonusEarned + commendationEarned + favorEarned + vigorEarned + zuishukuEarned + marketTrendEarned,
     items: itemsAfterFavor,
     rites: ritesAfterRefund,
     revelations: revelationsAfterRefund,

@@ -2833,6 +2833,69 @@ describe('resolveWaveEnd', () => {
       expect(favor?.rewardBonus).toBe(DEFAULT_PARAMS.talismans.favor.n + DEFAULT_PARAMS.talismans.favor.a)
     })
   })
+
+  describe('活気(vigor)', () => {
+    test('ウェーブクリア時、そのウェーブの最大コンボ数に応じて星片が加算される', () => {
+      const run = endedRun(
+        { items: [{ instanceId: 1, id: 'vigor' }], currency: 0, nextInstanceId: 2 },
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+      )
+      const runWithCombo = { ...run, wave: { ...run.wave!, maxComboThisWave: 12 } }
+      const runWithoutVigor = { ...runWithCombo, items: [] }
+      const result = resolveWaveEnd(DEFAULT_PARAMS, runWithCombo, createRng(1))
+      const resultWithoutVigor = resolveWaveEnd(DEFAULT_PARAMS, runWithoutVigor, createRng(1))
+      // floor(12/5) = 2, * n(=2) = 4
+      expect(result.currency - resultWithoutVigor.currency).toBe(Math.floor(12 / 5) * DEFAULT_PARAMS.talismans.vigor.n)
+    })
+  })
+
+  describe('瑞祝(zuishuku)', () => {
+    test('ウェーブクリア時、そのウェーブで成立した役の種類数に応じて星片が加算される', () => {
+      const run = endedRun(
+        { items: [{ instanceId: 1, id: 'zuishuku' }], currency: 0, nextInstanceId: 2 },
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+      )
+      const runWithRoles = { ...run, wave: { ...run.wave!, roleOccurrenceCountThisWave: { flush: 3, pair: 1, stair: 2 } } }
+      const runWithoutZuishuku = { ...runWithRoles, items: [] }
+      const result = resolveWaveEnd(DEFAULT_PARAMS, runWithRoles, createRng(1))
+      const resultWithoutZuishuku = resolveWaveEnd(DEFAULT_PARAMS, runWithoutZuishuku, createRng(1))
+      // 3種類, floor(3/2) = 1, * n(=2) = 2
+      expect(result.currency - resultWithoutZuishuku.currency).toBe(Math.floor(3 / 2) * DEFAULT_PARAMS.talismans.zuishuku.n)
+    })
+  })
+
+  describe('市況(marketTrend)', () => {
+    test('ウェーブクリア時、山札消化率に応じて星片が加算される', () => {
+      const base = beginRun(DEFAULT_PARAMS, 1)
+      const deckComposition = new Array(52).fill(0).map((_, i) => ({ deckId: i, suit: '♠' as const, rank: 1 as const, wild: false, removed: false }))
+      const run = endedRun(
+        { items: [{ instanceId: 1, id: 'marketTrend' }], currency: 0, nextInstanceId: 2, deckComposition },
+        waveTarget(DEFAULT_PARAMS, 0, 0, base.stageStars),
+      )
+      // b = dealtRows(5) * layout.cols(7) = 35, c = 52, a(stock残り) = 5
+      const runWithStock = { ...run, wave: { ...run.wave!, dealtRows: 5, stock: new Array(5).fill(run.wave!.stock[0]) } }
+      const runWithoutMarketTrend = { ...runWithStock, items: [] }
+      const result = resolveWaveEnd(DEFAULT_PARAMS, runWithStock, createRng(1))
+      const resultWithoutMarketTrend = resolveWaveEnd(DEFAULT_PARAMS, runWithoutMarketTrend, createRng(1))
+      // ((52-35-5)/(52-35)) * 10 = (12/17)*10 = 7.05... -> floor = 7
+      expect(result.currency - resultWithoutMarketTrend.currency).toBe(7)
+    })
+
+    test('山札消化率の分母が0以下なら加算されない', () => {
+      const base = beginRun(DEFAULT_PARAMS, 1)
+      const deckComposition = new Array(30).fill(0).map((_, i) => ({ deckId: i, suit: '♠' as const, rank: 1 as const, wild: false, removed: false }))
+      const run = endedRun(
+        { items: [{ instanceId: 1, id: 'marketTrend' }], currency: 0, nextInstanceId: 2, deckComposition },
+        waveTarget(DEFAULT_PARAMS, 0, 0, base.stageStars),
+      )
+      // b = dealtRows(5) * layout.cols(7) = 35, c = 30 → denominator = c - b = -5 <= 0
+      const runWithStock = { ...run, wave: { ...run.wave!, dealtRows: 5 } }
+      const result = resolveWaveEnd(DEFAULT_PARAMS, runWithStock, createRng(1))
+      const runWithoutMarketTrend = { ...runWithStock, items: [] }
+      const resultWithoutMarketTrend = resolveWaveEnd(DEFAULT_PARAMS, runWithoutMarketTrend, createRng(1))
+      expect(result.currency - resultWithoutMarketTrend.currency).toBe(0)
+    })
+  })
 })
 
 describe('stageModifierFor / bossScoreLockFor', () => {
