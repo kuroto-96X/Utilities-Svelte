@@ -2570,6 +2570,20 @@ describe('createInitialRun / beginRun', () => {
     run.deckComposition.forEach(c => expect(c.removed).toBe(false))
   })
 
+  test('spreadId=loversでは、deckCompositionの黒スート(♠♣)が片方のみ、赤スート(♥♦)が片方のみになる', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1, 'lovers')
+    const distinctBlackSuits = new Set(run.deckComposition.filter(c => c.suit === '♠' || c.suit === '♣').map(c => c.suit))
+    const distinctRedSuits = new Set(run.deckComposition.filter(c => c.suit === '♥' || c.suit === '♦').map(c => c.suit))
+    expect(distinctBlackSuits.size).toBe(1)
+    expect(distinctRedSuits.size).toBe(1)
+  })
+
+  test('spreadIdを省略(fool)すると、deckCompositionは4スート混在のまま', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    const distinctSuits = new Set(run.deckComposition.map(c => c.suit))
+    expect(distinctSuits.size).toBe(4)
+  })
+
   test('waveTargetはflow.stageTargetBase・stageTargetMultiplierとstageStarsの倍率を参照する', () => {
     const custom = {
       ...DEFAULT_PARAMS,

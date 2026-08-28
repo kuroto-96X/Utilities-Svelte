@@ -1,7 +1,7 @@
 // src/lib/game/shidasu/engine.ts
 import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, HeldItem, HeldRite, HeldRevelation, HeldOracle, Star, StarRestriction, CardSetGenreId, RelicId, StarSabotage, SabotageActionId, ShopState } from './types'
 import type { ShidasuParams } from './params'
-import { createRng, shuffle, shuffleInPlace, standardDeckComposition, addCardsToDeckComposition, rollOffer } from './deck'
+import { createRng, shuffle, shuffleInPlace, standardDeckComposition, addCardsToDeckComposition, rollOffer, unifyBlackRedSuits } from './deck'
 import { rollSabotage } from './sabotage'
 import { isFace, chainContinuesPattern, evaluateChainBonus, countSameRankBefore, countSameRankForWildPlay, cardColors } from './patterns'
 import { addPart, multiplyPart, lockPart, type ScorePart } from './scoreParts'
@@ -1036,11 +1036,14 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
   const initialStageStars = rollStageStars(params, rand)
   const oracleLevels = oracleLevelsWithUniformValue(spreadConfig.initialOracleLevel)
   const initialRun = createInitialRun()
-  const deckComposition = spreadConfig.excludedRanks.length === 0
+  const deckCompositionAfterExclusion = spreadConfig.excludedRanks.length === 0
     ? initialRun.deckComposition
     : initialRun.deckComposition.map(c =>
         spreadConfig.excludedRanks.includes(c.rank) ? { ...c, removed: true } : c
       )
+  const deckComposition = spreadConfig.unifyBlackRedSuits
+    ? unifyBlackRedSuits(deckCompositionAfterExclusion, rand)
+    : deckCompositionAfterExclusion
   return {
     ...initialRun,
     phase: 'shop',
