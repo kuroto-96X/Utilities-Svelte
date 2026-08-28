@@ -26,6 +26,22 @@ export function standardDeckComposition(): DeckCard[] {
   return composition
 }
 
+// 標準デッキ(52枚)をmultiplier組連結したdeckCompositionを生成する。deckIdは重複しないよう
+// 通し番号で振り直す(例: multiplier=2なら0〜103の104個)。multiplier=1のときは
+// standardDeckComposition()と同じ結果になる。
+export function multipliedDeckComposition(multiplier: number): DeckCard[] {
+  const composition: DeckCard[] = []
+  let deckId = 0
+  for (let i = 0; i < multiplier; i++) {
+    for (const suit of SUITS) {
+      for (let rank = 1; rank <= 13; rank++) {
+        composition.push({ deckId: deckId++, suit, rank: rank as Rank, wild: false, removed: false })
+      }
+    }
+  }
+  return composition
+}
+
 // deckCompositionに複数枚のカードを一括追加する。deckIdは既存の配列長を基準に連番で振る
 // (天啓のワイルド供給処理revelationEffects.tsのnewDeckIdと同じ採番方式)。
 export function addCardsToDeckComposition(deckComposition: DeckCard[], cards: NewCardSpec[]): DeckCard[] {

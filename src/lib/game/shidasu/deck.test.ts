@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { createDeck, createRng, rollOffer, shuffle, standardDeckComposition, addCardsToDeckComposition, unifyBlackRedSuits } from './deck'
+import { createDeck, createRng, rollOffer, shuffle, standardDeckComposition, addCardsToDeckComposition, unifyBlackRedSuits, multipliedDeckComposition } from './deck'
 
 function idGen() {
   let n = 0
@@ -219,5 +219,40 @@ describe('unifyBlackRedSuits', () => {
     const copy = composition.map(c => ({ ...c }))
     unifyBlackRedSuits(composition, createRng(1))
     expect(composition).toEqual(copy)
+  })
+})
+
+describe('multipliedDeckComposition', () => {
+  test('multiplier=1のとき、standardDeckComposition()と同じ52枚になる', () => {
+    const result = multipliedDeckComposition(1)
+    expect(result).toHaveLength(52)
+    const suits = ['♠', '♥', '♦', '♣'] as const
+    suits.forEach(suit => {
+      const cards = result.filter(c => c.suit === suit)
+      expect(cards).toHaveLength(13)
+    })
+  })
+
+  test('multiplier=2のとき、104枚になり各スート・ランクの組み合わせが2枚ずつ存在する', () => {
+    const result = multipliedDeckComposition(2)
+    expect(result).toHaveLength(104)
+    const suits = ['♠', '♥', '♦', '♣'] as const
+    suits.forEach(suit => {
+      for (let rank = 1; rank <= 13; rank++) {
+        const cards = result.filter(c => c.suit === suit && c.rank === rank)
+        expect(cards).toHaveLength(2)
+      }
+    })
+  })
+
+  test('multiplier=2のとき、deckIdは0〜103の重複しない連番になる', () => {
+    const result = multipliedDeckComposition(2)
+    const deckIds = result.map(c => c.deckId).sort((a, b) => a - b)
+    expect(deckIds).toEqual(Array.from({ length: 104 }, (_, i) => i))
+  })
+
+  test('全カードがwild:false, removed:falseで生成される', () => {
+    const result = multipliedDeckComposition(2)
+    expect(result.every(c => c.wild === false && c.removed === false)).toBe(true)
   })
 })
