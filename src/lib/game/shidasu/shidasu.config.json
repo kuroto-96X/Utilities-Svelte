@@ -120,7 +120,8 @@
       "initialItemCapacityBonus": 0,
       "excludedRanks": [],
       "unifyBlackRedSuits": false,
-      "randomizeDeck": false
+      "randomizeDeck": false,
+      "randomizeWildPerSuit": false
     },
     "moon": {
       "name": "月",
@@ -135,7 +136,8 @@
       "initialItemCapacityBonus": 0,
       "excludedRanks": [],
       "unifyBlackRedSuits": false,
-      "randomizeDeck": false
+      "randomizeDeck": false,
+      "randomizeWildPerSuit": false
     },
     "pope": {
       "name": "教皇",
@@ -150,7 +152,8 @@
       "initialItemCapacityBonus": 0,
       "excludedRanks": [],
       "unifyBlackRedSuits": false,
-      "randomizeDeck": false
+      "randomizeDeck": false,
+      "randomizeWildPerSuit": false
     },
     "empress": {
       "name": "女帝",
@@ -165,7 +168,8 @@
       "initialItemCapacityBonus": 0,
       "excludedRanks": [],
       "unifyBlackRedSuits": false,
-      "randomizeDeck": false
+      "randomizeDeck": false,
+      "randomizeWildPerSuit": false
     },
     "magician": {
       "name": "魔術師",
@@ -180,7 +184,8 @@
       "initialItemCapacityBonus": 1,
       "excludedRanks": [],
       "unifyBlackRedSuits": false,
-      "randomizeDeck": false
+      "randomizeDeck": false,
+      "randomizeWildPerSuit": false
     },
     "justice": {
       "name": "正義",
@@ -195,7 +200,8 @@
       "initialItemCapacityBonus": 0,
       "excludedRanks": [11, 12, 13],
       "unifyBlackRedSuits": false,
-      "randomizeDeck": false
+      "randomizeDeck": false,
+      "randomizeWildPerSuit": false
     },
     "lovers": {
       "name": "恋人",
@@ -210,7 +216,8 @@
       "initialItemCapacityBonus": 0,
       "excludedRanks": [],
       "unifyBlackRedSuits": true,
-      "randomizeDeck": false
+      "randomizeDeck": false,
+      "randomizeWildPerSuit": false
     },
     "emperor": {
       "name": "皇帝",
@@ -225,7 +232,8 @@
       "initialItemCapacityBonus": -1,
       "excludedRanks": [],
       "unifyBlackRedSuits": false,
-      "randomizeDeck": false
+      "randomizeDeck": false,
+      "randomizeWildPerSuit": false
     },
     "wheelOfFortune": {
       "name": "運命の輪",
@@ -240,7 +248,24 @@
       "initialItemCapacityBonus": 0,
       "excludedRanks": [],
       "unifyBlackRedSuits": false,
-      "randomizeDeck": true
+      "randomizeDeck": true,
+      "randomizeWildPerSuit": false
+    },
+    "strength": {
+      "name": "力",
+      "desc": "初期デッキの各スート(♠♥♦♣)から1枚ずつランダムに選ばれたカードがワイルドに変換された状態で始まる",
+      "initialExtraTableauRows": 0,
+      "deckMultiplier": 1,
+      "tableauRowMultiplier": 1,
+      "targetScoreMultiplier": 1,
+      "initialOracleLevel": 1,
+      "bannedShopKinds": [],
+      "initialCurrencyBonus": 0,
+      "initialItemCapacityBonus": 0,
+      "excludedRanks": [],
+      "unifyBlackRedSuits": false,
+      "randomizeDeck": false,
+      "randomizeWildPerSuit": true
     }
   },
   "items": {

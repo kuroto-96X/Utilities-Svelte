@@ -144,6 +144,29 @@ describe('DEFAULT_PARAMS', () => {
     expect(DEFAULT_PARAMS.spreads.lovers.excludedRanks).toEqual([])
   })
 
+  test('fool/moon/pope/empress/magician/justice/lovers/emperor/wheelOfFortuneのrandomizeWildPerSuitはfalse', () => {
+    const nonStrengthIds = ['fool', 'moon', 'pope', 'empress', 'magician', 'justice', 'lovers', 'emperor', 'wheelOfFortune'] as const
+    nonStrengthIds.forEach(id => {
+      expect(DEFAULT_PARAMS.spreads[id].randomizeWildPerSuit).toBe(false)
+    })
+  })
+
+  test('strengthの名称は力、randomizeWildPerSuitはtrue、他のフィールドはfoolと同じ', () => {
+    expect(DEFAULT_PARAMS.spreads.strength.name).toBe('力')
+    expect(DEFAULT_PARAMS.spreads.strength.randomizeWildPerSuit).toBe(true)
+    expect(DEFAULT_PARAMS.spreads.strength.initialExtraTableauRows).toBe(DEFAULT_PARAMS.spreads.fool.initialExtraTableauRows)
+    expect(DEFAULT_PARAMS.spreads.strength.deckMultiplier).toBe(1)
+    expect(DEFAULT_PARAMS.spreads.strength.tableauRowMultiplier).toBe(1)
+    expect(DEFAULT_PARAMS.spreads.strength.targetScoreMultiplier).toBe(1)
+    expect(DEFAULT_PARAMS.spreads.strength.initialOracleLevel).toBe(DEFAULT_PARAMS.spreads.fool.initialOracleLevel)
+    expect(DEFAULT_PARAMS.spreads.strength.bannedShopKinds).toEqual([])
+    expect(DEFAULT_PARAMS.spreads.strength.initialCurrencyBonus).toBe(0)
+    expect(DEFAULT_PARAMS.spreads.strength.initialItemCapacityBonus).toBe(0)
+    expect(DEFAULT_PARAMS.spreads.strength.excludedRanks).toEqual([])
+    expect(DEFAULT_PARAMS.spreads.strength.unifyBlackRedSuits).toBe(false)
+    expect(DEFAULT_PARAMS.spreads.strength.randomizeDeck).toBe(false)
+  })
+
   test('方向性1の24護符がtalismansに定義されている', () => {
     const ids = ['exchange', 'koban', 'senryo', 'manryo', 'harvest', 'settlement', 'hiddenTreasure', 'greatestTreasure', 'heirloom', 'treasury', 'boom', 'abundantFunds', 'savings', 'bigCatch', 'grains', 'liveliness', 'prosperity', 'heavenlyBlessing', 'mizuho', 'bountifulYear', 'profit', 'bounty', 'perk', 'nestEgg'] as const
     for (const id of ids) {
