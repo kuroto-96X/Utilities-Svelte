@@ -82,6 +82,8 @@
   // タイトル画面の高さをプレイ画面に揃えるための計測専用ダミーウェーブ(実際のゲームには使わない)
   const measurementWave = startWave(params, 0, 0, [], standardDeckComposition(), 1).wave
   let measuredPlayHeight = $state(0)
+  // スプレッド説明カードの高さを、全スプレッド中で説明文が最長のものに合わせるための実測値。
+  let measuredSpreadCardHeight = $state(0)
 
   let run = $state<RunState>(createInitialRun())
   let highlightedItemId = $state<ItemId | null>(null)
@@ -776,6 +778,26 @@
   >
     <PlayArea wave={measurementWave} {params} modifier={currentModifier} {target} items={run.items.map(h => h.id)} onPlayCard={handlePlayCard} onDraw={handleDraw} headerExtra={stageRow} extraFooter={itemBadges} rites={run.rites} onUseRite={handleUseRite} />
   </div>
+  <!-- スプレッド説明カードの高さを、全スプレッド中で説明文が最長のものに揃えるための実測用ブロック。
+       実際のカード行(左右ボタン+カード)と同じ構造で幅を揃え、CSS Gridで全スプレッド分を
+       同じセルに重ねて描画することで、最大の高さをoffsetHeightとして取得する。 -->
+  <div
+    style="position:absolute; top:0; left:0; width:100%; visibility:hidden; pointer-events:none; z-index:-1;"
+    aria-hidden="true"
+  >
+    <div class="flex items-center gap-2 w-full max-w-xs mx-auto">
+      <div class="shrink-0 w-10 h-10"></div>
+      <div class="flex-1 min-w-0 grid" bind:offsetHeight={measuredSpreadCardHeight}>
+        {#each SPREAD_IDS as spreadId (spreadId)}
+          <div class="border border-yellow-500/40 rounded-xl px-4 py-3 text-left" style="grid-area:1/1;">
+            <div class="font-black text-lg">{params.spreads[spreadId].name}</div>
+            <div class="text-xs mt-0.5">{params.spreads[spreadId].desc}</div>
+          </div>
+        {/each}
+      </div>
+      <div class="shrink-0 w-10 h-10"></div>
+    </div>
+  </div>
   <div class="flex flex-col items-center justify-center gap-6 text-center px-6" style="min-height:{measuredPlayHeight}px;">
     <div>
       <div class="text-xs tracking-widest text-emerald-300/70 mb-2">SOLITAIRE ROGUE</div>
@@ -797,7 +819,7 @@
         >
           ◀
         </button>
-        <div class="flex-1 min-w-0 bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 text-left relative" style="min-height:5.5rem;">
+        <div class="flex-1 min-w-0 bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 text-left relative" style="min-height:{measuredSpreadCardHeight}px;">
           {#key selectedSpreadIndex}
             {@const displayedSpreadId = SPREAD_IDS[selectedSpreadIndex]}
             <div class="absolute inset-0 px-4 py-3" transition:fade={{ duration: 150 }}>
