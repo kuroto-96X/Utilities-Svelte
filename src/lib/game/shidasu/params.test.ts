@@ -89,6 +89,28 @@ describe('DEFAULT_PARAMS', () => {
     expect(DEFAULT_PARAMS.spreads.justice.initialExtraTableauRows).toBe(0)
   })
 
+  test('fool/moon/pope/empress/magician/justiceのunifyBlackRedSuitsはfalse', () => {
+    expect(DEFAULT_PARAMS.spreads.fool.unifyBlackRedSuits).toBe(false)
+    expect(DEFAULT_PARAMS.spreads.moon.unifyBlackRedSuits).toBe(false)
+    expect(DEFAULT_PARAMS.spreads.pope.unifyBlackRedSuits).toBe(false)
+    expect(DEFAULT_PARAMS.spreads.empress.unifyBlackRedSuits).toBe(false)
+    expect(DEFAULT_PARAMS.spreads.magician.unifyBlackRedSuits).toBe(false)
+    expect(DEFAULT_PARAMS.spreads.justice.unifyBlackRedSuits).toBe(false)
+  })
+
+  test('loversの名称は恋人、unifyBlackRedSuitsはtrue、他のフィールドはfoolと同じ', () => {
+    expect(DEFAULT_PARAMS.spreads.lovers.name).toBe('恋人')
+    expect(DEFAULT_PARAMS.spreads.lovers.unifyBlackRedSuits).toBe(true)
+    expect(DEFAULT_PARAMS.spreads.lovers.initialExtraTableauRows).toBe(DEFAULT_PARAMS.spreads.fool.initialExtraTableauRows)
+    expect(DEFAULT_PARAMS.spreads.lovers.waveTargetBase).toBe(DEFAULT_PARAMS.spreads.fool.waveTargetBase)
+    expect(DEFAULT_PARAMS.spreads.lovers.waveTargetMultiplier).toBe(DEFAULT_PARAMS.spreads.fool.waveTargetMultiplier)
+    expect(DEFAULT_PARAMS.spreads.lovers.initialOracleLevel).toBe(DEFAULT_PARAMS.spreads.fool.initialOracleLevel)
+    expect(DEFAULT_PARAMS.spreads.lovers.bannedShopKinds).toEqual([])
+    expect(DEFAULT_PARAMS.spreads.lovers.initialCurrencyBonus).toBe(0)
+    expect(DEFAULT_PARAMS.spreads.lovers.initialItemCapacityBonus).toBe(0)
+    expect(DEFAULT_PARAMS.spreads.lovers.excludedRanks).toEqual([])
+  })
+
   test('方向性1の24護符がtalismansに定義されている', () => {
     const ids = ['exchange', 'koban', 'senryo', 'manryo', 'harvest', 'settlement', 'hiddenTreasure', 'greatestTreasure', 'heirloom', 'treasury', 'boom', 'abundantFunds', 'savings', 'bigCatch', 'grains', 'liveliness', 'prosperity', 'heavenlyBlessing', 'mizuho', 'bountifulYear', 'profit', 'bounty', 'perk', 'nestEgg'] as const
     for (const id of ids) {

@@ -25,8 +25,9 @@ export type StarSabotage =
 // fool(愚者)=特殊ルールなしの基本スプレッド、moon(月)=場札が常に1行少ない状態で始まる、
 // pope(教皇)=神託の初期レベルが上がるが、ショップで神託が販売されない、
 // empress(女帝)=初期所持金が多い状態で始まる、magician(魔術師)=護符所持スロットが多いが場札が少ない、
-// justice(正義)=初期デッキから絵札(J・Q・K)が除外される
-export type SpreadId = 'fool' | 'moon' | 'pope' | 'empress' | 'magician' | 'justice'
+// justice(正義)=初期デッキから絵札(J・Q・K)が除外される、
+// lovers(恋人)=初期デッキの黒スート(♠♣)・赤スート(♥♦)がそれぞれランダムに片方へ統一される
+export type SpreadId = 'fool' | 'moon' | 'pope' | 'empress' | 'magician' | 'justice' | 'lovers'
 // スプレッドごとの固有ルール設定。
 export interface SpreadConfig {
   name: string
@@ -45,6 +46,9 @@ export interface SpreadConfig {
   initialItemCapacityBonus: number
   // 初期デッキ生成時に除外するランクの一覧(既定は空配列=除外なし)。
   excludedRanks: Rank[]
+  // 初期デッキ生成時、黒スート(♠♣)をどちらか一方へ、赤スート(♥♦)をどちらか一方へ
+  // ランダムに統一するか(既定false)。統一先はラン開始のたびにランダムに決定される。
+  unifyBlackRedSuits: boolean
 }
 // Wave単位の新概念「星」が持つ制限ルール。旧BossKind(noLoop/faceLock/lowCombo/oddCombo/suit/face)を
 // kindで判別するUnion型として引き継ぐ。suitのみ、星が選出されると同時にスートを抽選し確定させる。

@@ -117,7 +117,8 @@
       "bannedShopKinds": [],
       "initialCurrencyBonus": 0,
       "initialItemCapacityBonus": 0,
-      "excludedRanks": []
+      "excludedRanks": [],
+      "unifyBlackRedSuits": false
     },
     "moon": {
       "name": "月",
@@ -129,7 +130,8 @@
       "bannedShopKinds": [],
       "initialCurrencyBonus": 0,
       "initialItemCapacityBonus": 0,
-      "excludedRanks": []
+      "excludedRanks": [],
+      "unifyBlackRedSuits": false
     },
     "pope": {
       "name": "教皇",
@@ -141,7 +143,8 @@
       "bannedShopKinds": ["oracle"],
       "initialCurrencyBonus": 0,
       "initialItemCapacityBonus": 0,
-      "excludedRanks": []
+      "excludedRanks": [],
+      "unifyBlackRedSuits": false
     },
     "empress": {
       "name": "女帝",
@@ -153,7 +156,8 @@
       "bannedShopKinds": [],
       "initialCurrencyBonus": 10,
       "initialItemCapacityBonus": 0,
-      "excludedRanks": []
+      "excludedRanks": [],
+      "unifyBlackRedSuits": false
     },
     "magician": {
       "name": "魔術師",
@@ -165,7 +169,8 @@
       "bannedShopKinds": [],
       "initialCurrencyBonus": 0,
       "initialItemCapacityBonus": 1,
-      "excludedRanks": []
+      "excludedRanks": [],
+      "unifyBlackRedSuits": false
     },
     "justice": {
       "name": "正義",
@@ -177,7 +182,21 @@
       "bannedShopKinds": [],
       "initialCurrencyBonus": 0,
       "initialItemCapacityBonus": 0,
-      "excludedRanks": [11, 12, 13]
+      "excludedRanks": [11, 12, 13],
+      "unifyBlackRedSuits": false
+    },
+    "lovers": {
+      "name": "恋人",
+      "desc": "初期デッキの黒スート(♠♣)・赤スート(♥♦)が、それぞれランダムにどちらか一方へ統一された状態で始まる",
+      "initialExtraTableauRows": 0,
+      "waveTargetBase": 2000,
+      "waveTargetMultiplier": 1.5,
+      "initialOracleLevel": 1,
+      "bannedShopKinds": [],
+      "initialCurrencyBonus": 0,
+      "initialItemCapacityBonus": 0,
+      "excludedRanks": [],
+      "unifyBlackRedSuits": true
     }
   },
   "items": {
