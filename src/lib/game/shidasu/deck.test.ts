@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { createDeck, createRng, rollOffer, shuffle, standardDeckComposition, addCardsToDeckComposition, unifyBlackRedSuits, multipliedDeckComposition } from './deck'
+import { createDeck, createRng, rollOffer, shuffle, standardDeckComposition, addCardsToDeckComposition, unifyBlackRedSuits, multipliedDeckComposition, randomizedDeckComposition } from './deck'
 
 function idGen() {
   let n = 0
@@ -254,5 +254,42 @@ describe('multipliedDeckComposition', () => {
   test('全カードがwild:false, removed:falseで生成される', () => {
     const result = multipliedDeckComposition(2)
     expect(result.every(c => c.wild === false && c.removed === false)).toBe(true)
+  })
+})
+
+describe('randomizedDeckComposition', () => {
+  test('52枚生成され、deckIdが0〜51の連番になる', () => {
+    const rand = createRng(1)
+    const composition = randomizedDeckComposition(rand)
+    expect(composition).toHaveLength(52)
+    composition.forEach((card, index) => {
+      expect(card.deckId).toBe(index)
+    })
+  })
+
+  test('同じシードのrandなら同じ結果になる(決定的)', () => {
+    const composition1 = randomizedDeckComposition(createRng(7))
+    const composition2 = randomizedDeckComposition(createRng(7))
+    expect(composition1).toEqual(composition2)
+  })
+
+  test('全カードがwild: false, removed: falseで生成される', () => {
+    const rand = createRng(2)
+    const composition = randomizedDeckComposition(rand)
+    composition.forEach(card => {
+      expect(card.wild).toBe(false)
+      expect(card.removed).toBe(false)
+    })
+  })
+
+  test('randの消費回数は52回×2(suit・rank)=104回になる', () => {
+    let callCount = 0
+    const baseRand = createRng(99)
+    const countingRand = () => {
+      callCount++
+      return baseRand()
+    }
+    randomizedDeckComposition(countingRand)
+    expect(callCount).toBe(104)
   })
 })

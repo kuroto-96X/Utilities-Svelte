@@ -42,6 +42,19 @@ export function multipliedDeckComposition(multiplier: number): DeckCard[] {
   return composition
 }
 
+// 52枚それぞれのsuit・rankを独立にランダム抽選したdeckCompositionを生成する。
+// 同じカード(同suit×同rank)が複数枚存在したり、特定のsuit・rankが1枚も
+// 存在しなかったりする可能性がある。deckIdは0〜51の連番。
+export function randomizedDeckComposition(rand: () => number): DeckCard[] {
+  const composition: DeckCard[] = []
+  for (let deckId = 0; deckId < 52; deckId++) {
+    const suit = SUITS[Math.floor(rand() * SUITS.length)]
+    const rank = (Math.floor(rand() * 13) + 1) as Rank
+    composition.push({ deckId, suit, rank, wild: false, removed: false })
+  }
+  return composition
+}
+
 // deckCompositionに複数枚のカードを一括追加する。deckIdは既存の配列長を基準に連番で振る
 // (天啓のワイルド供給処理revelationEffects.tsのnewDeckIdと同じ採番方式)。
 export function addCardsToDeckComposition(deckComposition: DeckCard[], cards: NewCardSpec[]): DeckCard[] {
