@@ -2556,6 +2556,20 @@ describe('createInitialRun / beginRun', () => {
     expect(run.currency).toBe(DEFAULT_PARAMS.currency.initialAmount)
   })
 
+  test('spreadId=justiceでは、deckCompositionのランク11・12・13が全てremoved:trueになる', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1, 'justice')
+    const excludedCards = run.deckComposition.filter(c => [11, 12, 13].includes(c.rank))
+    expect(excludedCards.length).toBeGreaterThan(0)
+    excludedCards.forEach(c => expect(c.removed).toBe(true))
+    const otherCards = run.deckComposition.filter(c => ![11, 12, 13].includes(c.rank))
+    otherCards.forEach(c => expect(c.removed).toBe(false))
+  })
+
+  test('spreadIdを省略(fool)すると、deckCompositionは全カードremoved:falseのまま', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    run.deckComposition.forEach(c => expect(c.removed).toBe(false))
+  })
+
   test('waveTargetはflow.stageTargetBase・stageTargetMultiplierとstageStarsの倍率を参照する', () => {
     const custom = {
       ...DEFAULT_PARAMS,

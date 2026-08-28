@@ -1035,14 +1035,21 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
   const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
   const initialStageStars = rollStageStars(params, rand)
   const oracleLevels = oracleLevelsWithUniformValue(spreadConfig.initialOracleLevel)
+  const initialRun = createInitialRun()
+  const deckComposition = spreadConfig.excludedRanks.length === 0
+    ? initialRun.deckComposition
+    : initialRun.deckComposition.map(c =>
+        spreadConfig.excludedRanks.includes(c.rank) ? { ...c, removed: true } : c
+      )
   return {
-    ...createInitialRun(),
+    ...initialRun,
     phase: 'shop',
     extraTableauRows: initialExtraTableauRows,
     spreadId,
     stageStars: initialStageStars,
     currency: params.currency.initialAmount + spreadConfig.initialCurrencyBonus,
     oracleLevels,
+    deckComposition,
   }
 }
 
