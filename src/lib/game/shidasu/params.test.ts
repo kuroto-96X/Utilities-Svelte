@@ -31,11 +31,6 @@ describe('DEFAULT_PARAMS', () => {
     expect(DEFAULT_PARAMS.scoring.comboMultiplierStep).toBe(0.1)
   })
 
-  test('月の目標スコア基礎値・倍率は愚者と全く同じ', () => {
-    expect(DEFAULT_PARAMS.spreads.moon.waveTargetBase).toBe(DEFAULT_PARAMS.spreads.fool.waveTargetBase)
-    expect(DEFAULT_PARAMS.spreads.moon.waveTargetMultiplier).toBe(DEFAULT_PARAMS.spreads.fool.waveTargetMultiplier)
-  })
-
   test('月の初期行数オフセットは1、愚者は0', () => {
     expect(DEFAULT_PARAMS.spreads.fool.initialExtraTableauRows).toBe(0)
     expect(DEFAULT_PARAMS.spreads.moon.initialExtraTableauRows).toBe(1)
@@ -55,11 +50,9 @@ describe('DEFAULT_PARAMS', () => {
     expect(DEFAULT_PARAMS.spreads.empress.initialCurrencyBonus).toBe(10)
   })
 
-  test('empressの名称は女帝、初期行数オフセット・目標スコア・神託初期レベルは愚者と同じ', () => {
+  test('empressの名称は女帝、初期行数オフセット・神託初期レベルは愚者と同じ', () => {
     expect(DEFAULT_PARAMS.spreads.empress.name).toBe('女帝')
     expect(DEFAULT_PARAMS.spreads.empress.initialExtraTableauRows).toBe(DEFAULT_PARAMS.spreads.fool.initialExtraTableauRows)
-    expect(DEFAULT_PARAMS.spreads.empress.waveTargetBase).toBe(DEFAULT_PARAMS.spreads.fool.waveTargetBase)
-    expect(DEFAULT_PARAMS.spreads.empress.waveTargetMultiplier).toBe(DEFAULT_PARAMS.spreads.fool.waveTargetMultiplier)
     expect(DEFAULT_PARAMS.spreads.empress.initialOracleLevel).toBe(DEFAULT_PARAMS.spreads.fool.initialOracleLevel)
     expect(DEFAULT_PARAMS.spreads.empress.bannedShopKinds).toEqual([])
   })
@@ -98,12 +91,30 @@ describe('DEFAULT_PARAMS', () => {
     expect(DEFAULT_PARAMS.spreads.justice.unifyBlackRedSuits).toBe(false)
   })
 
+  test('fool/moon/pope/empress/magician/justice/loversのdeckMultiplier・tableauRowMultiplier・targetScoreMultiplierは1', () => {
+    const nonEmperorIds = ['fool', 'moon', 'pope', 'empress', 'magician', 'justice', 'lovers'] as const
+    nonEmperorIds.forEach(id => {
+      expect(DEFAULT_PARAMS.spreads[id].deckMultiplier).toBe(1)
+      expect(DEFAULT_PARAMS.spreads[id].tableauRowMultiplier).toBe(1)
+      expect(DEFAULT_PARAMS.spreads[id].targetScoreMultiplier).toBe(1)
+    })
+  })
+
+  test('emperorの名称は皇帝、deckMultiplier・tableauRowMultiplier・targetScoreMultiplierは2、initialItemCapacityBonusは-1', () => {
+    expect(DEFAULT_PARAMS.spreads.emperor.name).toBe('皇帝')
+    expect(DEFAULT_PARAMS.spreads.emperor.deckMultiplier).toBe(2)
+    expect(DEFAULT_PARAMS.spreads.emperor.tableauRowMultiplier).toBe(2)
+    expect(DEFAULT_PARAMS.spreads.emperor.targetScoreMultiplier).toBe(2)
+    expect(DEFAULT_PARAMS.spreads.emperor.initialItemCapacityBonus).toBe(-1)
+    expect(DEFAULT_PARAMS.spreads.emperor.initialExtraTableauRows).toBe(0)
+    expect(DEFAULT_PARAMS.spreads.emperor.excludedRanks).toEqual([])
+    expect(DEFAULT_PARAMS.spreads.emperor.unifyBlackRedSuits).toBe(false)
+  })
+
   test('loversの名称は恋人、unifyBlackRedSuitsはtrue、他のフィールドはfoolと同じ', () => {
     expect(DEFAULT_PARAMS.spreads.lovers.name).toBe('恋人')
     expect(DEFAULT_PARAMS.spreads.lovers.unifyBlackRedSuits).toBe(true)
     expect(DEFAULT_PARAMS.spreads.lovers.initialExtraTableauRows).toBe(DEFAULT_PARAMS.spreads.fool.initialExtraTableauRows)
-    expect(DEFAULT_PARAMS.spreads.lovers.waveTargetBase).toBe(DEFAULT_PARAMS.spreads.fool.waveTargetBase)
-    expect(DEFAULT_PARAMS.spreads.lovers.waveTargetMultiplier).toBe(DEFAULT_PARAMS.spreads.fool.waveTargetMultiplier)
     expect(DEFAULT_PARAMS.spreads.lovers.initialOracleLevel).toBe(DEFAULT_PARAMS.spreads.fool.initialOracleLevel)
     expect(DEFAULT_PARAMS.spreads.lovers.bannedShopKinds).toEqual([])
     expect(DEFAULT_PARAMS.spreads.lovers.initialCurrencyBonus).toBe(0)

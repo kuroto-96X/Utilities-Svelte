@@ -26,16 +26,23 @@ export type StarSabotage =
 // pope(教皇)=神託の初期レベルが上がるが、ショップで神託が販売されない、
 // empress(女帝)=初期所持金が多い状態で始まる、magician(魔術師)=護符所持スロットが多いが場札が少ない、
 // justice(正義)=初期デッキから絵札(J・Q・K)が除外される、
-// lovers(恋人)=初期デッキの黒スート(♠♣)・赤スート(♥♦)がそれぞれランダムに片方へ統一される
-export type SpreadId = 'fool' | 'moon' | 'pope' | 'empress' | 'magician' | 'justice' | 'lovers'
+// lovers(恋人)=初期デッキの黒スート(♠♣)・赤スート(♥♦)がそれぞれランダムに片方へ統一される、
+// emperor(皇帝)=初期デッキ・場札・目標スコアが全て2倍になるが、護符所持スロットが1減る
+export type SpreadId = 'fool' | 'moon' | 'pope' | 'empress' | 'magician' | 'justice' | 'lovers' | 'emperor'
 // スプレッドごとの固有ルール設定。
 export interface SpreadConfig {
   name: string
   desc: string
   // ウェーブ開始時の配布行数への初期オフセット(既存)。
   initialExtraTableauRows: number
-  waveTargetBase: number
-  waveTargetMultiplier: number
+  // 初期デッキ生成時、標準デッキ(52枚)を何組連結するか(既定1)。2ならデッキ枚数が2倍(104枚)になる。
+  deckMultiplier: number
+  // 場札の配布行数への倍率(既定1)。ラン開始時、
+  // params.layout.rows * tableauRowMultiplier - params.layout.rows を
+  // initialExtraTableauRowsに加算する形で反映する(基準行数の変更に自動追従するため)。
+  tableauRowMultiplier: number
+  // 目標スコア(waveTarget)への倍率(既定1)。
+  targetScoreMultiplier: number
   // 神託(oracle)の初期レベル。ラン開始時、全10役一律にこの値でoracleLevelsを初期化する(既定1)。
   initialOracleLevel: number
   // ショップのバラ売り枠・福袋カタログの両方から除外する種別(既定は空配列=制限なし)。
