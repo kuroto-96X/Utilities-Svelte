@@ -34,6 +34,19 @@ export function addCardsToDeckComposition(deckComposition: DeckCard[], cards: Ne
   return [...deckComposition, ...added]
 }
 
+// 黒スートペア(♠・♣)をどちらか一方へ、赤スートペア(♥・♦)をどちらか一方へ、
+// それぞれランダムに統一する。統一先の決定にrandを2回消費する(黒→赤の順)。
+// ★(ワイルド専用スート)のカードはそのまま素通しする。
+export function unifyBlackRedSuits(composition: DeckCard[], rand: () => number): DeckCard[] {
+  const blackTarget: Suit = rand() < 0.5 ? '♠' : '♣'
+  const redTarget: Suit = rand() < 0.5 ? '♥' : '♦'
+  return composition.map(c => {
+    if (c.suit === '♠' || c.suit === '♣') return { ...c, suit: blackTarget }
+    if (c.suit === '♥' || c.suit === '♦') return { ...c, suit: redTarget }
+    return c
+  })
+}
+
 export function createRng(seed: number): () => number {
   let s = seed >>> 0
   return () => {

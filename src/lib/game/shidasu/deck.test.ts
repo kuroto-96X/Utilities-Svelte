@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { createDeck, createRng, rollOffer, shuffle, standardDeckComposition, addCardsToDeckComposition } from './deck'
+import { createDeck, createRng, rollOffer, shuffle, standardDeckComposition, addCardsToDeckComposition, unifyBlackRedSuits } from './deck'
 
 function idGen() {
   let n = 0
@@ -171,5 +171,53 @@ describe('addCardsToDeckComposition', () => {
     ]
     const result = addCardsToDeckComposition(composition, [{ suit: '♦', rank: 3, wild: false }])
     expect(result[2].deckId).toBe(2)
+  })
+})
+
+describe('unifyBlackRedSuits', () => {
+  test('rand()が常に0未満0.5以上を返さない(常に0を返す)場合、黒スートは全て♠、赤スートは全て♥になる', () => {
+    const composition = standardDeckComposition()
+    const alwaysZero = () => 0
+    const result = unifyBlackRedSuits(composition, alwaysZero)
+    const blackCards = result.filter(c => c.suit === '♠' || c.suit === '♣')
+    const redCards = result.filter(c => c.suit === '♥' || c.suit === '♦')
+    expect(blackCards.every(c => c.suit === '♠')).toBe(true)
+    expect(redCards.every(c => c.suit === '♥')).toBe(true)
+  })
+
+  test('rand()が常に0.5以上を返す場合、黒スートは全て♣、赤スートは全て♦になる', () => {
+    const composition = standardDeckComposition()
+    const alwaysHalf = () => 0.5
+    const result = unifyBlackRedSuits(composition, alwaysHalf)
+    const blackCards = result.filter(c => c.suit === '♠' || c.suit === '♣')
+    const redCards = result.filter(c => c.suit === '♥' || c.suit === '♦')
+    expect(blackCards.every(c => c.suit === '♣')).toBe(true)
+    expect(redCards.every(c => c.suit === '♦')).toBe(true)
+  })
+
+  test('変換後、スートは♠か♣のどちらか一方、♥か♦のどちらか一方のみになる(混在しない)', () => {
+    const composition = standardDeckComposition()
+    const result = unifyBlackRedSuits(composition, createRng(1))
+    const distinctBlackSuits = new Set(result.filter(c => c.suit === '♠' || c.suit === '♣').map(c => c.suit))
+    const distinctRedSuits = new Set(result.filter(c => c.suit === '♥' || c.suit === '♦').map(c => c.suit))
+    expect(distinctBlackSuits.size).toBe(1)
+    expect(distinctRedSuits.size).toBe(1)
+  })
+
+  test('カードの総枚数・各ランクの枚数構成は変わらない(rankやremovedは書き換えない)', () => {
+    const composition = standardDeckComposition()
+    const result = unifyBlackRedSuits(composition, createRng(1))
+    expect(result).toHaveLength(composition.length)
+    const originalRanks = composition.map(c => c.rank).sort((a, b) => a - b)
+    const resultRanks = result.map(c => c.rank).sort((a, b) => a - b)
+    expect(resultRanks).toEqual(originalRanks)
+    expect(result.every(c => c.removed === false)).toBe(true)
+  })
+
+  test('元のdeckCompositionを書き換えない(イミュータブル)', () => {
+    const composition = standardDeckComposition()
+    const copy = composition.map(c => ({ ...c }))
+    unifyBlackRedSuits(composition, createRng(1))
+    expect(composition).toEqual(copy)
   })
 })
