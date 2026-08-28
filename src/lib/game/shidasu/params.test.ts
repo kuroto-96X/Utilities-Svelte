@@ -111,6 +111,28 @@ describe('DEFAULT_PARAMS', () => {
     expect(DEFAULT_PARAMS.spreads.emperor.unifyBlackRedSuits).toBe(false)
   })
 
+  test('fool/moon/pope/empress/magician/justice/lovers/emperorのrandomizeDeckはfalse', () => {
+    const nonWheelOfFortuneIds = ['fool', 'moon', 'pope', 'empress', 'magician', 'justice', 'lovers', 'emperor'] as const
+    nonWheelOfFortuneIds.forEach(id => {
+      expect(DEFAULT_PARAMS.spreads[id].randomizeDeck).toBe(false)
+    })
+  })
+
+  test('wheelOfFortuneの名称は運命の輪、randomizeDeckはtrue、他のフィールドはfoolと同じ', () => {
+    expect(DEFAULT_PARAMS.spreads.wheelOfFortune.name).toBe('運命の輪')
+    expect(DEFAULT_PARAMS.spreads.wheelOfFortune.randomizeDeck).toBe(true)
+    expect(DEFAULT_PARAMS.spreads.wheelOfFortune.initialExtraTableauRows).toBe(DEFAULT_PARAMS.spreads.fool.initialExtraTableauRows)
+    expect(DEFAULT_PARAMS.spreads.wheelOfFortune.deckMultiplier).toBe(1)
+    expect(DEFAULT_PARAMS.spreads.wheelOfFortune.tableauRowMultiplier).toBe(1)
+    expect(DEFAULT_PARAMS.spreads.wheelOfFortune.targetScoreMultiplier).toBe(1)
+    expect(DEFAULT_PARAMS.spreads.wheelOfFortune.initialOracleLevel).toBe(DEFAULT_PARAMS.spreads.fool.initialOracleLevel)
+    expect(DEFAULT_PARAMS.spreads.wheelOfFortune.bannedShopKinds).toEqual([])
+    expect(DEFAULT_PARAMS.spreads.wheelOfFortune.initialCurrencyBonus).toBe(0)
+    expect(DEFAULT_PARAMS.spreads.wheelOfFortune.initialItemCapacityBonus).toBe(0)
+    expect(DEFAULT_PARAMS.spreads.wheelOfFortune.excludedRanks).toEqual([])
+    expect(DEFAULT_PARAMS.spreads.wheelOfFortune.unifyBlackRedSuits).toBe(false)
+  })
+
   test('loversの名称は恋人、unifyBlackRedSuitsはtrue、他のフィールドはfoolと同じ', () => {
     expect(DEFAULT_PARAMS.spreads.lovers.name).toBe('恋人')
     expect(DEFAULT_PARAMS.spreads.lovers.unifyBlackRedSuits).toBe(true)

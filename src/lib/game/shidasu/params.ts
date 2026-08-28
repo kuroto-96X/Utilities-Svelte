@@ -339,14 +339,15 @@ export const DEFAULT_PARAMS: ShidasuParams = {
     { id: 'regicide-planet', name: '王侯を打ち滅ぼす惑星', waveSlot: 3, targetMultiplier: 2, reward: 5, restrictionKind: 'face', descTemplate: '絵札(J・Q・K)で無得点', sabotageKind: 'all' },
   ],
   spreads: {
-    fool: { name: '愚者', desc: '特殊ルールなし', initialExtraTableauRows: 0, deckMultiplier: 1, tableauRowMultiplier: 1, targetScoreMultiplier: 1, initialOracleLevel: 1, bannedShopKinds: [], initialCurrencyBonus: 0, initialItemCapacityBonus: 0, excludedRanks: [], unifyBlackRedSuits: false },
-    moon: { name: '月', desc: '場札が常に1行多い状態で始まる。Wave開始時に配られる場札の上半分(端数切捨て)の行は裏向きになる。', initialExtraTableauRows: 1, deckMultiplier: 1, tableauRowMultiplier: 1, targetScoreMultiplier: 1, initialOracleLevel: 1, bannedShopKinds: [], initialCurrencyBonus: 0, initialItemCapacityBonus: 0, excludedRanks: [], unifyBlackRedSuits: false },
-    pope: { name: '教皇', desc: '神託の初期レベルが5になるが、ショップで神託が販売されない', initialExtraTableauRows: 0, deckMultiplier: 1, tableauRowMultiplier: 1, targetScoreMultiplier: 1, initialOracleLevel: 5, bannedShopKinds: ['oracle'], initialCurrencyBonus: 0, initialItemCapacityBonus: 0, excludedRanks: [], unifyBlackRedSuits: false },
-    empress: { name: '女帝', desc: '初期所持金が10多い状態で始まる', initialExtraTableauRows: 0, deckMultiplier: 1, tableauRowMultiplier: 1, targetScoreMultiplier: 1, initialOracleLevel: 1, bannedShopKinds: [], initialCurrencyBonus: 10, initialItemCapacityBonus: 0, excludedRanks: [], unifyBlackRedSuits: false },
-    magician: { name: '魔術師', desc: '護符の所持スロットが1多いが、場札は1行少ない状態で始まる', initialExtraTableauRows: -1, deckMultiplier: 1, tableauRowMultiplier: 1, targetScoreMultiplier: 1, initialOracleLevel: 1, bannedShopKinds: [], initialCurrencyBonus: 0, initialItemCapacityBonus: 1, excludedRanks: [], unifyBlackRedSuits: false },
-    justice: { name: '正義', desc: '初期デッキから絵札(J・Q・K)が除外された状態で始まる', initialExtraTableauRows: 0, deckMultiplier: 1, tableauRowMultiplier: 1, targetScoreMultiplier: 1, initialOracleLevel: 1, bannedShopKinds: [], initialCurrencyBonus: 0, initialItemCapacityBonus: 0, excludedRanks: [11, 12, 13], unifyBlackRedSuits: false },
-    lovers: { name: '恋人', desc: '初期デッキの黒スート(♠♣)・赤スート(♥♦)が、それぞれランダムにどちらか一方へ統一された状態で始まる', initialExtraTableauRows: 0, deckMultiplier: 1, tableauRowMultiplier: 1, targetScoreMultiplier: 1, initialOracleLevel: 1, bannedShopKinds: [], initialCurrencyBonus: 0, initialItemCapacityBonus: 0, excludedRanks: [], unifyBlackRedSuits: true },
-    emperor: { name: '皇帝', desc: '初期デッキの枚数・場札の配布行数・目標スコアが全て2倍になるが、護符の所持スロットが1減った状態で始まる', initialExtraTableauRows: 0, deckMultiplier: 2, tableauRowMultiplier: 2, targetScoreMultiplier: 2, initialOracleLevel: 1, bannedShopKinds: [], initialCurrencyBonus: 0, initialItemCapacityBonus: -1, excludedRanks: [], unifyBlackRedSuits: false },
+    fool: { name: '愚者', desc: '特殊ルールなし', initialExtraTableauRows: 0, deckMultiplier: 1, tableauRowMultiplier: 1, targetScoreMultiplier: 1, initialOracleLevel: 1, bannedShopKinds: [], initialCurrencyBonus: 0, initialItemCapacityBonus: 0, excludedRanks: [], unifyBlackRedSuits: false, randomizeDeck: false },
+    moon: { name: '月', desc: '場札が常に1行多い状態で始まる。Wave開始時に配られる場札の上半分(端数切捨て)の行は裏向きになる。', initialExtraTableauRows: 1, deckMultiplier: 1, tableauRowMultiplier: 1, targetScoreMultiplier: 1, initialOracleLevel: 1, bannedShopKinds: [], initialCurrencyBonus: 0, initialItemCapacityBonus: 0, excludedRanks: [], unifyBlackRedSuits: false, randomizeDeck: false },
+    pope: { name: '教皇', desc: '神託の初期レベルが5になるが、ショップで神託が販売されない', initialExtraTableauRows: 0, deckMultiplier: 1, tableauRowMultiplier: 1, targetScoreMultiplier: 1, initialOracleLevel: 5, bannedShopKinds: ['oracle'], initialCurrencyBonus: 0, initialItemCapacityBonus: 0, excludedRanks: [], unifyBlackRedSuits: false, randomizeDeck: false },
+    empress: { name: '女帝', desc: '初期所持金が10多い状態で始まる', initialExtraTableauRows: 0, deckMultiplier: 1, tableauRowMultiplier: 1, targetScoreMultiplier: 1, initialOracleLevel: 1, bannedShopKinds: [], initialCurrencyBonus: 10, initialItemCapacityBonus: 0, excludedRanks: [], unifyBlackRedSuits: false, randomizeDeck: false },
+    magician: { name: '魔術師', desc: '護符の所持スロットが1多いが、場札は1行少ない状態で始まる', initialExtraTableauRows: -1, deckMultiplier: 1, tableauRowMultiplier: 1, targetScoreMultiplier: 1, initialOracleLevel: 1, bannedShopKinds: [], initialCurrencyBonus: 0, initialItemCapacityBonus: 1, excludedRanks: [], unifyBlackRedSuits: false, randomizeDeck: false },
+    justice: { name: '正義', desc: '初期デッキから絵札(J・Q・K)が除外された状態で始まる', initialExtraTableauRows: 0, deckMultiplier: 1, tableauRowMultiplier: 1, targetScoreMultiplier: 1, initialOracleLevel: 1, bannedShopKinds: [], initialCurrencyBonus: 0, initialItemCapacityBonus: 0, excludedRanks: [11, 12, 13], unifyBlackRedSuits: false, randomizeDeck: false },
+    lovers: { name: '恋人', desc: '初期デッキの黒スート(♠♣)・赤スート(♥♦)が、それぞれランダムにどちらか一方へ統一された状態で始まる', initialExtraTableauRows: 0, deckMultiplier: 1, tableauRowMultiplier: 1, targetScoreMultiplier: 1, initialOracleLevel: 1, bannedShopKinds: [], initialCurrencyBonus: 0, initialItemCapacityBonus: 0, excludedRanks: [], unifyBlackRedSuits: true, randomizeDeck: false },
+    emperor: { name: '皇帝', desc: '初期デッキの枚数・場札の配布行数・目標スコアが全て2倍になるが、護符の所持スロットが1減った状態で始まる', initialExtraTableauRows: 0, deckMultiplier: 2, tableauRowMultiplier: 2, targetScoreMultiplier: 2, initialOracleLevel: 1, bannedShopKinds: [], initialCurrencyBonus: 0, initialItemCapacityBonus: -1, excludedRanks: [], unifyBlackRedSuits: false, randomizeDeck: false },
+    wheelOfFortune: { name: '運命の輪', desc: '初期デッキ52枚それぞれのランク・スートが完全ランダムに再抽選された状態で始まる', initialExtraTableauRows: 0, deckMultiplier: 1, tableauRowMultiplier: 1, targetScoreMultiplier: 1, initialOracleLevel: 1, bannedShopKinds: [], initialCurrencyBonus: 0, initialItemCapacityBonus: 0, excludedRanks: [], unifyBlackRedSuits: false, randomizeDeck: true },
   },
   items: {
     maxItems: 5,
@@ -634,7 +635,7 @@ export const DEFAULT_PARAMS: ShidasuParams = {
 
 // スプレッドのID一覧。ゲーム側のスプレッド選択画面・admin側の設定ページの両方から参照する
 // 単一の情報源。新規スプレッドを追加する際はここに追記すれば両画面に自動反映される。
-export const SPREAD_IDS: SpreadId[] = ['fool', 'moon', 'pope', 'empress', 'magician', 'justice', 'lovers', 'emperor']
+export const SPREAD_IDS: SpreadId[] = ['fool', 'moon', 'pope', 'empress', 'magician', 'justice', 'lovers', 'emperor', 'wheelOfFortune']
 
 export function loadParams(): ShidasuParams {
   // ui.comboTierThresholds(タプル型)とJSON側の推論型(number[])が構造的に一致しないため、

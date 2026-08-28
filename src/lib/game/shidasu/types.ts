@@ -27,8 +27,9 @@ export type StarSabotage =
 // empress(女帝)=初期所持金が多い状態で始まる、magician(魔術師)=護符所持スロットが多いが場札が少ない、
 // justice(正義)=初期デッキから絵札(J・Q・K)が除外される、
 // lovers(恋人)=初期デッキの黒スート(♠♣)・赤スート(♥♦)がそれぞれランダムに片方へ統一される、
-// emperor(皇帝)=初期デッキ・場札・目標スコアが全て2倍になるが、護符所持スロットが1減る
-export type SpreadId = 'fool' | 'moon' | 'pope' | 'empress' | 'magician' | 'justice' | 'lovers' | 'emperor'
+// emperor(皇帝)=初期デッキ・場札・目標スコアが全て2倍になるが、護符所持スロットが1減る、
+// wheelOfFortune(運命の輪)=初期デッキ52枚それぞれのランク・スートが完全ランダムに再抽選される
+export type SpreadId = 'fool' | 'moon' | 'pope' | 'empress' | 'magician' | 'justice' | 'lovers' | 'emperor' | 'wheelOfFortune'
 // スプレッドごとの固有ルール設定。
 export interface SpreadConfig {
   name: string
@@ -56,6 +57,9 @@ export interface SpreadConfig {
   // 初期デッキ生成時、黒スート(♠♣)をどちらか一方へ、赤スート(♥♦)をどちらか一方へ
   // ランダムに統一するか(既定false)。統一先はラン開始のたびにランダムに決定される。
   unifyBlackRedSuits: boolean
+  // 初期デッキ生成時、52枚それぞれのsuit・rankを独立にランダム抽選するか(既定false)。
+  // trueの場合、deckMultiplierによる複製結果を上書きする(52枚固定生成のため)。
+  randomizeDeck: boolean
 }
 // Wave単位の新概念「星」が持つ制限ルール。旧BossKind(noLoop/faceLock/lowCombo/oddCombo/suit/face)を
 // kindで判別するUnion型として引き継ぐ。suitのみ、星が選出されると同時にスートを抽選し確定させる。
