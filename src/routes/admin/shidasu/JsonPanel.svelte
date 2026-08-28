@@ -24,13 +24,9 @@
       typeof fool?.name === 'string' &&
       typeof fool?.desc === 'string' &&
       typeof fool?.initialExtraTableauRows === 'number' &&
-      typeof fool?.waveTargetBase === 'number' &&
-      typeof fool?.waveTargetMultiplier === 'number' &&
       typeof moon?.name === 'string' &&
       typeof moon?.desc === 'string' &&
       typeof moon?.initialExtraTableauRows === 'number' &&
-      typeof moon?.waveTargetBase === 'number' &&
-      typeof moon?.waveTargetMultiplier === 'number' &&
       typeof v.items === 'object' && v.items !== null &&
       typeof v.flow === 'object' && v.flow !== null &&
       typeof v.ui === 'object' && v.ui !== null &&
