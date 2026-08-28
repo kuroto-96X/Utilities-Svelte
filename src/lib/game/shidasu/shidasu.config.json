@@ -115,7 +115,9 @@
       "waveTargetMultiplier": 1.5,
       "initialOracleLevel": 1,
       "bannedShopKinds": [],
-      "initialCurrencyBonus": 0
+      "initialCurrencyBonus": 0,
+      "initialItemCapacityBonus": 0,
+      "excludedRanks": []
     },
     "moon": {
       "name": "月",
@@ -125,7 +127,9 @@
       "waveTargetMultiplier": 1.5,
       "initialOracleLevel": 1,
       "bannedShopKinds": [],
-      "initialCurrencyBonus": 0
+      "initialCurrencyBonus": 0,
+      "initialItemCapacityBonus": 0,
+      "excludedRanks": []
     },
     "pope": {
       "name": "教皇",
@@ -135,7 +139,9 @@
       "waveTargetMultiplier": 1.5,
       "initialOracleLevel": 5,
       "bannedShopKinds": ["oracle"],
-      "initialCurrencyBonus": 0
+      "initialCurrencyBonus": 0,
+      "initialItemCapacityBonus": 0,
+      "excludedRanks": []
     },
     "empress": {
       "name": "女帝",
@@ -145,7 +151,33 @@
       "waveTargetMultiplier": 1.5,
       "initialOracleLevel": 1,
       "bannedShopKinds": [],
-      "initialCurrencyBonus": 10
+      "initialCurrencyBonus": 10,
+      "initialItemCapacityBonus": 0,
+      "excludedRanks": []
+    },
+    "magician": {
+      "name": "魔術師",
+      "desc": "護符の所持スロットが1多いが、場札は1行少ない状態で始まる",
+      "initialExtraTableauRows": -1,
+      "waveTargetBase": 2000,
+      "waveTargetMultiplier": 1.5,
+      "initialOracleLevel": 1,
+      "bannedShopKinds": [],
+      "initialCurrencyBonus": 0,
+      "initialItemCapacityBonus": 1,
+      "excludedRanks": []
+    },
+    "justice": {
+      "name": "正義",
+      "desc": "初期デッキから絵札(J・Q・K)が除外された状態で始まる",
+      "initialExtraTableauRows": 0,
+      "waveTargetBase": 2000,
+      "waveTargetMultiplier": 1.5,
+      "initialOracleLevel": 1,
+      "bannedShopKinds": [],
+      "initialCurrencyBonus": 0,
+      "initialItemCapacityBonus": 0,
+      "excludedRanks": [11, 12, 13]
     }
   },
   "items": {

@@ -64,6 +64,31 @@ describe('DEFAULT_PARAMS', () => {
     expect(DEFAULT_PARAMS.spreads.empress.bannedShopKinds).toEqual([])
   })
 
+  test('fool/moon/pope/empressのinitialItemCapacityBonusは0、excludedRanksは空配列', () => {
+    expect(DEFAULT_PARAMS.spreads.fool.initialItemCapacityBonus).toBe(0)
+    expect(DEFAULT_PARAMS.spreads.fool.excludedRanks).toEqual([])
+    expect(DEFAULT_PARAMS.spreads.moon.initialItemCapacityBonus).toBe(0)
+    expect(DEFAULT_PARAMS.spreads.moon.excludedRanks).toEqual([])
+    expect(DEFAULT_PARAMS.spreads.pope.initialItemCapacityBonus).toBe(0)
+    expect(DEFAULT_PARAMS.spreads.pope.excludedRanks).toEqual([])
+    expect(DEFAULT_PARAMS.spreads.empress.initialItemCapacityBonus).toBe(0)
+    expect(DEFAULT_PARAMS.spreads.empress.excludedRanks).toEqual([])
+  })
+
+  test('magicianの名称は魔術師、initialItemCapacityBonusは1、initialExtraTableauRowsは-1', () => {
+    expect(DEFAULT_PARAMS.spreads.magician.name).toBe('魔術師')
+    expect(DEFAULT_PARAMS.spreads.magician.initialItemCapacityBonus).toBe(1)
+    expect(DEFAULT_PARAMS.spreads.magician.initialExtraTableauRows).toBe(-1)
+    expect(DEFAULT_PARAMS.spreads.magician.excludedRanks).toEqual([])
+  })
+
+  test('justiceの名称は正義、excludedRanksは[11, 12, 13]', () => {
+    expect(DEFAULT_PARAMS.spreads.justice.name).toBe('正義')
+    expect(DEFAULT_PARAMS.spreads.justice.excludedRanks).toEqual([11, 12, 13])
+    expect(DEFAULT_PARAMS.spreads.justice.initialItemCapacityBonus).toBe(0)
+    expect(DEFAULT_PARAMS.spreads.justice.initialExtraTableauRows).toBe(0)
+  })
+
   test('方向性1の24護符がtalismansに定義されている', () => {
     const ids = ['exchange', 'koban', 'senryo', 'manryo', 'harvest', 'settlement', 'hiddenTreasure', 'greatestTreasure', 'heirloom', 'treasury', 'boom', 'abundantFunds', 'savings', 'bigCatch', 'grains', 'liveliness', 'prosperity', 'heavenlyBlessing', 'mizuho', 'bountifulYear', 'profit', 'bounty', 'perk', 'nestEgg'] as const
     for (const id of ids) {
