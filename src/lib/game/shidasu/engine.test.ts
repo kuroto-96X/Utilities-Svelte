@@ -1,4 +1,4 @@
-﻿// src/lib/game/shidasu/engine.test.ts
+// src/lib/game/shidasu/engine.test.ts
 import { describe, test, it, expect } from 'vitest'
 import {
   rankLabel,
