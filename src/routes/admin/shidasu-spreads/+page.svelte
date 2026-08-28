@@ -60,8 +60,9 @@
       if (!entry.name.trim()) return true
       if (!entry.desc.trim()) return true
       if (!Number.isFinite(entry.initialExtraTableauRows)) return true
-      if (!Number.isFinite(entry.waveTargetBase)) return true
-      if (!Number.isFinite(entry.waveTargetMultiplier)) return true
+      if (!Number.isFinite(entry.deckMultiplier)) return true
+      if (!Number.isFinite(entry.tableauRowMultiplier)) return true
+      if (!Number.isFinite(entry.targetScoreMultiplier)) return true
       if (!Number.isFinite(entry.initialOracleLevel)) return true
       if (!Number.isFinite(entry.initialCurrencyBonus)) return true
       if (!Number.isFinite(entry.initialItemCapacityBonus)) return true
@@ -143,7 +144,8 @@
               <th class="px-2 py-1.5 text-left" style="width:6rem;">名称</th>
               <th class="px-2 py-1.5 text-left" style="width:16rem;">説明文</th>
               <th class="px-2 py-1.5 text-left" style="width:7rem;">初期行数オフセット</th>
-              <th class="px-2 py-1.5 text-left" style="width:7rem;">目標スコア基礎値</th>
+              <th class="px-2 py-1.5 text-left" style="width:7rem;">デッキ枚数倍率</th>
+              <th class="px-2 py-1.5 text-left" style="width:7rem;">場札行倍率</th>
               <th class="px-2 py-1.5 text-left" style="width:7rem;">目標スコア倍率</th>
               <th class="px-2 py-1.5 text-left" style="width:7rem;">神託初期レベル</th>
               <th class="px-2 py-1.5 text-left" style="width:7rem;">初期所持金オフセット</th>
@@ -168,10 +170,13 @@
                   <input type="number" step="any" bind:value={entry.initialExtraTableauRows} class="w-full border border-slate-200 rounded px-1 py-0.5" />
                 </td>
                 <td class="px-2 py-1.5 align-top">
-                  <input type="number" step="any" bind:value={entry.waveTargetBase} class="w-full border border-slate-200 rounded px-1 py-0.5" />
+                  <input type="number" step="any" bind:value={entry.deckMultiplier} class="w-full border border-slate-200 rounded px-1 py-0.5" />
                 </td>
                 <td class="px-2 py-1.5 align-top">
-                  <input type="number" step="any" bind:value={entry.waveTargetMultiplier} class="w-full border border-slate-200 rounded px-1 py-0.5" />
+                  <input type="number" step="any" bind:value={entry.tableauRowMultiplier} class="w-full border border-slate-200 rounded px-1 py-0.5" />
+                </td>
+                <td class="px-2 py-1.5 align-top">
+                  <input type="number" step="any" bind:value={entry.targetScoreMultiplier} class="w-full border border-slate-200 rounded px-1 py-0.5" />
                 </td>
                 <td class="px-2 py-1.5 align-top">
                   <input type="number" step="any" bind:value={entry.initialOracleLevel} class="w-full border border-slate-200 rounded px-1 py-0.5" />
