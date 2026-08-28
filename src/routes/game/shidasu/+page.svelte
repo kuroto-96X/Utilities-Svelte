@@ -797,10 +797,10 @@
         >
           ◀
         </button>
-        <div class="flex-1 min-w-0 bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 text-left" style="min-height:5.5rem;">
+        <div class="flex-1 min-w-0 bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 text-left relative" style="min-height:5.5rem;">
           {#key selectedSpreadIndex}
             {@const displayedSpreadId = SPREAD_IDS[selectedSpreadIndex]}
-            <div transition:fade={{ duration: 150 }}>
+            <div class="absolute inset-0 px-4 py-3" transition:fade={{ duration: 150 }}>
               <div class="font-black text-yellow-300 text-lg">{params.spreads[displayedSpreadId].name}</div>
               <div class="text-xs text-emerald-100/80 mt-0.5">{params.spreads[displayedSpreadId].desc}</div>
             </div>
