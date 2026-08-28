@@ -48,6 +48,22 @@ describe('DEFAULT_PARAMS', () => {
     expect(DEFAULT_PARAMS.spreads.moon.bannedShopKinds).toEqual([])
   })
 
+  test('fool/moon/popeのinitialCurrencyBonusは0、empressは10', () => {
+    expect(DEFAULT_PARAMS.spreads.fool.initialCurrencyBonus).toBe(0)
+    expect(DEFAULT_PARAMS.spreads.moon.initialCurrencyBonus).toBe(0)
+    expect(DEFAULT_PARAMS.spreads.pope.initialCurrencyBonus).toBe(0)
+    expect(DEFAULT_PARAMS.spreads.empress.initialCurrencyBonus).toBe(10)
+  })
+
+  test('empressの名称は女帝、初期行数オフセット・目標スコア・神託初期レベルは愚者と同じ', () => {
+    expect(DEFAULT_PARAMS.spreads.empress.name).toBe('女帝')
+    expect(DEFAULT_PARAMS.spreads.empress.initialExtraTableauRows).toBe(DEFAULT_PARAMS.spreads.fool.initialExtraTableauRows)
+    expect(DEFAULT_PARAMS.spreads.empress.waveTargetBase).toBe(DEFAULT_PARAMS.spreads.fool.waveTargetBase)
+    expect(DEFAULT_PARAMS.spreads.empress.waveTargetMultiplier).toBe(DEFAULT_PARAMS.spreads.fool.waveTargetMultiplier)
+    expect(DEFAULT_PARAMS.spreads.empress.initialOracleLevel).toBe(DEFAULT_PARAMS.spreads.fool.initialOracleLevel)
+    expect(DEFAULT_PARAMS.spreads.empress.bannedShopKinds).toEqual([])
+  })
+
   test('方向性1の24護符がtalismansに定義されている', () => {
     const ids = ['exchange', 'koban', 'senryo', 'manryo', 'harvest', 'settlement', 'hiddenTreasure', 'greatestTreasure', 'heirloom', 'treasury', 'boom', 'abundantFunds', 'savings', 'bigCatch', 'grains', 'liveliness', 'prosperity', 'heavenlyBlessing', 'mizuho', 'bountifulYear', 'profit', 'bounty', 'perk', 'nestEgg'] as const
     for (const id of ids) {

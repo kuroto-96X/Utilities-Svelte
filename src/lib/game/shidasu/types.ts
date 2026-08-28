@@ -23,8 +23,9 @@ export type StarSabotage =
 
 // スプレッド: ラン開始時にプレイヤーが選ぶ固有ルールセット。大アルカナから命名する。
 // fool(愚者)=特殊ルールなしの基本スプレッド、moon(月)=場札が常に1行少ない状態で始まる、
-// pope(教皇)=神託の初期レベルが上がるが、ショップで神託が販売されない
-export type SpreadId = 'fool' | 'moon' | 'pope'
+// pope(教皇)=神託の初期レベルが上がるが、ショップで神託が販売されない、
+// empress(女帝)=初期所持金が多い状態で始まる
+export type SpreadId = 'fool' | 'moon' | 'pope' | 'empress'
 // スプレッドごとの固有ルール設定。
 export interface SpreadConfig {
   name: string
@@ -37,6 +38,8 @@ export interface SpreadConfig {
   initialOracleLevel: number
   // ショップのバラ売り枠・福袋カタログの両方から除外する種別(既定は空配列=制限なし)。
   bannedShopKinds: ShopSlotKind[]
+  // 初期所持金(currency.initialAmount)へのオフセット(既定0)。
+  initialCurrencyBonus: number
 }
 // Wave単位の新概念「星」が持つ制限ルール。旧BossKind(noLoop/faceLock/lowCombo/oddCombo/suit/face)を
 // kindで判別するUnion型として引き継ぐ。suitのみ、星が選出されると同時にスートを抽選し確定させる。

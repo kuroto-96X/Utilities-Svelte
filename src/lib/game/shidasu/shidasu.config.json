@@ -114,7 +114,8 @@
       "waveTargetBase": 2000,
       "waveTargetMultiplier": 1.5,
       "initialOracleLevel": 1,
-      "bannedShopKinds": []
+      "bannedShopKinds": [],
+      "initialCurrencyBonus": 0
     },
     "moon": {
       "name": "月",
@@ -123,7 +124,8 @@
       "waveTargetBase": 2000,
       "waveTargetMultiplier": 1.5,
       "initialOracleLevel": 1,
-      "bannedShopKinds": []
+      "bannedShopKinds": [],
+      "initialCurrencyBonus": 0
     },
     "pope": {
       "name": "教皇",
@@ -132,7 +134,18 @@
       "waveTargetBase": 2000,
       "waveTargetMultiplier": 1.5,
       "initialOracleLevel": 5,
-      "bannedShopKinds": ["oracle"]
+      "bannedShopKinds": ["oracle"],
+      "initialCurrencyBonus": 0
+    },
+    "empress": {
+      "name": "女帝",
+      "desc": "初期所持金が10多い状態で始まる",
+      "initialExtraTableauRows": 0,
+      "waveTargetBase": 2000,
+      "waveTargetMultiplier": 1.5,
+      "initialOracleLevel": 1,
+      "bannedShopKinds": [],
+      "initialCurrencyBonus": 10
     }
   },
   "items": {
