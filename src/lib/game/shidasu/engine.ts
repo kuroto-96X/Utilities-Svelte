@@ -96,6 +96,19 @@ function convertRandomCardToWild(composition: DeckCard[], rand: () => number): D
   return composition.map((c, i) => (i === target ? { ...c, wild: true } : c))
 }
 
+// デッキ構成のうち、4スート(♠♥♦♣)それぞれから非ワイルド・非除外の1枚をランダムに選び
+// ワイルドへ変換した新しい配列を返す。候補が無いスートはスキップする(スプレッド「力」が使用)。
+function convertOneCardPerSuitToWild(composition: DeckCard[], rand: () => number): DeckCard[] {
+  let result = composition
+  for (const suit of (['♠', '♥', '♦', '♣'] as Suit[])) {
+    const candidates = result.map((c, i) => i).filter(i => result[i].suit === suit && !result[i].wild && !result[i].removed)
+    if (candidates.length === 0) continue
+    const target = candidates[Math.floor(rand() * candidates.length)]
+    result = result.map((c, i) => (i === target ? { ...c, wild: true } : c))
+  }
+  return result
+}
+
 // 指定したdeckIdに一致する(まだワイルドでない)デッキ構成エントリをワイルドへ変換した新しい配列を返す。
 // 該当エントリが無い(既にワイルド化済み、またはdeckIdが存在しない)場合は何もしない(静寂の護符が使用する)。
 function convertCardToWildByDeckId(composition: DeckCard[], deckId: number): DeckCard[] {
@@ -1050,9 +1063,12 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
     : deckCompositionAfterRandomize.map(c =>
         spreadConfig.excludedRanks.includes(c.rank) ? { ...c, removed: true } : c
       )
-  const deckComposition = spreadConfig.unifyBlackRedSuits
+  const deckCompositionAfterUnify = spreadConfig.unifyBlackRedSuits
     ? unifyBlackRedSuits(deckCompositionAfterExclusion, rand)
     : deckCompositionAfterExclusion
+  const deckComposition = spreadConfig.randomizeWildPerSuit
+    ? convertOneCardPerSuitToWild(deckCompositionAfterUnify, rand)
+    : deckCompositionAfterUnify
   return {
     ...initialRun,
     phase: 'shop',

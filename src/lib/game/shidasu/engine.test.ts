@@ -2623,6 +2623,20 @@ describe('createInitialRun / beginRun', () => {
     expect(seen.size).toBe(52)
   })
 
+  test('spreadId=strengthでbeginRunすると、4スート(♠♥♦♣)それぞれから1枚ずつ、合計4枚がwild: trueになる', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1, 'strength')
+    const wildCards = run.deckComposition.filter(c => c.wild)
+    expect(wildCards).toHaveLength(4)
+    const wildSuits = new Set(wildCards.map(c => c.suit))
+    expect(wildSuits).toEqual(new Set(['♠', '♥', '♦', '♣']))
+  })
+
+  test('spreadId=strength以外(fool)では、wild: trueのカードが存在しない', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1, 'fool')
+    const wildCards = run.deckComposition.filter(c => c.wild)
+    expect(wildCards).toHaveLength(0)
+  })
+
   test('waveTargetはflow.stageTargetBase・stageTargetMultiplierとstageStarsの倍率を参照する', () => {
     const custom = {
       ...DEFAULT_PARAMS,
