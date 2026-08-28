@@ -150,6 +150,7 @@
               <th class="px-2 py-1.5 text-left" style="width:7rem;">護符所持スロットオフセット</th>
               <th class="px-2 py-1.5 text-left" style="width:12rem;">ショップ非販売種別</th>
               <th class="px-2 py-1.5 text-left" style="width:16rem;">除外ランク</th>
+              <th class="px-2 py-1.5 text-left" style="width:7rem;">黒赤スート統一</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -208,6 +209,9 @@
                       </label>
                     {/each}
                   </div>
+                </td>
+                <td class="px-2 py-1.5 align-top">
+                  <input type="checkbox" bind:checked={entry.unifyBlackRedSuits} />
                 </td>
               </tr>
             {/each}
