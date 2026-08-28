@@ -47,6 +47,7 @@
       if (!Number.isFinite(entry.waveTargetBase)) return true
       if (!Number.isFinite(entry.waveTargetMultiplier)) return true
       if (!Number.isFinite(entry.initialOracleLevel)) return true
+      if (!Number.isFinite(entry.initialCurrencyBonus)) return true
       return false
     })
   })
@@ -128,6 +129,7 @@
               <th class="px-2 py-1.5 text-left" style="width:7rem;">目標スコア基礎値</th>
               <th class="px-2 py-1.5 text-left" style="width:7rem;">目標スコア倍率</th>
               <th class="px-2 py-1.5 text-left" style="width:7rem;">神託初期レベル</th>
+              <th class="px-2 py-1.5 text-left" style="width:7rem;">初期所持金オフセット</th>
               <th class="px-2 py-1.5 text-left" style="width:12rem;">ショップ非販売種別</th>
             </tr>
           </thead>
@@ -153,6 +155,9 @@
                 </td>
                 <td class="px-2 py-1.5 align-top">
                   <input type="number" step="any" bind:value={entry.initialOracleLevel} class="w-full border border-slate-200 rounded px-1 py-0.5" />
+                </td>
+                <td class="px-2 py-1.5 align-top">
+                  <input type="number" step="any" bind:value={entry.initialCurrencyBonus} class="w-full border border-slate-200 rounded px-1 py-0.5" />
                 </td>
                 <td class="px-2 py-1.5 align-top">
                   <div class="flex flex-col gap-0.5">
