@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte'
   import { DEFAULT_PARAMS, SPREAD_IDS, type ShidasuParams } from '$lib/game/shidasu/params'
-  import type { SpreadId, ShopSlotKind } from '$lib/game/shidasu/types'
+  import type { SpreadId, ShopSlotKind, Rank } from '$lib/game/shidasu/types'
 
   let config = $state<ShidasuParams | null>(null)
   let error = $state<string | null>(null)
@@ -15,6 +15,12 @@
     revelation: '天啓',
     oracle: '神託',
     cardSet: 'トランプセット',
+  }
+
+  const RANK_OPTIONS: Rank[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+  const RANK_LABELS: Record<Rank, string> = {
+    0: '',
+    1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: '10', 11: 'J', 12: 'Q', 13: 'K',
   }
 
   function showToast(message: string) {
@@ -37,6 +43,16 @@
     }
   }
 
+  // チェックボックスのON/OFFに応じて、対象ランクをexcludedRanks配列に追加/削除する。
+  function toggleExcludedRank(id: SpreadId, rank: Rank, checked: boolean) {
+    const entry = spreadEntry(id)
+    if (checked) {
+      if (!entry.excludedRanks.includes(rank)) entry.excludedRanks = [...entry.excludedRanks, rank]
+    } else {
+      entry.excludedRanks = entry.excludedRanks.filter(r => r !== rank)
+    }
+  }
+
   let hasValidationError = $derived.by(() => {
     if (!config) return false
     return SPREAD_IDS.some(id => {
@@ -48,6 +64,7 @@
       if (!Number.isFinite(entry.waveTargetMultiplier)) return true
       if (!Number.isFinite(entry.initialOracleLevel)) return true
       if (!Number.isFinite(entry.initialCurrencyBonus)) return true
+      if (!Number.isFinite(entry.initialItemCapacityBonus)) return true
       return false
     })
   })
@@ -130,7 +147,9 @@
               <th class="px-2 py-1.5 text-left" style="width:7rem;">目標スコア倍率</th>
               <th class="px-2 py-1.5 text-left" style="width:7rem;">神託初期レベル</th>
               <th class="px-2 py-1.5 text-left" style="width:7rem;">初期所持金オフセット</th>
+              <th class="px-2 py-1.5 text-left" style="width:7rem;">護符所持スロットオフセット</th>
               <th class="px-2 py-1.5 text-left" style="width:12rem;">ショップ非販売種別</th>
+              <th class="px-2 py-1.5 text-left" style="width:16rem;">除外ランク</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -160,6 +179,9 @@
                   <input type="number" step="any" bind:value={entry.initialCurrencyBonus} class="w-full border border-slate-200 rounded px-1 py-0.5" />
                 </td>
                 <td class="px-2 py-1.5 align-top">
+                  <input type="number" step="any" bind:value={entry.initialItemCapacityBonus} class="w-full border border-slate-200 rounded px-1 py-0.5" />
+                </td>
+                <td class="px-2 py-1.5 align-top">
                   <div class="flex flex-col gap-0.5">
                     {#each SHOP_SLOT_KIND_OPTIONS as kind (kind)}
                       <label class="flex items-center gap-1 text-[11px] text-slate-600">
@@ -169,6 +191,20 @@
                           onchange={(e) => toggleBannedShopKind(id, kind, e.currentTarget.checked)}
                         />
                         {SHOP_SLOT_KIND_LABELS[kind]}
+                      </label>
+                    {/each}
+                  </div>
+                </td>
+                <td class="px-2 py-1.5 align-top">
+                  <div class="flex flex-wrap gap-x-2 gap-y-0.5">
+                    {#each RANK_OPTIONS as rank (rank)}
+                      <label class="flex items-center gap-1 text-[11px] text-slate-600">
+                        <input
+                          type="checkbox"
+                          checked={entry.excludedRanks.includes(rank)}
+                          onchange={(e) => toggleExcludedRank(id, rank, e.currentTarget.checked)}
+                        />
+                        {RANK_LABELS[rank]}
                       </label>
                     {/each}
                   </div>
