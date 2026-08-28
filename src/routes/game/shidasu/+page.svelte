@@ -113,7 +113,7 @@
 
   onDestroy(clearPendingTimer)
 
-  let target = $derived(waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars))
+  let target = $derived(waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars, run.spreadId))
   let wave = $derived(run.wave)
   // RoleStatusPanel表示用: 現在の封印状態(役封印/天啓封印)から、役の実効レベルへの
   // 補正情報を導出する。triggerSabotage内部の同名処理と同じロジックをengine.tsから再利用。
@@ -1237,7 +1237,7 @@
           {@const isCleared = i < run.waveIndex}
           {@const isNext = i === run.waveIndex}
           {@const isBoss = isBossWave(params, i)}
-          {@const waveTargetValue = waveTarget(params, run.stageIndex, i, run.stageStars)}
+          {@const waveTargetValue = waveTarget(params, run.stageIndex, i, run.stageStars, run.spreadId)}
           <div
             class="border-2 rounded-xl p-3 {isNext ? 'border-teal-500 bg-teal-50' : 'border-slate-200 bg-white'} {isCleared ? 'opacity-60' : ''}"
           >

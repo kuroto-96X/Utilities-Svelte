@@ -1,4 +1,4 @@
-// src/lib/game/shidasu/engine.test.ts
+﻿// src/lib/game/shidasu/engine.test.ts
 import { describe, test, it, expect } from 'vitest'
 import {
   rankLabel,
@@ -521,7 +521,7 @@ describe('残響・流星の基盤(startWave/resolveWaveEndでの同期)', () =>
     const { wave } = startWave(DEFAULT_PARAMS, base.stageIndex, base.waveIndex, base.items.map(h => h.id), base.deckComposition, 1, base.extraTableauRows, base.oracleLevels)
     const run: RunState = {
       ...base,
-      wave: { ...wave, echoX: 3, shootingStarN: 120, score: waveTarget(DEFAULT_PARAMS, 0, 0, base.stageStars), status: 'ended', endReason: 'target' },
+      wave: { ...wave, echoX: 3, shootingStarN: 120, score: waveTarget(DEFAULT_PARAMS, 0, 0, base.stageStars, base.spreadId), status: 'ended', endReason: 'target' },
     }
     const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
     expect(result.echoX).toBe(3)
@@ -2613,9 +2613,20 @@ describe('createInitialRun / beginRun', () => {
       { id: 's2', name: 'star2', waveSlot: 2, targetMultiplier: 1.5, reward: 0, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' },
       { id: 's3', name: 'star3', waveSlot: 3, targetMultiplier: 2, reward: 0, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' },
     ]
-    expect(waveTarget(custom, 0, 0, stars)).toBe(1000) // 1000 × 2^0 × 1
-    expect(waveTarget(custom, 0, 1, stars)).toBe(1500) // 1000 × 2^0 × 1.5
-    expect(waveTarget(custom, 1, 0, stars)).toBe(2000) // 1000 × 2^1 × 1
+    expect(waveTarget(custom, 0, 0, stars, 'fool')).toBe(1000) // 1000 × 2^0 × 1 × 1
+    expect(waveTarget(custom, 0, 1, stars, 'fool')).toBe(1500) // 1000 × 2^0 × 1.5 × 1
+    expect(waveTarget(custom, 1, 0, stars, 'fool')).toBe(2000) // 1000 × 2^1 × 1 × 1
+  })
+
+  test('waveTargetはspreadIdがemperorのとき、targetScoreMultiplier(2)がさらに乗算される', () => {
+    const custom = {
+      ...DEFAULT_PARAMS,
+      flow: { ...DEFAULT_PARAMS.flow, stageTargetBase: 1000, stageTargetMultiplier: 2 },
+    }
+    const stars: Star[] = [
+      { id: 's1', name: 'star1', waveSlot: 1, targetMultiplier: 1, reward: 0, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' },
+    ]
+    expect(waveTarget(custom, 0, 0, stars, 'emperor')).toBe(2000) // 1000 × 2^0 × 1 × 2
   })
 
   test('beginRunのstageStarsは、waveSlot 1・2・3それぞれから1件ずつ確定した3要素配列になる', () => {
@@ -2742,7 +2753,7 @@ describe('resolveWaveEnd', () => {
   }
 
   test('目標スコア以上でクリアした場合、ショップ画面(shop)へ遷移しバラ売り3枠・福袋2枠が確定する', () => {
-    const run = endedRun({ waveIndex: 0 }, waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars))
+    const run = endedRun({ waveIndex: 0 }, waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars, 'fool'))
     const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
     expect(result.phase).toBe('shop')
     expect(result.shop).not.toBeNull()
@@ -2751,7 +2762,7 @@ describe('resolveWaveEnd', () => {
   })
 
   test('ショップ突入時、次のウェーブ位置・stageStarsは確定するが、waveは直前Waveの状態のまま変更されない', () => {
-    const run = endedRun({ waveIndex: 0 }, waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars))
+    const run = endedRun({ waveIndex: 0 }, waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars, 'fool'))
     const previousWave = run.wave
     const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
     expect(result.phase).toBe('shop')
@@ -2772,7 +2783,7 @@ describe('resolveWaveEnd', () => {
     const stageStars = beginRun(DEFAULT_PARAMS, 1).stageStars
     const run = endedRun(
       { waveIndex: DEFAULT_PARAMS.flow.wavesPerStage - 1, stageIndex: finalStageIndex },
-      waveTarget(DEFAULT_PARAMS, finalStageIndex, DEFAULT_PARAMS.flow.wavesPerStage - 1, stageStars),
+      waveTarget(DEFAULT_PARAMS, finalStageIndex, DEFAULT_PARAMS.flow.wavesPerStage - 1, stageStars, 'fool'),
     )
     const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
     expect(result.phase).toBe('continueChoice')
@@ -2780,7 +2791,7 @@ describe('resolveWaveEnd', () => {
   })
 
   test('新しいショップに入るたび、shopRerollCountは0にリセットされる', () => {
-    const run = endedRun({ waveIndex: 0, shopRerollCount: 3 }, waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars))
+    const run = endedRun({ waveIndex: 0, shopRerollCount: 3 }, waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars, 'fool'))
     const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
     expect(result.shopRerollCount).toBe(0)
   })
@@ -2799,7 +2810,7 @@ describe('resolveWaveEnd', () => {
   test('報酬なしの星のWaveクリアではcurrencyが増えない', () => {
     const run = endedRun(
       { waveIndex: 0, stageStars: [noRewardStar, noRewardStar, noRewardStar] },
-      waveTarget(DEFAULT_PARAMS, 0, 0, [noRewardStar, noRewardStar, noRewardStar]),
+      waveTarget(DEFAULT_PARAMS, 0, 0, [noRewardStar, noRewardStar, noRewardStar], 'fool'),
     )
     const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
     expect(next.currency).toBe(run.currency)
@@ -2808,7 +2819,7 @@ describe('resolveWaveEnd', () => {
   test('星にrewardが設定されていればreward分だけ増える', () => {
     const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' }
     const stageStars = [noRewardStar, noRewardStar, rewardStar]
-    const run = endedRun({ waveIndex: 2, stageStars }, waveTarget(DEFAULT_PARAMS, 0, 2, stageStars))
+    const run = endedRun({ waveIndex: 2, stageStars }, waveTarget(DEFAULT_PARAMS, 0, 2, stageStars, 'fool'))
     const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
     expect(next.currency).toBe(run.currency + 20)
   })
@@ -2816,7 +2827,7 @@ describe('resolveWaveEnd', () => {
   test('rewardPenaltyが設定されていれば、星のrewardから減算される(レリックボーナスは減算後の額を基準にしても変わらない)', () => {
     const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 20, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' }
     const stageStars = [noRewardStar, noRewardStar, rewardStar]
-    const run = endedRun({ waveIndex: 2, stageStars, rewardPenalty: 6 }, waveTarget(DEFAULT_PARAMS, 0, 2, stageStars))
+    const run = endedRun({ waveIndex: 2, stageStars, rewardPenalty: 6 }, waveTarget(DEFAULT_PARAMS, 0, 2, stageStars, 'fool'))
     const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
     expect(next.currency).toBe(run.currency + (20 - 6))
   })
@@ -2824,7 +2835,7 @@ describe('resolveWaveEnd', () => {
   test('rewardPenaltyが星のreward以上でも、通貨が減ることは無い(下限0)', () => {
     const rewardStar: Star = { id: 'reward-star', name: '報酬の星', waveSlot: 3, targetMultiplier: 1, reward: 5, restriction: null, sabotage: { kind: 'none' }, descTemplate: '' }
     const stageStars = [noRewardStar, noRewardStar, rewardStar]
-    const run = endedRun({ waveIndex: 2, stageStars, rewardPenalty: 999 }, waveTarget(DEFAULT_PARAMS, 0, 2, stageStars))
+    const run = endedRun({ waveIndex: 2, stageStars, rewardPenalty: 999 }, waveTarget(DEFAULT_PARAMS, 0, 2, stageStars, 'fool'))
     const next = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(5))
     expect(next.currency).toBe(run.currency)
   })
@@ -2833,7 +2844,7 @@ describe('resolveWaveEnd', () => {
     test('プレイ回数がc以下でWaveクリアするとsellBonusが加算される', () => {
       const run = endedRun(
         { items: [{ instanceId: 1, id: 'settlement' }], nextInstanceId: 2 },
-        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars, 'fool'),
       )
       const runWithPlayCount = { ...run, wave: { ...run.wave!, playCountThisWave: DEFAULT_PARAMS.talismans.settlement.c } }
       const result = resolveWaveEnd(DEFAULT_PARAMS, runWithPlayCount, createRng(1))
@@ -2844,7 +2855,7 @@ describe('resolveWaveEnd', () => {
     test('プレイ回数がcを超えていればsellBonusは加算されない', () => {
       const run = endedRun(
         { items: [{ instanceId: 1, id: 'settlement' }], nextInstanceId: 2 },
-        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars, 'fool'),
       )
       const runWithPlayCount = { ...run, wave: { ...run.wave!, playCountThisWave: DEFAULT_PARAMS.talismans.settlement.c + 1 } }
       const result = resolveWaveEnd(DEFAULT_PARAMS, runWithPlayCount, createRng(1))
@@ -2863,7 +2874,7 @@ describe('resolveWaveEnd', () => {
           oracles: [{ instanceId: 5, id: 'flush' }],
           nextInstanceId: 6,
         },
-        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars, 'fool'),
       )
       const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(1))
       expect(result.items.find(h => h.instanceId === 1)?.sellBonus).toBe(DEFAULT_PARAMS.talismans.refund.n)
@@ -2876,7 +2887,7 @@ describe('resolveWaveEnd', () => {
     test('還元を所持していなければsellBonusは加算されない', () => {
       const run = endedRun(
         { items: [{ instanceId: 1, id: 'bridge' }], nextInstanceId: 2 },
-        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars, 'fool'),
       )
       const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(1))
       expect(result.items.find(h => h.instanceId === 1)?.sellBonus ?? 0).toBe(0)
@@ -2887,11 +2898,11 @@ describe('resolveWaveEnd', () => {
     test('ウェーブクリア時、無条件で星片が加算される', () => {
       const run = endedRun(
         { items: [{ instanceId: 1, id: 'bonus' }], currency: 0, nextInstanceId: 2 },
-        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars, 'fool'),
       )
       const runWithoutBonus = endedRun(
         { items: [], currency: 0, nextInstanceId: 2 },
-        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars, 'fool'),
       )
       const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(1))
       const resultWithoutBonus = resolveWaveEnd(DEFAULT_PARAMS, runWithoutBonus, createRng(1))
@@ -2904,11 +2915,11 @@ describe('resolveWaveEnd', () => {
       const targetRankCount = beginRun(DEFAULT_PARAMS, 1).deckComposition.filter(c => !c.removed && c.rank === DEFAULT_PARAMS.talismans.commendation.l).length
       const run = endedRun(
         { items: [{ instanceId: 1, id: 'commendation' }], currency: 0, nextInstanceId: 2 },
-        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars, 'fool'),
       )
       const runWithoutCommendation = endedRun(
         { items: [], currency: 0, nextInstanceId: 2 },
-        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars, 'fool'),
       )
       const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(1))
       const resultWithoutCommendation = resolveWaveEnd(DEFAULT_PARAMS, runWithoutCommendation, createRng(1))
@@ -2920,11 +2931,11 @@ describe('resolveWaveEnd', () => {
     test('取得直後の初回ウェーブクリアでは初期値nが星片に加算される', () => {
       const run = endedRun(
         { items: [{ instanceId: 1, id: 'favor', rewardBonus: DEFAULT_PARAMS.talismans.favor.n }], currency: 0, nextInstanceId: 2 },
-        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars, 'fool'),
       )
       const runWithoutFavor = endedRun(
         { items: [], currency: 0, nextInstanceId: 2 },
-        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars, 'fool'),
       )
       const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(1))
       const resultWithoutFavor = resolveWaveEnd(DEFAULT_PARAMS, runWithoutFavor, createRng(1))
@@ -2935,7 +2946,7 @@ describe('resolveWaveEnd', () => {
       const bossWaveIndex = DEFAULT_PARAMS.flow.wavesPerStage - 1
       const run = endedRun(
         { waveIndex: bossWaveIndex, items: [{ instanceId: 1, id: 'favor', rewardBonus: DEFAULT_PARAMS.talismans.favor.n }], currency: 0, nextInstanceId: 2 },
-        waveTarget(DEFAULT_PARAMS, 0, bossWaveIndex, beginRun(DEFAULT_PARAMS, 1).stageStars),
+        waveTarget(DEFAULT_PARAMS, 0, bossWaveIndex, beginRun(DEFAULT_PARAMS, 1).stageStars, 'fool'),
       )
       const result = resolveWaveEnd(DEFAULT_PARAMS, run, createRng(1))
       const favor = result.items.find(h => h.instanceId === 1)
@@ -2947,7 +2958,7 @@ describe('resolveWaveEnd', () => {
     test('ウェーブクリア時、そのウェーブの最大コンボ数に応じて星片が加算される', () => {
       const run = endedRun(
         { items: [{ instanceId: 1, id: 'vigor' }], currency: 0, nextInstanceId: 2 },
-        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars, 'fool'),
       )
       const runWithCombo = { ...run, wave: { ...run.wave!, maxComboThisWave: 12 } }
       const runWithoutVigor = { ...runWithCombo, items: [] }
@@ -2962,7 +2973,7 @@ describe('resolveWaveEnd', () => {
     test('ウェーブクリア時、そのウェーブで成立した役の種類数に応じて星片が加算される', () => {
       const run = endedRun(
         { items: [{ instanceId: 1, id: 'zuishuku' }], currency: 0, nextInstanceId: 2 },
-        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars),
+        waveTarget(DEFAULT_PARAMS, 0, 0, beginRun(DEFAULT_PARAMS, 1).stageStars, 'fool'),
       )
       const runWithRoles = { ...run, wave: { ...run.wave!, roleOccurrenceCountThisWave: { flush: 3, pair: 1, stair: 2 } } }
       const runWithoutZuishuku = { ...runWithRoles, items: [] }
@@ -2979,7 +2990,7 @@ describe('resolveWaveEnd', () => {
       const deckComposition = new Array(52).fill(0).map((_, i) => ({ deckId: i, suit: '♠' as const, rank: 1 as const, wild: false, removed: false }))
       const run = endedRun(
         { items: [{ instanceId: 1, id: 'marketTrend' }], currency: 0, nextInstanceId: 2, deckComposition },
-        waveTarget(DEFAULT_PARAMS, 0, 0, base.stageStars),
+        waveTarget(DEFAULT_PARAMS, 0, 0, base.stageStars, base.spreadId),
       )
       // b = dealtRows(5) * layout.cols(7) = 35, c = 52, a(stock残り) = 5
       const runWithStock = { ...run, wave: { ...run.wave!, dealtRows: 5, stock: new Array(5).fill(run.wave!.stock[0]) } }
@@ -2995,7 +3006,7 @@ describe('resolveWaveEnd', () => {
       const deckComposition = new Array(30).fill(0).map((_, i) => ({ deckId: i, suit: '♠' as const, rank: 1 as const, wild: false, removed: false }))
       const run = endedRun(
         { items: [{ instanceId: 1, id: 'marketTrend' }], currency: 0, nextInstanceId: 2, deckComposition },
-        waveTarget(DEFAULT_PARAMS, 0, 0, base.stageStars),
+        waveTarget(DEFAULT_PARAMS, 0, 0, base.stageStars, base.spreadId),
       )
       // b = dealtRows(5) * layout.cols(7) = 35, c = 30 → denominator = c - b = -5 <= 0
       const runWithStock = { ...run, wave: { ...run.wave!, dealtRows: 5 } }
@@ -3181,7 +3192,7 @@ describe('rerollShop', () => {
   function shopStateAfterWaveClear(): RunState {
     const begun = beginRun(DEFAULT_PARAMS, 1)
     const { wave } = startWave(DEFAULT_PARAMS, begun.stageIndex, begun.waveIndex, begun.items.map(h => h.id), begun.deckComposition, 1, begun.extraTableauRows, begun.oracleLevels)
-    const ended: RunState = { ...begun, wave: { ...wave, score: waveTarget(DEFAULT_PARAMS, 0, 0, begun.stageStars), status: 'ended', endReason: 'target' } }
+    const ended: RunState = { ...begun, wave: { ...wave, score: waveTarget(DEFAULT_PARAMS, 0, 0, begun.stageStars, begun.spreadId), status: 'ended', endReason: 'target' } }
     return resolveWaveEnd(DEFAULT_PARAMS, ended, createRng(5))
   }
 

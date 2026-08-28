@@ -918,12 +918,14 @@ export function bossScoreLockFor(_params: ShidasuParams, run: RunState): BossSco
   }
 }
 
-// ステージ基準点に、現在Waveの星が持つ倍率をかけて目標スコアを算出する。
-// target(stageIndex, waveIndex) = flow.stageTargetBase × flow.stageTargetMultiplier^stageIndex × star.targetMultiplier
-export function waveTarget(params: ShidasuParams, stageIndex: number, waveIndex: number, stageStars: Star[]): number {
+// ステージ基準点に、現在Waveの星が持つ倍率・スプレッド由来の倍率をかけて目標スコアを算出する。
+// target(stageIndex, waveIndex) = flow.stageTargetBase × flow.stageTargetMultiplier^stageIndex
+//   × star.targetMultiplier × spreads[spreadId].targetScoreMultiplier
+export function waveTarget(params: ShidasuParams, stageIndex: number, waveIndex: number, stageStars: Star[], spreadId: SpreadId): number {
   const base = params.flow.stageTargetBase * params.flow.stageTargetMultiplier ** stageIndex
   const star = stageStars[waveIndex]
-  return Math.floor(base * (star?.targetMultiplier ?? 1))
+  const spreadMultiplier = params.spreads[spreadId].targetScoreMultiplier
+  return Math.floor(base * (star?.targetMultiplier ?? 1) * spreadMultiplier)
 }
 
 const GREAT_MISFORTUNE_SUITS: Suit[] = ['♠', '♥', '♦', '♣']
@@ -1064,7 +1066,7 @@ export function resolveWaveEnd(params: ShidasuParams, run: RunState, rand: () =>
   const wave = run.wave
   if (!wave || wave.status !== 'ended') return run
 
-  const target = waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars)
+  const target = waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars, run.spreadId)
   if (wave.score < target) {
     return { ...run, phase: 'gameOver' }
   }
@@ -1905,7 +1907,7 @@ export function restartRun(params: ShidasuParams, seed?: number): RunState {
 // このヘルパーに含めると呼び出し元で二重計算・不自然な分離が発生する。
 function resolvePlayContext(params: ShidasuParams, run: RunState, wave: WaveState) {
   return {
-    target: waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars),
+    target: waveTarget(params, run.stageIndex, run.waveIndex, run.stageStars, run.spreadId),
     scoreLock: bossScoreLockFor(params, run),
     effectiveItems: resolveEffectiveItems(run.items, wave.activeSeal),
     sealedRoleEffect: resolveSealedRoleEffect(wave.activeSeal),
