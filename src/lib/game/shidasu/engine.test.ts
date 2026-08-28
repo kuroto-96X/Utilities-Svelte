@@ -2603,6 +2603,26 @@ describe('createInitialRun / beginRun', () => {
     expect(run.extraTableauRows).toBe(0)
   })
 
+  test('spreadId=wheelOfFortuneでbeginRunすると、deckCompositionが52枚生成される', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1, 'wheelOfFortune')
+    expect(run.deckComposition).toHaveLength(52)
+  })
+
+  test('spreadId=wheelOfFortuneでは、同じseedでもfoolの標準デッキとsuit/rankの並びが異なる(ランダム化が効いている)', () => {
+    const foolRun = beginRun(DEFAULT_PARAMS, 1, 'fool')
+    const wheelRun = beginRun(DEFAULT_PARAMS, 1, 'wheelOfFortune')
+    const foolSeq = foolRun.deckComposition.map(c => `${c.suit}-${c.rank}`).join(',')
+    const wheelSeq = wheelRun.deckComposition.map(c => `${c.suit}-${c.rank}`).join(',')
+    expect(wheelSeq).not.toBe(foolSeq)
+  })
+
+  test('spreadId=fool(wheelOfFortune以外)では、従来通り標準デッキ(4スート×13ランクが重複なく揃う)が生成される', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1, 'fool')
+    expect(run.deckComposition).toHaveLength(52)
+    const seen = new Set(run.deckComposition.map(c => `${c.suit}-${c.rank}`))
+    expect(seen.size).toBe(52)
+  })
+
   test('waveTargetはflow.stageTargetBase・stageTargetMultiplierとstageStarsの倍率を参照する', () => {
     const custom = {
       ...DEFAULT_PARAMS,
