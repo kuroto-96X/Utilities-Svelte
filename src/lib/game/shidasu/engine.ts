@@ -1041,7 +1041,7 @@ export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadI
     extraTableauRows: initialExtraTableauRows,
     spreadId,
     stageStars: initialStageStars,
-    currency: params.currency.initialAmount,
+    currency: params.currency.initialAmount + spreadConfig.initialCurrencyBonus,
     oracleLevels,
   }
 }

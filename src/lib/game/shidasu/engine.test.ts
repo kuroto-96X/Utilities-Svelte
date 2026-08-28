@@ -2546,6 +2546,16 @@ describe('createInitialRun / beginRun', () => {
     Object.values(run.oracleLevels).forEach(level => expect(level).toBe(5))
   })
 
+  test('spreadId=empressでは、currencyがinitialAmount+10になる', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1, 'empress')
+    expect(run.currency).toBe(DEFAULT_PARAMS.currency.initialAmount + 10)
+  })
+
+  test('spreadIdを省略(fool)すると、currencyはinitialAmountのまま', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    expect(run.currency).toBe(DEFAULT_PARAMS.currency.initialAmount)
+  })
+
   test('waveTargetはflow.stageTargetBase・stageTargetMultiplierとstageStarsの倍率を参照する', () => {
     const custom = {
       ...DEFAULT_PARAMS,
