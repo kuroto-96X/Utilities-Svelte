@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
+  import { fade } from 'svelte/transition'
   import { loadParams, SPREAD_IDS } from '$lib/game/shidasu/params'
   import type { ShidasuParams } from '$lib/game/shidasu/params'
   import {
@@ -226,6 +227,16 @@
   // ショップ画面表示に戻る(run自体は既にhandleTargetColumnで更新済み)。
   function handleRevelationPreviewCleanupDone() {
     revelationPreviewWave = null
+  }
+
+  // タイトル画面のスプレッド選択カルーセルで現在表示中のSPREAD_IDSのインデックス(初期値0='fool'=愚者)。
+  let selectedSpreadIndex = $state(0)
+
+  function goToPrevSpread() {
+    selectedSpreadIndex = (selectedSpreadIndex - 1 + SPREAD_IDS.length) % SPREAD_IDS.length
+  }
+  function goToNextSpread() {
+    selectedSpreadIndex = (selectedSpreadIndex + 1) % SPREAD_IDS.length
   }
 
   function handleStartWithSpread(spreadId: SpreadId) {
