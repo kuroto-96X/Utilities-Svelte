@@ -45,8 +45,9 @@ export interface ShidasuParams {
     // 現状'some'相当の個別指定はサポートしない(将来拡張用にengine.ts側の型は対応済み)。
     sabotageKind: 'none' | 'all'
   }[]
-  // スプレッド(ラン開始時に選ぶ固有ルールセット)ごとの設定。目標スコア算出式
-  // target(n) = waveTargetBase × waveTargetMultiplier^(n-1) の基礎値・倍率(nは通しウェーブ番号、1始まり)と、
+  // スプレッド(ラン開始時に選ぶ固有ルールセット)ごとの設定。目標スコアは
+  // engine.tsのwaveTarget()が flow.stageTargetBase × flow.stageTargetMultiplier^stageIndex × star.targetMultiplier
+  // で算出した値に、spreads[id].targetScoreMultiplierを掛けて調整する。
   // ウェーブ開始時の配布行数への初期オフセット(initialExtraTableauRows)をスプレッドごとに持つ。
   spreads: Record<SpreadId, SpreadConfig>
   items: {
