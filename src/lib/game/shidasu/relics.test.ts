@@ -87,16 +87,28 @@ describe('relicSellBonusMultiplier(開運こけし)', () => {
 
 describe('所持上限ヘルパー', () => {
   it('itemMaxCapacity: 招き布袋像なしならparams.items.maxItemsそのまま', () => {
-    const run = { relics: [] } as unknown as RunState
+    const run = { relics: [], spreadId: 'fool' } as unknown as RunState
     expect(itemMaxCapacity(DEFAULT_PARAMS, run)).toBe(DEFAULT_PARAMS.items.maxItems)
   })
   it('itemMaxCapacity: 招き布袋像(未付喪化)で+1', () => {
-    const run = { relics: [{ id: 'manekiHoteizo' as const, tsukumoka: false }] } as unknown as RunState
+    const run = { relics: [{ id: 'manekiHoteizo' as const, tsukumoka: false }], spreadId: 'fool' } as unknown as RunState
     expect(itemMaxCapacity(DEFAULT_PARAMS, run)).toBe(DEFAULT_PARAMS.items.maxItems + 1)
   })
   it('itemMaxCapacity: 招き布袋像(付喪化)で+2', () => {
-    const run = { relics: [{ id: 'manekiHoteizo' as const, tsukumoka: true }] } as unknown as RunState
+    const run = { relics: [{ id: 'manekiHoteizo' as const, tsukumoka: true }], spreadId: 'fool' } as unknown as RunState
     expect(itemMaxCapacity(DEFAULT_PARAMS, run)).toBe(DEFAULT_PARAMS.items.maxItems + 2)
+  })
+  it('itemMaxCapacity: spreadId=magicianなら+1(招き布袋像なし)', () => {
+    const run = { relics: [], spreadId: 'magician' } as unknown as RunState
+    expect(itemMaxCapacity(DEFAULT_PARAMS, run)).toBe(DEFAULT_PARAMS.items.maxItems + 1)
+  })
+  it('itemMaxCapacity: spreadId=magician + 招き布袋像(未付喪化)で+2', () => {
+    const run = { relics: [{ id: 'manekiHoteizo' as const, tsukumoka: false }], spreadId: 'magician' } as unknown as RunState
+    expect(itemMaxCapacity(DEFAULT_PARAMS, run)).toBe(DEFAULT_PARAMS.items.maxItems + 2)
+  })
+  it('itemMaxCapacity: spreadId=foolなら+0(魔術師のボーナスなし)', () => {
+    const run = { relics: [], spreadId: 'fool' } as unknown as RunState
+    expect(itemMaxCapacity(DEFAULT_PARAMS, run)).toBe(DEFAULT_PARAMS.items.maxItems)
   })
   it('riteMaxCapacity: 破魔矢なしなら3', () => {
     const run = { relics: [] } as unknown as RunState

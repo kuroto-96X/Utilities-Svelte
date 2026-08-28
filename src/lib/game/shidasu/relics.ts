@@ -57,10 +57,12 @@ function relicBonus(run: RunState, id: RelicId, n: number, tsukumokaN: number): 
   return relic.tsukumoka ? n + tsukumokaN : n
 }
 
-// 護符の所持上限。招き布袋像所持時はn(付喪化ならさらにtsukumokaN)を加算する。
+// 護符の所持上限。招き布袋像所持時はn(付喪化ならさらにtsukumokaN)を加算し、
+// スプレッド由来のオフセット(魔術師は+1)も加算する。
 export function itemMaxCapacity(params: ShidasuParams, run: RunState): number {
   const r = params.relics.manekiHoteizo
-  return params.items.maxItems + relicBonus(run, 'manekiHoteizo', r.n, r.tsukumokaN)
+  const spreadBonus = params.spreads[run.spreadId].initialItemCapacityBonus
+  return params.items.maxItems + spreadBonus + relicBonus(run, 'manekiHoteizo', r.n, r.tsukumokaN)
 }
 
 // 秘儀の所持上限(基本値3)。破魔矢所持時はn(付喪化ならさらにtsukumokaN)を加算する。
