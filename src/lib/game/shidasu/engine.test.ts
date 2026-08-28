@@ -2584,6 +2584,25 @@ describe('createInitialRun / beginRun', () => {
     expect(distinctSuits.size).toBe(4)
   })
 
+  test('spreadId=emperorでは、deckCompositionが104枚(標準デッキ2組)になる', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1, 'emperor')
+    expect(run.deckComposition).toHaveLength(104)
+  })
+
+  test('spreadId=emperorでは、extraTableauRowsが基準行数x2相当のオフセットになる', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1, 'emperor')
+    const expectedExtraRows = DEFAULT_PARAMS.spreads.emperor.initialExtraTableauRows
+      + (DEFAULT_PARAMS.layout.rows * DEFAULT_PARAMS.spreads.emperor.tableauRowMultiplier - DEFAULT_PARAMS.layout.rows)
+    expect(run.extraTableauRows).toBe(expectedExtraRows)
+    expect(run.extraTableauRows).toBe(5)
+  })
+
+  test('spreadIdを省略(fool)すると、deckCompositionは52枚のまま、extraTableauRowsは0のまま', () => {
+    const run = beginRun(DEFAULT_PARAMS, 1)
+    expect(run.deckComposition).toHaveLength(52)
+    expect(run.extraTableauRows).toBe(0)
+  })
+
   test('waveTargetはflow.stageTargetBase・stageTargetMultiplierとstageStarsの倍率を参照する', () => {
     const custom = {
       ...DEFAULT_PARAMS,

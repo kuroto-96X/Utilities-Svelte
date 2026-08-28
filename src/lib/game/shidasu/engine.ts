@@ -1,7 +1,7 @@
 // src/lib/game/shidasu/engine.ts
 import type { Card, StageModifier, WaveState, ItemId, WaveEndReason, RunState, Suit, Rank, DeckCard, RoleName, RiteId, Rarity, RevelationId, SpreadId, RunPhase, HeldRevelationOrOracleRef, HeldItem, HeldRite, HeldRevelation, HeldOracle, Star, StarRestriction, CardSetGenreId, RelicId, StarSabotage, SabotageActionId, ShopState } from './types'
 import type { ShidasuParams } from './params'
-import { createRng, shuffle, shuffleInPlace, standardDeckComposition, addCardsToDeckComposition, rollOffer, unifyBlackRedSuits } from './deck'
+import { createRng, shuffle, shuffleInPlace, standardDeckComposition, addCardsToDeckComposition, rollOffer, unifyBlackRedSuits, multipliedDeckComposition } from './deck'
 import { rollSabotage } from './sabotage'
 import { isFace, chainContinuesPattern, evaluateChainBonus, countSameRankBefore, countSameRankForWildPlay, cardColors } from './patterns'
 import { addPart, multiplyPart, lockPart, type ScorePart } from './scoreParts'
@@ -1031,14 +1031,18 @@ export function createInitialRun(): RunState {
 
 export function beginRun(params: ShidasuParams, seed?: number, spreadId: SpreadId = 'fool'): RunState {
   const spreadConfig = params.spreads[spreadId]
-  const initialExtraTableauRows = spreadConfig.initialExtraTableauRows
+  const extraRowsFromMultiplier = params.layout.rows * spreadConfig.tableauRowMultiplier - params.layout.rows
+  const initialExtraTableauRows = spreadConfig.initialExtraTableauRows + extraRowsFromMultiplier
   const rand = createRng(seed ?? Math.floor(Math.random() * 999999) + 1)
   const initialStageStars = rollStageStars(params, rand)
   const oracleLevels = oracleLevelsWithUniformValue(spreadConfig.initialOracleLevel)
   const initialRun = createInitialRun()
-  const deckCompositionAfterExclusion = spreadConfig.excludedRanks.length === 0
+  const baseDeckComposition = spreadConfig.deckMultiplier === 1
     ? initialRun.deckComposition
-    : initialRun.deckComposition.map(c =>
+    : multipliedDeckComposition(spreadConfig.deckMultiplier)
+  const deckCompositionAfterExclusion = spreadConfig.excludedRanks.length === 0
+    ? baseDeckComposition
+    : baseDeckComposition.map(c =>
         spreadConfig.excludedRanks.includes(c.rank) ? { ...c, removed: true } : c
       )
   const deckComposition = spreadConfig.unifyBlackRedSuits
