@@ -4,91 +4,111 @@ Shidasuロードマップ項目3「スプレッドの追加検討」のための
 
 ## スプレッドの説明
 
-スプレッドは、ラン開始時にプレイヤーが選ぶ固有ルールセット。大アルカナ(タロットカードの22枚)から命名する(`src/lib/game/shidasu/types.ts`の`SpreadId`型のコメントに明記)。1回のランを通して不変で、タイトル画面に戻って選び直すまで固定される(`RunState.spreadId`)。
+スプレッドは、ラン開始時にプレイヤーが選ぶ固有ルールセット。大アルカナ(タロットカードの22枚)から命名する(`src/lib/game/shidasu/types.ts`の`SpreadId`型のコメントに明記)。1回のランを通して不変で、タイトル画面に戻って選び直すまで固定される(`RunState.spreadId`)。タイトル画面では全スプレッドを1件ずつ表示するカルーセルUI(左右ボタンで切り替え、下部のスタートボタンで確定)から選ぶ。
 
-現状3種類が実装済み(`src/lib/game/shidasu/params.ts`の`ShidasuParams.spreads`):
+現状10種類が実装済み(`src/lib/game/shidasu/params.ts`の`ShidasuParams.spreads`、`SPREAD_IDS`定数の順):
 
-| ItemId | 名称 | 効果 |
+| SpreadId | 名称 | 効果 |
 |---|---|---|
 | `fool` | 愚者 | 特殊ルールなし(基本スプレッド) |
-| `moon` | 月 | 場札が常に1行少ない状態で始まる(`initialExtraTableauRows: -1`) |
+| `moon` | 月 | 場札が常に1行多い状態で始まる。Wave開始時に配られる場札の上半分(端数切捨て)の行は裏向きになる(`initialExtraTableauRows: 1`) |
 | `pope` | 教皇 | 神託の初期レベルが5になるが、ショップで神託が販売されない(`initialOracleLevel: 5`, `bannedShopKinds: ['oracle']`) |
+| `empress` | 女帝 | 初期所持金が10多い状態で始まる(`initialCurrencyBonus: 10`) |
+| `magician` | 魔術師 | 護符の所持スロットが1多いが、場札は1行少ない状態で始まる(`initialItemCapacityBonus: 1`, `initialExtraTableauRows: -1`) |
+| `justice` | 正義 | 初期デッキから絵札(J・Q・K)が除外された状態で始まる(`excludedRanks: [11, 12, 13]`) |
+| `lovers` | 恋人 | 初期デッキの黒スート(♠♣)・赤スート(♥♦)が、それぞれランダムにどちらか一方へ統一された状態で始まる(`unifyBlackRedSuits: true`) |
+| `emperor` | 皇帝 | 初期デッキの枚数・場札の配布行数・目標スコアが全て2倍になるが、護符の所持スロットが1減った状態で始まる(`deckMultiplier: 2`, `tableauRowMultiplier: 2`, `targetScoreMultiplier: 2`, `initialItemCapacityBonus: -1`) |
+| `wheelOfFortune` | 運命の輪 | 初期デッキ52枚それぞれのランク・スートが完全ランダムに再抽選された状態で始まる(`randomizeDeck: true`) |
+| `strength` | 力 | 初期デッキの各スート(♠♥♦♣)から1枚ずつランダムに選ばれたカードがワイルドに変換された状態で始まる(`randomizeWildPerSuit: true`) |
 
-`ShidasuParams.spreads[id]`は`name`・`desc`・`initialExtraTableauRows`(ウェーブ開始時の配布行数への初期オフセット)・`waveTargetBase`・`waveTargetMultiplier`・`initialOracleLevel`(神託の初期レベル、全役一律)・`bannedShopKinds`(ショップで販売されないスロット種別の配列)という7フィールドを持つ型として定義されている。`/admin/shidasu-spreads`で全フィールドを編集可能。
+`ShidasuParams.spreads[id]`(`SpreadConfig`型、`src/lib/game/shidasu/types.ts`)は以下のフィールドを持つ:
 
-**技術的な注記(次回の実装検討時に確認すること)**: `waveTargetBase`/`waveTargetMultiplier`の2フィールドは型・デフォルト値とも定義されているが、実際の目標スコア計算関数`waveTarget`(`engine.ts`)は`params.flow.stageTargetBase`/`stageTargetMultiplier`と星の`targetMultiplier`のみを参照しており、`spreads`側のこの2フィールドはどこからも参照されていない(死んだフィールド)。新規スプレッドでこの2フィールドを使った効果を検討する場合、まず`waveTarget`関数側の実装を追加する必要がある。
+- `name` / `desc`: 表示名・説明文
+- `initialExtraTableauRows`: ウェーブ開始時の配布行数への初期オフセット
+- `deckMultiplier`: 初期デッキ生成時、標準デッキ(52枚)を何組連結するか(既定1)
+- `tableauRowMultiplier`: 場札の配布行数への倍率(既定1、`initialExtraTableauRows`に加算する形で反映)
+- `targetScoreMultiplier`: 目標スコア(`waveTarget`)への倍率(既定1)
+- `initialOracleLevel`: 神託の初期レベル(全役一律、既定1)
+- `bannedShopKinds`: ショップのバラ売り枠・福袋カタログの両方から除外する種別(既定は空配列=制限なし)
+- `initialCurrencyBonus`: 初期所持金(`currency.initialAmount`)へのオフセット(既定0)
+- `initialItemCapacityBonus`: 護符の所持上限(`itemMaxCapacity`)へのオフセット(既定0)
+- `excludedRanks`: 初期デッキ生成時に除外するランクの一覧(既定は空配列=除外なし)
+- `unifyBlackRedSuits`: 初期デッキ生成時、黒スート・赤スートをそれぞれランダムに片方へ統一するか(既定false)
+- `randomizeDeck`: 初期デッキ52枚それぞれのsuit・rankを独立にランダム抽選するか(既定false。trueの場合`deckMultiplier`による複製結果を上書きする)
+- `randomizeWildPerSuit`: 初期デッキ生成時、4スートそれぞれから1枚ずつランダムにワイルドへ変換するか(既定false)
 
-## 名称候補一覧(大アルカナより、既存3枚を除く19枚)
+`/admin/shidasu-spreads`(単一テーブル型admin画面)で全フィールドを編集可能。新規スプレッドを追加する場合は`SPREAD_IDS`(`params.ts`)への追記が必要(ゲーム側のタイトル画面カルーセル・admin画面の両方がここを単一の情報源として参照する)。
 
-大アルカナ22枚のうち`fool`(愚者)・`moon`(月)・`pope`(教皇)は実装済みのため、残り19枚を新規スプレッドの名称候補とする。標準的な並び順(0〜21、実装済み3枚を除く)で列挙する。
+`beginRun`(`engine.ts`)内のデッキ変換チェーンは、`baseDeckComposition`(`deckMultiplier`由来)→`deckCompositionAfterRandomize`(`randomizeDeck`由来)→`deckCompositionAfterExclusion`(`excludedRanks`由来)→`deckCompositionAfterUnify`(`unifyBlackRedSuits`由来)→`deckComposition`(`randomizeWildPerSuit`由来)という段階的な三項演算子チェーンで、この順序で各スプレッド効果を適用する。
+
+## 名称候補一覧(大アルカナより、既存10枚を除く12枚)
+
+大アルカナ22枚のうち`fool`(愚者)・`moon`(月)・`pope`(教皇)・`empress`(女帝)・`magician`(魔術師)・`justice`(正義)・`lovers`(恋人)・`emperor`(皇帝)・`wheelOfFortune`(運命の輪)・`strength`(力)は実装済みのため、残り12枚を新規スプレッドの名称候補とする。標準的な並び順(0〜21、実装済み10枚を除く)で列挙する。
 
 | # | 名称 | 一般的なモチーフ・象徴 |
 |---|---|---|
-| 1 | 魔術師 | 意志・創造・才覚 |
-| 2 | 女教皇 | 知恵・秘密・静寂 |
-| 3 | 女帝 | 豊穣・繁栄・母性 |
-| 4 | 皇帝 | 権威・支配・秩序 |
-| 5 | 恋人 | 選択・調和・結合 |
-| 6 | 戦車 | 勝利・前進・意志力 |
-| 7 | 力 | 忍耐・克己・内なる強さ |
-| 8 | 隠者 | 内省・孤独・探求 |
-| 9 | 運命の輪 | 転機・循環・偶然 |
-| 10 | 正義 | 均衡・公正・因果 |
-| 11 | 吊るされた男 | 停滞・犠牲・視点の転換 |
-| 12 | 死神 | 終焉・変容・再生 |
-| 13 | 節制 | 調和・中庸・融合 |
-| 14 | 悪魔 | 束縛・誘惑・依存 |
-| 15 | 塔 | 崩壊・急変・啓示 |
-| 16 | 星 | 希望・導き・浄化 |
-| 17 | 太陽 | 成功・活力・祝福 |
-| 18 | 審判 | 復活・覚醒・総括 |
-| 19 | 世界 | 完成・統合・達成 |
+| 1 | 女教皇 | 知恵・秘密・静寂 |
+| 2 | 戦車 | 勝利・前進・意志力 |
+| 3 | 隠者 | 内省・孤独・探求 |
+| 4 | 吊るされた男 | 停滞・犠牲・視点の転換 |
+| 5 | 死神 | 終焉・変容・再生 |
+| 6 | 節制 | 調和・中庸・融合 |
+| 7 | 悪魔 | 束縛・誘惑・依存 |
+| 8 | 塔 | 崩壊・急変・啓示 |
+| 9 | 星 | 希望・導き・浄化 |
+| 10 | 太陽 | 成功・活力・祝福 |
+| 11 | 審判 | 復活・覚醒・総括 |
+| 12 | 世界 | 完成・統合・達成 |
 
-**注記:** 「星」(#16)は既存の`Star`型(Wave単位の概念)と、「太陽」は既存レリック候補などとの名称衝突が無いか、実際に採用する際は`SpreadId`型・既存の`ItemId`/`RelicId`/`RiteId`/`RevelationId`と重複しないか確認が必要(過去に「恩賞」→`favor`のように、想定外の衝突が判明した前例がある)。
+**注記:** 「星」(#9)は既存の`Star`型(Wave単位の概念)と、「太陽」は既存レリック候補などとの名称衝突が無いか、実際に採用する際は`SpreadId`型・既存の`ItemId`/`RelicId`/`RiteId`/`RevelationId`と重複しないか確認が必要(過去に「恩賞」→`favor`のように、想定外の衝突が判明した前例がある)。
 
 ## スプレッドの固有ルールの方向性(対象になりそうな要素の洗い出し)
 
-スプレッドは「ラン開始時に決まり、以後変わらない」という性質を持つ(プレイ中に動的に変化する護符・レリック・妨害行動とは対照的)。以下、9つの対象軸ごとに、実際のコード上でラン開始時に固定化できそうな要素を洗い出す。まだどれを採用するか・具体的な数値は未検討で、次回以降のセッションで個別候補として絞り込む。
+スプレッドは「ラン開始時に決まり、以後変わらない」という性質を持つ(プレイ中に動的に変化する護符・レリック・妨害行動とは対照的)。以下、9つの対象軸ごとに、実際のコード上でラン開始時に固定化できそうな要素を洗い出す。
 
 ### 初期デッキ内容
 
-`RunState.deckComposition`(`DeckCard[]`)は`standardDeckComposition()`(`src/lib/game/shidasu/deck.ts`)が52枚(4スート×ランク1〜13、全て`wild: false`)を生成する。スプレッドが割り込める余地:
+`RunState.deckComposition`(`DeckCard[]`)は`standardDeckComposition()`(`src/lib/game/shidasu/deck.ts`)が52枚(4スート×ランク1〜13、全て`wild: false`)を生成する。
 
-- スート別の初期枚数比率を非対称にする(例: 特定スートを減らす/増やす)
-- 初期ワイルド枚数を変える(`addCardsToDeckComposition`ヘルパーで`wild: true`のカードを最初から混ぜる。既存護符「永劫」がWave開始のたびワイルド1枚追加する処理と同型)
-- 特定ランク・スートを最初から除外する(`removed: true`で初期化)
-- 既存護符「豊穣」(ランダム1枚をワイルド化)・「静寂」(指定カードをワイルド化)のような変換を、ラン開始時に一括適用する
+- **実装済み**: 初期デッキ枚数を倍にする(`SpreadConfig.deckMultiplier`、`emperor`が`2`を使用。`multipliedDeckComposition()`ヘルパー(`deck.ts`)が標準デッキを指定組数連結する)
+- **実装済み**: 特定ランクを最初から除外する(`SpreadConfig.excludedRanks`、`justice`が`[11, 12, 13]`を使用。`removed: true`で初期化)
+- **実装済み**: 黒スート・赤スートをそれぞれランダムに片方へ統一する(`SpreadConfig.unifyBlackRedSuits`、`lovers`が使用。`unifyBlackRedSuits()`ヘルパー(`deck.ts`)がラン開始時にランダムな統一先を決定する)
+- **実装済み**: 52枚それぞれのランク・スートを完全ランダムに再抽選する(`SpreadConfig.randomizeDeck`、`wheelOfFortune`が使用。`randomizedDeckComposition()`ヘルパー(`deck.ts`))
+- **実装済み**: 4スートそれぞれから1枚ずつランダムにワイルド化する(`SpreadConfig.randomizeWildPerSuit`、`strength`が使用。`convertOneCardPerSuitToWild()`ヘルパー(`engine.ts`)、既存護符「豊穣」の`convertRandomCardToWild()`のスート版)
+- 未実装: スート別の初期枚数比率を非対称にする(例: 特定スートを減らす/増やす)
+- 未実装: 初期ワイルド枚数を、スート別ではなく単純な固定N枚で変える(既存護符「永劫」がWave開始のたびワイルド1枚追加する処理と同型)
 
 ### 場札
 
-`startWave`(`engine.ts`)の配布ロジックが対象。既存`moon`が使っている`initialExtraTableauRows`(行数オフセット)以外の余地:
+`startWave`(`engine.ts`)の配布ロジックが対象。
 
-- 列数(`params.layout.cols`、既定7)自体をスプレッドごとに変える(現状はスプレッド非依存の固定値、型拡張が必要)
-- 配布順序(現状は列ごとに山札の先頭から`rows`枚ずつ配る単純な方式)を変える(例: 行優先配布、特定パターンでの配布)
-- 基準カード(foundation)の選出方法(現状は配布後の山札末尾を採用)を、特定ランク・スート固定にする
+- **実装済み**: 場札の配布行数への倍率(`SpreadConfig.tableauRowMultiplier`、`emperor`が`2`を使用。`params.layout.rows * tableauRowMultiplier - params.layout.rows`を`initialExtraTableauRows`に加算する形で、基準行数の変更に自動追従する)
+- 未実装: 列数(`params.layout.cols`、既定7)自体をスプレッドごとに変える(現状はスプレッド非依存の固定値、型拡張が必要)
+- 未実装: 配布順序(現状は列ごとに山札の先頭から`rows`枚ずつ配る単純な方式)を変える(例: 行優先配布、特定パターンでの配布)
+- 未実装: 基準カード(foundation)の選出方法(現状は配布後の山札末尾を採用)を、特定ランク・スート固定にする
 
 ### 報酬
 
 `Star.reward`・`params.flow`(`stageTargetBase`/`stageTargetMultiplier`/`stagesPerRun`/`wavesPerStage`)・`params.currency.initialAmount`が対象。
 
-- 初期所持金(`currency.initialAmount`、既定5)をスプレッドごとに変える
-- 目標スコアのベース値・倍率(`stageTargetBase`/`stageTargetMultiplier`)をスプレッド専用に上書きする(**注意**: `ShidasuParams.spreads`型には既に`waveTargetBase`/`waveTargetMultiplier`フィールドが存在するが、上記「技術的な注記」の通り現状未接続の死んだフィールドになっている。この軸で検討する場合はまずこの接続自体を直す必要がある)
-- ステージ数(`stagesPerRun`、既定8)・1ステージあたりのWave数(`wavesPerStage`、既定3)を変える(ラン全体の長さ・テンポに影響)
-- Wave報酬(`Star.reward`)への倍率適用
+- **実装済み**: 初期所持金(`currency.initialAmount`)へのオフセット(`SpreadConfig.initialCurrencyBonus`、`empress`が`10`を使用)
+- **実装済み**: 目標スコア(`waveTarget`)への倍率(`SpreadConfig.targetScoreMultiplier`、`emperor`が`2`を使用。`waveTarget`関数(`engine.ts`)が`spreadId`を受け取り、対応する`spreadConfig.targetScoreMultiplier`を乗算する)
+- 未実装: ステージ数(`stagesPerRun`、既定8)・1ステージあたりのWave数(`wavesPerStage`、既定3)を変える(ラン全体の長さ・テンポに影響)
+- 未実装: Wave報酬(`Star.reward`)への倍率適用
 
 ### ショップ
 
 `params.shop`(`itemPrice`/`ritePrice`/`revelationPrice`/`oraclePrice`/`packCatalog`/`rerollCostStep`)が対象。
 
-- ~~護符・秘儀・天啓・神託の価格体系(`itemPrice`等)全体に倍率をかける(安く/高くする)~~ → 下記「所持品」軸へ統合(レリック「招き猫」の効果と同型のため、価格割引はショップ専用フィールドを新設せず所持品として表現する)
-- リロールコストの刻み幅(`rerollCostStep`、既定5)を変える
-- 福袋カタログ(`packCatalog`)の内容をスプレッドごとに絞る・追加する(特定ジャンルの福袋を除外/優遇する)
-- ショップの初期枠数(バラ売り・福袋の基本枠数)を変える(現状レリック「熊手」「福笹」がランタイムで増やす仕組みのみ存在、スプレッド側からのベース値変更は要調査・型拡張)
-- **実装済み**: 特定スロット種別(護符/秘儀/天啓/神託/トランプセット)をショップから丸ごと除外する(`SpreadConfig.bannedShopKinds: ShopSlotKind[]`、`pope`が`['oracle']`を使用。`shop.ts`の`rollIndividualSlot`/`rollPackSlots`がフィルタする)
+- **実装済み**: 特定スロット種別(護符/秘儀/天啓/神託/トランプセット)をショップから丸ごと除外する(`SpreadConfig.bannedShopKinds`、`pope`が`['oracle']`を使用。`shop.ts`の`rollIndividualSlot`/`rollPackSlots`がフィルタする)
+- 未実装: 護符・秘儀・天啓・神託の価格体系(`itemPrice`等)全体に倍率をかける(安く/高くする。専用フィールドを新設せず、レリック「招き猫」と同型の効果を持つレリック・天啓を最初から持たせる「所持品」軸での実現が優先候補)
+- 未実装: リロールコストの刻み幅(`rerollCostStep`、既定5)を変える
+- 未実装: 福袋カタログ(`packCatalog`)の内容をスプレッドごとに絞る・追加する(特定ジャンルの福袋を除外/優遇する)
+- 未実装: ショップの初期枠数(バラ売り・福袋の基本枠数)を変える(現状レリック「熊手」「福笹」がランタイムで増やす仕組みのみ存在、スプレッド側からのベース値変更は要調査・型拡張)
 
 ### 星
 
-`params.stars`(星の候補プール)・`StarRestriction`・`StarSabotage`が対象。
+`params.stars`(星の候補プール)・`StarRestriction`・`StarSabotage`が対象。まだ実装例なし。
 
 - 星の抽選プールをスプレッド専用にフィルタする(例: 特定`restrictionKind`の星を除外、またはスプレッド限定の星を追加する。現状`rollStarForSlot`は`waveSlot`一致のみでフィルタしており、スプレッド軸のフィルタは未実装)
 - 各星の`targetMultiplier`/`reward`にスプレッド補正をかけ、難易度・報酬カーブを変える
@@ -100,7 +120,7 @@ Shidasuロードマップ項目3「スプレッドの追加検討」のための
 護符(`ITEM_POOL`)・秘儀(`RITE_POOL`)・天啓(`REVELATION_POOL`)・神託(`ORACLE_POOL`)・レリック(`RELIC_POOL`)のオファー抽選は、いずれも`rollOffer<T>(pool, count, rand)`(`deck.ts`)による均等抽選(シャッフルして先頭`count`個)。カードセット福袋のジャンル抽選のみ`CARD_SET_GENRE_WEIGHTS`(`cardSets.ts`)という重みテーブルを持つ。現状、これらの抽選にスプレッド軸のフィルタ・重み付けは一切実装されていない。
 
 - 特定カテゴリの護符・秘儀・神託が出やすくなる/出にくくなる(重み付き抽選への変更が前提)
-- ~~特定レリックが最初から除外される、または優先的に出現する~~ → 「優先的に出現」は下記「所持品」軸へ統合(抽選で出やすくするより、最初から持たせる方が直接的)。除外(出現しなくする)は本軸のまま残る
+- 特定レリックが最初から除外される(出現しなくする)
 - カードセット福袋のジャンル出現率(`CARD_SET_GENRE_WEIGHTS`)をスプレッドごとに差し替える(特定ジャンルが出やすい/出ない)
 
 ### 神託の初期レベル
@@ -112,42 +132,50 @@ Shidasuロードマップ項目3「スプレッドの追加検討」のための
 
 ### 所持品
 
-`RunState.relics: { id: RelicId; tsukumoka: boolean }[]`・`RunState.revelations: HeldRevelation[]`(`{ instanceId, id, sellBonus? }`)が対象。ラン開始時、特定のレリック・天啓を最初から所持した状態でスタートする軸。対象はレリック・天啓の2カテゴリに限定する(護符・秘儀・神託は対象外)。
+`RunState.relics: { id: RelicId; tsukumoka: boolean }[]`・`RunState.revelations: HeldRevelation[]`(`{ instanceId, id, sellBonus? }`)が対象。ラン開始時、特定のレリック・天啓を最初から所持した状態でスタートする軸。対象はレリック・天啓の2カテゴリに限定する(護符・秘儀・神託は対象外)。まだ実装例なし。
 
-これは「抽選プールの偏り」「ショップ」「役」の各軸で挙がっていた項目のうち、「専用のスプレッドフィールドを新設する」のではなく「該当する効果を持つレリック・天啓を最初から持たせる」ことで実現できるものの受け皿になる。
+「抽選プールの偏り」「ショップ」「役」の各軸で挙がる効果のうち、「専用のスプレッドフィールドを新設する」のではなく「該当する効果を持つレリック・天啓を最初から持たせる」ことで実現できるものの受け皿になる。
 
 - 特定のレリック・天啓をラン開始時から所持させる(`beginRun`(`engine.ts`)で`RunState.relics`/`revelations`に初期エントリを追加する。護符「橋」と同型の役ボーナス緩和効果を持つレリック・天啓があれば「役」軸の効果を、価格割引効果を持つレリック「招き猫」があれば「ショップ」軸の効果を、それぞれ専用フィールド無しで表現できる)
 - 天啓は`HeldRevelation.sellBonus`等の個体差要素を持つため、初期所持時にどう初期化するか(ランダムか固定か)は個別候補の検討時に決める
 
+### 護符所持スロット
+
+`itemMaxCapacity`(`relics.ts`)。
+
+- **実装済み**: 護符の所持上限へのオフセット(`SpreadConfig.initialItemCapacityBonus`、`magician`が`+1`、`emperor`が`-1`を使用)
+
 ### 役
 
-`params.scoring`セクション(基礎点・コンボ倍率step・各役/パターンのボーナス点・成立に必要な最小枚数など)は現状スプレッド非依存の単一グローバル値。既存護符「橋」が、階段・同スート/同色の成立に必要な最小枚数(`stairMinLen`/`suitColorMinLen`)を所持時のみ緩和する「実効値」算出パターン(基礎値から護符由来のオフセットを差し引いて都度計算)を持っており、同じパターンをスプレッド由来のオフセットとして流用できる。
+`params.scoring`セクション(基礎点・コンボ倍率step・各役/パターンのボーナス点・成立に必要な最小枚数など)は現状スプレッド非依存の単一グローバル値。既存護符「橋」が、階段・同スート/同色の成立に必要な最小枚数(`stairMinLen`/`suitColorMinLen`)を所持時のみ緩和する「実効値」算出パターン(基礎値から護符由来のオフセットを差し引いて都度計算)を持っており、同じパターンをスプレッド由来のオフセットとして流用できる。まだ実装例なし。
 
-- ~~階段・同スート・同色・交互などパターンの成立に必要な最小枚数を、スプレッドごとに緩和/厳格化する~~ → 下記「所持品」軸へ統合(該当効果を持つ天啓・レリックを最初から持たせることで実現。専用フィールドを新設せず、護符「橋」と同型の効果を天啓・レリック側に持たせる前提)
-- ~~コンボ倍率の伸び方(`comboMultiplierStep`)をスプレッドごとに変える~~ → 同上、所持品軸へ統合
-- ~~特定の役・パターンのボーナス点(`flushBonus`・`royalSetBonus`・`sameRankBonusUnit`・`completeRunBonus`・`pairBonusUnit`・`alternatingBonus`等)をスプレッドごとに増減する~~ → 同上、所持品軸へ統合
+- 階段・同スート・同色・交互などパターンの成立に必要な最小枚数を、スプレッドごとに緩和/厳格化する → 「所持品」軸へ統合(該当効果を持つ天啓・レリックを最初から持たせることで実現。専用フィールドを新設せず、護符「橋」と同型の効果を天啓・レリック側に持たせる前提)
+- コンボ倍率の伸び方(`comboMultiplierStep`)をスプレッドごとに変える → 同上、所持品軸へ統合
+- 特定の役・パターンのボーナス点(`flushBonus`・`royalSetBonus`・`sameRankBonusUnit`・`completeRunBonus`・`pairBonusUnit`・`alternatingBonus`等)をスプレッドごとに増減する → 同上、所持品軸へ統合
 
 ### 検討時の留意点
 
 - これらの軸を組み合わせて、大アルカナの各名称が持つ象徴(上記名称候補一覧の「一般的なモチーフ・象徴」列)と紐づいた固有ルールを個別に検討していく
 - 「同じ軸に複数のスプレッドが偏らないようにする」「`fool`は特殊ルールなしの基準点として維持する」といった設計方針も、個別候補の検討時に合わせて詰める
-- 「場札」列数変更・「報酬」目標スコア上書き・「ショップ」初期枠数変更・「抽選プールの偏り」(重み付き抽選化)は、いずれも現状の型定義に無いフィールドの追加(`ShidasuParams`の拡張)や既存関数の改修が前提になる点に注意(「ショップ」のスロット種別除外・「神託の初期レベル」の一律底上げは`pope`スプレッドで実装済み)
-- 「所持品」軸は`ShidasuParams`の拡張ではなく、`beginRun`(`engine.ts`)で`RunState.relics`/`revelations`に初期エントリを追加する形になる見込み(元々あった「ショップ」「役」「抽選プールの偏り」軸の一部項目は、専用フィールドではなくこの所持品軸で表現する方針に整理済み)
-- スプレッドの追加・編集は`/admin/shidasu-spreads`(単一テーブル型admin画面)から行える。新規スプレッドを追加する場合は`SPREAD_IDS`(`params.ts`)への追記が必要(ゲーム側の選択画面・admin画面の両方がここを単一の情報源として参照する)
+- 「場札」列数変更・「ショップ」初期枠数変更・「抽選プールの偏り」(重み付き抽選化)・「星」軸全般は、いずれも現状の型定義に無いフィールドの追加(`ShidasuParams`の拡張)や既存関数の改修が前提になる点に注意
+- 「所持品」軸は`ShidasuParams`の拡張ではなく、`beginRun`(`engine.ts`)で`RunState.relics`/`revelations`に初期エントリを追加する形になる見込み
+- スプレッドの追加・編集は`/admin/shidasu-spreads`(単一テーブル型admin画面)から行える。新規スプレッドを追加する場合は`SPREAD_IDS`(`params.ts`)への追記が必要(ゲーム側のタイトル画面カルーセル・admin画面の両方がここを単一の情報源として参照する)
 
-## 具体的なルール候補一覧
+## 具体的なルール候補一覧(実装済み)
 
-上記の軸の洗い出しとは別に、実際に挙がった具体的なルール候補(数値入り)を列挙する。まだ名称・実装の割り当ては未定。各候補が既存の`SpreadConfig`フィールドで表現できるか、それとも型拡張・新規ロジックが必要かも合わせて記載する。
+過去に挙がった具体的なルール候補(候補A〜G)は、いずれも新規スプレッドとして実装済み。対応関係を記録として残す。
 
-| # | 内容 | 対象軸 | 実装メモ |
+| # | 内容 | 実装済みSpreadId | 対象軸 |
 |---|---|---|---|
-| A | 初期所持金+N(初期値N=10) | 報酬 | `SpreadConfig`にフィールドなし。既存の`currency.initialAmount`(既定5)へのオフセットとして新規フィールド追加が必要 |
-| B | 護符の所持スロット+N、場札-N行(初期値N=1) | 場札/その他 | 場札側は既存の`initialExtraTableauRows`を流用可能(`-N`)。護符所持スロット側は`itemMaxCapacity`(`relics.ts`)が`params.items.maxItems`+レリック由来加算という構造のみで、スプレッド由来加算の仕組みが無いため新規フィールド・関数改修が必要 |
-| C | 初期デッキからJQK(11・12・13)を除外してスタート | 初期デッキ内容 | 「特定ランク・スートを最初から除外する」の具体化。`DeckCard.removed: true`での初期化で対応できる見込み。スプレッド側から`removed`を一括適用する仕組みの新設が必要 |
-| D | 初期デッキの♠と♣がどちらか片方に変換、♥と♦がどちらか片方に変換された状態でスタート | 初期デッキ内容 | 既存護符のようなカード変換(スート書き換え)をラン開始時に一括適用するパターン。スプレッド側からの一括変換ロジックの新設が必要。「どちらか片方」がランダム決定か固定かは未定(要検討) |
-| E | 初期デッキの枚数x倍、場札配布行x倍、基礎目標スコアx倍、護符の所持スロット-N(初期値x=2, N=1) | 初期デッキ内容/場札/報酬/その他 | 複合効果。デッキ枚数x倍は`standardDeckComposition()`(`deck.ts`)がスート×ランク固定の52枚生成のため大幅な改修が必要。場札配布行x倍は`initialExtraTableauRows`が加算方式(オフセット)のため、倍率方式への対応(または`rows`計算式自体の変更)が必要。基礎目標スコアx倍は「報酬」節の技術的注記の通り`waveTargetBase`/`waveTargetMultiplier`が現状死んだフィールドのため、まず`waveTarget`関数への接続が前提。護符所持スロット-Nは候補Bと同じ新規フィールドを流用できる見込み |
-| F | 初期デッキのすべてのランクとスートがランダムになる | 初期デッキ内容 | 52枚それぞれのランク・スートを再抽選する処理。基準カード(foundation)選出や役判定(スート・ランク依存)への影響範囲が広く、他候補より検討コストが高い見込み |
-| G | 初期デッキの各スートから1枚ずつランダムにワイルドに変換してスタート(4枚がワイルド化される) | 初期デッキ内容 | 既存護符「豊穣」(ランダム1枚をワイルド化)と同型の処理を、スート単位で4回適用するイメージ。スート別に対象候補を絞ってからランダム1枚を選ぶ抽選ロジックの新設が必要。`DeckCard.wild: true`への書き換えで対応できる見込み |
+| A | 初期所持金+N(N=10) | `empress`(女帝) | 報酬 |
+| B | 護符の所持スロット+N、場札-N行(N=1) | `magician`(魔術師) | 護符所持スロット/場札 |
+| C | 初期デッキからJQK(11・12・13)を除外してスタート | `justice`(正義) | 初期デッキ内容 |
+| D | 初期デッキの♠と♣がどちらか片方に変換、♥と♦がどちらか片方に変換された状態でスタート | `lovers`(恋人) | 初期デッキ内容 |
+| E | 初期デッキの枚数x倍、場札配布行x倍、基礎目標スコアx倍、護符の所持スロット-N(x=2, N=1) | `emperor`(皇帝) | 初期デッキ内容/場札/報酬/護符所持スロット |
+| F | 初期デッキのすべてのランクとスートがランダムになる | `wheelOfFortune`(運命の輪) | 初期デッキ内容 |
+| G | 初期デッキの各スートから1枚ずつランダムにワイルドに変換してスタート(4枚がワイルド化される) | `strength`(力) | 初期デッキ内容 |
+
+新規の具体的なルール候補は、今後このセクションに追記していく。
 
 ## スコープ外
 
