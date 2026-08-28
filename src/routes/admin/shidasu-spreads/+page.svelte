@@ -153,6 +153,7 @@
               <th class="px-2 py-1.5 text-left" style="width:12rem;">ショップ非販売種別</th>
               <th class="px-2 py-1.5 text-left" style="width:16rem;">除外ランク</th>
               <th class="px-2 py-1.5 text-left" style="width:7rem;">黒赤スート統一</th>
+              <th class="px-2 py-1.5 text-left" style="width:7rem;">デッキランダム化</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -217,6 +218,9 @@
                 </td>
                 <td class="px-2 py-1.5 align-top">
                   <input type="checkbox" bind:checked={entry.unifyBlackRedSuits} />
+                </td>
+                <td class="px-2 py-1.5 align-top">
+                  <input type="checkbox" bind:checked={entry.randomizeDeck} />
                 </td>
               </tr>
             {/each}
