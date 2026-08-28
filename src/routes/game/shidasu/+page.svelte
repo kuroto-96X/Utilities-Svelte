@@ -788,16 +788,42 @@
         突破でステージクリア。
       </p>
     </div>
-    <div class="flex flex-col gap-3 w-full max-w-xs">
-      {#each SPREAD_IDS as spreadId (spreadId)}
+    <div class="flex flex-col gap-4 w-full max-w-xs">
+      <div class="flex items-center gap-2">
         <button
-          onclick={() => handleStartWithSpread(spreadId)}
-          class="text-left bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
+          onclick={goToPrevSpread}
+          aria-label="前のスプレッド"
+          class="shrink-0 w-10 h-10 flex items-center justify-center text-2xl font-black text-yellow-300 bg-emerald-900/80 border border-yellow-500/40 rounded-full active:scale-95 transition-transform"
         >
-          <div class="font-black text-yellow-300 text-lg">{params.spreads[spreadId].name}</div>
-          <div class="text-xs text-emerald-100/80 mt-0.5">{params.spreads[spreadId].desc}</div>
+          ◀
         </button>
-      {/each}
+        <div class="flex-1 min-w-0 bg-emerald-900/80 border border-yellow-500/40 rounded-xl px-4 py-3 text-left" style="min-height:5.5rem;">
+          {#key selectedSpreadIndex}
+            <div transition:fade={{ duration: 150 }}>
+              <div class="font-black text-yellow-300 text-lg">{params.spreads[SPREAD_IDS[selectedSpreadIndex]].name}</div>
+              <div class="text-xs text-emerald-100/80 mt-0.5">{params.spreads[SPREAD_IDS[selectedSpreadIndex]].desc}</div>
+            </div>
+          {/key}
+        </div>
+        <button
+          onclick={goToNextSpread}
+          aria-label="次のスプレッド"
+          class="shrink-0 w-10 h-10 flex items-center justify-center text-2xl font-black text-yellow-300 bg-emerald-900/80 border border-yellow-500/40 rounded-full active:scale-95 transition-transform"
+        >
+          ▶
+        </button>
+      </div>
+      <div class="flex justify-center gap-1.5">
+        {#each SPREAD_IDS as spreadId, i (spreadId)}
+          <span class="w-1.5 h-1.5 rounded-full {i === selectedSpreadIndex ? 'bg-yellow-300' : 'bg-emerald-100/30'}"></span>
+        {/each}
+      </div>
+      <button
+        onclick={() => handleStartWithSpread(SPREAD_IDS[selectedSpreadIndex])}
+        class="bg-yellow-500 text-emerald-950 font-black text-lg rounded-xl px-4 py-3 active:scale-[0.98] transition-transform"
+      >
+        スタート
+      </button>
     </div>
   </div>
 
