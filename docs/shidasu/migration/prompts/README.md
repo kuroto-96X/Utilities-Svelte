@@ -48,4 +48,4 @@ Godotプロジェクトを`c:\Users\the-f\Documents\ClaudeProjects\Shidasu-Godot
 - Godot 4.6.3 / .NET 8.0(net8.0)を採用
 - 状態管理は`record`+`with`式、乱数は`System.Random`+mulberry32相当の自前PRNG、命名規約等をADR 0001〜0005として文書化
 - **重要な構造上の決定**: Godotプロジェクト本体はリポジトリ直下ではなく`Game/`サブフォルダに分離した。SDK形式csprojの暗黙globが`Shidasu.Core`配下のソースを二重コンパイルしてしまう問題が実際に発生したため(詳細は`docs/adr/0001-project-structure.md`)。後続フェーズでファイルを配置する際はこの構成を前提にすること
-- **既知の環境注意点**: このAI実行環境には.NET 10のみがインストールされておりnet8.0の実行用ランタイムがないため、`dotnet build`は成功するが`dotnet test`等の実行はこの環境では失敗する。Godotエディタ上での実行やユーザー環境でのテスト実行には影響しない見込みだが、コマンドラインで`dotnet test`を使いたい場合は.NET 8.0ランタイムの別途インストールが必要
+- **環境注意点(解消済み)**: 当初この実行環境には.NET 10のみがインストールされておりnet8.0の実行用ランタイムがなく`dotnet test`が失敗していたが、ユーザーが.NET 8.0 Runtime(x64)を追加インストール済み(.NET 10と共存)。`dotnet test`で2件のサンプルテストが成功することを確認済み。
