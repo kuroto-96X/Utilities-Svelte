@@ -1,6 +1,6 @@
 # フェーズ8: 神託(Oracle)・レリック(Relic)・ショップ/福袋システムの移植
 
-> このプロンプトは、Shidasu(Balatro風トランプソリティア型ローグライク)をGodot(GDScript)へ移植し、Steam向けPCゲームとして販売するプロジェクトの一部です。Godotプロジェクトは元のWebリポジトリ(Utilities-Svelte)とは別管理ですが、VSCodeのマルチルートワークスペースにより両方のファイルを参照できます。
+> このプロンプトは、Shidasu(Balatro風トランプソリティア型ローグライク)をGodot(C#)へ移植し、Steam向けPCゲームとして販売するプロジェクトの一部です。Godotプロジェクトは元のWebリポジトリ(Utilities-Svelte)とは別管理ですが、VSCodeのマルチルートワークスペースにより両方のファイルを参照できます。
 >
 > 着手前に必ず読むこと:
 > - `Utilities-Svelte/docs/shidasu/migration/01-work-plan.md`(全体計画)
@@ -50,7 +50,7 @@
   - `CARD_SET_GENRE_WEIGHTS`(重み付け。ワイルドカードは1枚だが例外的に1/6の重み)と`weightedSampleGenres`(重み付き非復元抽選、ルーレット選択を逐次適用)を移植する
   - `rollCardSetOffer`: 開封時にジャンル抽選+カード内容確定を同時に行う
 - ショップ購入・売却系の共通ヘルパーの移植:
-  - `buyIndividualHold<TId>`: バラ売り枠(護符/秘儀/天啓/神託)の「温存」(所持に加える)購入の共通実装。上限判定(`atCapacity`)・通貨不足判定・所持配列への追加・`nextInstanceId`採番を1つの関数に集約する。GDScriptではジェネリクスが無いため、`Variant`型のIDと配列を受け取る設計、またはDictionary経由の実装に読み替えること
+  - `buyIndividualHold<TId>`: バラ売り枠(護符/秘儀/天啓/神託)の「温存」(所持に加える)購入の共通実装。上限判定(`atCapacity`)・通貨不足判定・所持配列への追加・`nextInstanceId`採番を1つの関数に集約する。C#のジェネリクス(`buyIndividualHold<TId>`のようなジェネリックメソッド)でそのまま1:1に実装できる
   - `buyPack`: 福袋購入。購入したジャンルに応じて対応する中身選択フェーズ(`itemSelect`/`riteSelect`/`revelationSelect`/`oracleSelect`/`cardSetSelect`)へ遷移し、`offerPickRemaining`をセットする
   - `resolvePackOfferPick`: 福袋の中身を1つ選び終えた後の共通処理(オファー配列から該当1件を除去、残り選択数をデクリメント、0になったら`shop`フェーズへ戻る)。**所持側(items/rites/revelations/oracles)への追加は呼び出し元が事前に行い、この関数自体は所持側に一切関知しない**という役割分担を踏襲すること
   - `sellFromArray<T>`: 護符/秘儀/天啓/神託の売却共通実装(`playing`/`shop`フェーズでのみ有効、対象個体を`instanceId`で特定、通貨加算)。`sellItem`は儲蓄(`nestEgg`)の特殊処理(**売却された護符自身以外の全`nestEgg`個体の`sellBonus`にnを加算。ここが本フェーズで初めて配線される護符効果**)を`sellFromArray`呼び出し後に追加する。`sellRite`/`sellRevelation`/`sellOracle`は`sellFromArray`をそのまま使うだけでよい
@@ -76,7 +76,7 @@
 
 ## 成果物・保存先
 
-- Godotプロジェクト側(フェーズ2で決定したフォルダ構成)に、神託・レリック・ショップ/福袋/トランプセットシステム一式のGDScript実装
+- `Shidasu.Core`側(フェーズ2で決定したプロジェクト構成)に、神託・レリック・ショップ/福袋/トランプセットシステム一式のC#実装
 - ショップに入店→バラ売り購入・福袋購入・レリック購入・売却・並べ替え・退店、という一連の操作をUIなし(コンソール/テスト)で通しで行える動作確認記録
 
 ## 完了条件

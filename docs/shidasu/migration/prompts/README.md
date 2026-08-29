@@ -15,7 +15,7 @@
 | 7 | [phase07-rites-revelations.md](phase07-rites-revelations.md) | 秘儀(Rite)・天啓(Revelation)の効果移植 |
 | 8 | [phase08-oracles-relics-shop.md](phase08-oracles-relics-shop.md) | 神託・レリック・ショップ/福袋システムの移植 |
 | 9 | [phase09-sabotage-spreads.md](phase09-sabotage-spreads.md) | 星の妨害行動・スプレッド固有ルールの移植・統合 |
-| 10 | [phase10-testing.md](phase10-testing.md) | ロジック層の統合検証・GDScriptユニットテスト整備 |
+| 10 | [phase10-testing.md](phase10-testing.md) | ロジック層の統合検証・xUnit(またはNUnit)ユニットテスト整備 |
 | 11 | [phase11-ui-title-select.md](phase11-ui-title-select.md) | UI①: タイトル・スプレッド選択・基本画面構成 |
 | 12 | [phase12-ui-core-gameplay.md](phase12-ui-core-gameplay.md) | UI②: 場札/山札/チェーン/捨て札・ショップ/選択UI |
 | 13 | [phase13-animation-redesign.md](phase13-animation-redesign.md) | アニメーション・演出の再設計 |

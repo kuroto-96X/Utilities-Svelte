@@ -1,10 +1,10 @@
 # フェーズ6: 護符(Talisman)の効果移植
 
-> このプロンプトは、Shidasu(Balatro風トランプソリティア型ローグライク)をGodot(GDScript)へ移植し、Steam向けPCゲームとして販売するプロジェクトの一部です。Godotプロジェクトは元のWebリポジトリ(Utilities-Svelte)とは別管理ですが、VSCodeのマルチルートワークスペースにより両方のファイルを参照できます。
+> このプロンプトは、Shidasu(Balatro風トランプソリティア型ローグライク)をGodot(C#)へ移植し、Steam向けPCゲームとして販売するプロジェクトの一部です。Godotプロジェクトは元のWebリポジトリ(Utilities-Svelte)とは別管理ですが、VSCodeのマルチルートワークスペースにより両方のファイルを参照できます。
 >
 > 着手前に必ず読むこと:
 > - `Utilities-Svelte/docs/shidasu/migration/01-work-plan.md`(全体計画)
-> - フェーズ5の成果物(`playCard`/`drawStock`のGDScript実装。特に本フェーズで差し替える3つのスタブ関数の現在の位置とシグネチャ)
+> - フェーズ5の成果物(`playCard`/`drawStock`の`Shidasu.Core`側C#実装。特に本フェーズで差し替える3つのスタブ関数の現在の位置とシグネチャ)
 > - `Utilities-Svelte/src/lib/game/shidasu/itemActualEffects.ts`(護符の実装ロジック監査用一覧。**本フェーズの実質的な作業チェックリスト**)
 
 ## 目的
@@ -100,7 +100,7 @@ Web版の護符は、**単一の巨大switch文ではなく、効果の性質ご
 
 ## 成果物・保存先
 
-- Godotプロジェクト側(フェーズ2で決定したフォルダ構成)に、上記A〜Dに対応する護符効果のGDScript実装一式
+- `Shidasu.Core`側(フェーズ2で決定したプロジェクト構成)に、上記A〜Dに対応する護符効果のC#実装一式
 - 133種(または再カウントした実数)すべての護符について、1種ずつ所持させて効果が発火することを確認した動作確認記録
 
 ## 完了条件

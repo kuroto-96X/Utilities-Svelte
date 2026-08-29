@@ -1,6 +1,6 @@
 # フェーズ12: UI実装②(場札/山札/チェーン/捨て札の操作・ショップ/選択UI)
 
-> このプロンプトは、Shidasu(Balatro風トランプソリティア型ローグライク)をGodot(GDScript)へ移植し、Steam向けPCゲームとして販売するプロジェクトの一部です。Godotプロジェクトは元のWebリポジトリ(Utilities-Svelte)とは別管理ですが、VSCodeのマルチルートワークスペースにより両方のファイルを参照できます。
+> このプロンプトは、Shidasu(Balatro風トランプソリティア型ローグライク)をGodot(C#)へ移植し、Steam向けPCゲームとして販売するプロジェクトの一部です。ゲームロジックはGodotに依存しないPure C#の`Shidasu.Core`ライブラリに実装し、Godotプロジェクト本体はそれを参照するNode/Controlベースの薄いアダプタ層(UI・入力・演出)として実装します。Godotプロジェクトは元のWebリポジトリ(Utilities-Svelte)とは別管理ですが、VSCodeのマルチルートワークスペースにより両方のファイルを参照できます。
 >
 > 着手前に必ず読むこと:
 > - `Utilities-Svelte/docs/shidasu/migration/01-work-plan.md`(全体計画)
@@ -66,7 +66,7 @@ Web版は**クリック操作**(ドラッグではない)を採用している�
 
 ### 7. 演出フック用シグナル設計(重要、フェーズ13が使う)
 
-フェーズ13(アニメーション・演出の再設計)は、Web版で個別に発生していた「表示専用スナップショット+ガードフラグ」という技術的負債パターンを、Godotの`AnimationPlayer`/`Tween`+シグナルベースの構造的な仕組みに置き換える計画になっている。そのためには、**状態が変化した「タイミング」を明示的なシグナルとしてロジック層(またはロジック層の呼び出し直後のUI層)が発火する**設計が前提になる。本フェーズでは演出そのものは実装しないが、以下のシグナルを設計・発火するところまでは行うこと。
+フェーズ13(アニメーション・演出の再設計)は、Web版で個別に発生していた「表示専用スナップショット+ガードフラグ」という技術的負債パターンを、Godotの`AnimationPlayer`/`Tween`+シグナルベースの構造的な仕組みに置き換える計画になっている。そのためには、**状態が変化した「タイミング」を明示的なシグナルとしてUI層(Godotの`Node`/`Control`を継承するC#スクリプト)が発火する**設計が前提になる。ロジック層(`Shidasu.Core`)はGodotに依存しないPure C#であるため`[Signal]`は持たず、UI層のC#スクリプトが`Shidasu.Core`の関数を呼び出した直後に、その返り値・状態差分を見てGodotのシグナルとして発火する、という役割分担になる。本フェーズでは演出そのものは実装しないが、以下のシグナルを設計・発火するところまでは行うこと。
 
 - **妨害発動シグナル**: 例 `signal sabotage_triggered(sabotage_id: String, result: Dictionary)`。`WaveState.lastSabotage`(`id`・`seq`・`affectedCols`・`purgedToDiscardCount`・`confiscatedTarget`・`forceActivatedTarget`・`numericChangeTarget`・`tableauCardRemoved`・`redistributedAreas`、フェーズ9で移植済み)の`seq`が増加したタイミングで発火する。Web版もこの`seq`インクリメント方式で「同じIDが連続発動しても変化を検知できる」設計にしている(`types.ts`の`lastSabotage`コメント参照)ので、そのままGodot版でも採用する。
 - **コンボリセットシグナル**: 例 `signal combo_reset(previous_combo: int)`。Web版には現状「コンボリセット」専用の演出は無く、単に`wave.combo`の表示値が0に戻るだけだが、フェーズ13で新規に演出を追加する前提のため、本フェーズで「直前の`combo`値」と「更新後の`combo`値」を比較し、`0`より大きい値から`0`に落ちた(かつ妨害の`comboBreather`/`comboReduce`等ではなく、手詰まりや不成立プレイによる自然なリセットの場合を区別したいなら`resetComboFields`が呼ばれた経路も合わせて判定する)場合にこのシグナルを発火するロジックをUI層(またはUI層向けの薄いラッパー関数)に用意する。

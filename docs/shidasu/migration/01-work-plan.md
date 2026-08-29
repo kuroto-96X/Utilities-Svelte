@@ -12,10 +12,21 @@
 作業はすべてAIエージェントに任せる前提。成果物(この計画書・今後作成する資料・プロンプト)はすべて `docs/shidasu/migration/` に保存する。
 
 ### 確定済みの移行方針(ユーザー確認済み)
-- Godot実装言語: **GDScript**
-- コンテンツスコープ: **現状の内容を完全移植するのみ**(スプレッド10種・護符99種・秘儀24種・天啓28種・レリック10種・妨害32種)。ロードマップ上の未着手拡張は対象外
+- Godot実装言語: **C#**(GDScriptは不使用。方針転換の経緯は下記「アーキテクチャ方針」参照)
+- コンテンツスコープ: **現状の内容を完全移植するのみ**(スプレッド10種・護符133種・秘儀24種・天啓28種・レリック10種・妨害32種。フェーズ1実行により確定、詳細は`reference/00-updated-rules.md`)。ロードマップ上の未着手拡張は対象外
 - Steam向け機能: **最小限**(実績・クラウドセーブ等は初期スコープ外、後続フェーズ扱い)
 - ビジュアル/オーディオ: **強化する**(現状は画像アセットなし・CSS/Unicode文字描画のみ、音声演出は皆無。Godot版では新規に商用品質のグラフィック・SE/BGMを制作/調達する)
+
+### アーキテクチャ方針: Pure C# Core / Godotアダプタ層分離(ユーザー確認済み、方針転換)
+
+当初はGDScriptでの実装を予定していたが、C#に変更し、**ゲームロジック層をGodotから完全に切り離す**方針とする。
+
+- **`Shidasu.Core`(仮称)**: Godotに一切依存しない、Pure C#のクラスライブラリプロジェクト。ゲームルール・状態(`RunState`/`WaveState`)・スコア計算・護符/秘儀/天啓/神託/レリック/妨害/役/スプレッドの全ロジックをここに実装する。`Godot.*`名前空間は一切参照しない。Web版の「Svelte非依存の純粋関数型TypeScript(`src/lib/game/shidasu/`)」という設計をそのままC#で再現する狙い
+- **Godotプロジェクト本体**: `Shidasu.Core`をプロジェクト参照し、Node/Controlベースのシーン・UI・入力処理・演出(Tween/AnimationPlayer/Signal)のみを担当する薄いアダプタ層とする。ゲームロジックをここに書き込まない
+- **状態管理パターン**: `RunState`/`WaveState`はC#の`record`型(`record class`)として定義し、TypeScript版の「引数を取り新しい状態を返すイミュータブルな関数型更新」を、C#の`with`式による非破壊コピーでそのまま再現する。GDScript前提だった「RefCounted+`duplicate_state()`」規約は不要(recordの`with`式が標準機能として同等のものを提供する)
+- **乱数**: フェーズ1の調査で、実プレイではシード指定が使われておらず(`Math.random`相当へのフォールバックのみ)、決定論性はテストコードでしか使われていないことが判明済み(`reference/rng-notes.md`)。C#では通常時は`System.Random`を使い、テスト用に既存`createRng`(mulberry32)相当の軽量PRNGを`Shidasu.Core`内に移植する
+- **テスト**: GodotのGDScript向けテストフレームワーク(GUT)は不要になる。`Shidasu.Core`はGodotランタイムに依存しないため、標準の.NETテストフレームワーク(xUnit等)でGodotを起動せずにロジック層のユニットテストを実行できる。TypeScript版のvitestに近い開発体験を再現できる
+- **命名・規約**: GDScript向けの規約ではなく、標準的なC#の命名規約(publicメンバーはPascalCase等)を採用する
 
 ### 調査で判明した重要な前提
 - 既存ドキュメント `docs/shidasu/shidasu-current-rules.md` は**実装より古い**(スプレッドを2種としか書いていないが、コード上は10種実装済み。護符も件数の記載が古い)。→ **移植の正はコード(`engine.ts`等)と`shidasu.config.json`であり、既存docsを鵜呑みにしない。** これを踏まえ、資料化フェーズで最新化する。
@@ -70,31 +81,32 @@
 ---
 
 ### フェーズ2: Godotプロジェクトの基盤構築
-**目的**: プロジェクト構成・状態管理パターンを決定し、以後の全フェーズの土台を作る。
+**目的**: プロジェクト構成(Pure C# Core / Godotアダプタ層分離)・状態管理パターンを決定し、以後の全フェーズの土台を作る。
 
 **作業内容**:
-- プロジェクトのフォルダ構成方針(`logic/`/`scenes/`/`data/`/`assets/`)決定
-- **状態管理パターンの移植方針決定**: GDScriptオブジェクトは参照型のため、Web版の「引数を取り新しいオブジェクトを返す」設計を単純移植すると意図せぬ書き換えが起きる。`RefCounted`ベースのステートクラス+明示的な`duplicate_state()`(ディープコピー)を規約化し、「更新関数は必ずコピーを返す」というWeb版の設計思想自体は踏襲する
-- ロジック層(Node非依存の素のGDScriptクラス)とUI層(シーン・ノード)の分離方針決定
-- 乱数方針決定: 決定論的互換は不要なためGodot標準RNGへの置き換えを推奨。ただしシード指定によるリプレイ/テスト再現性は維持
-- GDScriptコーディング規約(命名・型付け・enum方針)決定
+- ソリューション構成の決定: `Shidasu.Core`(Godot非依存のPure C#クラスライブラリ)と、Godotプロジェクト本体(`Shidasu.Core`をプロジェクト参照する薄いアダプタ層)の2プロジェクト構成にする
+- **状態管理パターンの決定**: `RunState`/`WaveState`をC#の`record class`として定義し、TypeScript版の「引数を取り新しい状態を返すイミュータブルな関数型更新」を、`with`式による非破壊コピーで再現する規約を確定する
+- ロジック層(`Shidasu.Core`、Godot非依存の素のC#クラス)とUI層(Godotプロジェクト側のNode/Controlスクリプト)の分離方針決定
+- 乱数方針決定: 決定論的互換は不要なため通常時は`System.Random`を使用。テスト再現性のため既存`createRng`(mulberry32)相当の軽量PRNGを`Shidasu.Core`内に移植
+- C#コーディング規約(命名・namespace構成・enum方針)決定
+- テスト基盤の決定: `Shidasu.Core`に対するxUnit(またはNUnit)のテストプロジェクトを用意する(Godotランタイム不要でロジック層のみテスト可能)
 
-**成果物**: Godotプロジェクト雛形、状態管理サンプル実装、アーキテクチャ決定記録
+**成果物**: ソリューション雛形(`Shidasu.Core`+Godotプロジェクト+テストプロジェクト)、状態管理サンプル実装、アーキテクチャ決定記録
 **依存**: フェーズ1
-**注意点**: 最も構造的に作り直すべき部分。ここで規約を誤ると以後全フェーズで状態共有バグが頻発するリスクが高い
+**注意点**: 最も構造的に作り直すべき部分。ここで規約を誤ると以後全フェーズで状態共有バグが頻発するリスクが高い。`Shidasu.Core`に`Godot.*`名前空間への依存が紛れ込まないよう、プロジェクト参照の向き(Godot側→Core側の一方向)を徹底する
 **参照ファイル**: `types.ts`(RunState/WaveState全体), `engine.ts`(更新関数の呼び出しパターン)
 
 ---
 
 ### フェーズ3: コアデータモデル・パラメータ/コンテンツデータの移植
-**目的**: 型定義とゲームバランス数値をGDScriptで扱える形に移す。
+**目的**: 型定義とゲームバランス数値を`Shidasu.Core`(Pure C#)で扱える形に移す。
 
 **作業内容**:
-- `types.ts`の型(Suit/Rank/各ItemId/RoleName/SpreadId/Card/DeckCard/ScoreGain等)をGDScriptのenum・クラスとして定義
-- データ形式決定: `shidasu.config.json`をそのまま継続利用し、Godot起動時にJSONパーサで読み込み型付きデータクラスに変換するローダーを実装(`params.ts`の役割を再現)。「メタデータはJSON、効果ロジックはコード」という現状の分離を踏襲
+- `types.ts`の型(Suit/Rank/各ItemId/RoleName/SpreadId/Card/DeckCard/ScoreGain等)をC#のenum・record/クラスとして`Shidasu.Core`内に定義
+- データ形式決定: `shidasu.config.json`をそのまま継続利用し、起動時に(Godot非依存の)JSONパーサ(`System.Text.Json`等)で読み込み型付きデータクラスに変換するローダーを`Shidasu.Core`内に実装(`params.ts`の役割を再現)。「メタデータはJSON、効果ロジックはコード」という現状の分離を踏襲
 - コンテンツカタログを元に、各アイテムのID一覧・メタデータを定義
 
-**成果物**: GDScript型定義一式、JSONローダー、コンテンツID・メタデータ一覧
+**成果物**: C#型定義一式(`Shidasu.Core`内)、JSONローダー、コンテンツID・メタデータ一覧
 **依存**: フェーズ1, 2
 **参照ファイル**: `types.ts`, `params.ts`, `shidasu.config.json`, `items.ts`, `rites.ts`, `revelations.ts`, `relics.ts`, `sabotage.ts`, `roles.ts`
 
@@ -106,9 +118,9 @@
 **作業内容**:
 - `deck.ts`(RNG、シャッフル、デッキ生成、スプレッド固有変形)を移植
 - `beginRun`/`startWave`/`waveTarget`/`stageModifierFor`/`bossScoreLockFor`/`rollStageStars`/`nextWaveLocation`/`resolveWaveEnd`(遷移部分)/`enterShop`/`finishShop`等を移植
-- `RunPhase`の状態遷移をGDScriptの状態機械として実装
+- `RunPhase`の状態遷移をC#の状態機械として`Shidasu.Core`内に実装
 
-**成果物**: Run/Wave進行のGDScript実装。効果なしでRunを最初から最後まで流せる動作確認
+**成果物**: Run/Wave進行のC#実装(`Shidasu.Core`内)。効果なしでRunを最初から最後まで流せる動作確認
 **依存**: フェーズ2, 3
 **注意点**: `WaveState`に正本を持つ累積カウンタの同期タイミング(Wave開始でRunStateからコピー・終了で書き戻す)を正確に再現する
 **参照ファイル**: `engine.ts`(該当関数群), `deck.ts`, `waveReset.ts`, `bosses.ts`
@@ -125,9 +137,9 @@
 - `playCard`本体の計算順序(base→チェーンボーナス→列一掃ボーナス→護符効果フック→各種加算→最終乗算チェーン→floor→星の得点ロック)を骨格移植(護符効果部分はスタブ)
 - `drawStock`/`isStuck`を移植
 
-**成果物**: スコア計算パイプラインのGDScript実装(護符等はスタブ)。計算順序が仕様書と一致することをログで確認
+**成果物**: スコア計算パイプラインのC#実装(`Shidasu.Core`内、護符等はスタブ)。計算順序が仕様書と一致することをログで確認
 **依存**: フェーズ4
-**注意点**: 加点・乗算の順序が1つでもズレるとバランスが崩れるため、フェーズ1のカタログと1対1で突き合わせる
+**注意点**: 加点・乗算の順序が1つでもズレるとバランスが崩れるため、フェーズ1のカタログと1対1で突き合わせる。フェーズ1の調査で判明した`drawStock`と`playCard`のスコア計算の非対称性(素朴パスでは列一掃ボーナス・役倍率・7種の乗算が非適用)を誤って解消・複製しないこと(詳細は`reference/score-pipeline.md`)
 **参照ファイル**: `engine.ts`(playCard/drawStock/isPlayable/isStuck), `patterns.ts`, `scoreParts.ts`, `chainAttributeEffects.ts`, `cardComboEffects.ts`, `stateAndPatternEffects.ts`
 
 ---
@@ -195,15 +207,15 @@
 
 ---
 
-### フェーズ10: ロジック層の統合検証・GDScriptユニットテスト整備
-**目的**: Web版はほぼ全モジュールにvitestテストが対応(`engine.test.ts`だけで6267行)。この網羅性をGodot版でも再現する。
+### フェーズ10: ロジック層の統合検証・C#ユニットテスト整備
+**目的**: Web版はほぼ全モジュールにvitestテストが対応(`engine.test.ts`だけで6267行)。この網羅性を`Shidasu.Core`でも再現する。`Shidasu.Core`はGodot非依存のため、Godotを起動せずxUnit(またはNUnit)でロジック層を直接テストできる(vitestに近い開発体験)。
 
 **作業内容**:
-- GUT(Gut Unit Test)の導入
-- vitestの主要テストケースをGUT形式に翻訳(コアスコアリング→護符→秘儀/天啓→妨害/ショップの優先順)
+- `Shidasu.Core`用のxUnit(またはNUnit)テストプロジェクトの整備(フェーズ2で雛形は用意済みの前提)
+- vitestの主要テストケースをxUnit形式に翻訳(コアスコアリング→護符→秘儀/天啓→妨害/ショップの優先順)
 - 固定シードでRun全体を自動プレイするスモークテストを作成
 
-**成果物**: GUTベースのテストスイート
+**成果物**: xUnit(またはNUnit)ベースのテストスイート
 **依存**: フェーズ4〜9(ただし各フェーズ内で都度テストを追加する運用が望ましく、本フェーズは最終棚卸し位置づけ)
 **参照ファイル**: `engine.test.ts`, `patterns.test.ts`, `testHelpers.ts`, 各`*.test.ts`
 

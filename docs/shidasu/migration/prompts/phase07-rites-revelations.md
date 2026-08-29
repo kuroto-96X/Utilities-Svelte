@@ -1,10 +1,10 @@
 # フェーズ7: 秘儀(Rite)・天啓(Revelation)の効果移植
 
-> このプロンプトは、Shidasu(Balatro風トランプソリティア型ローグライク)をGodot(GDScript)へ移植し、Steam向けPCゲームとして販売するプロジェクトの一部です。Godotプロジェクトは元のWebリポジトリ(Utilities-Svelte)とは別管理ですが、VSCodeのマルチルートワークスペースにより両方のファイルを参照できます。
+> このプロンプトは、Shidasu(Balatro風トランプソリティア型ローグライク)をGodot(C#)へ移植し、Steam向けPCゲームとして販売するプロジェクトの一部です。Godotプロジェクトは元のWebリポジトリ(Utilities-Svelte)とは別管理ですが、VSCodeのマルチルートワークスペースにより両方のファイルを参照できます。
 >
 > 着手前に必ず読むこと:
 > - `Utilities-Svelte/docs/shidasu/migration/01-work-plan.md`(全体計画)
-> - フェーズ5の成果物(`WaveState`のGDScript実装。特に秘儀・天啓が書き換える多数のフラグ・数値フィールド)
+> - フェーズ5の成果物(`WaveState`の`Shidasu.Core`側C#実装。特に秘儀・天啓が書き換える多数のフラグ・数値フィールド)
 > - フェーズ6の成果物(`discretion`/`frost`/`exchange`の扱い。本フェーズで初めて実際に配線される)
 
 ## 目的
@@ -28,7 +28,7 @@
 
 - `RITE_POOL`(24種のID一覧)、`rollRite`/`rollRiteOffer`(均等抽選、既存所持を除外しない)を移植する
 - `canUseRite`: 現在の盤面状態で使用可能かどうかの判定(UIのボタン無効化に使う)。捨て札/山札の残り枚数、対象カード有無などriteId別の個別条件があるので、`riteEffects.ts`の`canUseRite`をそのまま移植する。加えて、妨害「封印系」により対象秘儀(個体)が封印中の場合は使用不可にする分岐があるが、これはフェーズ9(妨害)の`activeSeal`機構に依存するため、**フェーズ7時点では`activeSeal`が常に存在しない前提で構わない(該当チェックのコードは書いておいてよいが、発火しなくても問題ない)**
-- `RITE_HANDLERS`ディスパッチテーブル(riteId→ハンドラ関数)として24種を実装する。GDScriptでは`match`文または`Dictionary<String, Callable>`での実装を推奨する。各秘儀の実装ロジックは`riteActualEffects.ts`の`RITE_ACTUAL_EFFECTS`(監査用一覧)を1件ずつのチェックリストとして使い、`riteEffects.ts`の実装を1:1で移植する
+- `RITE_HANDLERS`ディスパッチテーブル(riteId→ハンドラ関数)として24種を実装する。`Shidasu.Core`側では`switch`式または`Dictionary<RiteId, Func<...>>`での実装を推奨する。各秘儀の実装ロジックは`riteActualEffects.ts`の`RITE_ACTUAL_EFFECTS`(監査用一覧)を1件ずつのチェックリストとして使い、`riteEffects.ts`の実装を1:1で移植する
 - `useRite`(engine.ts側の呼び出し処理)を移植する。以下の処理順序を守ること:
   1. フェーズ・wave状態のガード(`playing`フェーズ、またはショップ系フェーズ`SHOP_FLOW_PHASES`内であること。かつ`wave.status === 'playing'`)
   2. `canUseRite`チェック
@@ -74,7 +74,7 @@
 
 ## 成果物・保存先
 
-- Godotプロジェクト側(フェーズ2で決定したフォルダ構成)に、秘儀24種・天啓28種の効果実装一式
+- `Shidasu.Core`側(フェーズ2で決定したプロジェクト構成)に、秘儀24種・天啓28種の効果実装一式
 - 各秘儀・天啓を1つずつ使用して効果が正しく発火することを確認した動作確認記録
 - `hotori`(昴)の自己参照ループ防止、`kyo`(京)の未付喪化レリック存在チェック等、防御ロジックが機能することの確認記録
 

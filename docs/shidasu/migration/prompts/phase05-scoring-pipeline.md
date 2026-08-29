@@ -1,10 +1,10 @@
 # フェーズ5: 役判定・スコアリングパイプラインの移植
 
-> このプロンプトは、Shidasu(Balatro風トランプソリティア型ローグライク)をGodot(GDScript)へ移植し、Steam向けPCゲームとして販売するプロジェクトの一部です。Godotプロジェクトは元のWebリポジトリ(Utilities-Svelte)とは別管理ですが、VSCodeのマルチルートワークスペースにより両方のファイルを参照できます。
+> このプロンプトは、Shidasu(Balatro風トランプソリティア型ローグライク)をGodot(C#)へ移植し、Steam向けPCゲームとして販売するプロジェクトの一部です。ゲームロジックはGodotに一切依存しない`Shidasu.Core`(Pure C#クラスライブラリ)に実装し、Godotプロジェクト本体は`Shidasu.Core`をプロジェクト参照する薄いアダプタ層とします。Godotプロジェクトは元のWebリポジトリ(Utilities-Svelte)とは別管理ですが、VSCodeのマルチルートワークスペースにより両方のファイルを参照できます。
 >
 > 着手前に必ず読むこと:
 > - `Utilities-Svelte/docs/shidasu/migration/01-work-plan.md`(全体計画)
-> - フェーズ4の成果物(Run/Wave進行フローのGDScript実装。`RunState`/`WaveState`相当のクラス、`start_wave`相当関数など)
+> - フェーズ4の成果物(Run/Wave進行フローの`Shidasu.Core`実装。`RunState`/`WaveState`相当の`record class`、`StartWave`相当関数など)
 > - フェーズ1の成果物のうち「スコア計算パイプライン仕様」に該当する資料(`docs/shidasu/migration/`直下に作成されているはずなので、ファイル名を確認して読むこと)
 
 ## 目的
@@ -13,7 +13,7 @@
 
 ## 前提・依存
 
-- フェーズ4が完了していること(`WaveState`/`RunState`のGDScript版、`start_wave`相当関数、`RunPhase`状態機械が動作していること)。
+- フェーズ4が完了していること(`WaveState`/`RunState`の`Shidasu.Core`版、`StartWave`相当関数、`RunPhase`状態機械が動作していること)。
 - 本フェーズの時点では、プレイヤーはまだ護符・秘儀・天啓・神託を一切所持できない(所持リストは常に空)前提で実装・検証してよい。これらを所持できるようにするショップ等はフェーズ8以降の担当。
 
 ## 重要: 「スタブにする護符効果フック」は3箇所のみ
@@ -107,19 +107,19 @@
 
 ## 成果物・保存先
 
-- Godotプロジェクト側(フェーズ2で決定したフォルダ構成、例: `logic/`配下)に、パターン判定・スコア内訳・プレイ/山札めくりパイプラインのGDScript実装
+- `Shidasu.Core`側(フェーズ2で決定したフォルダ構成、例: `Core/`配下、Godotの機能・クラスに依存しないこと)に、パターン判定・スコア内訳・プレイ/山札めくりパイプラインのC#実装
 - 護符・秘儀・天啓を一切持たない状態でRunを通しプレイし、スコア計算の逐次ログが仕様と一致することを示す動作確認記録(テストコードまたはコンソール出力のスクリーンショット等)
 
 ## 完了条件
 
-- [ ] `patterns.ts`の全関数がGDScriptに移植され、10役の判定結果が既存テスト(`patterns.test.ts`)の主要ケースと一致する
+- [ ] `patterns.ts`の全関数が`Shidasu.Core`に移植され、10役の判定結果が既存テスト(`patterns.test.ts`)の主要ケースと一致する
 - [ ] `scoreParts.ts`のScorePart構造体と集計関数が移植されている
 - [ ] `isPlayable`/`getPlayableRowsInColumn`/`getPlayableColumns`が移植され、`faceLock`/`noLoop`/誓約/契りの制約が正しく機能する
 - [ ] `playCard`が計算順序を1つも入れ替えずに移植され、フック1〜3の3箇所のみがスタブになっている(それ以外の護符関連分岐は完全実装済み)
 - [ ] `drawStock`が移植され、パターン継続時・非継続時それぞれの分岐が正しく動作する
 - [ ] `isStuck`/`markStuck`が移植されている
 - [ ] 護符無し状態でのRun通しプレイで、スコア内訳ログの並び順・数値がフェーズ1仕様と一致する
-- [ ] `npm run build`相当のGodot側健全性チェック(構文エラー無し)が通る
+- [ ] `npm run build`相当の`Shidasu.Core`健全性チェック(`dotnet build`が警告・エラー無しで通る)が通る
 
 ## 注意点
 
