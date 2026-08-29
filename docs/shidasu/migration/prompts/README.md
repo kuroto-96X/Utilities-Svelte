@@ -67,3 +67,12 @@ Godotプロジェクトを`c:\Users\the-f\Documents\ClaudeProjects\Shidasu-Godot
 - `WaveState`⇔`RunState`間で同期する7つの永続カウンタ(`dedicationX`/`diligenceX`/`divineProtectionX`/`discretionN`/`frostX`/`echoX`/`shootingStarN`)のコピー・書き戻しタイミングをWeb版通りに再現し、専用テストで検証済み
 - `rollShop`/`rollSabotage`/`rerollRandomTargets`等の他フェーズ担当ロジックはシグネチャのみ確定してスタブ化(フェーズ6・8・9で差し替え予定)
 - `dotnet build`/`dotnet test`とも成功、21件のテスト全て成功(全10スプレッドでの`beginRun`、24Wave分のRun通し、7値同期の検証を含む)
+
+## フェーズ5 実行結果(完了)
+
+`patterns.ts`(10役判定)・`scoreParts.ts`・`isPlayable`/`getPlayableColumns`・`playCard`(26ステップの計算順序)・`drawStock`・`isStuck`/`markStuck`を`Shidasu.Core`に移植した。
+
+- フック1〜3(`ApplyItemEffects`/`ResolvePlayTriggeredRewardTalismans`/`ResolvePlayTriggeredCurrencyGain`、フェーズ6が本実装)のみスタブとし、それ以外の護符関連分岐(黄金・祝福・鋼鉄・献身・勤勉・加護・果断・星霜・残響・慢心・静寂・沈着・冷静・博愛・素朴・約束・再生・治癒・庇護・大地・明星・架橋・慈悲・誓約・契り)は本フェーズで完全実装済み
+- `waveReset.ts`の`ResetComboFields`も本フェーズで追加移植(playCard/drawStockの暗黙の依存として判明)
+- フェーズ4のスタブ(約束護符の並べ替え・手詰まり判定)を本実装に差し替え
+- `dotnet build`/`dotnet test`とも成功、76件のテスト全て成功(既存21件+`patterns.test.ts`移植50件+スコアリングパイプライン検証5件)
