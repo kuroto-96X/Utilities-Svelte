@@ -76,3 +76,12 @@ Godotプロジェクトを`c:\Users\the-f\Documents\ClaudeProjects\Shidasu-Godot
 - `waveReset.ts`の`ResetComboFields`も本フェーズで追加移植(playCard/drawStockの暗黙の依存として判明)
 - フェーズ4のスタブ(約束護符の並べ替え・手詰まり判定)を本実装に差し替え
 - `dotnet build`/`dotnet test`とも成功、76件のテスト全て成功(既存21件+`patterns.test.ts`移植50件+スコアリングパイプライン検証5件)
+
+## フェーズ6 実行結果(完了)
+
+護符100種(clearBonus 3・cardCombo 18・chainAttribute 24・stateAndPattern 20・rewardTalisman 24・waveStart 3・waveEnd 8)を`Shidasu.Core`に実装した(残り33種はフェーズ5で完全実装済み・独自効果なし・他フェーズ担当のいずれか)。
+
+- フェーズ5の3スタブ(`ApplyItemEffectsStub`等)を実装に差し替え。所持順に効果を逐次適用する設計と、水鏡(waterMirror)による左隣護符の再適用ロジックを実装
+- 永劫/豊穣/不屈はフェーズ4の時点で既に完全実装済みと判明し、重複実装を回避(担当エージェントが自主的に検出)
+- ファイル競合を避けるため、共有ファイル(`ScoringPipeline.cs`/`WaveFlow.cs`/`RunFlow.cs`)の編集担当を4グループ間で明確に分離して並列実装
+- `dotnet build`/`dotnet test`とも成功、221件のテスト全て成功(既存76件+護符関連145件)。GitHubリモート(`https://github.com/kuroto-96X/Shidasu-Godot`)へpush済み
