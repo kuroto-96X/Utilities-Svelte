@@ -49,3 +49,13 @@ Godotプロジェクトを`c:\Users\the-f\Documents\ClaudeProjects\Shidasu-Godot
 - 状態管理は`record`+`with`式、乱数は`System.Random`+mulberry32相当の自前PRNG、命名規約等をADR 0001〜0005として文書化
 - **重要な構造上の決定**: Godotプロジェクト本体はリポジトリ直下ではなく`Game/`サブフォルダに分離した。SDK形式csprojの暗黙globが`Shidasu.Core`配下のソースを二重コンパイルしてしまう問題が実際に発生したため(詳細は`docs/adr/0001-project-structure.md`)。後続フェーズでファイルを配置する際はこの構成を前提にすること
 - **環境注意点(解消済み)**: 当初この実行環境には.NET 10のみがインストールされておりnet8.0の実行用ランタイムがなく`dotnet test`が失敗していたが、ユーザーが.NET 8.0 Runtime(x64)を追加インストール済み(.NET 10と共存)。`dotnet test`で2件のサンプルテストが成功することを確認済み。
+
+## フェーズ3 実行結果(完了)
+
+`types.ts`の型定義・`shidasu.config.json`のパラメータ/コンテンツデータを`Shidasu.Core/Data/`配下にC#で移植した(効果ロジックは対象外、フェーズ6〜9で実装)。
+
+- enum・record: `Suit`/`StageModifier`/`SabotageActionId`(32)/`SpreadId`(10)/`RoleName`(10)/`ItemId`(**133**)/`RiteId`(24)/`RevelationId`(28)/`RelicId`(10)/`RunPhase`/`ShopSlotKind`/`CardSetGenreId`のenumと、`Card`/`DeckCard`/`ScoreGain`/`Star`(判別共用体はabstract record継承+パターンマッチングで表現)のrecordを定義。`Rank`は算術演算(±1、K⇔Aループ)を多用するためenum化せず`int`のまま扱う方針にした
+- コンテンツIDプール(`ItemPool`等)は`Enum.GetValues<T>()`で代替(Web版のプールは均等抽選専用で並び順に意味がないため)
+- JSONローダー(`ParamsLoader.LoadFromJson(string json)`): `Shidasu.Core`はGodotに依存できないため、ファイルパスではなくJSON文字列を受け取る設計にした。護符等の可変パラメータ(`m`/`n`等、項目により異なる)は個別クラス化せず、共通の`ContentEntry`型+`System.Text.Json`の`[JsonExtensionData]`で吸収する設計(ADR0005のTalismanMetaパターンを実装)
+- enumキーの`Dictionary<ItemId, ContentEntry>`等をデシリアライズするため、camelCase JSONキー(`"bridge"`等)⇔PascalCase enum名(`Bridge`)を変換するカスタム`JsonConverterFactory`を実装
+- `dotnet build ShidasuGodot.slnx`・`dotnet test`とも成功(17件のテスト全てパス、護符133/秘儀24/天啓28/レリック10/妨害32の件数一致を確認)
