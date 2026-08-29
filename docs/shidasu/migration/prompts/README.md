@@ -101,3 +101,14 @@ Godotプロジェクトを`c:\Users\the-f\Documents\ClaudeProjects\Shidasu-Godot
 - フェーズ6で保留していた`nestEgg`(儲蓄)のsellBonus加算を`sellItem`で配線
 - `useOracle`で`ApplyDiscretionFrostBonus`/`ApplyExchangeBonus`(フェーズ7のヘルパー)を再利用
 - `dotnet build`/`dotnet test`とも成功、464件のテスト全て成功。GitHubリモートへpush済み
+
+## フェーズ9 実行結果(完了)
+
+妨害行動32種(`TriggerSabotage`ディスパッチャ、`ISabotageContext`経由でRite/Revelation/OracleSystemを呼ぶ依存性注入パターンを維持)と、封印(`ActiveSeal`)をスコアリングパイプラインへ反映する`ResolveEffectiveItems`/`ResolveSealedRoleEffect`/`ResolveComboCap`/`ResolvePlayContext`を実装した。
+
+- `PlayCard`/`DrawStock`は既にフェーズ4/5の時点で必要な引数(items/sealedRoleEffect/comboCap)を受け取れる設計になっており、シグネチャ変更は不要だった
+- スプレッド10種の4接続箇所(デッキ生成順序・目標スコア倍率・ショップ禁止種別・moon分岐)はフェーズ4/8時点で既に正しく実装済みと判明、追加修正は不要
+- 固定シードでの1Run分(24Wave、妨害込み)シミュレーションで両担当領域(妨害/封印)の統合を確認
+- `dotnet build`/`dotnet test`とも成功、532件のテスト全て成功。GitHubリモートへpush済み
+
+これでコアロジック(フェーズ2〜9)が完了。次はフェーズ10(テスト整備)またはフェーズ11以降のUI実装。
