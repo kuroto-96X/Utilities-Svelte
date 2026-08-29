@@ -85,3 +85,11 @@ Godotプロジェクトを`c:\Users\the-f\Documents\ClaudeProjects\Shidasu-Godot
 - 永劫/豊穣/不屈はフェーズ4の時点で既に完全実装済みと判明し、重複実装を回避(担当エージェントが自主的に検出)
 - ファイル競合を避けるため、共有ファイル(`ScoringPipeline.cs`/`WaveFlow.cs`/`RunFlow.cs`)の編集担当を4グループ間で明確に分離して並列実装
 - `dotnet build`/`dotnet test`とも成功、221件のテスト全て成功(既存76件+護符関連145件)。GitHubリモート(`https://github.com/kuroto-96X/Shidasu-Godot`)へpush済み
+
+## フェーズ7 実行結果(完了)
+
+秘儀24種(WaveStateのみ書き換え)・天啓28種(WaveState+deckComposition両方を書き換え)を`Shidasu.Core`に実装した。
+
+- `useRite`/`useRevelation`の処理順序をengine.ts通りに再現し、フェーズ6で保留にしていたdiscretion/frost/exchange護符の配線用共有ヘルパー(`ApplyDiscretionFrostBonus`/`ApplyExchangeBonus`)を実装、両方から再利用
+- `hotori`(昴)の自己参照ループ防止、`useRevelation`内での`ApplyExchangeBonus`適用順序(Web版で実際に発生したバグの再発防止)をテストで検証済み
+- `dotnet build`/`dotnet test`とも成功、329件のテスト全て成功。GitHubリモートへpush済み
