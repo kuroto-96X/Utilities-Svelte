@@ -93,3 +93,11 @@ Godotプロジェクトを`c:\Users\the-f\Documents\ClaudeProjects\Shidasu-Godot
 - `useRite`/`useRevelation`の処理順序をengine.ts通りに再現し、フェーズ6で保留にしていたdiscretion/frost/exchange護符の配線用共有ヘルパー(`ApplyDiscretionFrostBonus`/`ApplyExchangeBonus`)を実装、両方から再利用
 - `hotori`(昴)の自己参照ループ防止、`useRevelation`内での`ApplyExchangeBonus`適用順序(Web版で実際に発生したバグの再発防止)をテストで検証済み
 - `dotnet build`/`dotnet test`とも成功、329件のテスト全て成功。GitHubリモートへpush済み
+
+## フェーズ8 実行結果(完了)
+
+神託10種(単一パターン、`run.OracleLevels`/`wave.OracleLevels`両方を同期)・レリック10種(付喪化ボーナスを共通ヘルパー`RelicBonus`に集約)、ショップの価格計算(5カテゴリ共通の`CategoryPrice`)・購入(`BuyIndividualHold<TId>`)・売却(`SellFromArray<T>`)・福袋中身選択(`ResolvePackOfferPick<T>`)・トランプセット福袋23ジャンルを`Shidasu.Core`に実装した。
+
+- フェーズ6で保留していた`nestEgg`(儲蓄)のsellBonus加算を`sellItem`で配線
+- `useOracle`で`ApplyDiscretionFrostBonus`/`ApplyExchangeBonus`(フェーズ7のヘルパー)を再利用
+- `dotnet build`/`dotnet test`とも成功、464件のテスト全て成功。GitHubリモートへpush済み
