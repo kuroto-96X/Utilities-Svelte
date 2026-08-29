@@ -1,0 +1,29 @@
+# フェーズ別AI実行プロンプト 一覧
+
+`../01-work-plan.md`(全体計画)の16フェーズに対応する、AI実行用の指示プロンプト集。各ファイルは、そのフェーズを担当する(将来の別セッションの)AIエージェントにそのまま貼り付けて実行させることを想定している。
+
+実行順は依存関係に従うこと(詳細は`01-work-plan.md`の「フェーズ間の依存関係」を参照)。フェーズ14(ビジュアルアセット)・フェーズ15の一部(BGM)はフェーズ1完了後、他のフェーズと並行して着手できる。
+
+| # | ファイル | 内容 |
+|---|---|---|
+| 1 | [phase01-spec-documentation.md](phase01-spec-documentation.md) | 現状仕様の資料化(移植用リファレンス作成)。コード変更なし |
+| 2 | [phase02-godot-foundation.md](phase02-godot-foundation.md) | Godotプロジェクトの基盤構築(状態管理パターン・ADR決定) |
+| 3 | [phase03-data-model.md](phase03-data-model.md) | コアデータモデル・パラメータ/コンテンツデータの移植 |
+| 4 | [phase04-run-wave-flow.md](phase04-run-wave-flow.md) | Run/Wave進行フロー・デッキ生成の移植(効果はスタブ) |
+| 5 | [phase05-scoring-pipeline.md](phase05-scoring-pipeline.md) | 役判定・スコアリングパイプラインの移植 |
+| 6 | [phase06-talismans.md](phase06-talismans.md) | 護符(Talisman)の効果移植 |
+| 7 | [phase07-rites-revelations.md](phase07-rites-revelations.md) | 秘儀(Rite)・天啓(Revelation)の効果移植 |
+| 8 | [phase08-oracles-relics-shop.md](phase08-oracles-relics-shop.md) | 神託・レリック・ショップ/福袋システムの移植 |
+| 9 | [phase09-sabotage-spreads.md](phase09-sabotage-spreads.md) | 星の妨害行動・スプレッド固有ルールの移植・統合 |
+| 10 | [phase10-testing.md](phase10-testing.md) | ロジック層の統合検証・GDScriptユニットテスト整備 |
+| 11 | [phase11-ui-title-select.md](phase11-ui-title-select.md) | UI①: タイトル・スプレッド選択・基本画面構成 |
+| 12 | [phase12-ui-core-gameplay.md](phase12-ui-core-gameplay.md) | UI②: 場札/山札/チェーン/捨て札・ショップ/選択UI |
+| 13 | [phase13-animation-redesign.md](phase13-animation-redesign.md) | アニメーション・演出の再設計 |
+| 14 | [phase14-visual-assets.md](phase14-visual-assets.md) | ビジュアルアセット制作・組み込み |
+| 15 | [phase15-audio.md](phase15-audio.md) | オーディオ実装 |
+| 16 | [phase16-packaging.md](phase16-packaging.md) | Steam向け最小パッケージング・総合動作確認 |
+
+## 既知の注意事項
+
+- **護符(Talisman)の件数について**: `01-work-plan.md`作成時点では99種としていたが、フェーズ5〜8のプロンプト作成時にソースコードを再確認したところ、実装は既に133種まで増えていた(work-plan作成後にコンテンツが追加されたため)。秘儀24種・天啓28種・レリック10種は記載通り。フェーズ1(資料化)で実数を数え直しコンテンツカタログに正しい件数を記録するため実害はないが、後続フェーズのプロンプトを読む際は「99種」という記載を鵜呑みにせず、フェーズ1の成果物(コンテンツカタログ)を正とすること。
+- 各プロンプトはUtilities-Svelteリポジトリのファイルパスをそのまま参照している。実行時はVSCodeのマルチルートワークスペース等で、Godotプロジェクトと`Utilities-Svelte`の両方を閲覧できる状態にしておくこと。
