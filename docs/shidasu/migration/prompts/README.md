@@ -121,4 +121,14 @@ Godotプロジェクトを`c:\Users\the-f\Documents\ClaudeProjects\Shidasu-Godot
 - **棚卸しの副産物**: `engine.ts`の`skipWave`/`rerollStageStars`/`startRevelationPreview`がフェーズ4時点で移植漏れになっていたことが判明し、本フェーズで追加実装(テスト付き)
 - `dotnet build`/`dotnet test`とも成功、722件のテスト全て成功(既存532件+補完190件)。GitHubリモートへpush済み
 
-次はフェーズ11以降のUI実装。
+## フェーズ11 実行結果(完了、要目視確認)
+
+`RunPhase`11種に対応する`Control`ノードの排他表示、`showStageScreen`相当のUI専用フラグ(順序依存ロジック)、タイトル・スプレッド選択カルーセル(10種、ドットインジケーター、フェードトランジション、スタートボタン)を実装した。
+
+- カード最小高さはGodotの`GetCombinedMinimumSize()`で10種の説明文の最大値を実測して動的固定(Web版の`offsetHeight`実測ハックをGodot標準機構で代替)
+- `playing`/`shop`等の残り10フェーズはプレースホルダー(中身はフェーズ12の担当)
+- `dotnet build`は0警告0エラー、既存722件のテストは回帰なし
+- **重要: この実行環境にはGodotエディタが無いため、フェード演出・レイアウト崩れ・ウィンドウリサイズ挙動の目視確認は未実施。ユーザー側でGodotエディタを開いての確認が必要**
+- GitHubリモートへpush済み
+
+次はフェーズ12(UI②: 場札/山札/チェーン/捨て札の操作・ショップ/選択UI)。
