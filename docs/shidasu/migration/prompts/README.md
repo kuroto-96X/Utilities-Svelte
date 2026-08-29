@@ -119,6 +119,6 @@ Godotプロジェクトを`c:\Users\the-f\Documents\ClaudeProjects\Shidasu-Godot
 
 - 主な追加: `ScorePartsTests.cs`(得点内訳、直接テストが無かった)、境界値・エッジケース、妨害の`LastSabotageInfo`詳細検証・`SabotageTurnsRemaining`カウントダウン・`comboCap`クランプ・`dividend`連動、複数固定シード×全10スプレッドの組み合わせによるRun全体自動プレイスモークテスト
 - **棚卸しの副産物**: `engine.ts`の`skipWave`/`rerollStageStars`/`startRevelationPreview`がフェーズ4時点で移植漏れになっていたことが判明し、本フェーズで追加実装(テスト付き)
-- `dotnet build`/`dotnet test`とも成功、714件のテスト全て成功(既存532件+補完182件)。GitHubリモートへpush済み
+- `dotnet build`/`dotnet test`とも成功、722件のテスト全て成功(既存532件+補完190件)。GitHubリモートへpush済み
 
 次はフェーズ11以降のUI実装。
