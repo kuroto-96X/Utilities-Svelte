@@ -111,4 +111,14 @@ Godotプロジェクトを`c:\Users\the-f\Documents\ClaudeProjects\Shidasu-Godot
 - 固定シードでの1Run分(24Wave、妨害込み)シミュレーションで両担当領域(妨害/封印)の統合を確認
 - `dotnet build`/`dotnet test`とも成功、532件のテスト全て成功。GitHubリモートへpush済み
 
-これでコアロジック(フェーズ2〜9)が完了。次はフェーズ10(テスト整備)またはフェーズ11以降のUI実装。
+これでコアロジック(フェーズ2〜9)が完了。
+
+## フェーズ10 実行結果(完了)
+
+フェーズ4〜9で実装済みの532件のテストを棚卸しし、Web版vitestテスト(patterns/scoreParts/各護符テーブル/秘儀/天啓/妨害/ショップ/`engine.test.ts`の全describeブロック)と突き合わせて不足分を補完した。
+
+- 主な追加: `ScorePartsTests.cs`(得点内訳、直接テストが無かった)、境界値・エッジケース、妨害の`LastSabotageInfo`詳細検証・`SabotageTurnsRemaining`カウントダウン・`comboCap`クランプ・`dividend`連動、複数固定シード×全10スプレッドの組み合わせによるRun全体自動プレイスモークテスト
+- **棚卸しの副産物**: `engine.ts`の`skipWave`/`rerollStageStars`/`startRevelationPreview`がフェーズ4時点で移植漏れになっていたことが判明し、本フェーズで追加実装(テスト付き)
+- `dotnet build`/`dotnet test`とも成功、714件のテスト全て成功(既存532件+補完182件)。GitHubリモートへpush済み
+
+次はフェーズ11以降のUI実装。
