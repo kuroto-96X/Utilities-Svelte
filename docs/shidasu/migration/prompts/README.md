@@ -59,3 +59,11 @@ Godotプロジェクトを`c:\Users\the-f\Documents\ClaudeProjects\Shidasu-Godot
 - JSONローダー(`ParamsLoader.LoadFromJson(string json)`): `Shidasu.Core`はGodotに依存できないため、ファイルパスではなくJSON文字列を受け取る設計にした。護符等の可変パラメータ(`m`/`n`等、項目により異なる)は個別クラス化せず、共通の`ContentEntry`型+`System.Text.Json`の`[JsonExtensionData]`で吸収する設計(ADR0005のTalismanMetaパターンを実装)
 - enumキーの`Dictionary<ItemId, ContentEntry>`等をデシリアライズするため、camelCase JSONキー(`"bridge"`等)⇔PascalCase enum名(`Bridge`)を変換するカスタム`JsonConverterFactory`を実装
 - `dotnet build ShidasuGodot.slnx`・`dotnet test`とも成功(17件のテスト全てパス、護符133/秘儀24/天啓28/レリック10/妨害32の件数一致を確認)
+
+## フェーズ4 実行結果(完了)
+
+`RunState`/`WaveState`を`types.ts`から全フィールド移植し、`deck.ts`(`createRng`=mulberry32・シャッフル・デッキ生成・スプレッド固有変形)、`beginRun`/`startWave`/`resolveWaveEnd`/`enterShop`/`finishShop`等のRun/Wave進行フローを`Shidasu.Core`に実装した(効果ロジック・スコア計算はスタブのまま、フェーズ5〜9の担当)。
+
+- `WaveState`⇔`RunState`間で同期する7つの永続カウンタ(`dedicationX`/`diligenceX`/`divineProtectionX`/`discretionN`/`frostX`/`echoX`/`shootingStarN`)のコピー・書き戻しタイミングをWeb版通りに再現し、専用テストで検証済み
+- `rollShop`/`rollSabotage`/`rerollRandomTargets`等の他フェーズ担当ロジックはシグネチャのみ確定してスタブ化(フェーズ6・8・9で差し替え予定)
+- `dotnet build`/`dotnet test`とも成功、21件のテスト全て成功(全10スプレッドでの`beginRun`、24Wave分のRun通し、7値同期の検証を含む)
