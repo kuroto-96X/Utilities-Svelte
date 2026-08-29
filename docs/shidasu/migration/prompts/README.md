@@ -39,3 +39,13 @@
 - **`types.ts`のコメントに誤りがある**: `moon`スプレッドのコメントは「場札が1行少ない」だが、実装(`initialExtraTableauRows: 1`)は逆に「1行多い」。ソースコードは修正せず(スコープ外)、カタログ側で正しい仕様を記載済み。詳細は`reference/catalog-roles-spreads.md`。
 - **`PlayArea.svelte`の技術的負債は想定より広範**: 「表示専用スナップショット+ガードフラグ」パターンは既知6件ではなく実際は16件確認された。加えて、JS側のアニメーションタイマー時間とCSS `@keyframes`の時間を手打ちで一致させており(`animationend`イベント未使用)、ズレると演出が壊れる潜在的な脆弱ポイントがある。フェーズ13で構造的に解消する際の入力として`reference/playarea-tech-debt.md`を参照すること。
 - **RunはbeginRun直後に一度shopフェーズを経由する**: 旧仕様書には未記載だった遷移。詳細は`reference/00-updated-rules.md`。
+
+## フェーズ2 実行結果(完了)
+
+Godotプロジェクトを`c:\Users\the-f\Documents\ClaudeProjects\Shidasu-Godot\`に新規作成し、ローカルgitリポジトリとして初期化済み(リモート未作成)。実パス・ADR一覧は`reference/godot-project-location.md`を参照。
+
+- ソリューション構成: `Shidasu.Core`(Pure C#、Godot非依存)・`Game/`(Godotプロジェクト本体、C#アダプタ層)・`Shidasu.Core.Tests`(xUnit)の3プロジェクト、`ShidasuGodot.slnx`でビルド成功確認済み
+- Godot 4.6.3 / .NET 8.0(net8.0)を採用
+- 状態管理は`record`+`with`式、乱数は`System.Random`+mulberry32相当の自前PRNG、命名規約等をADR 0001〜0005として文書化
+- **重要な構造上の決定**: Godotプロジェクト本体はリポジトリ直下ではなく`Game/`サブフォルダに分離した。SDK形式csprojの暗黙globが`Shidasu.Core`配下のソースを二重コンパイルしてしまう問題が実際に発生したため(詳細は`docs/adr/0001-project-structure.md`)。後続フェーズでファイルを配置する際はこの構成を前提にすること
+- **既知の環境注意点**: このAI実行環境には.NET 10のみがインストールされておりnet8.0の実行用ランタイムがないため、`dotnet build`は成功するが`dotnet test`等の実行はこの環境では失敗する。Godotエディタ上での実行やユーザー環境でのテスト実行には影響しない見込みだが、コマンドラインで`dotnet test`を使いたい場合は.NET 8.0ランタイムの別途インストールが必要
