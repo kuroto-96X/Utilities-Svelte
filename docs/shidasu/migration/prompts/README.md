@@ -128,7 +128,8 @@ Godotプロジェクトを`c:\Users\the-f\Documents\ClaudeProjects\Shidasu-Godot
 - カード最小高さはGodotの`GetCombinedMinimumSize()`で10種の説明文の最大値を実測して動的固定(Web版の`offsetHeight`実測ハックをGodot標準機構で代替)
 - `playing`/`shop`等の残り10フェーズはプレースホルダー(中身はフェーズ12の担当)
 - `dotnet build`は0警告0エラー、既存722件のテストは回帰なし
-- **重要: この実行環境にはGodotエディタが無いため、フェード演出・レイアウト崩れ・ウィンドウリサイズ挙動の目視確認は未実施。ユーザー側でGodotエディタを開いての確認が必要**
+- **追記: ユーザーがGodot 4.7.2をインストールし`godot_console`にPATHを通したことで、`--headless`起動+一時的なスクリーンショット撮影スクリプトによる目視確認(私が実施)が可能になった。** 実際に確認したところ、スプレッド選択カルーセルの前後ボタン・ドットインジケーター・スタートボタンが画面外(Y座標3000超)に押し出され一切表示されない重大なレイアウト崩れを発見した。原因は`BuildMaxCardHeight()`が`_Ready()`内でコンテナの初回レイアウト確定前に`GetCombinedMinimumSize()`を呼んでおり、折り返し計算が収束せず異常な高さ(1164px)を返していたこと。`Font.GetMultilineStringSize`で幅を明示指定して直接計測する方式に変更し、レイアウトタイミングに依存しない実装に修正。スプレッド切り替え時のフェード・説明文の長さが変わった際の高さ再計算も実機で問題ないことを確認した。検証用コードは確認後に削除済み
+- Godotエディタが4.7.2で開かれたことに伴い、`ShidasuGodot.csproj`のSDKバージョン・`project.godot`の`config/features`を4.7系に更新
 - GitHubリモートへpush済み
 
 次はフェーズ12(UI②: 場札/山札/チェーン/捨て札の操作・ショップ/選択UI)。
