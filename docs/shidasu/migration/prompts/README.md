@@ -132,4 +132,14 @@ Godotプロジェクトを`c:\Users\the-f\Documents\ClaudeProjects\Shidasu-Godot
 - Godotエディタが4.7.2で開かれたことに伴い、`ShidasuGodot.csproj`のSDKバージョン・`project.godot`の`config/features`を4.7系に更新
 - GitHubリモートへpush済み
 
-次はフェーズ12(UI②: 場札/山札/チェーン/捨て札の操作・ショップ/選択UI)。
+## フェーズ12 実行結果(完了)
+
+場札/山札/チェーン/捨て札の表示・クリック操作、カード表示コンポーネント、役ステータス/スート枚数パネル、演出フック用シグナル(妨害発動/コンボリセット/役成立/山札シャッフル)、ショップ画面・ステージ確認画面・5種の選択画面(護符/秘儀/天啓/神託/トランプセット福袋)を実装した。1ウェーブを最初から最後まで操作だけで完走できる状態になった。
+
+- 全Phaseスクリプトを`RunStateChanged`シグナル+`CurrentRun`プロパティ+冪等な`Refresh(shidasuParams, run)`という統一契約に揃え、`Game.cs`への配線を機械的に行えるようにした(共有ファイルへの同時編集を避けるため、各エージェントには`Game.cs`を触らせず、全員完了後にまとめて配線)
+- 役成立シグナルのため`Shidasu.Core`の`PlayCardResult`/`DrawStockResult`に`RoleFired`フィールドを追加(スコア計算ロジック自体は不変)
+- 実装中に`chainLayout.ts`(チェーン配置座標計算)がフェーズ4で移植漏れになっていたことが判明し、UI層のヘルパーとして実装
+- godot_consoleでの実機確認により、タイトル→ステージ確認→プレイ→各選択画面の実際の画面遷移が例外なく動作することを確認。複数の実装バグ(シグナル未接続Disconnectエラー、CardFaceの表示タイミング問題、ドラッグ中の行すり替わり、ShopPhase.Refresh自体の呼び出し漏れ)を目視確認の過程で発見・修正
+- `dotnet build`/`dotnet test`とも成功、722件のテスト全て成功。GitHubリモートへpush済み
+
+次はフェーズ13(アニメーション・演出の再設計)。
