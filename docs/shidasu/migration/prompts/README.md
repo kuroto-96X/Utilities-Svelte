@@ -156,4 +156,8 @@ Web版の「表示専用スナップショット+ガードフラグ+完了時同
 - 命名規則・モチーフ対応表を`14-visual-assets-guide.md`にドキュメント化。実際のCardFace.cs等への統合は今後の課題
 - `dotnet build`/`dotnet test`とも成功、722件のテスト全て成功(既存スクリプト無変更のため回帰なし)。GitHubリモートへpush済み
 
-次はフェーズ13の2/2(カード裏返し+妨害演出4種)。
+## フェーズ13 実行結果(2/2、カード裏返し+妨害演出4種、完了)
+
+`CardFace.PlayFlipReveal`(Tweenでscale.xを1→0→1補間、半分経過時点で中身差し替え)と`SabotageEffectController`(封印系/没収系/強制発動系/数値変化系の4種、Tweenで実装)を実装。実装中、対象カードの実ノードに直接Tweenを仕込む初期設計では`RedrawAll`の無条件`QueueFree`によりTweenが完了しない不具合を発見し、チェーンリセット演出と同じ「AnimationOverlayへの一時ノード生成」パターンに作り直して解消した。Web版の`anyAnimationActive`の非対称性(封印系・没収系のみ操作ブロック対象)も正しく反映。godot_consoleでの検証により先出し防止・演出分岐・操作ブロック方針がWeb版と一致することを確認。`dotnet build`/`dotnet test`成功、722件のテスト全て成功。GitHubリモートへpush済み。
+
+**これでフェーズ13(アニメーション・演出の再設計)が完了。** 次はフェーズ15(オーディオ実装)またはフェーズ16(Steam向け最小パッケージング)。
